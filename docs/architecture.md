@@ -1,0 +1,173 @@
+# Architecture
+
+`funcprops` separates declarative property facts, symbolic proof machinery, and
+public query routing so exact reasoning can be reused without forcing every API
+through the same expensive path.
+
+## Main modules
+
+- `api.py` defines the public `function_*` surface and routes property queries.
+- `engine.py` evaluates conditional catalogue rules, overload precedence, and
+  assumptions.
+- `registry.py` and `data/catalogue.json` store conditional function-family
+  metadata and source-pattern information.
+- `conditions.py` parses deterministic SymPy-constructor catalogue expressions
+  and preserves custom semantic predicates explicitly.
+- `singularities.py` handles poles, removable and essential singularities,
+  branch/definition loci, analyticity, meromorphicity, and continuity.
+- `stratification.py` normalizes guarded alternatives and splits mixed
+  variable/parameter domains for all property engines.
+- `_semialg.py` is the narrow adapter to semialg 1.1.0+ public root exports for
+  exact semialgebraic domain, range, sign, monotonicity, convexity, smoothness, and mapping operations.
+- `real_analysis/` contains domain, sign/inequality, monotonicity, range, mapping,
+  convexity, boundedness, smoothness, and structural-property reasoning.
+- `real_analysis/piecewise.py` supplies effective branch domains and shared
+  interface data for property-specific piecewise combination.
+- `transcendental/` contains certified root isolation, algebraization,
+  periodic reduction, zero geometry, extrema, and supporting proof objects.
+- `branchcuts/` contains structural cut pullback and boundary-value/jump
+  machinery.
+- `proof_cache.py` coordinates reusable lazy proof primitives.
+- `verification.py` replays certificate invariants.
+
+## Conditional results
+
+Property queries preserve unresolved parameter conditions. A singularity record,
+for example, keeps its variable-dependent locus separate from the parameter-only
+guard under which that locus applies. This distinction is necessary for families
+whose branch or pole structure changes with an order or shape parameter.
+
+`PropertyResult` is the shared representation for guarded alternatives. Mixed
+variable/parameter conditions are stratified before a property engine runs, and
+nested guarded results are flattened back into the same representation. Internal
+transformations preserve cases rather than looking only at the primary
+classification.
+
+Three-valued logic is a correctness requirement. An undecidable set relation,
+branch-locus intersection, singularity search, or domain conversion must remain
+unknown rather than being coerced through Python truthiness.
+
+## Real-property proof flow
+
+The real-analysis layer uses inexpensive exact information before invoking heavier
+machinery:
+
+```text
+property query
+  -> parameter-domain stratification
+  -> primitive and structural closure facts
+  -> shared sign/inequality proof when applicable
+  -> effective Piecewise branch analysis when applicable
+  -> direct symbolic simplification
+  -> transcendental algebraization when applicable
+  -> semialgebraic solver for the algebraized problem
+  -> periodic fundamental-domain reduction
+  -> certified root or zero geometry
+  -> monotonic/convex interval decomposition
+```
+
+Not every query traverses this entire pipeline. Fast paths return immediately when
+they already prove the requested property.
+
+Completeness is explicit. An incomplete root search can be useful evidence but is
+never consumed as an exhaustive zero set.
+
+## Shared inequality and piecewise reasoning
+
+The sign engine is the common exact inequality oracle. Relations such as `f >= g`
+are reduced to the sign of `f - g`; derivative-based consumers therefore reuse the
+same proof ladder instead of maintaining independent inequality solvers.
+
+Finite `Piecewise` expressions are first converted to effective, non-overlapping
+branch domains. Sign and boundedness combine branch classifications directly.
+Monotonicity additionally verifies the direction of one-sided interface jumps.
+Convexity requires matching interface values and the appropriate ordering of
+one-sided derivative slopes. Unknown interface facts remain unknown rather than
+being inferred from compatible branch labels alone.
+
+## Zero geometry and interval decomposition
+
+The root layer separates root representation from geometric proof. Closed-form and
+isolated roots coexist with `IndexedZero` families. Certificates describe support,
+parameter guards, counts, simplicity, ordering, and interlacing.
+
+First-derivative zero geometry feeds monotonic decomposition; second-derivative
+geometry feeds convexity decomposition. Finite exact roots create concrete cells.
+Complete infinite families create symbolic indexed cells rather than a finite
+numerical truncation.
+
+Indexed-tail inversion adds exact inverse-index objects for semi-infinite domains:
+
+```text
+IndexedZero family
+  -> IndexedTailIndex / inversion certificate
+  -> first admissible extremum indices
+  -> extremum ordering theorem
+  -> finite exact candidate set
+  -> function range
+```
+
+A general parameter cutoff can remain symbolic. When same-family ordering or
+interlacing identifies the first admissible index exactly, the selector is reduced
+to an integer.
+
+## Shared proof context
+
+`PropertyProofContext(expr, var, domain, assumptions)` is a lazy container for
+cross-property proof primitives. It does not compute a domain, derivative, sign,
+or singularity analysis when constructed.
+
+Bounded LRU caches independently retain:
+
+- raw derivatives;
+- factored derivatives;
+- natural domains;
+- sign classifications;
+- one-sided endpoint limits;
+- zero geometry;
+- singularity analyses; and
+- monotonic partitions.
+
+Raw and factored derivatives are separate because factorization can dominate the
+cost of an otherwise cheap derivative query. Recursive traversal can bypass the
+global cache boundary when transient subexpressions are unlikely to be reused.
+
+Cache-key normalization is deliberately syntactic: Boolean conjunctions and
+disjunctions are flattened, duplicates removed, operands sorted canonically, and
+simple relations oriented deterministically. Quantifier elimination and expensive
+logical simplification are never performed merely to build a cache key.
+
+## Certificate replay
+
+Verification lives above the proof context. Convexity classifications use one
+`ConvexityCertificate` representation; strong classifications add a certified
+modulus while ordinary classifications retain their method and proof payload in
+the same shape. A verifier reconstructs the invariant claimed by a certificate
+from its payload and current exact primitives. Failed or undecidable checks return
+failure; replay does not treat inability to disprove a claim as proof of that
+claim.
+
+## Error handling
+
+Symbolic fallbacks catch only documented computational failures through
+`SYMBOLIC_QUERY_ERRORS`. Programming errors such as `NameError`, `KeyError`, and
+unexpected `AttributeError` are allowed to surface. Individual interoperability
+boundaries may catch a more specific exception when an external SymPy protocol is
+known to use it, such as `Boolean.as_set()` on custom Boolean predicates.
+
+## Executable documentation and invariant tests
+
+The property reference, tutorial notebook, and specification tests share one canonical example corpus in `examples/property_examples.py`. Every public `function_*` query has a page under `docs/properties/` with a common structure: mathematical definition, public API and parameters, domain/assumption semantics, executable examples, applications, proof strategy, limitations, and related properties. The tutorial notebook is built from those same examples rather than maintaining a second set of snippets.
+
+Tests are separated by purpose. `tests/specification/` checks documented behavior and executes the tutorial, while `tests/invariants/` checks mathematical laws that must hold across proof routes: implication chains, parameter specialization, piecewise interface compatibility, expression-rewrite invariance, certificate replay, and cross-property consistency. Regression tests remain focused on particular algorithms and previously discovered edge cases. This separation makes a failure identify whether the public contract, a mathematical invariant, or an implementation-specific regression was violated.
+
+
+## Detailed-result protocol
+
+Compact property APIs keep their established return types.  Downstream code that
+needs a uniform representation can call `funcprops.as_detailed_result(value)`.
+The resulting `DetailedPropertyResult` exposes `primary`, `cases`, `domain`,
+`complete`, `source`, `evidence`, `certificate`, `exceptions`, and
+`all_properties` without forcing every property family into one public scalar
+type.  This keeps simple calls lightweight while giving orchestration and
+certificate tooling a stable structural contract.
