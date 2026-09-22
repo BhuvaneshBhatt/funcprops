@@ -9,7 +9,7 @@ A function is bijective when it is both injective on its domain and surjective o
 ## API and return values
 
 ```python
-function_bijective(expr, var, *, domain=True, codomain=Reals)
+function_bijective(expr, var, *, domain=True, codomain=Reals, assumptions=True)
 ```
 
 TruthValue.TRUE, FALSE, or UNKNOWN, possibly stratified by parameters.

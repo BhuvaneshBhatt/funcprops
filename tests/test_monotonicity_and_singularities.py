@@ -13,7 +13,7 @@ x = sp.symbols("x", real=True)
 
 
 def test_monotonic_decomposition_inverse_trig_composition():
-    d = monotonic_decomposition(sp.acos(sp.exp(x)), x)
+    d = monotonic_decomposition(sp.acos(sp.exp(x)), x, return_result=True)
     assert d is not None
     assert d.direction == -1
     assert d.inner == sp.exp(x)
@@ -34,7 +34,9 @@ def test_positive_product_closure_monotonicity():
 
 
 def test_finite_monotonic_partition():
-    p = monotonic_partition(x**3 - 3 * x, x, domain=sp.Interval(-2, 2))
+    p = monotonic_partition(
+        x**3 - 3 * x, x, domain=sp.Interval(-2, 2), return_result=True
+    )
     assert p.complete
     assert len(p.cells) == 3
     assert [c.direction for c in p.cells] == [
@@ -47,7 +49,9 @@ def test_finite_monotonic_partition():
 
 
 def test_indexed_monotonic_partition_bessel():
-    p = monotonic_partition(sp.besselj(0, x), x, domain=sp.Interval.open(0, sp.oo))
+    p = monotonic_partition(
+        sp.besselj(0, x), x, domain=sp.Interval.open(0, sp.oo), return_result=True
+    )
     assert p.complete
     assert p.indexed is not None
     assert p.indexed.boundary_geometry[0].family == "BesselJ"

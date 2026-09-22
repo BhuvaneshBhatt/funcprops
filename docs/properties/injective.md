@@ -9,7 +9,7 @@ A function is injective when distinct domain points cannot have the same output.
 ## API and return values
 
 ```python
-function_injective(expr, var, *, domain=True, partition=None)
+function_injective(expr, var, *, domain=True, partition=None, assumptions=True)
 ```
 
 TruthValue.TRUE, FALSE, or UNKNOWN, possibly stratified by parameters.

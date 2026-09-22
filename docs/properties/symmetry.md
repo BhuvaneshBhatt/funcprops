@@ -9,10 +9,10 @@ Symmetry detects even, odd, both, central, neither, or unresolved symmetry relat
 ## API and return values
 
 ```python
-function_symmetry(expr, var, *, center=0, domain=True, details=False)
+function_symmetry(expr, var, *, center=0, domain=True, return_result=False, assumptions=True)
 ```
 
-A Symmetry value or detailed result with center/evidence.
+A Symmetry value by default; return_result=True exposes center and evidence.
 
 ## Domains, assumptions, and parameters
 

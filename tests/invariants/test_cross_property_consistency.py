@@ -18,7 +18,7 @@ def test_analytic_implies_continuous_and_smooth_for_entire_examples():
     for f in (sp.exp(x), sp.sin(x), x**4 + 2 * x):
         assert fp.function_analytic(f, x) is Analyticity.ANALYTIC
         assert fp.function_continuous(f, x) is Continuity.CONTINUOUS
-        assert fp.function_smoothness(f, x).smooth is True
+        assert fp.function_smoothness(f, x, return_result=True).smooth is True
 
 
 def test_strict_monotonicity_implies_injectivity():
@@ -109,8 +109,8 @@ def test_semialg_delegation_parity_for_convexity():
 
 
 def test_periodicity_metamorphic_affine_pullback():
-    a = fp.function_periodicity(sp.sin(x), x, details=True)
-    b = fp.function_periodicity(sp.sin(3 * x + 1), x, details=True)
+    a = fp.function_periodicity(sp.sin(x), x, return_result=True)
+    b = fp.function_periodicity(sp.sin(3 * x + 1), x, return_result=True)
     assert (
         a.classification is Periodicity.PERIODIC
         and b.classification is Periodicity.PERIODIC
@@ -125,7 +125,7 @@ def test_symmetry_equivalent_expression_invariance():
 
 
 def test_homogeneity_product_degree_adds():
-    a = fp.function_homogeneity(x**2, (x,), details=True)
-    b = fp.function_homogeneity(x**3, (x,), details=True)
-    c = fp.function_homogeneity(x**5, (x,), details=True)
+    a = fp.function_homogeneity(x**2, (x,), return_result=True)
+    b = fp.function_homogeneity(x**3, (x,), return_result=True)
+    c = fp.function_homogeneity(x**5, (x,), return_result=True)
     assert a.degree + b.degree == c.degree

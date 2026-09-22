@@ -13,7 +13,7 @@ x, y, a, b = sp.symbols("x y a b", real=True)
 
 def test_commensurate_periods_and_composition_replay():
     e = sp.exp(sp.sin(2 * x) + sp.cos(3 * x))
-    r = fp.function_periodicity(e, x, details=True)
+    r = fp.function_periodicity(e, x, return_result=True)
     assert r.classification is Periodicity.PERIODIC
     assert sp.simplify(r.period - 2 * sp.pi) == 0
     assert verify_periodicity_result(e, x, r)
@@ -28,7 +28,7 @@ def test_incommensurate_visible_frequencies_are_aperiodic():
 
 def test_parameterized_affine_frequency_retains_condition():
     e = sp.sin(a * x)
-    r = fp.function_periodicity(e, x, details=True)
+    r = fp.function_periodicity(e, x, return_result=True)
     assert r.classification is Periodicity.PERIODIC
     assert sp.simplify(r.period - 2 * sp.pi / sp.Abs(a)) == 0
     assert r.conditions == sp.Ne(a, 0)
@@ -37,7 +37,7 @@ def test_parameterized_affine_frequency_retains_condition():
 
 def test_discovered_polynomial_and_composed_reflection_centers():
     for e in ((x - 2) ** 2, sp.exp((x - 2) ** 2)):
-        r = fp.function_symmetry(e, x, center=None, details=True)
+        r = fp.function_symmetry(e, x, center=None, return_result=True)
         assert r.classification is Symmetry.EVEN and r.center == 2
         assert verify_symmetry_result(e, x, r)
         assert fp.verify_certificate(r, expr=e, var=x)
@@ -45,14 +45,14 @@ def test_discovered_polynomial_and_composed_reflection_centers():
 
 def test_central_symmetry_preserves_vertical_center():
     e = (x - 2) ** 3 + 5
-    r = fp.function_symmetry(e, x, center=None, details=True)
+    r = fp.function_symmetry(e, x, center=None, return_result=True)
     assert r.classification is Symmetry.CENTRAL
     assert r.center == 2 and r.central_value == 5
     assert verify_symmetry_result(e, x, r)
 
 
 def test_affine_trigonometric_center_families():
-    r = fp.function_symmetry(sp.sin(3 * x + 1), x, center=None, details=True)
+    r = fp.function_symmetry(sp.sin(3 * x + 1), x, center=None, return_result=True)
     assert r.classification is Symmetry.ODD
     assert r.center == -sp.Rational(1, 3)
     assert sp.simplify(r.center_period - sp.pi / 3) == 0
@@ -61,7 +61,7 @@ def test_affine_trigonometric_center_families():
 
 def test_weighted_multivariate_homogeneity_and_replay():
     e = x**2 + y**4
-    r = fp.function_homogeneity(e, (x, y), weights=(2, 1), details=True)
+    r = fp.function_homogeneity(e, (x, y), weights=(2, 1), return_result=True)
     assert r.classification is Homogeneity.HOMOGENEOUS and r.degree == 4
     assert r.weights == (2, 1)
     assert verify_homogeneity_result(e, r)
@@ -70,18 +70,18 @@ def test_weighted_multivariate_homogeneity_and_replay():
 
 def test_parameterized_homogeneity_retains_all_strata():
     e = a * x + b * x**2
-    r = fp.function_homogeneity(e, x, details=True)
+    r = fp.function_homogeneity(e, x, return_result=True)
     assert r.classification is Homogeneity.NOT_HOMOGENEOUS
     by_degree = {c.degree: c.condition for c in r.cases}
     assert 1 in by_degree and 2 in by_degree and None in by_degree
     assert (
         fp.function_homogeneity(
-            e, x, assumptions=sp.And(sp.Eq(b, 0), sp.Ne(a, 0)), details=True
+            e, x, assumptions=sp.And(sp.Eq(b, 0), sp.Ne(a, 0)), return_result=True
         ).degree
         == 1
     )
     z = fp.function_homogeneity(
-        e, x, assumptions=sp.And(sp.Eq(a, 0), sp.Eq(b, 0)), details=True
+        e, x, assumptions=sp.And(sp.Eq(a, 0), sp.Eq(b, 0)), return_result=True
     )
     assert z.classification is Homogeneity.HOMOGENEOUS and z.degree is None
 
@@ -130,7 +130,7 @@ def test_multivariate_analyticity_and_continuity_do_not_treat_tuple_as_atom():
 def test_parameterized_homogeneity_degree_block_requires_any_nonzero_coefficient():
     c = sp.symbols("c", real=True)
     e = a * x + b * y + c * x**2
-    r = fp.function_homogeneity(e, (x, y), details=True)
+    r = fp.function_homogeneity(e, (x, y), return_result=True)
     degree1 = next(case for case in r.cases if case.degree == 1)
     # c=0 and either linear coefficient nonzero is enough; one coefficient may vanish.
     assert (
@@ -143,7 +143,7 @@ def test_parameterized_homogeneity_degree_block_requires_any_nonzero_coefficient
         e,
         (x, y),
         assumptions=sp.And(sp.Eq(c, 0), sp.Eq(a, 0), sp.Ne(b, 0)),
-        details=True,
+        return_result=True,
     )
     assert got.classification is Homogeneity.HOMOGENEOUS and got.degree == 1
 

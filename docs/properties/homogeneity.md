@@ -9,10 +9,10 @@ A function is homogeneous when a common scaling of its variables produces a fixe
 ## API and return values
 
 ```python
-function_homogeneity(expr, vars, *, degree=None, weights=None, assumptions=True, details=False)
+function_homogeneity(expr, vars, *, degree=None, weights=None, assumptions=True, return_result=False)
 ```
 
-A Homogeneity value or detailed result containing degree/weights and parameter conditions.
+A Homogeneity value by default; return_result=True exposes degree, weights, and parameter conditions.
 
 ## Domains, assumptions, and parameters
 
@@ -29,7 +29,7 @@ import sympy as sp
 import funcprops as fp
 
 x, y = sp.symbols("x y", real=True)
-result = fp.function_homogeneity(x**2 + y**2, (x, y), details=True)
+result = fp.function_homogeneity(x**2 + y**2, (x, y), return_result=True)
 result
 ```
 

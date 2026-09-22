@@ -142,7 +142,7 @@ def test_restricted_nonsmooth_functions_can_be_analytic_and_smooth():
     x = sp.symbols("x", real=True)
     assert fp.function_analytic(sp.Abs(x), x) == fp.Analyticity.NOT_ANALYTIC
     assert fp.function_analytic(sp.Abs(x), x, domain=x > 0) == fp.Analyticity.ANALYTIC
-    s = fp.function_smoothness(sp.Abs(x), x, domain=x > 0)
+    s = fp.function_smoothness(sp.Abs(x), x, domain=x > 0, return_result=True)
     assert s.analytic == fp.Analyticity.ANALYTIC
     assert s.smooth is True
     assert s.differentiability_order is sp.oo

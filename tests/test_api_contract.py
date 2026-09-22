@@ -24,11 +24,11 @@ def test_every_public_function_property_has_direct_contract():
     assert fp.function_domain(sp.log(x), x) == (x > 0)
     assert fp.function_range(x**2, x, y) == (y >= 0)
     assert fp.function_branchcuts(sp.log(x), x)
-    assert fp.function_branchpoints(sp.log(x), x)
+    assert fp.function_branchpoints(sp.log(x), x) == sp.Eq(x, 0)
     assert fp.function_poles(1 / x, x)
-    assert "poles" in fp.function_singularities(1 / x, x)
+    assert fp.function_singularities(1 / x, x) == sp.Eq(x, 0)
     assert fp.function_singularity_analysis(1 / x, x).complete
-    assert isinstance(fp.function_discontinuities(1 / x, x), tuple)
+    assert isinstance(fp.function_discontinuities(1 / x, x), sp.Basic)
     assert fp.function_analytic(sp.exp(x), x) is Analyticity.ANALYTIC
     assert fp.function_meromorphic(1 / x, x) is Meromorphicity.MEROMORPHIC
     assert fp.function_continuous(sp.Abs(x), x) is Continuity.CONTINUOUS
@@ -48,7 +48,7 @@ def test_every_public_function_property_has_direct_contract():
     assert fp.function_injective(x, x) is TruthValue.TRUE
     assert fp.function_surjective(x, x) is TruthValue.TRUE
     assert fp.function_bijective(x, x) is TruthValue.TRUE
-    assert fp.function_smoothness(sp.Abs(x), x).differentiability_order == 0
+    assert fp.function_smoothness(sp.Abs(x), x) is TruthValue.FALSE
     assert fp.function_oscillation(sp.sin(x), x) is Oscillation.OSCILLATORY
     assert fp.function_periodicity(sp.sin(x), x) is Periodicity.PERIODIC
     assert fp.function_symmetry(sp.sin(x), x) is Symmetry.ODD
@@ -61,7 +61,7 @@ def test_differentiability_contract_edge_cases():
         Differentiability.SMOOTH,
     )
     # Abs is not globally differentiable; smoothness is the stronger exact API.
-    s = fp.function_smoothness(sp.Abs(x), x)
+    s = fp.function_smoothness(sp.Abs(x), x, return_result=True)
     assert s.differentiability_order == 0
     assert sp.Eq(x, 0) in s.exceptional_loci
 
@@ -75,9 +75,9 @@ def test_zero_contract_finite_periodic_and_indexed():
 
 
 def test_smoothness_contract_analytic_and_exceptional():
-    a = fp.function_smoothness(sp.exp(x), x)
-    assert a.smooth is True
-    b = fp.function_smoothness(sp.Abs(x), x)
+    assert fp.function_smoothness(sp.exp(x), x) is TruthValue.TRUE
+    assert fp.function_smoothness(sp.Abs(x), x) is TruthValue.FALSE
+    b = fp.function_smoothness(sp.Abs(x), x, return_result=True)
     assert b.smooth is False and sp.Eq(x, 0) in b.exceptional_loci
 
 
@@ -98,7 +98,7 @@ def test_mapping_contracts_and_codomain():
 
 
 def test_new_periodicity_details_and_negative_proof():
-    r = fp.function_periodicity(sp.sin(2 * x), x, details=True)
+    r = fp.function_periodicity(sp.sin(2 * x), x, return_result=True)
     assert r.classification is Periodicity.PERIODIC
     assert sp.simplify(r.period - sp.pi) == 0
     assert fp.function_periodicity(x**3 + x, x) is Periodicity.APERIODIC
@@ -113,7 +113,7 @@ def test_new_symmetry_about_zero_and_center():
 
 
 def test_new_homogeneity_degree_contract():
-    r = fp.function_homogeneity(x**2 + y**2, (x, y), details=True)
+    r = fp.function_homogeneity(x**2 + y**2, (x, y), return_result=True)
     assert r.classification is Homogeneity.HOMOGENEOUS and r.degree == 2
     assert fp.function_homogeneity(x + y**2, (x, y)) is Homogeneity.NOT_HOMOGENEOUS
     assert (

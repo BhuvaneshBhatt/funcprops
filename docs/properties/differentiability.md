@@ -9,7 +9,7 @@ Differentiability asks whether derivatives exist throughout a domain, optionally
 ## API and return values
 
 ```python
-function_differentiability(expr, var, *, domain=True, order=None, all_properties=False, details=False, max_order=6)
+function_differentiability(expr, var, *, domain=True, order=None, all_properties=False, return_result=False, max_order=6, assumptions=True)
 ```
 
 A Differentiability value or PropertyResult with regularity evidence.

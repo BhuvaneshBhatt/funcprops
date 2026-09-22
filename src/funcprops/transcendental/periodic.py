@@ -6,6 +6,7 @@ from math import gcd, lcm
 import sympy as sp
 from sympy import S
 
+from ..exactness import certify_identity_equal
 from ..exceptions import SYMBOLIC_QUERY_ERRORS
 
 
@@ -94,7 +95,7 @@ class PeriodicSet:
     def _align(self, other):
         if not isinstance(other, PeriodicSet):
             return None
-        if sp.simplify(self.origin - other.origin) != 0:
+        if certify_identity_equal(self.origin, other.origin) is False:
             return None
         p = common_period_values(self.period, other.period)
         if p is None:

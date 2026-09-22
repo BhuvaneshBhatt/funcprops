@@ -27,14 +27,14 @@ def _public_function(name: str) -> Callable:
         import semialg
     except ImportError as exc:
         raise SemialgUnavailable(
-            "funcprops real-analysis queries require semialg>=1.1.0"
+            "funcprops real-analysis queries require semialg>=1.2.0"
         ) from exc
 
     try:
         function = getattr(semialg, name)
     except AttributeError as exc:
         raise SemialgUnavailable(
-            f"semialg>=1.1.0 does not provide the required public function {name!r}"
+            f"semialg>=1.2.0 does not provide the required public function {name!r}"
         ) from exc
     if not callable(function):
         raise SemialgUnavailable(f"semialg public attribute {name!r} is not callable")

@@ -9,7 +9,7 @@ A function is surjective onto a codomain when every codomain value is attained b
 ## API and return values
 
 ```python
-function_surjective(expr, var, *, domain=True, codomain=Reals)
+function_surjective(expr, var, *, domain=True, codomain=Reals, assumptions=True)
 ```
 
 TruthValue.TRUE, FALSE, or UNKNOWN, possibly stratified by parameters.

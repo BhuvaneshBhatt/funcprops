@@ -9,10 +9,10 @@ Pole analysis identifies isolated singularities with finite negative local order
 ## API and return values
 
 ```python
-function_poles(expr, var, *, assumptions=True)
+function_poles(expr, var, *, assumptions=True, return_result=False)
 ```
 
-A tuple of Singularity records with kind POLE.
+A list of (pole, multiplicity) pairs by default; return_result=True returns the supporting Singularity records.
 
 ## Domains, assumptions, and parameters
 
@@ -29,7 +29,7 @@ import sympy as sp
 import funcprops as fp
 
 x, y = sp.symbols("x y", real=True)
-result = fp.function_poles(1 / x, x)
+result = fp.function_poles(1/x, x)
 result
 ```
 

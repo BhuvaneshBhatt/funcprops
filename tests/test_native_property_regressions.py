@@ -122,9 +122,9 @@ def test_concavity_on_positive_log_domain():
 
 
 def test_discontinuity_records_for_tangent_and_gamma():
-    tan_records = fp.function_discontinuities(sp.tan(x), x)
+    tan_records = fp.function_discontinuities(sp.tan(x), x, return_result=True)
     assert tan_records and any(r.condition == sp.Eq(sp.cos(x), 0) for r in tan_records)
-    gamma_records = fp.function_discontinuities(sp.gamma(x), x)
+    gamma_records = fp.function_discontinuities(sp.gamma(x), x, return_result=True)
     assert gamma_records
 
 

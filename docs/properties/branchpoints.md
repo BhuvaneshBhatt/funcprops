@@ -9,10 +9,10 @@ Branch-point analysis identifies points around which analytic continuation can c
 ## API and return values
 
 ```python
-function_branchpoints(expr, var, *, assumptions=True)
+function_branchpoints(expr, var, *, assumptions=True, return_result=False)
 ```
 
-A tuple of Singularity records with kind BRANCH_POINT.
+A Boolean branch-point locus by default; return_result=True returns the supporting Singularity records.
 
 ## Domains, assumptions, and parameters
 

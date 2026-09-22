@@ -2,7 +2,12 @@ from __future__ import annotations
 
 import sympy as sp
 
-from ..results import ConditionalValue, Continuity, Differentiability, PropertyResult
+from ..results import (
+    ConditionalExpression,
+    Continuity,
+    Differentiability,
+    PropertyResult,
+)
 from ..stratification import normalize_cases
 from .smoothness import function_smoothness
 
@@ -55,7 +60,7 @@ def function_differentiability(
     domain=True,
     order=None,
     all_properties=False,
-    details=False,
+    return_result=False,
     max_order=6,
 ):
     """Classify differentiability on the requested real domain.
@@ -88,11 +93,13 @@ def function_differentiability(
     from ..proof_cache import cached_derivative
 
     cached_derivative(expr, var, order=1)
-    smoothness = function_smoothness(expr, var, domain=domain, max_order=probe_order)
+    smoothness = function_smoothness(
+        expr, var, domain=domain, max_order=probe_order, return_result=True
+    )
     if isinstance(smoothness, PropertyResult):
         out = normalize_cases(
             (
-                ConditionalValue(_classify_smoothness(c.value, order), c.condition)
+                ConditionalExpression(_classify_smoothness(c.value, order), c.condition)
                 for c in smoothness.cases
             ),
             source="differentiability-parameter-stratification",
@@ -101,7 +108,7 @@ def function_differentiability(
         return out
 
     primary = _classify_smoothness(smoothness, order)
-    if all_properties or details:
+    if all_properties or return_result:
         return PropertyResult(
             primary=primary,
             all_properties=_differentiability_implications(primary),

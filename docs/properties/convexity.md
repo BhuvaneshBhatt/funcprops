@@ -9,7 +9,7 @@ Convexity classifies ordinary, strict, strong, affine, concave, log-, quasi-, an
 ## API and return values
 
 ```python
-function_convexity(expr, var, *, domain=True, strict_inequalities=True, all_properties=False, details=False, intervals=False, **kwargs)
+function_convexity(expr, var, *, domain=True, strict_inequalities=True, all_properties=False, return_result=False, intervals=False, assumptions=True, **kwargs)
 ```
 
 A Convexity value or PropertyResult; detailed results carry a normalized ConvexityCertificate.

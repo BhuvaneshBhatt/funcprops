@@ -48,13 +48,13 @@ def test_sign_all_properties_reports_weak_implications():
 def test_periodicity_uses_parameter_assumptions():
     x, a = sp.symbols("x a", real=True)
     constant = function_periodicity(
-        sp.sin(a * x), x, assumptions=sp.Eq(a, 0), details=True
+        sp.sin(a * x), x, assumptions=sp.Eq(a, 0), return_result=True
     )
     assert constant.classification is Periodicity.CONSTANT
     assert constant.period is None
 
     periodic = function_periodicity(
-        sp.sin(a * x), x, assumptions=sp.Ne(a, 0), details=True
+        sp.sin(a * x), x, assumptions=sp.Ne(a, 0), return_result=True
     )
     assert periodic.classification is Periodicity.PERIODIC
     assert periodic.conditions is sp.S.true

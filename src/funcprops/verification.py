@@ -8,9 +8,12 @@ unknown symbolic comparison into success.
 
 from __future__ import annotations
 
+from functools import lru_cache
+
 import sympy as sp
 from sympy import S
 
+from .exactness import certify_identity_equal
 from .exceptions import SYMBOLIC_QUERY_ERRORS
 from .results import Monotonicity, Sign
 
@@ -37,7 +40,7 @@ def verify_monotonic_decomposition(cert):
     if not isinstance(cert, MonotonicDecomposition):
         return False
     try:
-        return sp.simplify(cert.reconstruct() - cert.expression) == 0
+        return certify_identity_equal(cert.reconstruct(), cert.expression) is True
     except SYMBOLIC_QUERY_ERRORS:
         return False
 
@@ -53,7 +56,10 @@ def verify_monotonic_partition(expr, var, cert):
     ctx = property_proof_context(expr, var, domain=cert.domain)
     try:
         d = ctx.derivative(1, factored=True)
-        if cert.derivative is not None and sp.simplify(d - cert.derivative) != 0:
+        if (
+            cert.derivative is not None
+            and certify_identity_equal(d, cert.derivative) is False
+        ):
             return False
     except SYMBOLIC_QUERY_ERRORS:
         return False
@@ -162,7 +168,7 @@ def verify_indexed_tail_inversion(cert):
                 return False
             if (
                 getattr(b, "exact", False)
-                and sp.simplify(cert.first_index - b.lower) != 0
+                and certify_identity_equal(cert.first_index, b.lower) is False
             ):
                 return False
         except SYMBOLIC_QUERY_ERRORS:
@@ -170,9 +176,11 @@ def verify_indexed_tail_inversion(cert):
     return True
 
 
-def verify_certificate(cert, *, expr=None, var=None):
-    """Dispatch a supported certificate to its replay verifier."""
+@lru_cache(maxsize=1)
+def _certificate_verifiers():
+    from .geometry import LevelBoundednessCertificate, ModeExistenceCertificate
     from .real_analysis.advanced_convexity import ConvexityCertificate
+    from .real_analysis.complete_monotonicity import CompleteMonotonicityCertificate
     from .real_analysis.monotonic_certificates import (
         MonotonicDecomposition,
         MonotonicPartition,
@@ -193,43 +201,80 @@ def verify_certificate(cert, *, expr=None, var=None):
         IndexedTailInversionCertificate,
         ZeroGeometryCertificate,
     )
+    from .transformation import (
+        ChangeOfVariablesCertificate,
+        DeterminantNonvanishingCertificate,
+        LocalInvertibilityCertificate,
+    )
 
-    if isinstance(cert, MonotonicDecomposition):
-        return verify_monotonic_decomposition(cert)
-    if isinstance(cert, MonotonicPartition):
+    def self_verifying(cert, expr, var):
+        return cert.verify()
+
+    def monotonic_partition(cert, expr, var):
         if expr is None or var is None:
             raise ValueError("expr and var are required for MonotonicPartition replay")
         return verify_monotonic_partition(expr, var, cert)
-    if isinstance(cert, ConvexityCertificate):
+
+    def convexity(cert, expr, var):
         if expr is None or var is None:
             raise ValueError("expr and var are required for convexity replay")
         return verify_convexity_certificate(expr, var, cert)
-    if isinstance(cert, ZeroGeometryCertificate):
-        return verify_zero_geometry(cert)
-    if isinstance(cert, RootCertificate):
-        return verify_root_certificate(cert)
-    if isinstance(cert, ExtremumFamilyCertificate):
-        return verify_extremum_family_certificate(cert)
-    if isinstance(cert, ExtremumRange):
-        return verify_extremum_range(cert)
-    if isinstance(cert, ExtremumOrderingTheorem):
-        return verify_extremum_ordering_theorem(cert)
-    if isinstance(cert, CertifiedIntegerBracket):
-        return verify_integer_bracket(cert)
-    if isinstance(cert, IndexedTailInversionCertificate):
-        return verify_indexed_tail_inversion(cert)
-    if isinstance(cert, PeriodicityResult):
+
+    def periodicity(cert, expr, var):
         if expr is None or var is None:
             raise ValueError("expr and var are required for periodicity replay")
         return verify_periodicity_result(expr, var, cert)
-    if isinstance(cert, SymmetryResult):
+
+    def symmetry(cert, expr, var):
         if expr is None or var is None:
             raise ValueError("expr and var are required for symmetry replay")
         return verify_symmetry_result(expr, var, cert)
-    if isinstance(cert, HomogeneityResult):
+
+    def homogeneity(cert, expr, var):
         if expr is None:
             raise ValueError("expr is required for homogeneity replay")
         return verify_homogeneity_result(expr, cert)
+
+    return (
+        (ChangeOfVariablesCertificate, self_verifying),
+        (DeterminantNonvanishingCertificate, self_verifying),
+        (LocalInvertibilityCertificate, self_verifying),
+        (CompleteMonotonicityCertificate, self_verifying),
+        (LevelBoundednessCertificate, self_verifying),
+        (ModeExistenceCertificate, self_verifying),
+        (
+            MonotonicDecomposition,
+            lambda cert, expr, var: verify_monotonic_decomposition(cert),
+        ),
+        (MonotonicPartition, monotonic_partition),
+        (ConvexityCertificate, convexity),
+        (ZeroGeometryCertificate, lambda cert, expr, var: verify_zero_geometry(cert)),
+        (RootCertificate, lambda cert, expr, var: verify_root_certificate(cert)),
+        (
+            ExtremumFamilyCertificate,
+            lambda cert, expr, var: verify_extremum_family_certificate(cert),
+        ),
+        (ExtremumRange, lambda cert, expr, var: verify_extremum_range(cert)),
+        (
+            ExtremumOrderingTheorem,
+            lambda cert, expr, var: verify_extremum_ordering_theorem(cert),
+        ),
+        (CertifiedIntegerBracket, lambda cert, expr, var: verify_integer_bracket(cert)),
+        (
+            IndexedTailInversionCertificate,
+            lambda cert, expr, var: verify_indexed_tail_inversion(cert),
+        ),
+        (PeriodicityResult, periodicity),
+        (SymmetryResult, symmetry),
+        (HomogeneityResult, homogeneity),
+    )
+
+
+def verify_certificate(cert, *, expr=None, var=None):
+    """Replay any certificate supported by the package verifier registry."""
+    for certificate_type, verifier in _certificate_verifiers():
+        if isinstance(cert, certificate_type):
+            return verifier(cert, expr, var)
     raise TypeError(f"unsupported certificate type: {type(cert).__name__}")
 
 
@@ -313,7 +358,7 @@ def verify_periodicity_result(expr, var, cert):
         ):
             return False
         try:
-            if sp.simplify(expr.subs(var, var + cert.period) - expr) == 0:
+            if certify_identity_equal(expr.subs(var, var + cert.period), expr) is True:
                 return True
             if "conditional-affine-frequency" in cert.evidence and expr.func in (
                 sp.sin,
@@ -348,8 +393,8 @@ def verify_symmetry_result(expr, var, cert):
     c = sp.sympify(cert.center)
     try:
         ref = sp.simplify(expr.subs(var, 2 * c - var))
-        ev = sp.simplify(ref - expr) == 0
-        od = sp.simplify(ref + expr) == 0
+        ev = certify_identity_equal(ref, expr) is True
+        od = certify_identity_equal(ref, -expr) is True
     except SYMBOLIC_QUERY_ERRORS:
         return False
     if cert.classification is Symmetry.BOTH:
@@ -360,7 +405,7 @@ def verify_symmetry_result(expr, var, cert):
         return od
     if cert.classification is Symmetry.CENTRAL:
         try:
-            return sp.simplify(ref + expr - 2 * cert.central_value) == 0
+            return certify_identity_equal(ref + expr, 2 * cert.central_value) is True
         except SYMBOLIC_QUERY_ERRORS:
             return False
     if cert.classification is Symmetry.NEITHER:

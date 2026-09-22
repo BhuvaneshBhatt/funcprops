@@ -6,7 +6,7 @@ import sympy as sp
 from sympy import S
 
 from ..exceptions import SYMBOLIC_QUERY_ERRORS
-from ..results import ConditionalValue, Convexity, Monotonicity, Sign
+from ..results import ConditionalExpression, Convexity, Monotonicity, Sign
 from ..stratification import implication_guard, normalize_cases
 from .common import condition_to_set
 from .monotonicity import function_monotonicity
@@ -47,9 +47,9 @@ def parameterized_power_convexity(expr, var, domain):
     if not positive_domain and domain != (var > 0):
         return None
     cases = (
-        ConditionalValue(Convexity.STRICTLY_CONVEX, sp.Or(a < 0, a > 1)),
-        ConditionalValue(Convexity.STRICTLY_CONCAVE, sp.And(a > 0, a < 1)),
-        ConditionalValue(Convexity.AFFINE, sp.Or(sp.Eq(a, 0), sp.Eq(a, 1))),
+        ConditionalExpression(Convexity.STRICTLY_CONVEX, sp.Or(a < 0, a > 1)),
+        ConditionalExpression(Convexity.STRICTLY_CONCAVE, sp.And(a > 0, a < 1)),
+        ConditionalExpression(Convexity.AFFINE, sp.Or(sp.Eq(a, 0), sp.Eq(a, 1))),
     )
     return normalize_cases(cases, source="power-parameter-stratification")
 
@@ -69,8 +69,8 @@ def parameterized_exp_convexity(expr, var):
         return None
     return normalize_cases(
         (
-            ConditionalValue(Convexity.STRICTLY_CONVEX, sp.Ne(a, 0)),
-            ConditionalValue(Convexity.AFFINE, sp.Eq(a, 0)),
+            ConditionalExpression(Convexity.STRICTLY_CONVEX, sp.Ne(a, 0)),
+            ConditionalExpression(Convexity.AFFINE, sp.Eq(a, 0)),
         ),
         source="exp-affine-parameter-stratification",
     )

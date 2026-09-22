@@ -15,68 +15,8 @@ from functools import lru_cache
 import sympy as sp
 from sympy import S
 from sympy.core.function import PoleError
-from sympy.core.sympify import SympifyError
 
-
-def _basic(value):
-    if value is True or value is None:
-        return S.true
-    if value is False:
-        return S.false
-    if isinstance(value, sp.Set):
-        return value
-    try:
-        return sp.sympify(value)
-    except (SympifyError, TypeError):
-        return value
-
-
-def _normalize_relation(rel):
-    """Cheap deterministic relation normalization for cache keys only."""
-    if not isinstance(rel, sp.core.relational.Relational):
-        return rel
-    lhs, rhs = rel.lhs, rel.rhs
-    # Prefer a symbol/expression containing symbols on the left and zero or a
-    # simpler constant on the right.  Do not call simplify/QE here.
-    if not lhs.free_symbols and rhs.free_symbols:
-        return rel.reversed
-    return rel
-
-
-def normalize_assumptions(value):
-    """Canonicalize Boolean syntax without expensive logical reasoning."""
-    value = _basic(value)
-    if value in (S.true, S.false) or isinstance(value, sp.Set):
-        return value
-    if isinstance(value, (sp.And, sp.Or)):
-        head = value.func
-        flat = []
-        for arg in value.args:
-            q = normalize_assumptions(arg)
-            if isinstance(q, head):
-                flat.extend(q.args)
-            else:
-                flat.append(q)
-        ident = S.true if head is sp.And else S.false
-        annih = S.false if head is sp.And else S.true
-        if annih in flat:
-            return annih
-        flat = [q for q in flat if q != ident]
-        unique = {q: q for q in flat}
-        ordered = tuple(sorted(unique.values(), key=sp.default_sort_key))
-        if not ordered:
-            return ident
-        return head(*ordered, evaluate=False)
-    if isinstance(value, sp.Not):
-        q = normalize_assumptions(value.args[0])
-        return sp.Not(q, evaluate=False)
-    return _normalize_relation(value)
-
-
-def normalize_domain(value):
-    if isinstance(value, sp.Set):
-        return value
-    return normalize_assumptions(value)
+from .assumption_normalization import normalize_assumptions, normalize_domain
 
 
 @dataclass(frozen=True)
@@ -132,6 +72,12 @@ def cached_derivative(expr, var, *, order=1, factored=False):
     expr = sp.sympify(expr)
     var = sp.sympify(var)
     order = _derivative_order(order)
+    if order == 1:
+        from .registry_derivatives import registry_derivative
+
+        cert = registry_derivative(expr, var)
+        if cert.complete and cert.conditions is S.true:
+            return sp.factor(cert.derivative) if factored else cert.derivative
     fn = _factored_derivative_cached if factored else _derivative_cached
     args = (expr, var, order)
     try:
@@ -204,7 +150,7 @@ def _endpoint_limit_cached(expr, var, point, direction, attained):
 def cached_endpoint_limit(expr, var, point, *, direction="+", attained=False):
     expression = sp.sympify(expr)
     variable = sp.sympify(var)
-    point = _basic(point)
+    point = sp.sympify(point)
     args = (expression, variable, point, str(direction), bool(attained))
     try:
         return _endpoint_limit_cached(*args)
@@ -224,7 +170,7 @@ def _zero_geometry_cached(expr, var, derivative_order, domain):
 def cached_zero_geometry(
     expr, var, *, derivative_order=0, domain=S.Reals, assumptions=S.true
 ):
-    key = proof_key(expr, var, domain=domain, assumptions=assumptions)
+    key = proof_key(expr, var, domain=domain)
     order = _derivative_order(derivative_order)
     args = (key.expression, key.variable, order, key.domain)
     try:
@@ -330,6 +276,7 @@ class PropertyProofContext:
             self.expression,
             self.variable,
             domain=self.domain if domain is None else domain,
+            return_result=True,
         )
 
 

@@ -6,7 +6,13 @@ from sympy import S
 from .. import _semialg
 from ..engine import evaluate_property
 from ..exceptions import SYMBOLIC_QUERY_ERRORS
-from ..results import ConditionalValue, Convexity, Monotonicity, PropertyResult, Sign
+from ..results import (
+    ConditionalExpression,
+    Convexity,
+    Monotonicity,
+    PropertyResult,
+    Sign,
+)
 from ..stratification import (
     evaluate_parameter_strata,
     normalize_cases,
@@ -29,7 +35,7 @@ from .common import (
 )
 from .domain import function_domain
 from .monotonicity import function_monotonicity
-from .piecewise import piecewise_branches, piecewise_interface_limits
+from .piecewise import certify_piecewise_boundaries, piecewise_decomposition
 from .sign import function_sign
 from .special_functions import parameter_guard, positive_axis_convexity_strata
 
@@ -56,12 +62,13 @@ def _registry_convexity(expr, var):
         if pguard is S.true:
             return v
         return normalize_cases(
-            (ConditionalValue(v, pguard),), source="registry-convexity-stratification"
+            (ConditionalExpression(v, pguard),),
+            source="registry-convexity-stratification",
         )
     if r.cases:
         return normalize_cases(
             (
-                ConditionalValue(
+                ConditionalExpression(
                     _from_code(c.value), sp.And(semantic_condition(c.condition), pguard)
                 )
                 for c in r.cases
@@ -230,10 +237,11 @@ def _multivariate_constant_hessian_convexity(expr, variables):
 
 
 def _piecewise_convexity(expr, var, domain, strict):
-    """Combine convex branches after checking value and slope interfaces."""
+    """Combine convex branch cells after certified value/slope seam checks."""
     if not isinstance(expr, sp.Piecewise):
         return Convexity.UNKNOWN
-    branches = piecewise_branches(expr, var, domain)
+    decomp = piecewise_decomposition(expr, var, domain)
+    branches = tuple(b for b in decomp.branches if isinstance(b.domain, sp.Interval))
     if not branches:
         return Convexity.UNKNOWN
     classes = [
@@ -266,17 +274,17 @@ def _piecewise_convexity(expr, var, domain, strict):
         if all(value in concave for value in classes)
         else Convexity.UNKNOWN
     )
-    if orientation is Convexity.UNKNOWN:
-        return orientation
-    values = piecewise_interface_limits(branches, var)
-    slopes = piecewise_interface_limits(branches, var, derivative_order=1)
-    if values is None or slopes is None:
+    if orientation is Convexity.UNKNOWN or not decomp.complete:
         return orientation if len(branches) == 1 else Convexity.UNKNOWN
-    for (_, left_value, right_value), (_, left_slope, right_slope) in zip(
-        values, slopes, strict=False
-    ):
-        if sp.simplify(left_value - right_value) != 0:
+    seams = certify_piecewise_boundaries(decomp, max_order=1)
+    for seam in seams:
+        if seam.continuous is False:
             return Convexity.NEITHER
+        if seam.continuous is not True or not seam.derivative_limits:
+            return Convexity.UNKNOWN
+        left_slope, right_slope = seam.derivative_limits[0]
+        if left_slope is None or right_slope is None:
+            return Convexity.UNKNOWN
         jump = sp.simplify(right_slope - left_slope)
         if orientation is Convexity.CONVEX:
             if jump.is_nonnegative is not True:
@@ -333,194 +341,89 @@ def _semialgebraic_convexity_stage(
     return value if value is not Convexity.UNKNOWN else None
 
 
-def function_convexity(
-    expr,
-    var,
-    *,
-    domain=True,
-    strict_inequalities=True,
-    all_properties=False,
-    details=False,
-    intervals=False,
-    _domain_ready=False,
-    **kwargs,
-):
-    """Classify real convexity with strong/log/quasi/pseudo refinements.
+_NO_CONVEXITY_RESULT = object()
 
-    The default is the strongest canonical ordinary convexity/concavity class.
-    With ``all_properties=True`` a PropertyResult includes additional proved
-    log-, quasi-, and pseudo-convexity/concavity properties.
-    """
-    expr = sp.sympify(expr)
-    if isinstance(var, (tuple, list, sp.Tuple)):
-        variables = normalize_variables(var)
-        if not any(expr.has(v) for v in variables):
-            primary = Convexity.AFFINE
-        else:
-            primary = _multivariate_constant_hessian_convexity(expr, variables)
-        if primary is not Convexity.UNKNOWN:
-            extra = convexity_implications(primary)
-            return (
-                _convexity_property_result(
-                    primary,
-                    S.Reals,
-                    "constant-hessian",
-                    all_properties=extra,
-                )
-                if (all_properties or details or intervals)
-                else primary
-            )
+
+def _multivariate_convexity_stage(
+    expr, var, *, all_properties, return_result, intervals
+):
+    if not isinstance(var, (tuple, list, sp.Tuple)):
+        return _NO_CONVEXITY_RESULT
+    variables = normalize_variables(var)
+    primary = (
+        Convexity.AFFINE
+        if not any(expr.has(v) for v in variables)
+        else _multivariate_constant_hessian_convexity(expr, variables)
+    )
+    detailed = all_properties or return_result or intervals
+    if primary is Convexity.UNKNOWN:
         return (
             _convexity_property_result(
-                Convexity.UNKNOWN, S.Reals, "multivariate-variable-hessian"
+                primary, S.Reals, "multivariate-variable-hessian"
             )
-            if (all_properties or details or intervals)
-            else Convexity.UNKNOWN
-        )
-    var = sp.sympify(var)
-    if not expr.has(var):
-        primary = Convexity.AFFINE
-        return (
-            _convexity_property_result(
-                primary,
-                S.Reals,
-                "constant",
-                all_properties=(Convexity.CONVEX, Convexity.CONCAVE),
-            )
-            if (all_properties or details)
+            if detailed
             else primary
         )
-    natural = function_domain(expr, var)
-    assumptions = (
-        sp.sympify(domain)
-        if _domain_ready
-        else combine_natural_domain_condition(natural, domain, var)
-    )
-    if not _domain_ready:
-        split = evaluate_parameter_strata(
-            assumptions,
-            var,
-            lambda branch_domain: function_convexity(
-                expr,
-                var,
-                domain=branch_domain,
-                strict_inequalities=strict_inequalities,
-                all_properties=all_properties,
-                details=details,
-                intervals=intervals,
-                _domain_ready=True,
-                **kwargs,
-            ),
-            source="convexity-parameter-stratification",
+    return (
+        _convexity_property_result(
+            primary,
+            S.Reals,
+            "constant-hessian",
+            all_properties=convexity_implications(primary),
         )
-        if split is not None:
-            return split
-    ds_for_geometry = condition_to_set(assumptions, var)
+        if detailed
+        else primary
+    )
+
+
+def _convexity_domain_stage(assumptions, domain, var, *, detailed):
+    domain_set = condition_to_set(assumptions, var)
     requested_set = (
         condition_to_set(domain, var)
         if domain not in (True, None, S.true, S.Reals)
         else None
     )
-    # Global convexity/concavity is defined on a convex domain.  Validate an
-    # explicit requested domain independently of natural-domain bookkeeping so
-    # recognized convex restrictions (for example x > 0 for gamma(x)) keep
-    # their stronger catalogue/special-function proofs.
-    if isinstance(requested_set, sp.Union) or isinstance(ds_for_geometry, sp.Union):
-        primary = Convexity.NEITHER
-        return (
-            _convexity_property_result(primary, assumptions, "nonconvex-domain")
-            if (all_properties or details or intervals)
-            else primary
+    if isinstance(requested_set, sp.Union) or isinstance(domain_set, sp.Union):
+        result = Convexity.NEITHER
+        return None, (
+            _convexity_property_result(result, assumptions, "nonconvex-domain")
+            if detailed
+            else result
         )
     if domain not in (True, None, S.true, S.Reals) and not isinstance(
         requested_set, sp.Set
     ):
-        primary = Convexity.UNKNOWN
-        return (
+        result = Convexity.UNKNOWN
+        return None, (
             _convexity_property_result(
-                primary, assumptions, "unresolved-domain-convexity"
+                result, assumptions, "unresolved-domain-convexity"
             )
-            if (all_properties or details or intervals)
-            else primary
+            if detailed
+            else result
         )
-    geom_domain = (
-        ds_for_geometry
-        if isinstance(ds_for_geometry, sp.Set)
+    geometry_domain = (
+        domain_set
+        if isinstance(domain_set, sp.Set)
         else requested_set
         if isinstance(requested_set, sp.Set)
         else S.Reals
     )
-    piecewise = _piecewise_convexity(expr, var, assumptions, strict_inequalities)
-    if piecewise is not Convexity.UNKNOWN:
-        if all_properties or details or intervals:
-            return _convexity_property_result(
-                piecewise,
-                assumptions,
-                "piecewise-analysis",
-                all_properties=convexity_implications(piecewise),
-            )
-        return piecewise
-    curvature_decomposition = (
-        property_interval_decomposition(
-            expr,
-            var,
-            derivative_order=2,
-            domain=geom_domain,
-            positive_value=Convexity.STRICTLY_CONVEX,
-            negative_value=Convexity.STRICTLY_CONCAVE,
-        )
-        if (intervals or details)
-        else None
-    )
+    return geometry_domain, _NO_CONVEXITY_RESULT
 
-    # Certified second-derivative zero geometry can establish alternating
-    # convex/concave cells even when symbolic sign simplification cannot.
-    raw_curv = property_interval_decomposition(
-        expr,
-        var,
-        derivative_order=2,
-        domain=geom_domain,
-        positive_value=Convexity.STRICTLY_CONVEX,
-        negative_value=Convexity.STRICTLY_CONCAVE,
-    )
-    if (
-        raw_curv.complete
-        and raw_curv.alternating
-        and raw_curv.boundary_geometry
-        and geom_domain is S.Reals
-    ):
-        if intervals or details or all_properties:
-            return _convexity_property_result(
-                Convexity.NEITHER,
-                assumptions,
-                "second-derivative-zero-geometry",
-                evidence=(raw_curv,),
-            )
-        return Convexity.NEITHER
 
-    # Parameter strata are returned rather than collapsed to Unknown.
-    strat = parameterized_power_convexity(
-        expr, var, assumptions
-    ) or parameterized_exp_convexity(expr, var)
-    if strat is not None:
-        return strat
-    try:
-        positive_axis = (
-            sp.simplify_logic(sp.Implies(semantic_condition(assumptions), var > 0))
-            is S.true
-        )
-    except SYMBOLIC_QUERY_ERRORS:
-        positive_axis = False
-    if positive_axis:
-        sfacts = positive_axis_convexity_strata(expr, var)
-        if sfacts:
-            out = normalize_cases(
-                (ConditionalValue(v, g) for v, g, *_ in sfacts),
-                source="special-function-convexity-stratification",
-            )
-            if out.primary is None:
-                return out
-
+def _convexity_fallback_stage(
+    expr,
+    var,
+    *,
+    domain,
+    assumptions,
+    strict_inequalities,
+    all_properties,
+    return_result,
+    intervals,
+    curvature_decomposition,
+    options,
+):
     registry_hint = Convexity.UNKNOWN
     primary = Convexity.UNKNOWN
     source = "insufficient-evidence"
@@ -531,7 +434,7 @@ def function_convexity(
         var,
         assumptions,
         strict_inequalities=strict_inequalities,
-        options=kwargs,
+        options=options,
     )
     if backend is not None:
         primary = backend
@@ -557,7 +460,7 @@ def function_convexity(
     if primary is Convexity.UNKNOWN and expr.func is sp.Mul:
         const, dep = expr.as_independent(var, as_Add=False)
         if const != 1 and dep != expr:
-            c = function_convexity(
+            c = _function_convexity_impl(
                 dep, var, domain=assumptions, strict_inequalities=strict_inequalities
             )
             sg = function_sign(const, var)
@@ -565,12 +468,12 @@ def function_convexity(
                 ccases = (
                     c.cases
                     if isinstance(c, PropertyResult)
-                    else (ConditionalValue(c, S.true),)
+                    else (ConditionalExpression(c, S.true),)
                 )
                 scases = (
                     sg.cases
                     if isinstance(sg, PropertyResult)
-                    else (ConditionalValue(sg, S.true),)
+                    else (ConditionalExpression(sg, S.true),)
                 )
                 cases = []
                 for cv in ccases:
@@ -586,7 +489,7 @@ def function_convexity(
                         )
                         if val is not Convexity.UNKNOWN:
                             cases.append(
-                                ConditionalValue(
+                                ConditionalExpression(
                                     val, sp.And(cv.condition, sv.condition)
                                 )
                             )
@@ -626,7 +529,7 @@ def function_convexity(
             if isinstance(sg, PropertyResult):
                 out = normalize_cases(
                     (
-                        ConditionalValue(
+                        ConditionalExpression(
                             _convexity_from_second_sign(c.value), c.condition
                         )
                         for c in sg.cases
@@ -645,7 +548,7 @@ def function_convexity(
 
     # Upgrade an ordinary classification when a positive curvature bound is
     # available. If an upstream backend already proved strong convexity, compute
-    # the local certificate only when the caller requested proof details.
+    # the local certificate only when the caller requested proof return_result.
     ordinary = (
         Convexity.STRICTLY_CONVEX,
         Convexity.CONVEX,
@@ -653,7 +556,9 @@ def function_convexity(
         Convexity.CONCAVE,
     )
     strong = (Convexity.STRONGLY_CONVEX, Convexity.STRONGLY_CONCAVE)
-    need_certificate = (all_properties or details or intervals) and primary in strong
+    need_certificate = (
+        all_properties or return_result or intervals
+    ) and primary in strong
     if primary in ordinary or need_certificate:
         strong_result = strong_convexity(expr, var, assumptions)
         if strong_result is not None:
@@ -678,7 +583,7 @@ def function_convexity(
                 source = "special-function"
                 break
 
-    if all_properties or details or intervals:
+    if all_properties or return_result or intervals:
         extra, _ = secondary_convexity_properties(expr, var, assumptions, primary)
         for q in specials:
             if q is not primary and q not in extra:
@@ -696,3 +601,202 @@ def function_convexity(
             evidence=evidence,
         )
     return primary
+
+
+def _function_convexity_impl(
+    expr,
+    var,
+    *,
+    domain=True,
+    strict_inequalities=True,
+    all_properties=False,
+    return_result=False,
+    intervals=False,
+    _domain_ready=False,
+    **kwargs,
+):
+    """Classify real convexity with strong/log/quasi/pseudo refinements.
+
+    The default is the strongest canonical ordinary convexity/concavity class.
+    With ``all_properties=True`` a PropertyResult includes additional proved
+    log-, quasi-, and pseudo-convexity/concavity properties.
+    """
+    expr = sp.sympify(expr)
+    multivariate = _multivariate_convexity_stage(
+        expr,
+        var,
+        all_properties=all_properties,
+        return_result=return_result,
+        intervals=intervals,
+    )
+    if multivariate is not _NO_CONVEXITY_RESULT:
+        return multivariate
+    var = sp.sympify(var)
+    if not expr.has(var):
+        primary = Convexity.AFFINE
+        return (
+            _convexity_property_result(
+                primary,
+                S.Reals,
+                "constant",
+                all_properties=(Convexity.CONVEX, Convexity.CONCAVE),
+            )
+            if (all_properties or return_result)
+            else primary
+        )
+    natural = function_domain(expr, var)
+    assumptions = (
+        sp.sympify(domain)
+        if _domain_ready
+        else combine_natural_domain_condition(natural, domain, var)
+    )
+    if not _domain_ready:
+        split = evaluate_parameter_strata(
+            assumptions,
+            var,
+            lambda branch_domain: _function_convexity_impl(
+                expr,
+                var,
+                domain=branch_domain,
+                strict_inequalities=strict_inequalities,
+                all_properties=all_properties,
+                return_result=return_result,
+                intervals=intervals,
+                _domain_ready=True,
+                **kwargs,
+            ),
+            source="convexity-parameter-stratification",
+        )
+        if split is not None:
+            return split
+    geom_domain, domain_result = _convexity_domain_stage(
+        assumptions,
+        domain,
+        var,
+        detailed=all_properties or return_result or intervals,
+    )
+    if domain_result is not _NO_CONVEXITY_RESULT:
+        return domain_result
+    piecewise = _piecewise_convexity(expr, var, assumptions, strict_inequalities)
+    if piecewise is not Convexity.UNKNOWN:
+        if all_properties or return_result or intervals:
+            return _convexity_property_result(
+                piecewise,
+                assumptions,
+                "piecewise-analysis",
+                all_properties=convexity_implications(piecewise),
+            )
+        return piecewise
+
+    # Cheap theorem strata precede zero-geometry/semialgebraic analysis.  This is
+    # important for special functions whose derivatives are transcendental but
+    # whose curvature is known exactly.
+    strat = parameterized_power_convexity(
+        expr, var, assumptions
+    ) or parameterized_exp_convexity(expr, var)
+    if strat is not None:
+        return strat
+    try:
+        positive_axis = (
+            sp.simplify_logic(sp.Implies(semantic_condition(assumptions), var > 0))
+            is S.true
+        )
+    except SYMBOLIC_QUERY_ERRORS:
+        positive_axis = False
+    if positive_axis:
+        sfacts = positive_axis_convexity_strata(expr, var)
+        if sfacts:
+            out = normalize_cases(
+                (ConditionalExpression(v, g) for v, g, *_ in sfacts),
+                source="special-function-convexity-stratification",
+            )
+            if out.primary is not None:
+                if all_properties or return_result or intervals:
+                    extras = tuple(
+                        q
+                        for q in special_function_convexity(expr, var, assumptions)
+                        if q is not out.primary
+                    )
+                    return _convexity_property_result(
+                        out.primary,
+                        assumptions,
+                        out.source or "special-function",
+                        all_properties=extras,
+                    )
+                return out.primary
+            return out
+    curvature_decomposition = (
+        property_interval_decomposition(
+            expr,
+            var,
+            derivative_order=2,
+            domain=geom_domain,
+            positive_value=Convexity.STRICTLY_CONVEX,
+            negative_value=Convexity.STRICTLY_CONCAVE,
+        )
+        if (intervals or return_result)
+        else None
+    )
+
+    # Certified second-derivative zero geometry can establish alternating
+    # convex/concave cells even when symbolic sign simplification cannot.
+    raw_curv = property_interval_decomposition(
+        expr,
+        var,
+        derivative_order=2,
+        domain=geom_domain,
+        positive_value=Convexity.STRICTLY_CONVEX,
+        negative_value=Convexity.STRICTLY_CONCAVE,
+    )
+    if (
+        raw_curv.complete
+        and raw_curv.alternating
+        and raw_curv.boundary_geometry
+        and geom_domain is S.Reals
+    ):
+        if intervals or return_result or all_properties:
+            return _convexity_property_result(
+                Convexity.NEITHER,
+                assumptions,
+                "second-derivative-zero-geometry",
+                evidence=(raw_curv,),
+            )
+        return Convexity.NEITHER
+
+    return _convexity_fallback_stage(
+        expr,
+        var,
+        domain=domain,
+        assumptions=assumptions,
+        strict_inequalities=strict_inequalities,
+        all_properties=all_properties,
+        return_result=return_result,
+        intervals=intervals,
+        curvature_decomposition=curvature_decomposition,
+        options=kwargs,
+    )
+
+
+def function_convexity(
+    expr,
+    var,
+    *,
+    domain=True,
+    strict_inequalities=True,
+    all_properties=False,
+    return_result=False,
+    intervals=False,
+    **kwargs,
+):
+    """Classify real convexity with optional detailed property metadata."""
+    return _function_convexity_impl(
+        expr,
+        var,
+        domain=domain,
+        strict_inequalities=strict_inequalities,
+        all_properties=all_properties,
+        return_result=return_result,
+        intervals=intervals,
+        _domain_ready=False,
+        **kwargs,
+    )

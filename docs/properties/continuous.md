@@ -9,10 +9,10 @@ Continuity certifies that the function has no value/limit mismatch at points of 
 ## API and return values
 
 ```python
-function_continuous(expr, var, *, domain=Reals, assumptions=True, details=False)
+function_continuous(expr, var, *, domain=Reals, assumptions=True, return_result=False)
 ```
 
-Continuity.CONTINUOUS, DISCONTINUOUS, or UNKNOWN; details provide evidence.
+Continuity.CONTINUOUS, DISCONTINUOUS, or UNKNOWN; return_result=True provides evidence.
 
 ## Domains, assumptions, and parameters
 

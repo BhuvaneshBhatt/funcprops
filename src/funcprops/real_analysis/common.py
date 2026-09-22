@@ -3,6 +3,7 @@ from __future__ import annotations
 import sympy as sp
 from sympy import S
 
+from ..exactness import certify_equal
 from ..exceptions import SYMBOLIC_QUERY_ERRORS
 
 
@@ -194,7 +195,7 @@ def exact_order_real_points(points):
                 break
             if d.is_positive is True:
                 continue
-            if d.is_zero is True:
+            if certify_equal(q, r) is True:
                 placed = True
                 break
             return None
@@ -228,17 +229,52 @@ def combine_natural_domain_condition(natural_domain, user_domain, var):
 
 
 def normalize_variables(var):
-    """Return a canonical tuple of symbolic variables.
-
-    Public APIs that accept either one variable or a variable collection must
-    not sympify a tuple and then test ``expr.has(tuple)``: SymPy treats the
-    resulting Tuple as one atomic expression. This helper centralizes the
-    scalar/collection distinction without changing scalar call sites.
-    """
+    """Return a nonempty tuple of distinct symbolic coordinates."""
     if isinstance(var, (tuple, list, sp.Tuple)):
-        vv = tuple(sp.sympify(v) for v in var)
+        variables = tuple(sp.sympify(v) for v in var)
     else:
-        vv = (sp.sympify(var),)
-    if not vv:
+        variables = (sp.sympify(var),)
+    if not variables:
         raise ValueError("at least one variable is required")
-    return vv
+    if not all(isinstance(v, sp.Symbol) for v in variables):
+        raise TypeError("variables must be Symbols")
+    if len(set(variables)) != len(variables):
+        raise ValueError("variables cannot contain duplicates")
+    return variables
+
+
+def normalize_expressions(expressions):
+    """Return transformation components as a nonempty expression tuple."""
+    if isinstance(expressions, (tuple, list, sp.Tuple, sp.MatrixBase)):
+        values = tuple(sp.sympify(e) for e in expressions)
+    else:
+        values = (sp.sympify(expressions),)
+    if not values:
+        raise ValueError("at least one expression is required")
+    return values
+
+
+def normalize_domain_condition(domain, variables):
+    """Return a Boolean domain condition for one or more coordinates."""
+    variables = normalize_variables(variables)
+    if domain in (None, True, S.true, S.Reals):
+        return S.true
+    if domain in (False, S.false, S.EmptySet):
+        return S.false
+    if isinstance(domain, sp.Set):
+        if len(variables) == 1:
+            return sp.Contains(variables[0], domain)
+        return sp.Contains(sp.Tuple(*variables), domain)
+    return sp.sympify(domain)
+
+
+def normalize_domain_set(domain, variable):
+    """Return a univariate real domain as a SymPy set when representable."""
+    variable = normalize_variables(variable)[0]
+    if domain in (None, True, S.true, S.Reals):
+        return S.Reals
+    if domain in (False, S.false, S.EmptySet):
+        return S.EmptySet
+    if isinstance(domain, sp.Set):
+        return domain
+    return condition_to_set(sp.sympify(domain), variable)

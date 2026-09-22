@@ -9,9 +9,163 @@ from importlib.resources import files
 from typing import Any
 
 import sympy as sp
-from sympy import Symbol
+from sympy import S, Symbol
 
 from .conditions import parse_catalogue_expression
+from .exactness import certify_identity_equal
+
+
+class FunctionSlot(sp.Dummy):
+    """A rule-local placeholder for one positional function argument.
+
+    ``FunctionSlot`` deliberately behaves like a SymPy expression so registry
+    conditions and results can be written naturally, while retaining an
+    explicit positional binding.  Every construction is a fresh ``Dummy``; a
+    human-readable name never creates a global-symbol dependency.
+    """
+
+    def __new__(cls, position: int, name: str | None = None):
+        if isinstance(position, bool) or not isinstance(position, int) or position < 0:
+            raise ValueError("FunctionSlot position must be a non-negative integer")
+        display = name or f"slot{position}"
+        obj = sp.Dummy.__new__(cls, display)
+        obj._function_slot_position = position
+        obj._function_slot_name = name
+        return obj
+
+    @property
+    def position(self) -> int:
+        return self._function_slot_position
+
+    @property
+    def display_name(self) -> str | None:
+        return self._function_slot_name
+
+
+def make_function_slots(*names: str) -> tuple[FunctionSlot, ...]:
+    """Create fresh, positionally bound registry placeholders.
+
+    Examples
+    --------
+    ``nu, z = make_function_slots("nu", "z")`` binds ``nu`` to argument slot 0 and
+    ``z`` to argument slot 1 of whichever function head owns the rule.
+    """
+
+    return tuple(FunctionSlot(i, name) for i, name in enumerate(names))
+
+
+def _replace_slots(value, substitutions: dict[FunctionSlot, Any]):
+    if isinstance(value, sp.Basic):
+        return value.xreplace(substitutions)
+    if isinstance(value, tuple):
+        return tuple(_replace_slots(v, substitutions) for v in value)
+    if isinstance(value, list):
+        return [_replace_slots(v, substitutions) for v in value]
+    if isinstance(value, dict):
+        return {
+            _replace_slots(k, substitutions): _replace_slots(v, substitutions)
+            for k, v in value.items()
+        }
+    return value
+
+
+@dataclass(frozen=True)
+class InstantiatedPropertyRule:
+    """A native registry theorem instantiated for one concrete function call."""
+
+    rule: "PropertyRule"
+    expression: sp.Basic
+    subject: tuple[Any, ...]
+    conditions: Any
+    result: Any
+    substitutions: tuple[tuple[FunctionSlot, Any], ...]
+
+    @property
+    def substitution_map(self) -> dict[FunctionSlot, Any]:
+        return dict(self.substitutions)
+
+
+@dataclass(frozen=True)
+class PropertyRule:
+    """A localized, typed theorem about positional arguments of a function head.
+
+    This type is responsible only for theorem matching and instantiation.
+    Transport through compositions such as ``F(g(x))`` is handled separately
+    by the registry transport layer.
+    """
+
+    head: Any
+    property: str
+    subject: tuple[FunctionSlot, ...]
+    conditions: Any = S.true
+    result: Any = None
+    proof_kind: str | None = None
+    verifier: Any = None
+    source: str | None = None
+
+    def __post_init__(self):
+        subjects = (
+            (self.subject,)
+            if isinstance(self.subject, FunctionSlot)
+            else tuple(self.subject)
+        )
+        if not subjects:
+            raise ValueError(
+                "PropertyRule subject must contain at least one FunctionSlot"
+            )
+        if not all(isinstance(slot, FunctionSlot) for slot in subjects):
+            raise TypeError(
+                "PropertyRule subject entries must be FunctionSlot instances"
+            )
+        if len(set(subjects)) != len(subjects):
+            raise ValueError("PropertyRule subject cannot contain duplicate slots")
+        object.__setattr__(self, "subject", subjects)
+        object.__setattr__(self, "conditions", sp.sympify(self.conditions))
+
+        used = set(subjects)
+        for value in (self.conditions, self.result):
+            if isinstance(value, sp.Basic):
+                used.update(value.atoms(FunctionSlot))
+        if used:
+            positions = [slot.position for slot in used]
+            if len(set(positions)) != len(positions):
+                raise ValueError(
+                    "A PropertyRule cannot contain distinct FunctionSlots for the same position"
+                )
+
+    @property
+    def slots(self) -> tuple[FunctionSlot, ...]:
+        used = set(self.subject)
+        for value in (self.conditions, self.result):
+            if isinstance(value, sp.Basic):
+                used.update(value.atoms(FunctionSlot))
+        return tuple(sorted(used, key=lambda slot: slot.position))
+
+    def matches(self, expr) -> bool:
+        expr = sp.sympify(expr)
+        if getattr(expr, "func", None) != self.head:
+            return False
+        nargs = len(getattr(expr, "args", ()))
+        return all(slot.position < nargs for slot in self.slots)
+
+    def substitutions(self, expr) -> dict[FunctionSlot, Any]:
+        expr = sp.sympify(expr)
+        if not self.matches(expr):
+            raise ValueError(f"Rule for {self.head} does not match {expr}")
+        args = expr.args
+        return {slot: args[slot.position] for slot in self.slots}
+
+    def instantiate(self, expr) -> InstantiatedPropertyRule:
+        expr = sp.sympify(expr)
+        repl = self.substitutions(expr)
+        return InstantiatedPropertyRule(
+            rule=self,
+            expression=expr,
+            subject=tuple(repl[slot] for slot in self.subject),
+            conditions=_replace_slots(self.conditions, repl),
+            result=_replace_slots(self.result, repl),
+            substitutions=tuple((slot, repl[slot]) for slot in self.slots),
+        )
 
 
 def _balanced_content(text: str, start: int, open_char="[", close_char="]"):
@@ -122,7 +276,7 @@ def _literal_pattern_matches(token: str, actual) -> bool:
     try:
         literal = parse_catalogue_expression(token)
         if isinstance(actual, sp.Basic) and isinstance(literal, sp.Basic):
-            return sp.simplify(actual - literal) == 0
+            return certify_identity_equal(actual, literal) is True
         return actual == literal
     except (TypeError, ValueError):
         return False
@@ -239,7 +393,14 @@ class Family:
 
 
 class FunctionRegistry:
-    def __init__(self, records: Iterable[dict[str, Any]]):
+    def __init__(
+        self,
+        records: Iterable[dict[str, Any]],
+        *,
+        property_rules: Iterable[PropertyRule] = (),
+        identity_rules: Iterable[Any] = (),
+        derivative_rules: Iterable[Any] = (),
+    ):
         self._families = tuple(Family(r) for r in records)
         self._by_name = {}
         for fam in self._families:
@@ -250,6 +411,16 @@ class FunctionRegistry:
                 *fam.catalogue_names,
             ):
                 self._by_name.setdefault(n, fam)
+        self._property_rules: list[PropertyRule] = []
+        self._rules_by_head: dict[Any, list[PropertyRule]] = {}
+        for rule in property_rules:
+            self.register_property_rule(rule)
+        self._identity_rules: list[Any] = []
+        self._derivative_rules: list[Any] = []
+        for rule in identity_rules:
+            self.register_identity_rule(rule)
+        for rule in derivative_rules:
+            self.register_derivative_rule(rule)
 
     def __len__(self):
         return len(self._families)
@@ -266,9 +437,161 @@ class FunctionRegistry:
             raise KeyError(name)
         return f
 
+    def register_property_rule(self, rule: PropertyRule) -> PropertyRule:
+        """Register one native localized property theorem.
+
+        Catalogue-derived ``Family``/``RuleCase`` records remain independent in
+        Catalogue entries can be adapted to this native rule API when their
+        argument semantics are unambiguous.
+        """
+
+        if not isinstance(rule, PropertyRule):
+            raise TypeError("rule must be a PropertyRule")
+        self._property_rules.append(rule)
+        self._rules_by_head.setdefault(rule.head, []).append(rule)
+        return rule
+
+    def register_identity_rule(self, rule):
+        from .registry_derivatives import IdentityRule
+
+        if not isinstance(rule, IdentityRule):
+            raise TypeError("rule must be an IdentityRule")
+        self._identity_rules.append(rule)
+        return rule
+
+    def register_derivative_rule(self, rule):
+        from .registry_derivatives import DerivativeRule
+
+        if not isinstance(rule, DerivativeRule):
+            raise TypeError("rule must be a DerivativeRule")
+        self._derivative_rules.append(rule)
+        return rule
+
+    def identity_rules(self, *, head=None):
+        rules = tuple(self._identity_rules)
+        return tuple(r for r in rules if head is None or r.head == head)
+
+    def derivative_rules(self, *, head=None, position=None):
+        rules = tuple(self._derivative_rules)
+        return tuple(
+            r
+            for r in rules
+            if (head is None or r.head == head)
+            and (position is None or r.with_respect_to.position == position)
+        )
+
+    def match_identity_rules(self, expr):
+        expr = sp.sympify(expr)
+        return tuple(r for r in self.identity_rules(head=expr.func) if r.matches(expr))
+
+    def match_derivative_rules(self, expr, *, position=None):
+        expr = sp.sympify(expr)
+        return tuple(
+            r
+            for r in self.derivative_rules(head=expr.func, position=position)
+            if r.matches(expr)
+        )
+
+    def property_rules(
+        self, *, head=None, property: str | None = None
+    ) -> tuple[PropertyRule, ...]:
+        """Return native rules, optionally filtered by head/property name."""
+
+        rules = (
+            tuple(self._rules_by_head.get(head, ()))
+            if head is not None
+            else tuple(self._property_rules)
+        )
+        if property is not None:
+            rules = tuple(rule for rule in rules if rule.property == property)
+        return rules
+
+    def match_property_rules(
+        self, expr, *, property: str | None = None
+    ) -> tuple[PropertyRule, ...]:
+        """Return native rules whose function head/slots match ``expr``."""
+
+        expr = sp.sympify(expr)
+        return tuple(
+            rule
+            for rule in self.property_rules(
+                head=getattr(expr, "func", None), property=property
+            )
+            if rule.matches(expr)
+        )
+
+    def instantiate_property_rules(
+        self, expr, *, property: str | None = None
+    ) -> tuple[InstantiatedPropertyRule, ...]:
+        """Instantiate all matching native rules for one concrete call."""
+
+        return tuple(
+            rule.instantiate(expr)
+            for rule in self.match_property_rules(expr, property=property)
+        )
+
 
 @lru_cache(maxsize=1)
 def registry() -> FunctionRegistry:
     p = files("funcprops").joinpath("data/catalogue.json")
     payload = json.loads(p.read_text())
-    return FunctionRegistry(payload["families"])
+    reg = FunctionRegistry(payload["families"])
+    from .native_registry import install_native_rules
+
+    install_native_rules(reg)
+    return reg
+
+
+def adapt_catalogue_rule_case(
+    head,
+    property_name: str,
+    case: RuleCase,
+    *,
+    source: str | None = None,
+) -> PropertyRule | None:
+    """Conservatively adapt one catalogue case to a native ``PropertyRule``.
+
+    Only ordinary positional named patterns are migrated. Literal/restricted,
+    sequence, vector, and otherwise richer patterns deliberately remain in the
+    catalogue representation because flattening them would lose theorem semantics.
+    """
+
+    _, patterns, _, _ = case.signature
+    if len(patterns) != 1:
+        return None
+    names = []
+    for token in patterns:
+        token = token.strip()
+        # Accept only simple named blanks, e.g. ``z_`` or ``nu_``.
+        m = re.fullmatch(r"([A-Za-z$][A-Za-z0-9$]*)_", token)
+        if m is None:
+            return None
+        names.append(m.group(1))
+    slots = tuple(FunctionSlot(i, name) for i, name in enumerate(names))
+    substitutions = {
+        Symbol(name): slot for name, slot in zip(names, slots, strict=True)
+    }
+    value = case.value
+    condition = case.condition
+    if isinstance(value, sp.Basic):
+        value = value.xreplace(substitutions)
+    if isinstance(condition, sp.Basic):
+        condition = condition.xreplace(substitutions)
+
+    # Reject residual source-pattern symbols: the native rule would otherwise
+    # appear localized while still depending on global catalogue names.
+    residual = set()
+    for obj in (value, condition):
+        if isinstance(obj, sp.Basic):
+            residual.update(obj.free_symbols)
+    if residual & {Symbol(name) for name in names}:
+        return None
+    return PropertyRule(
+        head,
+        property_name,
+        slots,
+        conditions=condition,
+        result=value,
+        proof_kind="catalogue-adaptation",
+        source=source or case.source_lhs or "catalogue",
+    )

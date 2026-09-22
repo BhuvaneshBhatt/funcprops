@@ -6,7 +6,7 @@ from funcprops.proof_cache import (
     property_proof_cache_info,
     property_proof_context,
 )
-from funcprops.results import TruthValue
+from funcprops.results import Monotonicity, TruthValue
 
 x = sp.symbols("x", real=True)
 
@@ -25,7 +25,9 @@ def test_property_proof_context_is_lazy_and_canonical():
 
 
 def test_monotonic_partition_helpers_directly():
-    p = fp.monotonic_partition(x**3 - 3 * x, x, domain=sp.Interval(-2, 2))
+    p = fp.monotonic_partition(
+        x**3 - 3 * x, x, domain=sp.Interval(-2, 2), return_result=True
+    )
     assert p.complete and len(p.cells) == 3
     r = fp.range_from_monotonic_partition(x**3 - 3 * x, x, p)
     assert r.complete and r.image is not None
@@ -55,14 +57,16 @@ def test_simplify_extremum_range_directly():
 
 
 def test_cache_clear_helper_directly():
-    fp.monotonic_partition(x**2, x, domain=sp.Interval(-1, 1))
+    fp.monotonic_partition(x**2, x, domain=sp.Interval(-1, 1), return_result=True)
     fp.clear_monotonic_partition_cache()
     info = property_proof_cache_info()
     assert info["derivative"].currsize == 0 and info["zero_geometry"].currsize == 0
 
 
 def test_certificate_replay_monotonicity_and_zero_geometry():
-    p = fp.monotonic_partition(x**3 - 3 * x, x, domain=sp.Interval(-2, 2))
+    p = fp.monotonic_partition(
+        x**3 - 3 * x, x, domain=sp.Interval(-2, 2), return_result=True
+    )
     assert fp.verify_monotonic_partition(x**3 - 3 * x, x, p)
     assert fp.verify_certificate(p, expr=x**3 - 3 * x, var=x)
     g = fp.zero_geometry(sp.besselj(0, x), x)
@@ -70,7 +74,7 @@ def test_certificate_replay_monotonicity_and_zero_geometry():
 
 
 def test_certificate_replay_decomposition_and_convexity():
-    d = fp.monotonic_decomposition(sp.acos(sp.exp(x)), x)
+    d = fp.monotonic_decomposition(sp.acos(sp.exp(x)), x, return_result=True)
     assert d is not None and fp.verify_monotonic_decomposition(d)
     from funcprops.real_analysis.advanced_convexity import strong_convexity
 
@@ -143,6 +147,16 @@ def test_exported_function_api_contract_manifest_is_complete():
         "function_symmetry",
         "function_homogeneity",
         "function_complex_zeros",
+        "function_complete_monotonicity",
+        "function_boundary_behavior",
+        "function_level_boundedness",
+        "function_mode_existence",
+        "function_geometry",
+        "function_jacobian",
+        "function_determinant_nonvanishing",
+        "function_local_invertibility",
+        "function_change_of_variables",
+        "function_transformation_geometry",
     }
     exported = {n for n in fp.__all__ if n.startswith("function_")}
     assert exported == tested
@@ -178,6 +192,9 @@ def test_exported_helper_contract_manifest_is_complete():
     tested = {
         "registry",
         "as_detailed_result",
+        "cache_info",
+        "clear_caches",
+        "explain_result",
         "monotonic_decomposition",
         "monotonic_partition",
         "solve_monotonic_inverse",
@@ -217,5 +234,58 @@ def test_exported_helper_contract_manifest_is_complete():
         "exponential_polynomial_terms",
         "argument_principle_count",
         "isolate_complex_roots",
+        "transport_instantiated_rule",
+        "registry_derivative",
+        "registry_gradient",
+        "registry_jacobian",
+        "registry_hessian",
+        "registry_multivariate_chain_rule",
+        "rewrite_with_registry",
+        "piecewise_decomposition",
+        "certify_piecewise_boundaries",
+        "normalize_assumptions",
+        "decide",
+        "entails",
+        "require_decision",
+        "clear_entailment_cache",
     }
     assert exported == tested
+
+
+def test_monotonic_partition_default_is_compact_mathematical_result():
+    x = sp.symbols("x", real=True)
+    out = fp.monotonic_partition(x**3 - 3 * x, x, domain=sp.Interval(-3, 3))
+    assert out == (
+        (sp.Interval.open(-3, -1), Monotonicity.STRICTLY_INCREASING),
+        (sp.Interval.open(-1, 1), Monotonicity.STRICTLY_DECREASING),
+        (sp.Interval.open(1, 3), Monotonicity.STRICTLY_INCREASING),
+    )
+    rich = fp.monotonic_partition(
+        x**3 - 3 * x,
+        x,
+        domain=sp.Interval(-3, 3),
+        return_result=True,
+    )
+    assert isinstance(rich, fp.MonotonicPartition)
+    assert rich.complete is True
+
+
+def test_monotonic_decomposition_default_is_compact_mathematical_result():
+    x = sp.symbols("x", real=True)
+    out = fp.monotonic_decomposition(sp.acos(sp.exp(x)), x)
+    inner, outer, direction, condition = out
+    assert inner == sp.exp(x)
+    assert sp.simplify(outer(inner) - sp.acos(sp.exp(x))) == 0
+    assert direction == -1
+    assert condition == (sp.exp(x) <= 1)
+    rich = fp.monotonic_decomposition(sp.acos(sp.exp(x)), x, return_result=True)
+    assert isinstance(rich, fp.MonotonicDecomposition)
+
+
+def test_compact_monotonic_partition_composes_with_public_helpers():
+    x = sp.symbols("x", real=True)
+    compact = fp.monotonic_partition(x**3, x, domain=sp.Interval(-2, 2))
+    assert fp.injectivity_from_monotonic_partition(compact) is TruthValue.TRUE
+    pr = fp.range_from_monotonic_partition(x**3, x, compact, domain=sp.Interval(-2, 2))
+    assert pr.complete is True
+    assert pr.image == sp.Interval(-8, 8)

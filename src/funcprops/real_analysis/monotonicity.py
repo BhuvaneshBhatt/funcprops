@@ -7,8 +7,9 @@ from sympy import S
 
 from .. import _semialg
 from ..engine import evaluate_property
+from ..exactness import certify_zero
 from ..exceptions import SYMBOLIC_QUERY_ERRORS
-from ..results import ConditionalValue, Monotonicity, PropertyResult, Sign
+from ..results import ConditionalExpression, Monotonicity, PropertyResult, Sign
 from ..stratification import (
     evaluate_parameter_strata,
     normalize_cases,
@@ -26,9 +27,9 @@ from .monotonic_certificates import (
     quick_nonmonotonicity_witness,
 )
 from .piecewise import (
+    certify_piecewise_boundaries,
     combine_piecewise_monotonicity,
-    piecewise_branches,
-    piecewise_interface_limits,
+    piecewise_decomposition,
 )
 from .sign import function_sign
 from .special_functions import parameter_guard, positive_axis_monotonicity_strata
@@ -56,13 +57,13 @@ def _direct_registry(expr, var):
         if pguard is S.true:
             return v
         return normalize_cases(
-            (ConditionalValue(v, pguard),),
+            (ConditionalExpression(v, pguard),),
             source="registry-monotonicity-stratification",
         )
     if r.cases:
         out = normalize_cases(
             (
-                ConditionalValue(
+                ConditionalExpression(
                     _from_code(c.value), sp.And(semantic_condition(c.condition), pguard)
                 )
                 for c in r.cases
@@ -164,7 +165,7 @@ def _closure_monotonicity(expr, var, domain):
     if expr.is_Mul:
         const, dep = expr.as_independent(var, as_Add=False)
         parts = list(sp.Mul.make_args(dep))
-        if const.is_zero is True:
+        if certify_zero(const) is True:
             return Monotonicity.CONSTANT
         # Product of positive factors moving in the same direction.
         if parts:
@@ -212,43 +213,44 @@ def _closure_monotonicity(expr, var, domain):
 
 
 def _piecewise_monotonicity(expr, var, domain):
-    """Classify finite interval branches and verify ordering at interfaces."""
+    """Classify effective branches and certify ordering through every seam."""
     if not isinstance(expr, sp.Piecewise):
         return Monotonicity.UNKNOWN
-    branches = piecewise_branches(expr, var, domain)
+    decomp = piecewise_decomposition(expr, var, domain)
+    branches = decomp.branches
     if not branches:
         return Monotonicity.UNKNOWN
     values = [
-        function_monotonicity(b.expression, var, domain=b.condition) for b in branches
+        function_monotonicity(b.expression, var, domain=b.condition)
+        for b in branches
+        if isinstance(b.domain, sp.Interval)
     ]
+    if not values:
+        return Monotonicity.CONSTANT if len(branches) == 1 else Monotonicity.UNKNOWN
     direction = combine_piecewise_monotonicity(values)
     if direction in (Monotonicity.UNKNOWN, Monotonicity.NOT_MONOTONE):
         return direction
-    interfaces = piecewise_interface_limits(branches, var)
-    if interfaces is None:
+    if not decomp.complete:
         return direction if len(branches) == 1 else Monotonicity.UNKNOWN
-    for _, left_value, right_value in interfaces:
-        jump = sp.simplify(right_value - left_value)
-        if direction in (
-            Monotonicity.NONDECREASING,
-            Monotonicity.STRICTLY_INCREASING,
-        ):
-            if jump.is_nonnegative is not True:
-                return (
-                    Monotonicity.NOT_MONOTONE
-                    if jump.is_negative is True
-                    else Monotonicity.UNKNOWN
-                )
+    seams = certify_piecewise_boundaries(decomp, max_order=0)
+    for seam in seams:
+        if seam.left_limit is None or seam.right_limit is None or seam.value is None:
+            return Monotonicity.UNKNOWN
+        lv = sp.simplify(seam.value - seam.left_limit)
+        rv = sp.simplify(seam.right_limit - seam.value)
+        if direction in (Monotonicity.NONDECREASING, Monotonicity.STRICTLY_INCREASING):
+            if lv.is_nonnegative is not True or rv.is_nonnegative is not True:
+                if lv.is_negative is True or rv.is_negative is True:
+                    return Monotonicity.NOT_MONOTONE
+                return Monotonicity.UNKNOWN
         elif direction in (
             Monotonicity.NONINCREASING,
             Monotonicity.STRICTLY_DECREASING,
         ):
-            if jump.is_nonpositive is not True:
-                return (
-                    Monotonicity.NOT_MONOTONE
-                    if jump.is_positive is True
-                    else Monotonicity.UNKNOWN
-                )
+            if lv.is_nonpositive is not True or rv.is_nonpositive is not True:
+                if lv.is_positive is True or rv.is_positive is True:
+                    return Monotonicity.NOT_MONOTONE
+                return Monotonicity.UNKNOWN
     return direction
 
 
@@ -258,9 +260,9 @@ def _parameter_strata(expr, var, domain):
         if a.free_symbols and domain == (var > 0):
             return normalize_cases(
                 (
-                    ConditionalValue(Monotonicity.STRICTLY_INCREASING, a > 0),
-                    ConditionalValue(Monotonicity.CONSTANT, sp.Eq(a, 0)),
-                    ConditionalValue(Monotonicity.STRICTLY_DECREASING, a < 0),
+                    ConditionalExpression(Monotonicity.STRICTLY_INCREASING, a > 0),
+                    ConditionalExpression(Monotonicity.CONSTANT, sp.Eq(a, 0)),
+                    ConditionalExpression(Monotonicity.STRICTLY_DECREASING, a < 0),
                 ),
                 source="power-parameter-stratification",
             )
@@ -275,16 +277,18 @@ def _parameter_strata(expr, var, domain):
             if a.free_symbols:
                 return normalize_cases(
                     (
-                        ConditionalValue(Monotonicity.STRICTLY_INCREASING, a > 0),
-                        ConditionalValue(Monotonicity.CONSTANT, sp.Eq(a, 0)),
-                        ConditionalValue(Monotonicity.STRICTLY_DECREASING, a < 0),
+                        ConditionalExpression(Monotonicity.STRICTLY_INCREASING, a > 0),
+                        ConditionalExpression(Monotonicity.CONSTANT, sp.Eq(a, 0)),
+                        ConditionalExpression(Monotonicity.STRICTLY_DECREASING, a < 0),
                     ),
                     source="exp-affine-parameter-stratification",
                 )
     return None
 
 
-def _semialgebraic_monotonicity_stage(expr, var, assumptions, *, details, intervals):
+def _semialgebraic_monotonicity_stage(
+    expr, var, assumptions, *, return_result, intervals
+):
     """Run the exact semialgebraic monotonicity stage, if eligible.
 
     Interval requests deliberately continue to funcprops' shared partition
@@ -294,7 +298,10 @@ def _semialgebraic_monotonicity_stage(expr, var, assumptions, *, details, interv
         return None
     try:
         raw = _semialg.function_monotonicity(
-            expr, var, domain=assumptions, return_result=bool(intervals or details)
+            expr,
+            var,
+            domain=assumptions,
+            return_result=bool(intervals or return_result),
         )
     except (_semialg.SemialgUnavailable, *SYMBOLIC_QUERY_ERRORS):
         return None
@@ -306,123 +313,135 @@ def _semialgebraic_monotonicity_stage(expr, var, assumptions, *, details, interv
     return value, evidence
 
 
-def _classify_monotonicity(
+_NO_MONOTONICITY_RESULT = object()
+
+
+def _monotonicity_output(value, *, intervals, return_result, source=None, evidence=()):
+    if intervals or return_result:
+        return PropertyResult(
+            value, source=source or "monotonicity", evidence=tuple(evidence)
+        )
+    return value
+
+
+def _monotonicity_theorem_stage(
     expr,
     var,
     *,
-    domain=True,
-    intervals=False,
-    details=False,
-    partition=None,
-    _domain_ready=False,
+    assumptions,
+    domain,
+    natural,
+    domain_set,
+    geometry_domain,
+    intervals,
+    return_result,
+    partition,
 ):
-    """Classify global monotonicity on the natural/requested real domain.
-
-    Expensive critical-point decomposition is deliberately delayed until cheap
-    registry, closure, and composition proofs have failed.  When needed, the
-    shared :func:`monotonic_partition` certificate is reused by range,
-    injectivity, inverse, oscillation, and extrema consumers.
-    """
-    expr = sp.sympify(expr)
-    var = sp.sympify(var)
-    if not expr.has(var):
-        return Monotonicity.CONSTANT
-    natural = function_domain(expr, var)
-    assumptions = (
-        sp.sympify(domain)
-        if _domain_ready
-        else combine_natural_domain_condition(natural, domain, var)
-    )
-    with contextlib.suppress(SYMBOLIC_QUERY_ERRORS):
-        assumptions = sp.simplify(assumptions)
-    if not _domain_ready:
-        split = evaluate_parameter_strata(
-            assumptions,
-            var,
-            lambda branch_domain: _classify_monotonicity(
-                expr,
-                var,
-                domain=branch_domain,
-                intervals=intervals,
-                details=details,
-                partition=None,
-                _domain_ready=True,
-            ),
-            source="monotonicity-parameter-stratification",
-        )
-        if split is not None:
-            return split
-    ds = condition_to_set(assumptions, var)
-    geom_domain = ds if isinstance(ds, sp.Set) else S.Reals
-
-    def finish(value, source=None, evidence=()):
-        if intervals or details:
-            return PropertyResult(
-                value, source=source or "monotonicity", evidence=tuple(evidence)
-            )
-        return value
-
     strata = _parameter_strata(expr, var, assumptions)
     if strata is not None:
         return strata
+
     piecewise = _piecewise_monotonicity(expr, var, assumptions)
     if piecewise is not Monotonicity.UNKNOWN:
-        return finish(piecewise, "piecewise-analysis")
+        return _monotonicity_output(
+            piecewise,
+            intervals=intervals,
+            return_result=return_result,
+            source="piecewise-analysis",
+        )
+
     try:
         positive_axis = (
-            isinstance(ds, sp.Interval)
-            and ds.start == 0
-            and ds.left_open
-            and ds.end is S.Infinity
+            isinstance(domain_set, sp.Interval)
+            and domain_set.start == 0
+            and domain_set.left_open
+            and domain_set.end is S.Infinity
         ) or sp.simplify_logic(
             sp.Implies(semantic_condition(assumptions), var > 0)
         ) is S.true
     except SYMBOLIC_QUERY_ERRORS:
         positive_axis = False
     if positive_axis:
-        facts = positive_axis_monotonicity_strata(expr, var)
+        facts = positive_axis_monotonicity_strata(expr, var, assumptions)
         if facts:
-            out = normalize_cases(
-                (ConditionalValue(v, g) for v, g, *_ in facts),
+            result = normalize_cases(
+                (ConditionalExpression(value, guard) for value, guard, *_ in facts),
                 source="special-function-monotonicity-stratification",
             )
-            if out.primary is not None:
-                return finish(
-                    out.primary, "special-function-monotonicity-stratification"
-                )
-            return out
+            if result.primary is None:
+                return result
+            return _monotonicity_output(
+                result.primary,
+                intervals=intervals,
+                return_result=return_result,
+                source="special-function-monotonicity-stratification",
+            )
 
-    # Stored GlobalMonotonicity describes the whole natural domain only.
     if domain is True or is_full_natural_domain(assumptions, natural):
-        m = _direct_registry(expr, var)
-        if m is not Monotonicity.UNKNOWN:
-            if intervals or details:
+        result = _direct_registry(expr, var)
+        if result is not Monotonicity.UNKNOWN:
+            if intervals or return_result:
                 part = (
                     partition
                     if partition is not None
-                    and getattr(partition, "domain", None) == geom_domain
-                    else monotonic_partition(expr, var, domain=geom_domain)
+                    and getattr(partition, "domain", None) == geometry_domain
+                    else monotonic_partition(
+                        expr, var, domain=geometry_domain, return_result=True
+                    )
                 )
-                ev = (
+                evidence = (
                     (part.property_decomposition,)
                     if part.property_decomposition is not None
                     else ()
                 ) + ((part,) if part.complete else ())
-                return finish(m, "registry-monotonicity", ev)
-            return m
+                return _monotonicity_output(
+                    result,
+                    intervals=intervals,
+                    return_result=return_result,
+                    source="registry-monotonicity",
+                    evidence=evidence,
+                )
+            return result
 
-    closure = _closure_monotonicity(expr, var, assumptions)
-    if closure is not Monotonicity.UNKNOWN:
-        return finish(closure, "closure-properties")
+    result = _closure_monotonicity(expr, var, assumptions)
+    if result is not Monotonicity.UNKNOWN:
+        return _monotonicity_output(
+            result,
+            intervals=intervals,
+            return_result=return_result,
+            source="closure-properties",
+        )
 
     backend = _semialgebraic_monotonicity_stage(
-        expr, var, assumptions, details=details, intervals=intervals
+        expr, var, assumptions, return_result=return_result, intervals=intervals
     )
     if backend is not None:
-        value, backend_evidence = backend
-        return finish(value, "semialg", backend_evidence)
+        value, evidence = backend
+        return _monotonicity_output(
+            value,
+            intervals=intervals,
+            return_result=return_result,
+            source="semialg",
+            evidence=evidence,
+        )
+    return _NO_MONOTONICITY_RESULT
 
-    dec = monotonic_decomposition(expr, var, strict=True, continuous=True)
+
+def _monotonicity_fallback_stage(
+    expr, var, *, assumptions, geometry_domain, intervals, return_result, partition
+):
+    def finish(value, source=None, evidence=()):
+        return _monotonicity_output(
+            value,
+            intervals=intervals,
+            return_result=return_result,
+            source=source,
+            evidence=evidence,
+        )
+
+    dec = monotonic_decomposition(
+        expr, var, strict=True, continuous=True, return_result=True
+    )
     if dec is not None and dec.inner != expr and dec.inner.has(var):
         try:
             valid = sp.simplify_logic(sp.Implies(assumptions, dec.condition))
@@ -513,23 +532,26 @@ def _classify_monotonicity(
     # Indexed zero geometry is cheap to recognize and gives stronger evidence
     # than a generic derivative-sign attempt. Details/interval requests also
     # explicitly ask for the partition certificate.
-    need_part = bool(intervals or details)
+    need_part = bool(intervals or return_result)
     if not need_part:
         try:
             from ..transcendental.zero_geometry import zero_geometry
 
             need_part = bool(
-                zero_geometry(expr, var, derivative_order=1, domain=geom_domain)
+                zero_geometry(expr, var, derivative_order=1, domain=geometry_domain)
             )
         except SYMBOLIC_QUERY_ERRORS:
             need_part = False
     part = (
         partition
-        if partition is not None and getattr(partition, "domain", None) == geom_domain
+        if partition is not None
+        and getattr(partition, "domain", None) == geometry_domain
         else None
     )
     if need_part and part is None:
-        part = monotonic_partition(expr, var, domain=geom_domain)
+        part = monotonic_partition(
+            expr, var, domain=geometry_domain, return_result=True
+        )
         ans = from_partition(part)
         if ans is not None:
             return ans
@@ -540,16 +562,32 @@ def _classify_monotonicity(
     try:
         from ..proof_cache import cached_derivative
 
-        derivative = (
-            part.derivative
-            if part is not None and part.derivative is not None
-            else cached_derivative(expr, var, order=1)
-        )
+        derivative = part.derivative if part is not None else None
+        registry_derivative_evidence = None
+        if derivative is None:
+            from ..registry_derivatives import registry_derivative
+
+            cert = registry_derivative(expr, var)
+            try:
+                applicable = (
+                    cert.complete
+                    and sp.simplify_logic(
+                        sp.Implies(semantic_condition(assumptions), cert.conditions)
+                    )
+                    is S.true
+                )
+            except SYMBOLIC_QUERY_ERRORS:
+                applicable = False
+            if applicable:
+                derivative = cert.derivative
+                registry_derivative_evidence = cert
+            else:
+                derivative = cached_derivative(expr, var, order=1)
     except SYMBOLIC_QUERY_ERRORS:
         return finish(
             Monotonicity.UNKNOWN,
             "unknown",
-            (part,) if part is not None and (details or intervals) else (),
+            (part,) if part is not None and (return_result or intervals) else (),
         )
     if derivative == 0:
         return finish(
@@ -560,7 +598,7 @@ def _classify_monotonicity(
     s = function_sign(derivative, var, domain=assumptions, strict_inequalities=True)
     if isinstance(s, PropertyResult):
         out = normalize_cases(
-            (ConditionalValue(from_sign(c.value), c.condition) for c in s.cases),
+            (ConditionalExpression(from_sign(c.value), c.condition) for c in s.cases),
             source="derivative-sign-stratification",
         )
         return out if out.cases else Monotonicity.UNKNOWN
@@ -574,21 +612,104 @@ def _classify_monotonicity(
         return finish(
             direct,
             "derivative-sign",
-            (part,) if part is not None and (details or intervals) else (),
+            tuple(
+                e
+                for e in (part, registry_derivative_evidence)
+                if e is not None and (return_result or intervals)
+            ),
         )
 
     if part is None:
-        part = monotonic_partition(expr, var, domain=geom_domain)
+        part = monotonic_partition(
+            expr, var, domain=geometry_domain, return_result=True
+        )
         ans = from_partition(part)
         if ans is not None:
             return ans
 
-    witness = quick_nonmonotonicity_witness(expr, var, geom_domain)
+    witness = quick_nonmonotonicity_witness(expr, var, geometry_domain)
     if witness is not None:
         return finish(
             Monotonicity.NOT_MONOTONE, "exact-ordering-witness", (witness, part)
         )
-    return finish(direct, "derivative-sign", (part,) if (details or intervals) else ())
+    return finish(
+        direct, "derivative-sign", (part,) if (return_result or intervals) else ()
+    )
+
+
+def _classify_monotonicity(
+    expr,
+    var,
+    *,
+    domain=True,
+    intervals=False,
+    return_result=False,
+    partition=None,
+    _domain_ready=False,
+):
+    """Classify global monotonicity on the natural/requested real domain.
+
+    Expensive critical-point decomposition is deliberately delayed until cheap
+    registry, closure, and composition proofs have failed.  When needed, the
+    shared :func:`monotonic_partition` certificate is reused by range,
+    injectivity, inverse, oscillation, and extrema consumers.
+    """
+    expr = sp.sympify(expr)
+    var = sp.sympify(var)
+    if not expr.has(var):
+        return Monotonicity.CONSTANT
+    natural = function_domain(expr, var)
+    assumptions = (
+        sp.sympify(domain)
+        if _domain_ready
+        else combine_natural_domain_condition(natural, domain, var)
+    )
+    with contextlib.suppress(SYMBOLIC_QUERY_ERRORS):
+        assumptions = sp.simplify(assumptions)
+    if not _domain_ready:
+        split = evaluate_parameter_strata(
+            assumptions,
+            var,
+            lambda branch_domain: _classify_monotonicity(
+                expr,
+                var,
+                domain=branch_domain,
+                intervals=intervals,
+                return_result=return_result,
+                partition=None,
+                _domain_ready=True,
+            ),
+            source="monotonicity-parameter-stratification",
+        )
+        if split is not None:
+            return split
+    ds = condition_to_set(assumptions, var)
+    geom_domain = ds if isinstance(ds, sp.Set) else S.Reals
+
+    early = _monotonicity_theorem_stage(
+        expr,
+        var,
+        assumptions=assumptions,
+        domain=domain,
+        natural=natural,
+        domain_set=ds,
+        geometry_domain=geom_domain,
+        intervals=intervals,
+        return_result=return_result,
+        partition=partition,
+    )
+    if early is not _NO_MONOTONICITY_RESULT:
+        return early
+
+    return _monotonicity_fallback_stage(
+        expr,
+        var,
+        assumptions=assumptions,
+        geometry_domain=geom_domain,
+        intervals=intervals,
+        return_result=return_result,
+        partition=partition,
+    )
 
 
 def _weaken_monotonicity(value):
@@ -617,7 +738,7 @@ def _format_monotonicity(result, *, strict_inequalities, all_properties):
     if isinstance(result, PropertyResult):
         primary = weaken(result.primary) if result.primary is not None else None
         cases = tuple(
-            ConditionalValue(weaken(case.value), case.condition)
+            ConditionalExpression(weaken(case.value), case.condition)
             for case in result.cases
         )
         implied = (
@@ -651,7 +772,7 @@ def function_monotonicity(
     strict_inequalities=True,
     all_properties=False,
     intervals=False,
-    details=False,
+    return_result=False,
     partition=None,
 ):
     """Classify global monotonicity on the natural/requested real domain.
@@ -665,7 +786,7 @@ def function_monotonicity(
         var,
         domain=domain,
         intervals=intervals,
-        details=details,
+        return_result=return_result,
         partition=partition,
     )
     return _format_monotonicity(

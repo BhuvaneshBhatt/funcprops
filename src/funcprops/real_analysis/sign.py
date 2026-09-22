@@ -7,8 +7,9 @@ from sympy import S
 
 from .. import _semialg
 from ..engine import evaluate_property
+from ..exactness import certify_zero
 from ..exceptions import SYMBOLIC_QUERY_ERRORS
-from ..results import ConditionalValue, PropertyResult, Sign, TruthValue
+from ..results import ConditionalExpression, PropertyResult, Sign, TruthValue
 from ..stratification import (
     evaluate_parameter_strata,
     implication_guard,
@@ -58,7 +59,7 @@ def _registry_sign(expr, var, assumptions=S.true):
     ):
         r = evaluate_property(expr, prop, var=var, mode="real", assumptions=assumptions)
         rcases = r.cases or (
-            () if r.primary is None else (ConditionalValue(r.primary, S.true),)
+            () if r.primary is None else (ConditionalExpression(r.primary, S.true),)
         )
         for c in rcases:
             guard = implication_guard(assumptions, c.value, var)
@@ -71,7 +72,7 @@ def _registry_sign(expr, var, assumptions=S.true):
             except SYMBOLIC_QUERY_ERRORS:
                 guard = sp.And(semantic_condition(c.condition), guard)
             if guard is not S.false:
-                cases.append(ConditionalValue(val, guard))
+                cases.append(ConditionalExpression(val, guard))
     if not cases:
         return Sign.UNKNOWN
     out = normalize_cases(cases, source="registry-sign-stratification")
@@ -85,9 +86,9 @@ def _constant_sign_strata(expr):
         return Sign.UNKNOWN
     return normalize_cases(
         (
-            ConditionalValue(Sign.POSITIVE, expr > 0),
-            ConditionalValue(Sign.ZERO, sp.Eq(expr, 0)),
-            ConditionalValue(Sign.NEGATIVE, expr < 0),
+            ConditionalExpression(Sign.POSITIVE, expr > 0),
+            ConditionalExpression(Sign.ZERO, sp.Eq(expr, 0)),
+            ConditionalExpression(Sign.NEGATIVE, expr < 0),
         ),
         source="constant-parameter-sign",
     )
@@ -139,13 +140,13 @@ def _multiply_sign_values(a, b):
 
 
 def _multiply_sign_results(values):
-    cases = [ConditionalValue(Sign.POSITIVE, S.true)]
+    cases = [ConditionalExpression(Sign.POSITIVE, S.true)]
     conditional = False
     for value in values:
         vcases = (
             value.cases
             if isinstance(value, PropertyResult)
-            else (ConditionalValue(value, S.true),)
+            else (ConditionalExpression(value, S.true),)
         )
         conditional = conditional or isinstance(value, PropertyResult)
         new = []
@@ -159,7 +160,7 @@ def _multiply_sign_results(values):
                 except SYMBOLIC_QUERY_ERRORS:
                     cond = sp.And(a.condition, b.condition)
                 if cond is not S.false:
-                    new.append(ConditionalValue(v, cond))
+                    new.append(ConditionalExpression(v, cond))
         if not new:
             return Sign.UNKNOWN
         cases = new
@@ -193,7 +194,7 @@ def _special_sign_strata(expr, var, domain):
     if not facts:
         return Sign.UNKNOWN
     out = normalize_cases(
-        (ConditionalValue(v, g) for v, g, *_ in facts),
+        (ConditionalExpression(v, g) for v, g, *_ in facts),
         source="special-function-sign-stratification",
     )
     return out.primary if out.primary is not None else out
@@ -258,7 +259,7 @@ def _sample_sign(value):
         return 1
     if value.is_negative is True:
         return -1
-    if value.is_zero is True:
+    if certify_zero(value) is True:
         return 0
     if value.is_number:
         try:
@@ -349,11 +350,14 @@ def _function_sign(expr, var, domain):
     if not expr.has(var):
         s = _constant_sign(expr)
         return _constant_sign_strata(expr) if s is Sign.UNKNOWN else s
-    # Structural facts are globally valid on the natural domain.
-    s = _structural_sign(expr, var, domain)
+    # Specialized theorem strata can be sharper than generic product closure
+    # (for example a Bessel quotient whose numerator/denominator have weaker
+    # individual positivity guards).
+    s = _special_sign_strata(expr, var, domain)
     if s is not Sign.UNKNOWN:
         return s
-    s = _special_sign_strata(expr, var, domain)
+    # Structural facts are globally valid on the natural domain.
+    s = _structural_sign(expr, var, domain)
     if s is not Sign.UNKNOWN:
         return s
     s = _registry_sign(expr, var, domain)
@@ -418,7 +422,7 @@ def _function_sign_public_impl(
 
     if isinstance(s, PropertyResult):
         return normalize_cases(
-            (ConditionalValue(weaken(c.value), c.condition) for c in s.cases),
+            (ConditionalExpression(weaken(c.value), c.condition) for c in s.cases),
             primary=weaken(s.primary) if s.primary is not None else None,
             source=s.source,
             evidence=s.evidence,
@@ -553,7 +557,7 @@ def prove_relation(relation, var=None, *, domain=True):
 
     if isinstance(sign, PropertyResult):
         return normalize_cases(
-            (ConditionalValue(classify(c.value), c.condition) for c in sign.cases),
+            (ConditionalExpression(classify(c.value), c.condition) for c in sign.cases),
             primary=classify(sign.primary) if sign.primary is not None else None,
             source="relation-from-sign",
             evidence=sign.evidence,

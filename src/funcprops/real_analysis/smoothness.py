@@ -8,8 +8,9 @@ import sympy as sp
 from sympy import S
 
 from .. import _semialg
+from ..exactness import certify_identity_equal
 from ..exceptions import SYMBOLIC_QUERY_ERRORS
-from ..results import Analyticity, Continuity
+from ..results import Analyticity, Continuity, TruthValue
 from ..singularities import (
     function_analytic,
     function_continuous,
@@ -103,7 +104,130 @@ def _structurally_smooth(expr, var):
     return False
 
 
-def function_smoothness(expr, var, *, domain=True, max_order=6, _domain_ready=False):
+def _smoothness_value(result):
+    """Return the compact mathematical C-infinity truth value."""
+    if result.smooth is True:
+        return TruthValue.TRUE
+    if result.smooth is False:
+        return TruthValue.FALSE
+    return TruthValue.UNKNOWN
+
+
+def _smoothness_output(result, *, return_result):
+    return result if return_result else _smoothness_value(result)
+
+
+def _piecewise_smoothness(expr, var, requested_domain, max_order):
+    """Certify finite-order seam regularity without differentiating Piecewise itself."""
+    from .piecewise import certify_piecewise_boundaries, piecewise_decomposition
+
+    decomp = piecewise_decomposition(expr, var, requested_domain)
+    if not decomp.complete or not decomp.branches:
+        return None
+
+    branch_results = []
+    for branch in decomp.branches:
+        result = _function_smoothness_impl(
+            branch.expression,
+            var,
+            domain=branch.condition,
+            max_order=max_order,
+            return_result=True,
+            _domain_ready=True,
+        )
+        if not isinstance(result, SmoothnessResult):
+            return None
+        branch_results.append(result)
+
+    seams = certify_piecewise_boundaries(decomp, max_order=max_order)
+    if any(c.continuous is False for c in seams):
+        return SmoothnessResult(
+            Continuity.DISCONTINUOUS,
+            0,
+            False,
+            Analyticity.NOT_ANALYTIC,
+            tuple(c.boundary.point for c in seams if c.continuous is False),
+            (decomp, *seams),
+        )
+    if any(c.continuous is None for c in seams):
+        continuity = Continuity.UNKNOWN
+    else:
+        continuity = (
+            Continuity.CONTINUOUS
+            if all(r.continuity is Continuity.CONTINUOUS for r in branch_results)
+            else Continuity.UNKNOWN
+        )
+
+    finite_orders = []
+    for r in branch_results:
+        if r.differentiability_order is sp.oo or r.differentiability_order == sp.oo:
+            finite_orders.append(max_order)
+        elif isinstance(r.differentiability_order, int):
+            finite_orders.append(r.differentiability_order)
+        else:
+            finite_orders.append(0)
+    for seam in seams:
+        finite_orders.append(seam.differentiability_order or 0)
+    verified = min(finite_orders) if finite_orders else 0
+
+    # A witnessed seam mismatch proves non-smoothness.  Matching finitely many
+    # derivatives never proves C-infinity.  The one safe nontrivial exception is
+    # when adjacent branch formulas are symbolically identical, in which case
+    # the Piecewise syntax is artificial and the common expression can be used.
+    mismatch = any(
+        seam.continuous is False
+        or (
+            seam.continuous is True
+            and seam.differentiability_order is not None
+            and seam.differentiability_order < max_order
+        )
+        for seam in seams
+    )
+    same_formula = all(
+        certify_identity_equal(branch.expression, decomp.branches[0].expression) is True
+        for branch in decomp.branches[1:]
+    )
+    if same_formula:
+        return _function_smoothness_impl(
+            decomp.branches[0].expression,
+            var,
+            domain=requested_domain,
+            max_order=max_order,
+            return_result=True,
+            _domain_ready=True,
+        )
+    analytic = (
+        Analyticity.NOT_ANALYTIC
+        if seams
+        else (
+            Analyticity.ANALYTIC
+            if all(r.analytic is Analyticity.ANALYTIC for r in branch_results)
+            else Analyticity.UNKNOWN
+        )
+    )
+    return SmoothnessResult(
+        continuity,
+        verified,
+        False if mismatch else None,
+        analytic,
+        tuple(
+            c.boundary.point
+            for c in seams
+            if c.continuous is not True or (c.differentiability_order or 0) < max_order
+        ),
+        (decomp, *branch_results, *seams),
+    )
+
+
+def _function_smoothness_impl(
+    expr,
+    var,
+    *,
+    domain=True,
+    max_order=6,
+    return_result=False,
+    _domain_ready=False,
+):
     """Analyze regularity up to ``max_order`` on the requested real domain.
 
     Finite derivative probing never certifies :math:`C^\\infty`.  Smoothness is
@@ -125,30 +249,42 @@ def function_smoothness(expr, var, *, domain=True, max_order=6, _domain_ready=Fa
         split = evaluate_parameter_strata(
             requested_domain,
             var,
-            lambda branch_domain: function_smoothness(
+            lambda branch_domain: _function_smoothness_impl(
                 expr,
                 var,
                 domain=branch_domain,
                 max_order=max_order,
+                return_result=return_result,
                 _domain_ready=True,
             ),
             source="smoothness-parameter-stratification",
         )
         if split is not None:
             return split
+    if isinstance(expr, sp.Piecewise):
+        piecewise = _piecewise_smoothness(expr, var, requested_domain, max_order)
+        if piecewise is not None:
+            return _smoothness_output(piecewise, return_result=return_result)
     analyticity = function_analytic(expr, var, domain=requested_domain)
     if analyticity is Analyticity.ANALYTIC:
         continuity = function_continuous(expr, var, domain=requested_domain)
         exceptions = list(
-            _domain_loci(function_discontinuities(expr, var), requested_domain, var)
+            _domain_loci(
+                function_discontinuities(expr, var, return_result=True),
+                requested_domain,
+                var,
+            )
         )
-        return SmoothnessResult(
-            continuity,
-            sp.oo,
-            True,
-            analyticity,
-            tuple(exceptions),
-            ("analytic-implies-smooth",),
+        return _smoothness_output(
+            SmoothnessResult(
+                continuity,
+                sp.oo,
+                True,
+                analyticity,
+                tuple(exceptions),
+                ("analytic-implies-smooth",),
+            ),
+            return_result=return_result,
         )
 
     backend = None
@@ -176,38 +312,51 @@ def function_smoothness(expr, var, *, domain=True, max_order=6, _domain_ready=Fa
                 exceptions = [
                     locus for locus in exceptions if locus not in (S.false, False)
                 ]
-                return SmoothnessResult(
-                    continuity,
-                    backend.differentiability_order,
-                    backend.smooth,
-                    analyticity,
-                    tuple(exceptions),
-                    (("semialg", backend),),
+                return _smoothness_output(
+                    SmoothnessResult(
+                        continuity,
+                        backend.differentiability_order,
+                        backend.smooth,
+                        analyticity,
+                        tuple(exceptions),
+                        (("semialg", backend),),
+                    ),
+                    return_result=return_result,
                 )
         except (_semialg.SemialgUnavailable, *SYMBOLIC_QUERY_ERRORS):
             backend = None
 
     continuity = function_continuous(expr, var, domain=requested_domain)
     exceptions = list(
-        _domain_loci(function_discontinuities(expr, var), requested_domain, var)
+        _domain_loci(
+            function_discontinuities(expr, var, return_result=True),
+            requested_domain,
+            var,
+        )
     )
 
     if continuity is Continuity.CONTINUOUS and _structurally_smooth(expr, var):
-        return SmoothnessResult(
-            continuity,
-            sp.oo,
-            True,
-            analyticity,
-            tuple(exceptions),
-            ("smooth-structural-closure",),
+        return _smoothness_output(
+            SmoothnessResult(
+                continuity,
+                sp.oo,
+                True,
+                analyticity,
+                tuple(exceptions),
+                ("smooth-structural-closure",),
+            ),
+            return_result=return_result,
         )
 
     order = 0 if continuity is Continuity.CONTINUOUS else None
     failure_proved = False
     domain_set = condition_to_set(requested_domain, var)
     if domain_set is None:
-        return SmoothnessResult(
-            continuity, order, None, analyticity, tuple(exceptions), ()
+        return _smoothness_output(
+            SmoothnessResult(
+                continuity, order, None, analyticity, tuple(exceptions), ()
+            ),
+            return_result=return_result,
         )
 
     from ..proof_cache import property_proof_context
@@ -220,7 +369,9 @@ def function_smoothness(expr, var, *, domain=True, max_order=6, _domain_ready=Fa
             break
 
         loci = _domain_loci(
-            function_discontinuities(derivative, var), requested_domain, var
+            function_discontinuities(derivative, var, return_result=True),
+            requested_domain,
+            var,
         )
         for locus in loci:
             if locus not in exceptions:
@@ -258,11 +409,26 @@ def function_smoothness(expr, var, *, domain=True, max_order=6, _domain_ready=Fa
         order = sp.oo
         smooth = True
         evidence = (*evidence, ("semialg", backend))
-    return SmoothnessResult(
-        continuity,
-        order,
-        smooth,
-        analyticity,
-        tuple(exceptions),
-        evidence,
+    return _smoothness_output(
+        SmoothnessResult(
+            continuity,
+            order,
+            smooth,
+            analyticity,
+            tuple(exceptions),
+            evidence,
+        ),
+        return_result=return_result,
+    )
+
+
+def function_smoothness(expr, var, *, domain=True, max_order=6, return_result=False):
+    """Analyze regularity up to ``max_order`` on a real domain."""
+    return _function_smoothness_impl(
+        expr,
+        var,
+        domain=domain,
+        max_order=max_order,
+        return_result=return_result,
+        _domain_ready=False,
     )

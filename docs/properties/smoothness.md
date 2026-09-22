@@ -9,7 +9,7 @@ Smoothness records continuity, the certified differentiability order, C-infinity
 ## API and return values
 
 ```python
-function_smoothness(expr, var, *, domain=True, max_order=6)
+function_smoothness(expr, var, *, domain=True, max_order=6, return_result=False, assumptions=True)
 ```
 
 A SmoothnessResult with regularity fields and evidence.
@@ -33,7 +33,7 @@ result = fp.function_smoothness(sp.exp(x), x)
 result
 ```
 
-Expected: smooth with differentiability order ``oo``.
+Expected: ``TruthValue.TRUE``.
 
 Application: Verify regularity assumptions required by approximation and differential methods.
 

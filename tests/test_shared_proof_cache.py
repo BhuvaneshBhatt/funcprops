@@ -29,7 +29,9 @@ def test_domain_cache_reused_across_property_calls():
 def test_zero_geometry_shared_between_partition_and_direct_query():
     x = sp.symbols("x", positive=True)
     clear_property_proof_cache()
-    p = monotonic_partition(sp.besselj(0, x), x, domain=sp.Interval.open(0, sp.oo))
+    p = monotonic_partition(
+        sp.besselj(0, x), x, domain=sp.Interval.open(0, sp.oo), return_result=True
+    )
     assert p.indexed is not None
     before = property_proof_cache_info()["zero_geometry"]
     g = zero_geometry(

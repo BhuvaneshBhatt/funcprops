@@ -3,6 +3,7 @@ from __future__ import annotations
 import sympy as sp
 from sympy import S
 
+from ..exactness import certify_zero
 from ..exceptions import SYMBOLIC_QUERY_ERRORS
 from ..results import PropertyResult
 from ..stratification import evaluate_parameter_strata
@@ -186,7 +187,8 @@ def _zeros_on_set(expr, var, domain_set, *, return_result, allow_numerical):
                     except SYMBOLIC_QUERY_ERRORS:
                         cell_complete = False
                         continue
-                    if value == 0 or value.is_zero is True:
+                    zero = certify_zero(value)
+                    if zero is True:
                         roots.append(point)
                         certs.append(
                             RootCertificate(
@@ -197,7 +199,7 @@ def _zeros_on_set(expr, var, domain_set, *, return_result, allow_numerical):
                                 True,
                             )
                         )
-                    elif value.is_zero is not False:
+                    elif zero is None:
                         cell_complete = False
                 results.append(
                     RootIsolationResult(
@@ -241,7 +243,38 @@ def _zeros_on_set(expr, var, domain_set, *, return_result, allow_numerical):
     return rr
 
 
-def function_zeros(
+def _piecewise_zero_set(expr, var, domain_set, *, return_result, allow_numerical):
+    from .piecewise import piecewise_decomposition
+
+    decomp = piecewise_decomposition(expr, var, domain_set)
+    if not decomp.complete:
+        return None
+    branch_results = []
+    plain_sets = []
+    for branch in decomp.branches:
+        if branch.domain is None:
+            return None
+        value = function_zeros(
+            branch.expression,
+            var,
+            domain=branch.domain,
+            return_result=return_result,
+            allow_numerical=allow_numerical,
+        )
+        if return_result:
+            if not isinstance(value, RootIsolationResult):
+                return None
+            branch_results.append(value)
+        else:
+            if not isinstance(value, sp.Set):
+                return None
+            plain_sets.append(value)
+    if return_result:
+        return _merge_root_results(tuple(branch_results), domain_set)
+    return sp.Union(*plain_sets) if plain_sets else S.EmptySet
+
+
+def _function_zeros_impl(
     expr,
     var,
     *,
@@ -302,7 +335,7 @@ def function_zeros(
         stratified = evaluate_parameter_strata(
             condition,
             var,
-            lambda branch: function_zeros(
+            lambda branch: _function_zeros_impl(
                 expr,
                 var,
                 domain=branch,
@@ -318,10 +351,34 @@ def function_zeros(
     domain_set = condition_to_set(condition, var)
     if domain_set is None:
         return RootIsolationResult((), complete=False, method="unsupported-domain")
+    if isinstance(expr, sp.Piecewise):
+        merged = _piecewise_zero_set(
+            expr,
+            var,
+            domain_set,
+            return_result=return_result,
+            allow_numerical=allow_numerical,
+        )
+        if merged is not None:
+            return merged
     return _zeros_on_set(
         expr,
         var,
         domain_set,
         return_result=return_result,
         allow_numerical=allow_numerical,
+    )
+
+
+def function_zeros(
+    expr, var, *, domain=True, return_result=False, allow_numerical=False
+):
+    """Return the certified real zeros of ``expr`` on the requested domain."""
+    return _function_zeros_impl(
+        expr,
+        var,
+        domain=domain,
+        return_result=return_result,
+        allow_numerical=allow_numerical,
+        _domain_ready=False,
     )

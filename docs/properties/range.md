@@ -9,7 +9,7 @@ The range is the set of output values attained by the expression on the requeste
 ## API and return values
 
 ```python
-function_range(expr, var, y, *, constraints=True, method='auto', partition=None, **kwargs)
+function_range(expr, var, y, *, constraints=True, method='auto', partition=None, assumptions=True, **kwargs)
 ```
 
 A SymPy condition in the output symbol, possibly wrapped in a conditional PropertyResult for parameter strata.

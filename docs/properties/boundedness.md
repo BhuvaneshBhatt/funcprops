@@ -9,7 +9,7 @@ Boundedness records whether the image is bounded above, below, both, or neither 
 ## API and return values
 
 ```python
-function_boundedness(expr, var, *, domain=True)
+function_boundedness(expr, var, *, domain=True, assumptions=True)
 ```
 
 A Boundedness value or conditional PropertyResult.

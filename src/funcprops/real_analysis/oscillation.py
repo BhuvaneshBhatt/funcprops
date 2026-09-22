@@ -25,12 +25,12 @@ class OscillationCertificate:
     evidence: tuple = ()
 
 
-def function_oscillation(
+def _function_oscillation_impl(
     expr,
     var,
     *,
     domain=True,
-    details=False,
+    return_result=False,
     partition=None,
     _domain_ready=False,
 ):
@@ -55,11 +55,11 @@ def function_oscillation(
         split = evaluate_parameter_strata(
             cond,
             var,
-            lambda branch_domain: function_oscillation(
+            lambda branch_domain: _function_oscillation_impl(
                 expr,
                 var,
                 domain=branch_domain,
-                details=details,
+                return_result=return_result,
                 partition=None,
                 _domain_ready=True,
             ),
@@ -72,16 +72,16 @@ def function_oscillation(
         out = OscillationCertificate(
             Oscillation.UNKNOWN, S.Reals, None, None, "unknown-domain"
         )
-        return out if details else out.classification
+        return out if return_result else out.classification
     if not expr.has(var):
         out = OscillationCertificate(
             Oscillation.NONOSCILLATORY, ds, None, 0, "constant"
         )
-        return out if details else out.classification
+        return out if return_result else out.classification
     part = (
         partition
         if partition is not None and getattr(partition, "domain", None) == ds
-        else monotonic_partition(expr, var, domain=ds)
+        else monotonic_partition(expr, var, domain=ds, return_result=True)
     )
     if part.indexed is not None and part.indexed.boundary_geometry:
         try:
@@ -102,14 +102,14 @@ def function_oscillation(
                 "indexed-monotonic-partition",
                 (part,),
             )
-            return out if details else out.classification
+            return out if return_result else out.classification
     if part.complete and part.cells:
         turns = part.direction_changes
         cls = Oscillation.FINITELY_OSCILLATORY if turns else Oscillation.NONOSCILLATORY
         out = OscillationCertificate(
             cls, ds, part, turns, "finite-monotonic-partition", (part,)
         )
-        return out if details else out.classification
+        return out if return_result else out.classification
     # A certified global monotonic classification is a cheap exact proof of
     # nonoscillation when critical-point partitioning itself is incomplete.
     try:
@@ -132,7 +132,7 @@ def function_oscillation(
                 "global-monotonicity",
                 (m, part),
             )
-            return out if details else out.classification
+            return out if return_result else out.classification
     except SYMBOLIC_QUERY_ERRORS:
         pass
     p = positive_period(expr, var)
@@ -144,8 +144,22 @@ def function_oscillation(
         out = OscillationCertificate(
             Oscillation.OSCILLATORY, ds, part, sp.oo, "exact-periodicity", (p, part)
         )
-        return out if details else out.classification
+        return out if return_result else out.classification
     out = OscillationCertificate(
         Oscillation.UNKNOWN, ds, part, None, "incomplete-monotonic-partition", (part,)
     )
-    return out if details else out.classification
+    return out if return_result else out.classification
+
+
+def function_oscillation(
+    expr, var, *, domain=True, return_result=False, partition=None
+):
+    """Classify real oscillation on the requested domain."""
+    return _function_oscillation_impl(
+        expr,
+        var,
+        domain=domain,
+        return_result=return_result,
+        partition=partition,
+        _domain_ready=False,
+    )

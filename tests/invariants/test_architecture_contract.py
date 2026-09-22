@@ -11,7 +11,7 @@ from funcprops import (
     function_monotonicity,
     function_range,
 )
-from funcprops.results import ConditionalValue
+from funcprops.results import ConditionalExpression
 from funcprops.stratification import stratify_boolean_by_parameters
 
 
@@ -39,7 +39,7 @@ def test_detailed_property_result_wraps_compact_and_property_results():
 
     p = PropertyResult(
         TruthValue.TRUE,
-        cases=(ConditionalValue(TruthValue.TRUE, sp.S.true),),
+        cases=(ConditionalExpression(TruthValue.TRUE, sp.S.true),),
         source="proof",
         evidence=("witness",),
     )

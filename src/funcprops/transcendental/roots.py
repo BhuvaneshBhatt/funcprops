@@ -7,6 +7,7 @@ from dataclasses import dataclass
 import sympy as sp
 from sympy import S
 
+from ..exactness import certify_identity_equal, certify_zero
 from ..exceptions import SYMBOLIC_QUERY_ERRORS
 from .analytic import analytic_neighborhood
 from .periodic import PeriodicSet
@@ -62,7 +63,7 @@ class RootIsolationResult:
 def _sort_unique(vals):
     out = []
     for v in sorted((sp.simplify(q) for q in vals), key=sp.default_sort_key):
-        if not any(sp.simplify(v - u) == 0 for u in out):
+        if not any(certify_identity_equal(v, u) is True for u in out):
             out.append(v)
     return tuple(out)
 
@@ -351,7 +352,7 @@ def _identically_zero_interval(expr, var, domain):
         reduced = sp.simplify(expr)
     except SYMBOLIC_QUERY_ERRORS:
         reduced = expr
-    if reduced == 0 or reduced.is_zero is True:
+    if not isinstance(reduced, sp.Piecewise) and certify_zero(reduced) is True:
         cert = RootCertificate(
             domain, None, "identically_zero_interval", (("simplified", reduced),), True
         )
@@ -372,7 +373,7 @@ def _identically_zero_interval(expr, var, domain):
                     continue
                 if domain.is_subset(branch_set) is True:
                     value = sp.simplify(branch)
-                    if value == 0 or value.is_zero is True:
+                    if certify_zero(value) is True:
                         cert = RootCertificate(
                             domain,
                             None,
@@ -486,7 +487,7 @@ def _certified_monotone_interval(expr, var, domain):
         (("derivative_sign", s), ("endpoint_values", left, right), ana),
         True,
     )
-    if sl.is_zero is True and not domain.left_open:
+    if certify_zero(left) is True and not domain.left_open:
         cert = RootCertificate(domain, 1, "strict_monotonicity", cert.proof, True)
         return RootIsolationResult(
             (domain.start,),
@@ -494,7 +495,7 @@ def _certified_monotone_interval(expr, var, domain):
             method="certified_monotonic",
             certificates=(cert,),
         )
-    if sr.is_zero is True and not domain.right_open:
+    if certify_zero(right) is True and not domain.right_open:
         cert = RootCertificate(domain, 1, "strict_monotonicity", cert.proof, True)
         return RootIsolationResult(
             (domain.end,),
@@ -519,7 +520,7 @@ def _certified_monotone_interval(expr, var, domain):
         for _ in range(24):
             m = sp.simplify((aa + bb) / 2)
             sm = sp.sign(sp.simplify(expr.subs(var, m)))
-            if sm.is_zero is True:
+            if certify_zero(sp.simplify(expr.subs(var, m))) is True:
                 cert = RootCertificate(
                     domain,
                     1,
@@ -864,7 +865,7 @@ def _certified_real_interval_isolation(expr, var, domain):
     try:
         from ..real_analysis.monotonic_certificates import monotonic_partition
 
-        partition = monotonic_partition(expr, var, domain=domain)
+        partition = monotonic_partition(expr, var, domain=domain, return_result=True)
     except (ImportError, *SYMBOLIC_QUERY_ERRORS):
         return None
     if not partition.finite or not partition.cells:

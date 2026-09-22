@@ -2,6 +2,7 @@ import sympy as sp
 
 from funcprops import (
     Analyticity,
+    ConditionalExpression,
     Continuity,
     Meromorphicity,
     function_analytic,
@@ -9,6 +10,7 @@ from funcprops import (
     function_branchpoints,
     function_continuous,
     function_discontinuities,
+    function_geometry,
     function_meromorphic,
     function_poles,
     function_singularities,
@@ -20,13 +22,13 @@ def test_integer_bessel_order_shadows_generic_branch_rule():
     z = sp.Symbol("z")
     n = sp.Symbol("n", integer=True)
     assert function_branchcuts(sp.besselj(n, z), z) == ()
-    assert function_branchpoints(sp.besselj(n, z), z) == ()
+    assert function_branchpoints(sp.besselj(n, z), z) is sp.S.false
     assert function_meromorphic(sp.besselj(n, z), z) == Meromorphicity.MEROMORPHIC
 
 
 def test_generic_bessel_order_retains_parameter_guard():
     z, n = sp.symbols("z n")
-    points = function_branchpoints(sp.besselj(n, z), z)
+    points = function_branchpoints(sp.besselj(n, z), z, return_result=True)
     assert len(points) == 1
     assert points[0].condition == sp.Eq(z, 0)
     assert points[0].guard.has(n)
@@ -37,26 +39,30 @@ def test_generic_bessel_order_retains_parameter_guard():
 
 def test_noninteger_bessel_has_origin_branch_point():
     z = sp.Symbol("z")
-    points = function_branchpoints(sp.besselj(sp.Rational(1, 2), z), z)
+    points = function_branchpoints(
+        sp.besselj(sp.Rational(1, 2), z), z, return_result=True
+    )
     assert any(p.condition == sp.Eq(z, 0) and p.guard is sp.S.true for p in points)
 
 
 def test_local_order_cancels_denominator_multiplicity():
     x = sp.Symbol("x")
     poles = function_poles(sp.sin(x) / x**3, x)
-    assert len(poles) == 1
-    assert poles[0].condition == sp.Eq(x, 0)
-    assert poles[0].multiplicity == 2
+    assert poles == [(0, 2)]
+    records = function_poles(sp.sin(x) / x**3, x, return_result=True)
+    assert records[0].condition == sp.Eq(x, 0)
 
 
 def test_removable_singularity_is_separate_from_poles():
     x = sp.Symbol("x")
     expr = sp.sin(x) / x
-    assert function_poles(expr, x) == ()
-    singular = function_singularities(expr, x)
+    assert function_poles(expr, x) == []
+    singular = function_singularities(expr, x, return_result=True)
+    assert singular.singularities == (sp.Eq(sp.re(x), 0) & sp.Eq(sp.im(x), 0))
+    assert singular.removable == (sp.Eq(sp.re(x), 0) & sp.Eq(sp.im(x), 0))
     assert any(
         s.kind == SingularityKind.REMOVABLE and s.condition == sp.Eq(x, 0)
-        for s in singular["removable"]
+        for s in singular.records
     )
 
 
@@ -64,9 +70,7 @@ def test_generic_reciprocal_keeps_unsolved_zero_condition():
     x = sp.Symbol("x")
     f = sp.Function("f")
     poles = function_poles(1 / f(x), x)
-    assert len(poles) == 1
-    assert poles[0].condition == sp.Eq(f(x), 0)
-    assert poles[0].multiplicity is None
+    assert poles == [(sp.Eq(f(x), 0), None)]
 
 
 def test_branchcut_composition_is_pulled_back_without_solving():
@@ -106,8 +110,9 @@ def test_essential_composition_is_not_meromorphic():
     expr = sp.exp(1 / z)
     assert function_analytic(expr, z, domain=sp.S.Complexes) == Analyticity.ANALYTIC
     assert function_meromorphic(expr, z) == Meromorphicity.NOT_MEROMORPHIC
-    singular = function_singularities(expr, z)
-    assert any(s.kind == SingularityKind.ESSENTIAL for s in singular["essential"])
+    singular = function_singularities(expr, z, return_result=True)
+    assert singular.essential == (sp.Eq(sp.re(z), 0) & sp.Eq(sp.im(z), 0))
+    assert any(s.kind == SingularityKind.ESSENTIAL for s in singular.records)
 
 
 def test_sqrt_is_continuous_but_not_real_analytic_at_zero():
@@ -125,7 +130,7 @@ def test_abs_is_continuous_but_not_real_analytic():
 def test_sign_has_explicit_discontinuity():
     x = sp.Symbol("x", real=True)
     d = function_discontinuities(sp.sign(x), x)
-    assert any(s.condition == sp.Eq(x, 0) for s in d)
+    assert d == sp.Eq(x, 0)
     assert function_continuous(sp.sign(x), x) == Continuity.DISCONTINUOUS
 
 
@@ -144,12 +149,19 @@ def test_piecewise_step_discontinuity_is_found():
     x = sp.Symbol("x", real=True)
     expr = sp.Piecewise((0, x < 0), (1, True))
     d = function_discontinuities(expr, x)
-    assert any(s.condition == sp.Eq(x, 0) for s in d)
+    assert d == sp.Eq(x, 0)
     assert function_continuous(expr, x) == Continuity.DISCONTINUOUS
 
 
 def test_continuous_piecewise_boundary_is_not_reported_as_discontinuity():
     x = sp.Symbol("x", real=True)
     expr = sp.Piecewise((-x, x < 0), (x, True))
-    assert function_discontinuities(expr, x) == ()
+    assert function_discontinuities(expr, x) is sp.S.false
     assert function_continuous(expr, x) == Continuity.CONTINUOUS
+
+
+def test_multivariate_condition_preserves_domain_dimension():
+    x, y = sp.symbols("x y", real=True)
+    expr = ConditionalExpression(x**2 + y**2, sp.And(x > 0, y > 0))
+    geometry = function_geometry(expr, (x, y))
+    assert geometry.domain == sp.And(x > 0, y > 0)

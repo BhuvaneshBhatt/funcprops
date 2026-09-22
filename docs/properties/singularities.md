@@ -4,15 +4,15 @@
 
 ## Mathematical definition
 
-This query returns a grouped inventory of poles, removable/essential singularities, branch points, branch cuts, and definition cuts.
+This query returns the Boolean locus where a function is singular: the disjunction of poles, removable and essential singularities, branch points and cuts, definition cuts, and discontinuities.
 
 ## API and return values
 
 ```python
-function_singularities(expr, var, *, domain=Complexes, assumptions=True)
+function_singularities(expr, var, domain=Complexes, *, assumptions=True, return_result=False)
 ```
 
-A dictionary whose values are tuples of Singularity records or cut conditions.
+A SymPy Boolean condition by default; return_result=True returns a SingularityResult with classified Boolean loci and supporting records.
 
 ## Domains, assumptions, and parameters
 
@@ -20,7 +20,7 @@ The query is interpreted on the supplied domain rather than from the expression 
 
 ## Executable examples
 
-### Grouped singularities
+### Boolean singularity locus
 
 <!-- example-id: singularities-rational -->
 
@@ -29,13 +29,13 @@ import sympy as sp
 import funcprops as fp
 
 x, y = sp.symbols("x y", real=True)
-result = fp.function_singularities(1 / x, x)
+result = fp.function_singularities(1/x, x)
 result
 ```
 
-Expected: one pole and no branch points.
+Expected: the singular locus ``x = 0``.
 
-Application: Obtain a compact inventory of analytic obstructions before complex-domain analysis.
+Application: Obtain one composable Boolean locus for analytic obstructions before downstream analysis.
 
 ## Applications
 
@@ -43,7 +43,7 @@ This property is useful whenever later mathematics depends on a global qualitati
 
 ## How funcprops proves it
 
-Shared structural singularity traversal and branch analysis, grouped by singularity kind.
+Shared structural singularity traversal and branch analysis, followed by guard-aware locus union and ConditionalExpression restriction.
 
 Successful conclusions are exact symbolic claims over the stated domain and assumptions. Detailed modes expose evidence or certificates where the property API supports them.
 

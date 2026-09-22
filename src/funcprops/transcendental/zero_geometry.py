@@ -6,6 +6,7 @@ from dataclasses import dataclass
 import sympy as sp
 from sympy import S
 
+from ..exactness import certify_equal, certify_identity_equal, certify_zero
 from ..exceptions import SYMBOLIC_QUERY_ERRORS
 
 
@@ -455,7 +456,7 @@ def _interval_subset_exact(a, b):
             d = sp.simplify(a.start - b.start)
             if d.is_positive is True:
                 left = True
-            elif d.is_zero is True:
+            elif certify_equal(a.start, b.start) is True:
                 left = not (b.left_open and not a.left_open)
             elif d.is_negative is True:
                 left = False
@@ -477,7 +478,7 @@ def _interval_subset_exact(a, b):
             d = sp.simplify(b.end - a.end)
             if d.is_positive is True:
                 right = True
-            elif d.is_zero is True:
+            elif certify_equal(b.end, a.end) is True:
                 right = not (b.right_open and not a.right_open)
             elif d.is_negative is True:
                 right = False
@@ -593,7 +594,7 @@ def property_interval_decomposition(
                         break
                     if delta.is_positive is True:
                         continue
-                    if delta.is_zero is True:
+                    if certify_equal(q, r) is True:
                         placed = True
                         break
                     pts = None
@@ -614,7 +615,7 @@ def property_interval_decomposition(
 
                     dn = cached_derivative(d, var, order=1)
                     for q in pts:
-                        if sp.simplify(dn.subs(var, q)).is_zero is not False:
+                        if certify_zero(dn.subs(var, q)) is not False:
                             simple = False
                             break
                 except SYMBOLIC_QUERY_ERRORS:
@@ -847,7 +848,7 @@ class CertifiedIntegerBracket:
 
     @property
     def exact(self):
-        return sp.simplify(self.lower - self.upper) == 0
+        return certify_identity_equal(self.lower, self.upper) is True
 
     def as_interval(self):
         return sp.Interval(sp.sympify(self.lower), sp.sympify(self.upper))

@@ -5,6 +5,7 @@ from dataclasses import dataclass
 import sympy as sp
 from sympy import S
 
+from ..exactness import certify_equal, certify_zero
 from ..exceptions import SYMBOLIC_QUERY_ERRORS
 from .zero_geometry import (
     IndexedZero,
@@ -193,7 +194,9 @@ def extremum_geometry(expr, var, *, domain=S.Reals, partition=None):
         try:
             from ..real_analysis.monotonic_certificates import monotonic_partition
 
-            partition = monotonic_partition(expr, var, domain=domain)
+            partition = monotonic_partition(
+                expr, var, domain=domain, return_result=True
+            )
         except SYMBOLIC_QUERY_ERRORS:
             partition = None
     geoms = ()
@@ -383,7 +386,7 @@ def _simplify_indexed_tail(expr, var, domain, certs, end_candidates):
         # with an interior critical index >=2.
         if (
             expr.func is sp.besselj
-            and nu.is_zero is True
+            and certify_zero(nu) is True
             and domain.start.is_positive is True
         ):
             k0 = sp.Max(2, k0)
@@ -497,11 +500,11 @@ def _simplify_indexed_extrema(expr, var, domain, certs, end_candidates):
         # Endpoint/limit candidates can dominate a signed family member.
         for v, att, _side in vals:
             d = sp.simplify(v - hi)
-            if d.is_positive is True or d.is_zero is True:
+            if d.is_positive is True or certify_zero(d) is True:
                 hi = v
                 ua = att
             d = sp.simplify(v - lo)
-            if d.is_negative is True or d.is_zero is True:
+            if d.is_negative is True or certify_zero(d) is True:
                 lo = v
                 la = att
         # Known Airy right-half-line behavior makes these comparisons exact
@@ -542,7 +545,7 @@ def _simplify_indexed_extrema(expr, var, domain, certs, end_candidates):
         if _contains_support(domain, support) is not True:
             return None
         nu = expr.args[0]
-        if nu.is_zero is True:
+        if certify_zero(nu) is True:
             vmin, zmin = _indexed_value(expr, var, "BesselJ", 2, nu)
             lo = vmin
             la = True
@@ -699,7 +702,7 @@ def symbolic_extremum_range(expr, var, domain=S.Reals, *, partition=None):
         try:
             from ..real_analysis.monotonic_certificates import monotonic_partition
 
-            partition = monotonic_partition(expr, var, domain=ds)
+            partition = monotonic_partition(expr, var, domain=ds, return_result=True)
         except SYMBOLIC_QUERY_ERRORS:
             partition = None
 
@@ -741,8 +744,7 @@ def symbolic_extremum_range(expr, var, domain=S.Reals, *, partition=None):
             for v, att in values:
                 if not att:
                     continue
-                eq = sp.simplify(bound - v)
-                if eq.is_zero is True:
+                if certify_equal(bound, v) is True:
                     return True
             # Prove non-attainment only when the bound is an open-endpoint limit
             # and every attained candidate lies strictly inside it.
@@ -750,7 +752,7 @@ def symbolic_extremum_range(expr, var, domain=S.Reals, *, partition=None):
             for v, att in values:
                 if att:
                     continue
-                if sp.simplify(bound - v).is_zero is True:
+                if certify_equal(bound, v) is True:
                     open_hits.append(v)
             if open_hits:
                 ok = True

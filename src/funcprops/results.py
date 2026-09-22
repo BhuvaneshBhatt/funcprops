@@ -125,7 +125,7 @@ class SingularityKind(str, Enum):
 
 
 @dataclass(frozen=True)
-class ConditionalValue:
+class ConditionalExpression:
     value: Any
     condition: Basic = S.true
 
@@ -144,13 +144,66 @@ class Singularity:
 
 
 @dataclass(frozen=True)
+class SingularityResult:
+    """Classified Boolean singularity loci with their supporting records.
+
+    Every locus is a Boolean condition in the analysis variable(s).
+    ``singularities`` is the classified union restricted to the effective function
+    domain. ``unrestricted_singularities`` preserves the ambient singular locus,
+    while ``interior_singularities``, ``boundary_singularities``, and
+    ``exterior_singularities`` classify it relative to the restriction. ``records``
+    preserves the lower-level :class:`Singularity` objects, including guards,
+    multiplicities, and provenance.
+    """
+
+    singularities: Basic
+    poles: Basic = S.false
+    removable: Basic = S.false
+    essential: Basic = S.false
+    branch_points: Basic = S.false
+    branch_cuts: Basic = S.false
+    definition_cuts: Basic = S.false
+    discontinuities: Basic = S.false
+    records: tuple[Singularity, ...] = ()
+    domain: Any = S.Complexes
+    restriction: Basic = S.true
+    unrestricted_singularities: Basic = S.false
+    interior_singularities: Basic = S.false
+    boundary_singularities: Basic = S.false
+    exterior_singularities: Basic = S.false
+    domain_interior: Basic = S.true
+    domain_boundary: Basic = S.false
+    domain_exterior: Basic = S.false
+
+    @property
+    def primary(self):
+        return self.singularities
+
+    @property
+    def classification(self):
+        return self.singularities
+
+    @property
+    def evidence(self):
+        return self.records
+
+
+@dataclass(frozen=True)
 class PropertyResult:
     primary: Any
-    cases: tuple[ConditionalValue, ...] = ()
+    cases: tuple[ConditionalExpression, ...] = ()
     all_properties: tuple[Any, ...] = ()
     source: str | None = None
     exceptions: tuple[Any, ...] = ()
     evidence: tuple[Any, ...] = ()
+
+    @property
+    def resolved(self):
+        """Return the unconditional value when the cases imply one."""
+        if self.primary is not None:
+            return self.primary
+        values = {case.value for case in self.cases if case.condition is S.true}
+        return next(iter(values)) if len(values) == 1 else None
 
     def as_detailed_result(self):
         """Project this result onto the package-wide detailed-result protocol."""
@@ -181,7 +234,7 @@ class DetailedPropertyResult:
     """
 
     primary: Any
-    cases: tuple[ConditionalValue, ...] = ()
+    cases: tuple[ConditionalExpression, ...] = ()
     domain: Any = None
     complete: bool | None = None
     source: str | None = None
@@ -189,6 +242,14 @@ class DetailedPropertyResult:
     certificate: Any = None
     exceptions: tuple[Any, ...] = ()
     all_properties: tuple[Any, ...] = ()
+
+    @property
+    def resolved(self):
+        """Return the compact value when this detailed result is unconditional."""
+        if self.primary is not None:
+            return self.primary
+        values = {case.value for case in self.cases if case.condition is S.true}
+        return next(iter(values)) if len(values) == 1 else None
 
 
 @runtime_checkable
@@ -233,7 +294,29 @@ def as_detailed_result(value, *, domain=None, source=None, complete=None):
         complete=complete,
         source=source or getattr(value, "source", None),
         evidence=evidence,
-        certificate=getattr(value, "certificate", None),
+        certificate=(
+            getattr(value, "certificate", None)
+            or (value if callable(getattr(value, "verify", None)) else None)
+        ),
         exceptions=exceptions,
         all_properties=tuple(getattr(value, "all_properties", ())),
     )
+
+
+def explain_result(value):
+    """Return a concise explanation of a property result or certificate."""
+    detail = as_detailed_result(value)
+    parts = []
+    if detail.primary is not None:
+        parts.append(f"Result: {detail.primary}.")
+    elif detail.cases:
+        parts.append(f"Result depends on {len(detail.cases)} parameter case(s).")
+    else:
+        parts.append("Result is unresolved.")
+    if detail.source:
+        parts.append(f"Proof route: {detail.source.replace('-', ' ')}.")
+    if detail.domain is not None:
+        parts.append(f"Domain: {detail.domain}.")
+    if detail.certificate is not None:
+        parts.append(f"Certificate: {type(detail.certificate).__name__}.")
+    return " ".join(parts)

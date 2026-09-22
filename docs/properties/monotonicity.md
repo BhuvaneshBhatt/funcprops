@@ -9,7 +9,7 @@ Monotonicity classifies a function as strictly increasing/decreasing, weakly mon
 ## API and return values
 
 ```python
-function_monotonicity(expr, var, *, domain=True, strict_inequalities=True, all_properties=False, intervals=False, details=False, partition=None)
+function_monotonicity(expr, var, *, domain=True, strict_inequalities=True, all_properties=False, intervals=False, return_result=False, partition=None, assumptions=True)
 ```
 
 A Monotonicity value, PropertyResult, or interval decomposition when requested.

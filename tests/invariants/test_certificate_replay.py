@@ -11,7 +11,7 @@ x = sp.symbols("x", real=True)
 
 def test_strong_convexity_modulus_replays_as_second_derivative_bound():
     expr = 3 * x**2 + 2 * x + 1
-    result = fp.function_convexity(expr, x, details=True, all_properties=True)
+    result = fp.function_convexity(expr, x, return_result=True, all_properties=True)
     assert isinstance(result, PropertyResult)
     cert = next(
         item for item in result.evidence if isinstance(item, ConvexityCertificate)

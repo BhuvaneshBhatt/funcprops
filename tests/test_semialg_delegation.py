@@ -56,18 +56,18 @@ def test_project_requires_semialg_public_api_release():
     from pathlib import Path
 
     project = (Path(__file__).parents[1] / "pyproject.toml").read_text()
-    assert '"semialg>=1.0.0"' in project
+    assert '"semialg>=1.2.0"' in project
 
 
 def test_monotonicity_delegates_semialgebraic_domain_to_semialg():
     x = sp.Symbol("x", real=True)
-    result = function_monotonicity(sp.Abs(x), x, domain=x >= 0, details=True)
+    result = function_monotonicity(sp.Abs(x), x, domain=x >= 0, return_result=True)
     assert result.primary is Monotonicity.STRICTLY_INCREASING
 
 
 def test_smoothness_uses_semialg_for_semialgebraic_breakpoint():
     x = sp.Symbol("x", real=True)
-    result = function_smoothness(sp.Abs(x), x)
+    result = function_smoothness(sp.Abs(x), x, return_result=True)
     assert result.smooth is False
     assert result.differentiability_order == 0
     assert any(item[0] == "semialg" for item in result.evidence)
@@ -75,7 +75,7 @@ def test_smoothness_uses_semialg_for_semialgebraic_breakpoint():
 
 def test_stronger_funcprops_regular_domain_proof_is_not_weakened_by_backend():
     x = sp.Symbol("x", real=True)
-    result = function_smoothness(sp.Abs(x), x, domain=x > 0)
+    result = function_smoothness(sp.Abs(x), x, domain=x > 0, return_result=True)
     assert result.smooth is True
     assert result.differentiability_order is sp.oo
     assert result.evidence == ("analytic-implies-smooth",)

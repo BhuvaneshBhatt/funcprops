@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 from dataclasses import dataclass
+from functools import lru_cache
 
 import sympy as sp
 from sympy import S
@@ -12,15 +13,17 @@ from sympy.core.relational import Relational
 from sympy.logic.boolalg import And, Boolean, Or
 
 from .engine import evaluate_property, simplify_condition
+from .exactness import certify_identity_equal
 from .exceptions import SYMBOLIC_QUERY_ERRORS
 from .results import (
     Analyticity,
-    ConditionalValue,
+    ConditionalExpression,
     Continuity,
     Meromorphicity,
     PropertyResult,
     Singularity,
     SingularityKind,
+    SingularityResult,
 )
 from .stratification import evaluate_parameter_strata
 
@@ -59,21 +62,31 @@ def _combine_guard(a, b, assumptions=S.true):
 
 
 def _split_locus_guard(condition, var, *, assumptions=S.true):
-    """Split a condition into variable-locus and parameter-only parts."""
+    """Split a condition into analysis-locus and parameter-only parts.
+
+    ``var`` may be one symbol or a collection of independent analysis variables.
+    A Boolean atom belongs to the locus whenever it depends on at least one of
+    those variables; only genuinely parameter-only atoms are moved to the guard.
+    """
     c = sp.sympify(condition)
+    variables = _variable_tuple(var) if var is not None else ()
+
+    def depends_on_analysis_variable(node):
+        return any(node.has(variable) for variable in variables)
+
     if c in (S.true, S.false):
         return c, S.true
     if c.func is And:
         locus = []
         guard = []
         for atom in c.args:
-            (locus if atom.has(var) else guard).append(atom)
+            (locus if depends_on_analysis_variable(atom) else guard).append(atom)
         lc = And(*locus) if locus else S.true
         gd = And(*guard) if guard else S.true
         return simplify_condition(lc, assumptions=assumptions), simplify_condition(
             gd, assumptions=assumptions
         )
-    if c.has(var):
+    if depends_on_analysis_variable(c):
         return c, S.true
     return S.true, simplify_condition(c, assumptions=assumptions)
 
@@ -253,9 +266,9 @@ def _recursive_argument_singularities(expr, var, kind, assumptions=S.true):
         if not getattr(arg, "has", lambda *_: False)(var):
             continue
         if kind is SingularityKind.POLE:
-            out.extend(function_poles(arg, var, assumptions=assumptions))
+            out.extend(_function_pole_records(arg, var, assumptions=assumptions))
         elif kind is SingularityKind.BRANCH_POINT:
-            out.extend(function_branchpoints(arg, var, assumptions=assumptions))
+            out.extend(_function_branchpoint_records(arg, var, assumptions=assumptions))
         elif kind is SingularityKind.ESSENTIAL:
             out.extend(
                 function_essential_singularities(arg, var, assumptions=assumptions)
@@ -302,9 +315,9 @@ def _validate_pole_candidates(expr, var, candidates):
 def function_removable_singularities(expr, var):
     """Return denominator singularities whose local order is nonnegative.
 
-    This is intentionally internal for now; ``function_singularities`` exposes
-    the records under its ``removable`` key without adding another top-level
-    public function.
+    This is intentionally internal; ``function_singularities(...,
+    return_result=True)`` exposes the classified removable locus and supporting
+    records without adding another top-level public function.
     """
     expr = sp.sympify(expr)
     var = sp.sympify(var)
@@ -333,7 +346,7 @@ def function_removable_singularities(expr, var):
     return _unique(out)
 
 
-def function_poles(expr, var, *, assumptions=S.true):
+def _function_pole_records(expr, var, *, assumptions=S.true):
     expr = sp.sympify(expr)
     var = sp.sympify(var)
     out = []
@@ -362,7 +375,7 @@ def function_poles(expr, var, *, assumptions=S.true):
     return _validate_pole_candidates(expr, var, _unique(out))
 
 
-def function_branchpoints(expr, var, *, assumptions=S.true):
+def _function_branchpoint_records(expr, var, *, assumptions=S.true):
     expr = sp.sympify(expr)
     var = sp.sympify(var)
     out = []
@@ -391,6 +404,40 @@ def function_branchpoints(expr, var, *, assumptions=S.true):
         )
     )
     return _unique(out)
+
+
+def _pole_location(record, var):
+    condition = sp.sympify(record.condition)
+    if isinstance(condition, sp.Equality):
+        if condition.lhs == var and not condition.rhs.has(var):
+            return condition.rhs
+        if condition.rhs == var and not condition.lhs.has(var):
+            return condition.lhs
+    return condition
+
+
+def function_poles(expr, var, *, assumptions=S.true, return_result=False):
+    """Return poles as ``(location, multiplicity)`` pairs.
+
+    Locations that are not isolated remain exact Boolean conditions.  Use
+    ``return_result=True`` for the underlying singularity records and provenance.
+    """
+    var = sp.sympify(var)
+    records = _function_pole_records(expr, var, assumptions=assumptions)
+    if return_result:
+        return records
+    return [(_pole_location(record, var), record.multiplicity) for record in records]
+
+
+def function_branchpoints(expr, var, *, assumptions=S.true, return_result=False):
+    """Return the Boolean branch-point locus of ``expr``.
+
+    Use ``return_result=True`` for classified records, guards, and provenance.
+    """
+    records = _function_branchpoint_records(expr, var, assumptions=assumptions)
+    if return_result:
+        return records
+    return _singularity_records_locus(records, assumptions=assumptions)
 
 
 def function_definition_cuts(expr, var, *, mode="real", assumptions=S.true):
@@ -480,7 +527,9 @@ def function_essential_singularities(expr, var, *, assumptions=S.true):
         if expr.func in transcendental_entire:
             for arg in expr.args:
                 if arg.has(var):
-                    for pole in function_poles(arg, var, assumptions=assumptions):
+                    for pole in _function_pole_records(
+                        arg, var, assumptions=assumptions
+                    ):
                         out.append(
                             Singularity(
                                 SingularityKind.ESSENTIAL,
@@ -694,53 +743,103 @@ def _piecewise_discontinuous_at(expr, var, condition):
                 else right_branch
             )
             value = expr.subs(var, p)
-            if sp.simplify(left - right) != 0 or sp.simplify(value - left) != 0:
+            if (
+                certify_identity_equal(left, right) is False
+                or certify_identity_equal(value, left) is False
+            ):
                 return True
         except SYMBOLIC_QUERY_ERRORS:
             any_unknown = True
     return None if any_unknown else False
 
 
-def function_discontinuities(expr, var, *, assumptions=S.true):
+def _registry_discontinuity_records(
+    expr, var, *, assumptions=S.true, registry_var=None
+):
+    """Return registry discontinuities for scalar or joint analysis variables.
+
+    ``registry_var`` is the distinguished scalar variable used by
+    univariate catalogue rules.  Joint multivariate transport leaves it unset while still
+    using ``var`` to separate analysis geometry from parameter guards.
+    """
+    query_var = (
+        var if registry_var is None and len(_variable_tuple(var)) == 1 else registry_var
+    )
+    result = evaluate_property(
+        expr, "Discontinuities", var=query_var, assumptions=assumptions
+    )
+    out = []
+    for case in result.cases:
+        value = case.value
+        if _is_empty(value):
+            continue
+        entries = (
+            tuple(value) if isinstance(value, (sp.Tuple, tuple, list)) else (value,)
+        )
+        for entry in entries:
+            condition = (
+                entry[0]
+                if isinstance(entry, (sp.Tuple, tuple, list)) and entry
+                else entry
+            )
+            locus, local_guard = _split_locus_guard(
+                condition, var, assumptions=assumptions
+            )
+            guard = _combine_guard(case.condition, local_guard, assumptions=assumptions)
+            if locus is S.false or guard is S.false:
+                continue
+            out.append(
+                Singularity(
+                    SingularityKind.DISCONTINUITY,
+                    sp.sympify(locus),
+                    sp.sympify(guard),
+                    source="registry",
+                )
+            )
+    return _unique(out)
+
+
+def _function_discontinuity_records(expr, var, *, assumptions=S.true):
     """Return unsolved real discontinuity conditions."""
     expr = sp.sympify(expr)
     var = sp.sympify(var)
     out = []
     if expr.is_Function:
-        r = evaluate_property(expr, "Discontinuities", var=var, assumptions=assumptions)
-        for case in r.cases:
-            value = case.value
-            if _is_empty(value):
-                continue
-            entries = (
-                tuple(value) if isinstance(value, (sp.Tuple, tuple, list)) else (value,)
-            )
-            for entry in entries:
-                cond = (
-                    entry[0]
-                    if isinstance(entry, (sp.Tuple, tuple, list)) and entry
-                    else entry
-                )
-                out.append(
-                    Singularity(
-                        SingularityKind.DISCONTINUITY,
-                        sp.sympify(cond),
-                        case.condition,
-                        source="registry",
-                    )
-                )
+        out.extend(_registry_discontinuity_records(expr, var, assumptions=assumptions))
     if isinstance(expr, sp.Piecewise):
-        for boundary in _piecewise_boundaries(expr):
-            verdict = _piecewise_discontinuous_at(expr, var, boundary)
-            if verdict is not False:
-                out.append(
-                    Singularity(
-                        SingularityKind.DISCONTINUITY,
-                        boundary,
-                        S.true,
-                        source="piecewise",
+        from .real_analysis.piecewise import (
+            certify_piecewise_boundaries,
+            piecewise_decomposition,
+        )
+
+        try:
+            decomposition = piecewise_decomposition(expr, var, assumptions)
+            certificates = certify_piecewise_boundaries(decomposition, max_order=0)
+        except SYMBOLIC_QUERY_ERRORS:
+            certificates = ()
+        if certificates:
+            for certificate in certificates:
+                if certificate.continuous is not True:
+                    out.append(
+                        Singularity(
+                            SingularityKind.DISCONTINUITY,
+                            sp.Eq(var, certificate.boundary.point),
+                            S.true,
+                            source="piecewise-boundary-certificate",
+                        )
                     )
-                )
+        else:
+            for boundary in _piecewise_boundaries(expr):
+                verdict = _piecewise_discontinuous_at(expr, var, boundary)
+                if verdict is not False:
+                    out.append(
+                        Singularity(
+                            SingularityKind.DISCONTINUITY,
+                            boundary,
+                            S.true,
+                            source="piecewise",
+                        )
+                    )
     # Discontinuities of inner arguments propagate through ordinary composition
     # unless an outer rule proves a cancellation; conservatively retain them.
     recursive_args = (
@@ -750,37 +849,974 @@ def function_discontinuities(expr, var, *, assumptions=S.true):
     )
     for arg in recursive_args:
         if getattr(arg, "has", lambda *_: False)(var):
-            out.extend(function_discontinuities(arg, var, assumptions=assumptions))
+            out.extend(
+                _function_discontinuity_records(arg, var, assumptions=assumptions)
+            )
     return _unique(out)
 
 
-def function_singularities(expr, var, *, domain=S.Complexes, assumptions=S.true):
-    """Return all known singularity loci without solving their equations."""
-    complex_mode = domain in (S.Complexes, "complex", "complexes", "C", "CC")
-    result = {
-        "poles": function_poles(expr, var, assumptions=assumptions),
-        "removable": function_removable_singularities(expr, var),
-        "essential": function_essential_singularities(
-            expr, var, assumptions=assumptions
+_SINGULARITY_LOCUS_SIMPLIFY_OP_LIMIT = 12
+
+
+def _bounded_locus_simplify(condition, *, assumptions=S.true):
+    """Simplify small singularity loci without exploding warmed Boolean states."""
+    condition = sp.sympify(condition)
+    assumptions = sp.sympify(assumptions)
+    if condition in (S.true, S.false):
+        return condition
+    if assumptions is not S.true:
+        condition = And(condition, assumptions)
+    # Rebuild top-level Boolean nodes structurally so an already-expanded warmed
+    # expression is not sent through the global simplifier again.
+    if condition.func is And:
+        condition = And(*condition.args, evaluate=False)
+    elif condition.func is Or:
+        condition = Or(*condition.args, evaluate=False)
+    if sp.count_ops(condition) > _SINGULARITY_LOCUS_SIMPLIFY_OP_LIMIT:
+        return condition
+    return simplify_condition(condition)
+
+
+def function_discontinuities(expr, var, *, assumptions=S.true, return_result=False):
+    """Return the Boolean real-discontinuity locus of ``expr``.
+
+    Use ``return_result=True`` for classified records and proof provenance.
+    """
+    records = _function_discontinuity_records(expr, var, assumptions=assumptions)
+    if return_result:
+        return records
+    return _singularity_records_locus(records, assumptions=assumptions)
+
+
+def _singularity_record_locus(record, *, assumptions=S.true):
+    return _bounded_locus_simplify(
+        And(record.condition, record.guard), assumptions=assumptions
+    )
+
+
+def _singularity_records_locus(records, *, assumptions=S.true):
+    conditions = tuple(
+        _singularity_record_locus(record, assumptions=assumptions) for record in records
+    )
+    conditions = tuple(
+        condition for condition in conditions if condition is not S.false
+    )
+    if not conditions:
+        return S.false
+    return _bounded_locus_simplify(Or(*conditions), assumptions=assumptions)
+
+
+def _restrict_boolean_locus(locus, restriction, var, *, assumptions=S.true):
+    """Intersect a Boolean locus with a function restriction conservatively."""
+    locus = sp.sympify(locus)
+    restriction = simplify_condition(restriction, assumptions=assumptions)
+    if restriction is S.false or locus is S.false:
+        return S.false
+    if restriction is S.true:
+        if len(_variable_tuple(var)) == 1:
+            return simplify_condition(locus, assumptions=assumptions)
+        return locus
+    locus = simplify_condition(locus, assumptions=assumptions)
+    combined = simplify_condition(And(locus, restriction), assumptions=assumptions)
+    if combined in (S.true, S.false):
+        return combined
+
+    # ``simplify_logic`` does not reason about inequalities across DNF branches.
+    # Resolve one-variable real clauses separately so restrictions such as x > 0
+    # can certify that the principal logarithm's nonpositive-real cut is absent.
+    vv = _variable_tuple(var)
+    if len(vv) != 1:
+        try:
+            from ._semialg import SemialgUnavailable, is_satisfiable
+
+            if not is_satisfiable(combined, vv):
+                return S.false
+        except (SemialgUnavailable, *SYMBOLIC_QUERY_ERRORS):
+            pass
+        return combined
+    variable = vv[0]
+    try:
+        dnf = sp.to_dnf(combined, simplify=True, force=True)
+    except SYMBOLIC_QUERY_ERRORS:
+        return combined
+    clauses = dnf.args if dnf.func is Or else (dnf,)
+    reduced = []
+    for clause in clauses:
+        atoms = clause.args if clause.func is And else (clause,)
+        contains_reals = any(
+            isinstance(atom, sp.Contains) and atom.args == (variable, S.Reals)
+            for atom in atoms
+        )
+        inequalities = tuple(
+            atom
+            for atom in atoms
+            if atom.has(variable) and isinstance(atom, Relational)
+        )
+        residual = tuple(
+            atom
+            for atom in atoms
+            if atom not in inequalities
+            and not (isinstance(atom, sp.Contains) and atom.args == (variable, S.Reals))
+        )
+        if inequalities:
+            try:
+                real_part = sp.reduce_inequalities(inequalities, variable)
+            except SYMBOLIC_QUERY_ERRORS:
+                real_part = And(*inequalities)
+            if real_part is S.false:
+                continue
+            clause_result = And(real_part, *residual)
+            if contains_reals and not inequalities:
+                clause_result = And(sp.Contains(variable, S.Reals), clause_result)
+        else:
+            clause_result = clause
+        clause_result = simplify_condition(clause_result, assumptions=assumptions)
+        if clause_result is not S.false:
+            reduced.append(clause_result)
+    if not reduced:
+        return S.false
+    return simplify_condition(Or(*reduced), assumptions=assumptions)
+
+
+def _merge_zero_boundary_relations(condition):
+    """Merge ``g == 0`` with an adjacent strict half-line exactly."""
+    condition = sp.sympify(condition)
+    if condition.func not in (And, Or):
+        return condition
+    args = [_merge_zero_boundary_relations(arg) for arg in condition.args]
+    if condition.func is not Or:
+        return And(*args)
+
+    for index, equality in enumerate(args):
+        if not isinstance(equality, sp.Equality):
+            continue
+        delta = sp.expand(equality.lhs - equality.rhs)
+        for other_index, relation in enumerate(args):
+            if index == other_index:
+                continue
+            relation_delta = (
+                sp.expand(relation.lhs - relation.rhs)
+                if isinstance(relation, Relational)
+                else None
+            )
+            replacement = None
+            if relation_delta == delta:
+                if isinstance(relation, sp.StrictLessThan):
+                    replacement = sp.LessThan(delta, 0)
+                elif isinstance(relation, sp.StrictGreaterThan):
+                    replacement = sp.GreaterThan(delta, 0)
+            elif relation_delta == -delta:
+                if isinstance(relation, sp.StrictLessThan):
+                    replacement = sp.GreaterThan(delta, 0)
+                elif isinstance(relation, sp.StrictGreaterThan):
+                    replacement = sp.LessThan(delta, 0)
+            if replacement is not None:
+                remaining = [
+                    arg
+                    for pos, arg in enumerate(args)
+                    if pos not in (index, other_index)
+                ]
+                return Or(replacement, *remaining)
+    return Or(*args)
+
+
+def _explicit_complex_locus(locus, var):
+    """Write simple complex loci explicitly in ``re(var)``, ``im(var)``.
+
+    Ordering relations on a complex analysis variable describe subsets of the
+    real axis.  Preserve that geometry in public complex-domain results rather
+    than allowing simplification to collapse it to an apparently real-only
+    relation such as ``x <= 0``.
+    """
+    locus = sp.sympify(locus)
+    if locus in (S.true, S.false):
+        return locus
+    vv = _variable_tuple(var)
+    if len(vv) != 1:
+        return locus
+    variable = vv[0]
+
+    def rewrite(node):
+        if isinstance(node, sp.Contains) and node.args == (variable, S.Reals):
+            return sp.Eq(sp.im(variable), 0)
+        if node.func in (And, Or):
+            return node.func(*(rewrite(arg) for arg in node.args))
+        if isinstance(node, Relational):
+            lhs, rhs = node.lhs, node.rhs
+            if lhs == variable and not rhs.has(variable) and rhs.is_real is True:
+                real_relation = node.func(sp.re(variable), rhs)
+                return And(sp.Eq(sp.im(variable), 0), real_relation)
+            if rhs == variable and not lhs.has(variable) and lhs.is_real is True:
+                real_relation = node.func(lhs, sp.re(variable))
+                return And(sp.Eq(sp.im(variable), 0), real_relation)
+        return node
+
+    rewritten = _merge_zero_boundary_relations(rewrite(locus))
+    simplified = sp.simplify_logic(rewritten, force=True)
+    return _merge_zero_boundary_relations(simplified)
+
+
+def _depends_on_any(expr, variables):
+    return any(getattr(expr, "has", lambda *_: False)(v) for v in variables)
+
+
+def _pullback_singularity_record(record, dummy, argument, *, source):
+    """Pull one univariate singularity record back through ``dummy = argument``."""
+    condition = sp.sympify(record.condition).subs(dummy, argument)
+    guard = sp.sympify(record.guard).subs(dummy, argument)
+    multiplicity = record.multiplicity
+    if isinstance(multiplicity, sp.Basic):
+        multiplicity = multiplicity.subs(dummy, argument)
+    return Singularity(
+        record.kind,
+        condition,
+        guard,
+        multiplicity,
+        source=source if record.source is None else f"{source}:{record.source}",
+    )
+
+
+def _multivariate_denominator_records(expr, variables):
+    """Classify explicit denominator hypersurfaces without assuming isolation.
+
+    When a denominator factor can itself be used as a local coordinate, replacing
+    that factor by a dummy variable reduces the transverse behavior to the univariate
+    local-order test.  This certifies common removable hypersurfaces such as
+    ``sin(x + y)/(x + y)`` while retaining an unsolved pole condition when no
+    transverse order can be proved.
+    """
+    vv = tuple(variables)
+    expr = sp.sympify(expr)
+    try:
+        _num, den = sp.fraction(sp.together(expr))
+    except SYMBOLIC_QUERY_ERRORS:
+        return ()
+    if den == 1 or not _depends_on_any(den, vv):
+        return ()
+
+    factors = []
+    try:
+        _constant, factor_data = sp.factor_list(den)
+        factors = [(sp.sympify(factor), mult) for factor, mult in factor_data]
+    except SYMBOLIC_QUERY_ERRORS:
+        factors = [(den, None)]
+    if not factors:
+        factors = [(den, None)]
+
+    out = []
+    for factor, denominator_mult in factors:
+        if not _depends_on_any(factor, vv):
+            continue
+        dummy = sp.Symbol("_funcprops_transverse")
+        try:
+            pulled = expr.xreplace({factor: dummy})
+            order = function_order_at(pulled, dummy, S.Zero)
+        except SYMBOLIC_QUERY_ERRORS:
+            order = None
+        condition = sp.Eq(factor, 0)
+        if order is not None and order.is_nonnegative:
+            out.append(
+                Singularity(
+                    SingularityKind.REMOVABLE,
+                    condition,
+                    S.true,
+                    source="multivariate-transverse-order",
+                )
+            )
+            continue
+        if order is not None and order.is_negative:
+            multiplicity = -order
+            if multiplicity.is_Integer:
+                multiplicity = int(multiplicity)
+            out.append(
+                Singularity(
+                    SingularityKind.POLE,
+                    condition,
+                    S.true,
+                    multiplicity,
+                    source="multivariate-transverse-order",
+                )
+            )
+            continue
+        out.append(
+            Singularity(
+                SingularityKind.POLE,
+                condition,
+                S.true,
+                denominator_mult,
+                source="multivariate-denominator",
+            )
+        )
+    return _unique(out)
+
+
+@lru_cache(maxsize=128)
+def _canonical_multivariate_registry_records(
+    expr, canonical_variables, complex_mode, assumptions
+):
+    """Transport joint registry singularity facts into multivariate loci.
+
+    One-coordinate function heads are handled by the univariate pullback path.
+    This routine handles the complementary case: native registry rules for a function
+    whose singularity geometry depends on two or more varying arguments.  The
+    catalogue rule is instantiated directly on the concrete node, so joint
+    conditions such as ``m*sin(phi)**2 == 1`` retain their full geometry and
+    parameter guards without introducing an artificial scalar coordinate.
+    """
+    vv = tuple(canonical_variables)
+    analysis_var = sp.Tuple(*vv)
+    out = []
+    properties = [
+        ("Poles", SingularityKind.POLE, "complex"),
+        ("Essential", SingularityKind.ESSENTIAL, "complex"),
+        ("BranchPoints", SingularityKind.BRANCH_POINT, "complex"),
+        (
+            "DefCuts",
+            SingularityKind.DEFINITION_CUT,
+            "complex" if complex_mode else "real",
         ),
-        "branch_points": function_branchpoints(expr, var, assumptions=assumptions),
-        "branch_cuts": function_branchcuts(
-            expr, var, assumptions=assumptions, mode="records"
+    ]
+    if complex_mode:
+        properties.append(("BranchCuts", SingularityKind.BRANCH_CUT, "complex"))
+
+    for node in sp.preorder_traversal(sp.sympify(expr)):
+        if not getattr(node, "is_Function", False):
+            continue
+        varying = [argument for argument in node.args if _depends_on_any(argument, vv)]
+        if len(varying) < 2:
+            continue
+        for prop, kind, mode in properties:
+            out.extend(
+                _registry_loci(
+                    node,
+                    prop,
+                    kind,
+                    mode=mode,
+                    var=analysis_var,
+                    assumptions=assumptions,
+                )
+            )
+        if not complex_mode:
+            out.extend(
+                _registry_discontinuity_records(
+                    node,
+                    analysis_var,
+                    assumptions=assumptions,
+                    registry_var=None,
+                )
+            )
+    return _unique(out)
+
+
+def _multivariate_univariate_pullbacks(
+    expr, variables, *, complex_mode, assumptions=S.true
+):
+    """Reuse the univariate singularity classifiers on one-coordinate pullbacks.
+
+    A multivariate function node with exactly one varying argument is a pullback
+    of a univariate function along that argument.  Running the established univariate
+    classifiers on a dummy coordinate keeps the two paths classification-
+    symmetric, including registry-backed special-function facts.
+    """
+    vv = tuple(variables)
+    out = []
+    elementary_structural_heads = {
+        sp.log,
+        sp.exp,
+        sp.sin,
+        sp.cos,
+        sp.sinh,
+        sp.cosh,
+        sp.erf,
+        sp.erfc,
+        sp.Abs,
+        sp.sign,
+        sp.floor,
+        sp.ceiling,
+    }
+    for node in sp.preorder_traversal(expr):
+        if not getattr(node, "is_Function", False):
+            continue
+        if node.func in elementary_structural_heads:
+            # These heads are handled by explicit multivariate rules below.
+            # Avoid running the full univariate registry pipeline at every elementary
+            # node; that would make simple multivariate expressions needlessly
+            # expensive while adding no classification information.
+            continue
+        varying = [arg for arg in node.args if _depends_on_any(arg, vv)]
+        if len(varying) != 1:
+            continue
+        argument = varying[0]
+        dummy = sp.Symbol("_funcprops_pullback")
+        try:
+            template = node.xreplace({argument: dummy})
+        except SYMBOLIC_QUERY_ERRORS:
+            continue
+        if template == node or template.has(*vv):
+            continue
+
+        groups = [
+            _function_pole_records(template, dummy, assumptions=assumptions),
+            function_removable_singularities(template, dummy),
+            function_essential_singularities(template, dummy, assumptions=assumptions),
+            _function_branchpoint_records(template, dummy, assumptions=assumptions),
+            function_definition_cuts(
+                template,
+                dummy,
+                mode="complex" if complex_mode else "real",
+                assumptions=assumptions,
+            ),
+        ]
+        if complex_mode:
+            groups.append(
+                function_branchcuts(
+                    template, dummy, assumptions=assumptions, mode="records"
+                )
+            )
+        else:
+            groups.append(
+                _function_discontinuity_records(
+                    template, dummy, assumptions=assumptions
+                )
+            )
+
+        for records in groups:
+            for record in records:
+                out.append(
+                    _pullback_singularity_record(
+                        record,
+                        dummy,
+                        argument,
+                        source="multivariate-pullback",
+                    )
+                )
+    return _unique(out)
+
+
+def _multivariate_registry_records(
+    expr, variables, *, complex_mode, assumptions=S.true
+):
+    """Alpha-normalized cached transport of joint multivariate registry facts."""
+    vv = tuple(variables)
+    canonical = tuple(sp.Symbol(f"_funcprops_alpha_{i}") for i in range(len(vv)))
+    to_canonical = dict(zip(vv, canonical, strict=True))
+    from_canonical = dict(zip(canonical, vv, strict=True))
+    canonical_expr = sp.sympify(expr).xreplace(to_canonical)
+    canonical_assumptions = sp.sympify(assumptions).xreplace(to_canonical)
+    records = _canonical_multivariate_registry_records(
+        canonical_expr, canonical, bool(complex_mode), canonical_assumptions
+    )
+    out = []
+    for record in records:
+        multiplicity = record.multiplicity
+        if isinstance(multiplicity, sp.Basic):
+            multiplicity = multiplicity.xreplace(from_canonical)
+        out.append(
+            Singularity(
+                record.kind,
+                sp.sympify(record.condition).xreplace(from_canonical),
+                sp.sympify(record.guard).xreplace(from_canonical),
+                multiplicity,
+                record.source,
+            )
+        )
+    return tuple(out)
+
+
+def _multivariate_structural_singularity_records(
+    expr, variables, *, complex_mode, assumptions=S.true
+):
+    """Return classified exact singularity loci for multivariate expressions.
+
+    The multivariate path deliberately mirrors all supported singularity classes.  It uses
+    exact denominator hypersurfaces, univariate pullbacks for function heads,
+    and structural composition rules where singular behavior comes from an
+    argument rather than from the outer head itself.
+    """
+    vv = tuple(variables)
+    expr = sp.sympify(expr)
+    out = list(_multivariate_denominator_records(expr, vv))
+    out.extend(
+        _multivariate_registry_records(
+            expr, vv, complex_mode=complex_mode, assumptions=assumptions
+        )
+    )
+    out.extend(
+        _multivariate_univariate_pullbacks(
+            expr, vv, complex_mode=complex_mode, assumptions=assumptions
+        )
+    )
+
+    transcendental_entire = {
+        sp.exp,
+        sp.sin,
+        sp.cos,
+        sp.sinh,
+        sp.cosh,
+        sp.erf,
+        sp.erfc,
+    }
+    for node in sp.preorder_traversal(expr):
+        args = getattr(node, "args", ())
+        if not complex_mode and args and _depends_on_any(args[0], vv):
+            argument = args[0]
+            if node.func in (sp.Abs, sp.sign):
+                out.append(
+                    Singularity(
+                        SingularityKind.DEFINITION_CUT,
+                        sp.Eq(argument, 0),
+                        S.true,
+                        source="multivariate-structural",
+                    )
+                )
+                if node.func is sp.sign:
+                    out.append(
+                        Singularity(
+                            SingularityKind.DISCONTINUITY,
+                            sp.Eq(argument, 0),
+                            S.true,
+                            source="multivariate-structural",
+                        )
+                    )
+            elif node.func in (sp.floor, sp.ceiling):
+                integer_locus = sp.Contains(argument, S.Integers)
+                out.append(
+                    Singularity(
+                        SingularityKind.DEFINITION_CUT,
+                        integer_locus,
+                        S.true,
+                        source="multivariate-structural",
+                    )
+                )
+                out.append(
+                    Singularity(
+                        SingularityKind.DISCONTINUITY,
+                        integer_locus,
+                        S.true,
+                        source="multivariate-structural",
+                    )
+                )
+
+        if node.func in transcendental_entire:
+            for argument in args:
+                if not _depends_on_any(argument, vv):
+                    continue
+                for pole in _multivariate_denominator_records(argument, vv):
+                    if pole.kind is SingularityKind.POLE:
+                        out.append(
+                            Singularity(
+                                SingularityKind.ESSENTIAL,
+                                pole.condition,
+                                pole.guard,
+                                source="multivariate-composition",
+                            )
+                        )
+
+        if node.func is sp.log and args and _depends_on_any(args[0], vv):
+            argument = args[0]
+            out.append(
+                Singularity(
+                    SingularityKind.BRANCH_POINT,
+                    sp.Eq(argument, 0),
+                    S.true,
+                    source="multivariate-log",
+                )
+            )
+            if complex_mode:
+                out.append(
+                    Singularity(
+                        SingularityKind.BRANCH_CUT,
+                        And(sp.Eq(sp.im(argument), 0), sp.re(argument) < 0),
+                        S.true,
+                        source="multivariate-log",
+                    )
+                )
+            continue
+        if isinstance(node, sp.Pow):
+            base, exponent = node.args
+            if exponent.is_integer is not True and _depends_on_any(base, vv):
+                out.append(
+                    Singularity(
+                        SingularityKind.BRANCH_POINT,
+                        sp.Eq(base, 0),
+                        S.true,
+                        source="multivariate-power",
+                    )
+                )
+                if complex_mode:
+                    out.append(
+                        Singularity(
+                            SingularityKind.BRANCH_CUT,
+                            And(sp.Eq(sp.im(base), 0), sp.re(base) < 0),
+                            S.true,
+                            source="multivariate-power",
+                        )
+                    )
+                else:
+                    out.append(
+                        Singularity(
+                            SingularityKind.DEFINITION_CUT,
+                            sp.Eq(base, 0),
+                            S.true,
+                            source="multivariate-power",
+                        )
+                    )
+
+    return _unique(out)
+
+
+def _relation_closure(atom):
+    if isinstance(atom, sp.StrictGreaterThan):
+        return sp.GreaterThan(atom.lhs, atom.rhs)
+    if isinstance(atom, sp.StrictLessThan):
+        return sp.LessThan(atom.lhs, atom.rhs)
+    return atom
+
+
+def _relation_interior(atom):
+    if isinstance(atom, sp.GreaterThan):
+        return sp.StrictGreaterThan(atom.lhs, atom.rhs)
+    if isinstance(atom, sp.LessThan):
+        return sp.StrictLessThan(atom.lhs, atom.rhs)
+    if isinstance(atom, sp.Equality):
+        return S.false
+    return atom
+
+
+def _domain_geometry(condition, variables, *, assumptions=S.true):
+    """Return certified ambient interior, boundary and exterior conditions.
+
+    This handles the semialgebraic support forms used throughout funcprops:
+    conjunctions of equalities and weak/strict inequalities, plus simple
+    disjunctions.  Unsupported Boolean atoms are retained conservatively.
+    """
+    condition = simplify_condition(condition, assumptions=assumptions)
+    if condition is S.true:
+        return S.true, S.false, S.false
+    if condition is S.false:
+        return S.false, S.false, S.true
+
+    def rec(node):
+        if node.func is And:
+            parts = [rec(a) for a in node.args]
+            closure = And(*(p[1] for p in parts))
+            interior = And(*(p[0] for p in parts))
+            return interior, closure
+        if node.func is Or:
+            parts = [rec(a) for a in node.args]
+            interior = Or(*(p[0] for p in parts))
+            closure = Or(*(p[1] for p in parts))
+            return interior, closure
+        if isinstance(node, Relational):
+            return _relation_interior(node), _relation_closure(node)
+        return node, node
+
+    interior, closure = rec(condition)
+    interior = simplify_condition(interior, assumptions=assumptions)
+    closure = simplify_condition(closure, assumptions=assumptions)
+    boundary = simplify_condition(
+        And(closure, sp.Not(interior)), assumptions=assumptions
+    )
+    exterior = simplify_condition(sp.Not(closure), assumptions=assumptions)
+    return interior, boundary, exterior
+
+
+def _complexify_equality_locus_impl(locus, variables):
+    """Expand complex equalities into explicit real/imaginary equations."""
+    vv = tuple(variables)
+
+    def rewrite(node):
+        if node.func in (And, Or):
+            rewritten = node.func(*(rewrite(a) for a in node.args))
+            if rewritten.func is Or and len(rewritten.args) == 2:
+                a, b = rewritten.args
+                pairs = ((a, b), (b, a))
+                for equality, relation in pairs:
+                    if not isinstance(equality, sp.Equality):
+                        continue
+                    delta = sp.expand(equality.lhs - equality.rhs)
+                    if delta == 0:
+                        continue
+                    if isinstance(relation, sp.StrictLessThan):
+                        if sp.expand(relation.lhs - relation.rhs) == delta:
+                            return sp.LessThan(delta, 0)
+                    if isinstance(relation, sp.StrictGreaterThan):
+                        if sp.expand(relation.lhs - relation.rhs) == delta:
+                            return sp.GreaterThan(delta, 0)
+            return rewritten
+        if isinstance(node, sp.Equality):
+            delta = sp.expand(node.lhs - node.rhs)
+            if any(delta.has(v) for v in vv):
+                # Registry branch-cut rules are frequently already expressed in
+                # explicit real/imaginary coordinates.  Re-complexifying an
+                # equality such as ``im(g(x, y)) == 0`` is redundant and can
+                # trigger very large expansions for special functions.
+                if delta.is_real is True:
+                    return sp.Eq(delta, 0)
+                if sp.count_ops(delta) > 8 or delta.has(
+                    sp.sin,
+                    sp.cos,
+                    sp.tan,
+                    sp.sinh,
+                    sp.cosh,
+                    sp.tanh,
+                ):
+                    real_part = sp.re(delta, evaluate=False)
+                    imag_part = sp.im(delta, evaluate=False)
+                else:
+                    real_part = sp.re(delta)
+                    imag_part = sp.im(delta)
+                return And(sp.Eq(real_part, 0), sp.Eq(imag_part, 0))
+        return node
+
+    locus = sp.sympify(locus)
+    rewritten = rewrite(locus)
+    # Small elementary loci benefit from Boolean normalization (for example,
+    # the log branch point plus negative-real cut becomes one nonpositive-real
+    # condition).  Large special-function preimages can expand exponentially
+    # under simplify_logic; their structurally exact Boolean form is already a
+    # canonical public answer, so avoid distributive normalization there.
+    if sp.count_ops(rewritten) > 30:
+        return rewritten
+    rewritten = _merge_zero_boundary_relations(rewritten)
+    result = simplify_condition(rewritten)
+    return _merge_zero_boundary_relations(simplify_condition(rewrite(result)))
+
+
+@lru_cache(maxsize=256)
+def _cached_complexify_equality_locus(locus, canonical_variables):
+    return _complexify_equality_locus_impl(locus, canonical_variables)
+
+
+def _complexify_equality_locus(locus, variables):
+    """Alpha-normalized cached complexification of multivariate equality loci."""
+    vv = tuple(variables)
+    canonical = tuple(sp.Symbol(f"_funcprops_alpha_{i}") for i in range(len(vv)))
+    to_canonical = dict(zip(vv, canonical, strict=True))
+    from_canonical = dict(zip(canonical, vv, strict=True))
+    canonical_locus = sp.sympify(locus).xreplace(to_canonical)
+    result = _cached_complexify_equality_locus(canonical_locus, canonical)
+    return sp.sympify(result).xreplace(from_canonical)
+
+
+def _collect_singularity_records(expr, variables, *, complex_mode, assumptions):
+    if len(variables) == 1:
+        variable = variables[0]
+        return {
+            "poles": _function_pole_records(expr, variable, assumptions=assumptions),
+            "removable": function_removable_singularities(expr, variable),
+            "essential": function_essential_singularities(
+                expr, variable, assumptions=assumptions
+            ),
+            "branch_points": _function_branchpoint_records(
+                expr, variable, assumptions=assumptions
+            ),
+            "branch_cuts": function_branchcuts(
+                expr, variable, assumptions=assumptions, mode="records"
+            )
+            if complex_mode
+            else (),
+            "definition_cuts": function_definition_cuts(
+                expr,
+                variable,
+                mode="complex" if complex_mode else "real",
+                assumptions=assumptions,
+            ),
+            "discontinuities": ()
+            if complex_mode
+            else _function_discontinuity_records(
+                expr, variable, assumptions=assumptions
+            ),
+        }
+
+    structural = _multivariate_structural_singularity_records(
+        expr, variables, complex_mode=complex_mode, assumptions=assumptions
+    )
+    return {
+        "poles": tuple(r for r in structural if r.kind is SingularityKind.POLE),
+        "removable": tuple(
+            r for r in structural if r.kind is SingularityKind.REMOVABLE
+        ),
+        "essential": tuple(
+            r for r in structural if r.kind is SingularityKind.ESSENTIAL
+        ),
+        "branch_points": tuple(
+            r for r in structural if r.kind is SingularityKind.BRANCH_POINT
+        ),
+        "branch_cuts": tuple(
+            r for r in structural if r.kind is SingularityKind.BRANCH_CUT
         )
         if complex_mode
         else (),
-        "definition_cuts": function_definition_cuts(
-            expr,
-            var,
-            mode="complex" if complex_mode else "real",
-            assumptions=assumptions,
+        "definition_cuts": tuple(
+            r for r in structural if r.kind is SingularityKind.DEFINITION_CUT
         ),
-    }
-    if not complex_mode:
-        result["discontinuities"] = function_discontinuities(
-            expr, var, assumptions=assumptions
+        "discontinuities": tuple(
+            r for r in structural if r.kind is SingularityKind.DISCONTINUITY
         )
-    return result
+        if not complex_mode
+        else (),
+    }
+
+
+def function_singularities(
+    expr,
+    var,
+    domain=S.Complexes,
+    *,
+    assumptions=S.true,
+    return_result=False,
+):
+    """Return the Boolean locus where ``expr`` is singular.
+
+    For several analysis variables, singularities remain as exact Boolean loci
+    such as ``Eq(x + y, 0)`` rather than being forced into isolated points.
+    ``ConditionalExpression`` restrictions define the effective function domain.
+    Detailed results additionally classify the unrestricted singular locus as
+    interior, boundary, or exterior to that domain.
+    """
+    restriction = S.true
+    while isinstance(expr, ConditionalExpression):
+        restriction = simplify_condition(
+            And(restriction, expr.condition), assumptions=assumptions
+        )
+        expr = expr.value
+    expr = sp.sympify(expr)
+    variables = _variable_tuple(var)
+    analysis_var = variables[0] if len(variables) == 1 else sp.Tuple(*variables)
+    complex_mode = domain in (S.Complexes, "complex", "complexes", "C", "CC")
+
+    classified_records = _collect_singularity_records(
+        expr, variables, complex_mode=complex_mode, assumptions=assumptions
+    )
+
+    unrestricted_loci = {
+        name: _singularity_records_locus(records, assumptions=assumptions)
+        for name, records in classified_records.items()
+    }
+    unrestricted = _bounded_locus_simplify(
+        Or(*unrestricted_loci.values()), assumptions=assumptions
+    )
+
+    classified_loci = {
+        name: _restrict_boolean_locus(
+            locus, restriction, analysis_var, assumptions=assumptions
+        )
+        for name, locus in unrestricted_loci.items()
+    }
+    singularities = _restrict_boolean_locus(
+        unrestricted, restriction, analysis_var, assumptions=assumptions
+    )
+
+    domain_interior, domain_boundary, domain_exterior = _domain_geometry(
+        restriction, variables, assumptions=assumptions
+    )
+    interior_singularities = _restrict_boolean_locus(
+        unrestricted, domain_interior, analysis_var, assumptions=assumptions
+    )
+    boundary_singularities = _restrict_boolean_locus(
+        unrestricted, domain_boundary, analysis_var, assumptions=assumptions
+    )
+    exterior_singularities = _restrict_boolean_locus(
+        unrestricted, domain_exterior, analysis_var, assumptions=assumptions
+    )
+
+    if complex_mode:
+        if len(variables) == 1:
+            singularities = _explicit_complex_locus(singularities, variables[0])
+            unrestricted = _explicit_complex_locus(unrestricted, variables[0])
+            classified_loci = {
+                name: _explicit_complex_locus(locus, variables[0])
+                for name, locus in classified_loci.items()
+            }
+            interior_singularities = _explicit_complex_locus(
+                interior_singularities, variables[0]
+            )
+            boundary_singularities = _explicit_complex_locus(
+                boundary_singularities, variables[0]
+            )
+            exterior_singularities = _explicit_complex_locus(
+                exterior_singularities, variables[0]
+            )
+        else:
+            complex_locus_cache = {}
+
+            def complexify(locus):
+                key = sp.srepr(locus)
+                if key not in complex_locus_cache:
+                    complex_locus_cache[key] = _complexify_equality_locus(
+                        locus, variables
+                    )
+                return complex_locus_cache[key]
+
+            classified_loci = {
+                name: complexify(locus) for name, locus in classified_loci.items()
+            }
+            if restriction is S.true:
+                aggregate = Or(*classified_loci.values())
+                unrestricted = (
+                    _merge_zero_boundary_relations(simplify_condition(aggregate))
+                    if sp.count_ops(aggregate) <= 80
+                    else aggregate
+                )
+                singularities = unrestricted
+                interior_singularities = unrestricted
+                boundary_singularities = S.false
+                exterior_singularities = S.false
+            else:
+                singularities = complexify(singularities)
+                unrestricted = complexify(unrestricted)
+                interior_singularities = complexify(interior_singularities)
+                boundary_singularities = complexify(boundary_singularities)
+                exterior_singularities = complexify(exterior_singularities)
+
+    if not return_result:
+        return singularities
+
+    restricted_records = []
+    if restriction is S.true:
+        for records in classified_records.values():
+            restricted_records.extend(records)
+    else:
+        for records in classified_records.values():
+            for record in records:
+                locus = _restrict_boolean_locus(
+                    _singularity_record_locus(record, assumptions=assumptions),
+                    restriction,
+                    analysis_var,
+                    assumptions=assumptions,
+                )
+                if locus is S.false:
+                    continue
+                restricted_records.append(
+                    Singularity(
+                        record.kind,
+                        locus,
+                        S.true,
+                        record.multiplicity,
+                        record.source,
+                    )
+                )
+    return SingularityResult(
+        singularities=singularities,
+        poles=classified_loci["poles"],
+        removable=classified_loci["removable"],
+        essential=classified_loci["essential"],
+        branch_points=classified_loci["branch_points"],
+        branch_cuts=classified_loci["branch_cuts"],
+        definition_cuts=classified_loci["definition_cuts"],
+        discontinuities=classified_loci["discontinuities"],
+        records=tuple(restricted_records),
+        domain=domain,
+        restriction=restriction,
+        unrestricted_singularities=unrestricted,
+        interior_singularities=interior_singularities,
+        boundary_singularities=boundary_singularities,
+        exterior_singularities=exterior_singularities,
+        domain_interior=domain_interior,
+        domain_boundary=domain_boundary,
+        domain_exterior=domain_exterior,
+    )
 
 
 def _real_domain_condition(expr, var):
@@ -958,134 +1994,98 @@ def _multivariate_structural_continuity(expr, variables):
     return Continuity.UNKNOWN
 
 
-def function_analytic(
-    expr,
-    var,
-    *,
-    domain=S.Reals,
-    assumptions=S.true,
-    details=False,
-    _domain_ready=False,
-):
-    """Classify real analyticity by default, holomorphy for Complexes."""
-    expr = sp.sympify(expr)
-    vv = _variable_tuple(var)
-    is_complex = domain in (S.Complexes, "complex", "complexes", "C", "CC")
-    if len(vv) > 1:
-        val = _multivariate_structural_analytic(expr, vv, complex_mode=is_complex)
-        result = PropertyResult(val, source="multivariate-structural-analyticity")
-        return result if details else val
-    var = vv[0]
-    if (
-        not is_complex
-        and domain not in (S.Reals, "real", "reals", "R", "RR")
-        and not isinstance(domain, (sp.Set, Boolean, Relational))
+def _complex_analyticity_stage(expr, var, *, assumptions, return_result):
+    # "Analytic" means holomorphic on the function's natural complex
+    # domain, matching the source LocallyAnalytic property.
+    if expr.func in (sp.Abs, sp.sign, sp.floor, sp.ceiling) or isinstance(
+        expr, sp.Piecewise
     ):
-        raise ValueError(
-            "domain must be Reals, Complexes, a set, or a Boolean domain condition"
-        )
+        result = PropertyResult(Analyticity.NOT_ANALYTIC, source="nonholomorphic-head")
+        return result if return_result else result.primary
+    # Generalized hypergeometric functions: DLMF 16.2 states that p<=q
+    # is entire in z, while p=q+1 has a principal analytic branch off its
+    # standard cut.  A terminating top parameter makes the series a
+    # polynomial.  We require bottom parameters to be provably outside
+    # the excluded nonpositive integers rather than assuming genericity.
+    if expr.func is sp.hyper and len(expr.args) == 3 and expr.args[2] == var:
+        aa = tuple(expr.args[0])
+        bb = tuple(expr.args[1])
 
-    # Algebraic expressions are analytic on their natural domain except at
-    # branch/definition boundaries, handled below.
-    if is_complex:
-        # "Analytic" means holomorphic on the function's natural complex
-        # domain, matching the source LocallyAnalytic property.
-        if expr.func in (sp.Abs, sp.sign, sp.floor, sp.ceiling) or isinstance(
-            expr, sp.Piecewise
-        ):
-            result = PropertyResult(
-                Analyticity.NOT_ANALYTIC, source="nonholomorphic-head"
-            )
-            return result if details else result.primary
-        # Generalized hypergeometric functions: DLMF 16.2 states that p<=q
-        # is entire in z, while p=q+1 has a principal analytic branch off its
-        # standard cut.  A terminating top parameter makes the series a
-        # polynomial.  We require bottom parameters to be provably outside
-        # the excluded nonpositive integers rather than assuming genericity.
-        if expr.func is sp.hyper and len(expr.args) == 3 and expr.args[2] == var:
-            aa = tuple(expr.args[0])
-            bb = tuple(expr.args[1])
+        def _bottom_ok(b):
+            return b.is_integer is False or b.is_positive is True
 
-            def _bottom_ok(b):
-                return b.is_integer is False or b.is_positive is True
-
-            bottoms_ok = all(_bottom_ok(b) for b in bb)
-            terminating = any(
-                a.is_integer is True and a.is_nonpositive is True for a in aa
-            )
-            if bottoms_ok and (len(aa) <= len(bb) + 1 or terminating):
-                src = (
-                    "DLMF 16.2(ii)"
-                    if len(aa) <= len(bb)
-                    else (
-                        "DLMF 16.2 terminating polynomial"
-                        if terminating
-                        else "DLMF 16.2(iii) principal branch"
-                    )
+        bottoms_ok = all(_bottom_ok(b) for b in bb)
+        terminating = any(a.is_integer is True and a.is_nonpositive is True for a in aa)
+        if bottoms_ok and (len(aa) <= len(bb) + 1 or terminating):
+            src = (
+                "DLMF 16.2(ii)"
+                if len(aa) <= len(bb)
+                else (
+                    "DLMF 16.2 terminating polynomial"
+                    if terminating
+                    else "DLMF 16.2(iii) principal branch"
                 )
-                result = PropertyResult(Analyticity.ANALYTIC, source=src)
-                return result if details else result.primary
-        local = evaluate_property(
-            expr, "LocallyAnalytic", mode="complex", var=var, assumptions=assumptions
+            )
+            result = PropertyResult(Analyticity.ANALYTIC, source=src)
+            return result if return_result else result.primary
+    local = evaluate_property(
+        expr, "LocallyAnalytic", mode="complex", var=var, assumptions=assumptions
+    )
+    local_status = _conditional_boolean_status(local)
+    if local_status is False:
+        return (
+            PropertyResult(Analyticity.NOT_ANALYTIC, source="registry")
+            if return_result
+            else Analyticity.NOT_ANALYTIC
         )
-        local_status = _conditional_boolean_status(local)
-        if local_status is False:
+    if local_status is True:
+        return (
+            PropertyResult(Analyticity.ANALYTIC, source="registry")
+            if return_result
+            else Analyticity.ANALYTIC
+        )
+    entire = evaluate_property(
+        expr, "Entire", mode="complex", var=var, assumptions=assumptions
+    )
+    if _conditional_boolean_status(entire) is True or expr.is_polynomial(var):
+        return (
+            PropertyResult(Analyticity.ANALYTIC, source="analytic-primitive")
+            if return_result
+            else Analyticity.ANALYTIC
+        )
+    # Arithmetic closure is valid without needing a primitive function
+    # theorem.  Do not apply generic composition closure to an unknown head.
+    if expr.is_Add or expr.is_Mul or (isinstance(expr, sp.Pow) and expr.exp.is_integer):
+        vals = [
+            _function_analytic_impl(a, var, domain=S.Complexes, assumptions=assumptions)
+            for a in expr.args
+            if a.has(var)
+        ]
+        if vals and all(v == Analyticity.ANALYTIC for v in vals):
             return (
-                PropertyResult(Analyticity.NOT_ANALYTIC, source="registry")
-                if details
+                PropertyResult(Analyticity.ANALYTIC, source="holomorphic-closure")
+                if return_result
+                else Analyticity.ANALYTIC
+            )
+        if any(v == Analyticity.NOT_ANALYTIC for v in vals):
+            return (
+                PropertyResult(Analyticity.NOT_ANALYTIC, source="holomorphic-closure")
+                if return_result
                 else Analyticity.NOT_ANALYTIC
             )
-        if local_status is True:
-            return (
-                PropertyResult(Analyticity.ANALYTIC, source="registry")
-                if details
-                else Analyticity.ANALYTIC
-            )
-        entire = evaluate_property(
-            expr, "Entire", mode="complex", var=var, assumptions=assumptions
-        )
-        if _conditional_boolean_status(entire) is True or expr.is_polynomial(var):
-            return (
-                PropertyResult(Analyticity.ANALYTIC, source="analytic-primitive")
-                if details
-                else Analyticity.ANALYTIC
-            )
-        # Arithmetic closure is valid without needing a primitive function
-        # theorem.  Do not apply generic composition closure to an unknown head.
-        if (
-            expr.is_Add
-            or expr.is_Mul
-            or (isinstance(expr, sp.Pow) and expr.exp.is_integer)
-        ):
-            vals = [
-                function_analytic(a, var, domain=S.Complexes, assumptions=assumptions)
-                for a in expr.args
-                if a.has(var)
-            ]
-            if vals and all(v == Analyticity.ANALYTIC for v in vals):
-                return (
-                    PropertyResult(Analyticity.ANALYTIC, source="holomorphic-closure")
-                    if details
-                    else Analyticity.ANALYTIC
-                )
-            if any(v == Analyticity.NOT_ANALYTIC for v in vals):
-                return (
-                    PropertyResult(
-                        Analyticity.NOT_ANALYTIC, source="holomorphic-closure"
-                    )
-                    if details
-                    else Analyticity.NOT_ANALYTIC
-                )
-        return (
-            PropertyResult(Analyticity.UNKNOWN, source="insufficient-evidence")
-            if details
-            else Analyticity.UNKNOWN
-        )
+    return (
+        PropertyResult(Analyticity.UNKNOWN, source="insufficient-evidence")
+        if return_result
+        else Analyticity.UNKNOWN
+    )
 
-    # Real analyticity on the requested/natural real domain.
+
+def _real_analyticity_stage(
+    expr, var, *, domain, assumptions, return_result, domain_ready
+):
     domain_cond = (
         sp.sympify(domain)
-        if _domain_ready
+        if domain_ready
         else (
             _real_domain_condition(expr, var)
             if domain in (S.Reals, "real", "reals", "R", "RR")
@@ -1096,17 +2096,17 @@ def function_analytic(
             )
         )
     )
-    if not _domain_ready and domain_cond is not None:
+    if not domain_ready and domain_cond is not None:
         split = evaluate_parameter_strata(
             domain_cond,
             var,
-            lambda branch_domain: function_analytic(
+            lambda branch_domain: _function_analytic_impl(
                 expr,
                 var,
                 domain=branch_domain,
                 assumptions=assumptions,
-                details=details,
-                _domain_ready=True,
+                return_result=return_result,
+                domain_ready=True,
             ),
             source="analyticity-parameter-stratification",
         )
@@ -1128,19 +2128,19 @@ def function_analytic(
             result = PropertyResult(
                 Analyticity.NOT_ANALYTIC, exceptions=tuple(bad), source="nonsmooth-head"
             )
-            return result if details else result.primary
+            return result if return_result else result.primary
         if unknown_cut:
             result = PropertyResult(
                 Analyticity.UNKNOWN,
                 exceptions=cuts,
                 source="conditional-nonsmooth-cuts",
             )
-            return result if details else result.primary
+            return result if return_result else result.primary
         # Abs/sign/floor/ceiling are locally analytic on every real component
         # that excludes their kink/jump lattice.  This matters for restricted
         # domains such as Abs(x) on x>0.
         result = PropertyResult(Analyticity.ANALYTIC, source="nonsmooth-head-off-cuts")
-        return result if details else result.primary
+        return result if return_result else result.primary
     if isinstance(expr, sp.Piecewise):
         boundaries = _piecewise_boundaries(expr)
         bad = []
@@ -1161,11 +2161,11 @@ def function_analytic(
             result = PropertyResult(
                 Analyticity.NOT_ANALYTIC, exceptions=exc, source="piecewise"
             )
-            return result if details else result.primary
+            return result if return_result else result.primary
         if unknown_boundary:
             return (
                 PropertyResult(Analyticity.UNKNOWN, source="piecewise-boundary-unknown")
-                if details
+                if return_result
                 else Analyticity.UNKNOWN
             )
     cuts = function_definition_cuts(expr, var, mode="real", assumptions=assumptions)
@@ -1182,7 +2182,7 @@ def function_analytic(
         result = PropertyResult(
             Analyticity.NOT_ANALYTIC, exceptions=tuple(bad), source="definition-cuts"
         )
-        return result if details else result.primary
+        return result if return_result else result.primary
     if unknown:
         return (
             PropertyResult(
@@ -1190,18 +2190,20 @@ def function_analytic(
                 exceptions=cuts,
                 source="conditional-definition-cuts",
             )
-            if details
+            if return_result
             else Analyticity.UNKNOWN
         )
 
     # Composition theorem: analytic primitives composed with analytic arguments.
     for arg in getattr(expr, "args", ()):
         if arg.has(var) and arg != var:
-            a = function_analytic(arg, var, domain=S.Reals, assumptions=assumptions)
+            a = _function_analytic_impl(
+                arg, var, domain=S.Reals, assumptions=assumptions
+            )
             if a == Analyticity.NOT_ANALYTIC:
                 return (
                     PropertyResult(Analyticity.NOT_ANALYTIC, source="composition")
-                    if details
+                    if return_result
                     else Analyticity.NOT_ANALYTIC
                 )
             if a == Analyticity.UNKNOWN:
@@ -1214,49 +2216,95 @@ def function_analytic(
     )
     if expr.is_polynomial(var) or entire.primary is S.true or local.primary is S.true:
         val = Analyticity.UNKNOWN if unknown else Analyticity.ANALYTIC
-        return PropertyResult(val, source="registry+composition") if details else val
+        return (
+            PropertyResult(val, source="registry+composition") if return_result else val
+        )
     if expr.is_rational_function(var) and not cuts:
         return (
             PropertyResult(Analyticity.ANALYTIC, source="rational")
-            if details
+            if return_result
             else Analyticity.ANALYTIC
         )
     if expr.is_Add or expr.is_Mul or (isinstance(expr, sp.Pow) and expr.exp.is_integer):
         vals = [
-            function_analytic(a, var, domain=S.Reals, assumptions=assumptions)
+            _function_analytic_impl(a, var, domain=S.Reals, assumptions=assumptions)
             for a in expr.args
             if a.has(var)
         ]
         if vals and all(v == Analyticity.ANALYTIC for v in vals):
             return (
                 PropertyResult(Analyticity.ANALYTIC, source="analytic-closure")
-                if details
+                if return_result
                 else Analyticity.ANALYTIC
             )
         if any(v == Analyticity.NOT_ANALYTIC for v in vals):
             return (
                 PropertyResult(Analyticity.NOT_ANALYTIC, source="analytic-closure")
-                if details
+                if return_result
                 else Analyticity.NOT_ANALYTIC
             )
     return (
         PropertyResult(Analyticity.UNKNOWN, source="insufficient-evidence")
-        if details
+        if return_result
         else Analyticity.UNKNOWN
     )
 
 
-def function_meromorphic(expr, var, *, assumptions=S.true, details=False):
+def _function_analytic_impl(
+    expr,
+    var,
+    *,
+    domain=S.Reals,
+    assumptions=S.true,
+    return_result=False,
+    _domain_ready=False,
+):
+    """Classify real analyticity by default, holomorphy for Complexes."""
+    expr = sp.sympify(expr)
+    vv = _variable_tuple(var)
+    is_complex = domain in (S.Complexes, "complex", "complexes", "C", "CC")
+    if len(vv) > 1:
+        val = _multivariate_structural_analytic(expr, vv, complex_mode=is_complex)
+        result = PropertyResult(val, source="multivariate-structural-analyticity")
+        return result if return_result else val
+    var = vv[0]
+    if (
+        not is_complex
+        and domain not in (S.Reals, "real", "reals", "R", "RR")
+        and not isinstance(domain, (sp.Set, Boolean, Relational))
+    ):
+        raise ValueError(
+            "domain must be Reals, Complexes, a set, or a Boolean domain condition"
+        )
+
+    # Algebraic expressions are analytic on their natural domain except at
+    # branch/definition boundaries, handled below.
+    if is_complex:
+        return _complex_analyticity_stage(
+            expr, var, assumptions=assumptions, return_result=return_result
+        )
+
+    return _real_analyticity_stage(
+        expr,
+        var,
+        domain=domain,
+        assumptions=assumptions,
+        return_result=return_result,
+        domain_ready=_domain_ready,
+    )
+
+
+def function_meromorphic(expr, var, *, assumptions=S.true, return_result=False):
     """Classify meromorphicity on the complex plane/natural complex domain."""
     expr = sp.sympify(expr)
     var = sp.sympify(var)
     if expr.is_rational_function(var):
         return (
             PropertyResult(Meromorphicity.MEROMORPHIC, source="rational")
-            if details
+            if return_result
             else Meromorphicity.MEROMORPHIC
         )
-    branch = function_branchpoints(expr, var, assumptions=assumptions)
+    branch = _function_branchpoint_records(expr, var, assumptions=assumptions)
     cuts = function_branchcuts(expr, var, assumptions=assumptions, mode="records")
     essential = function_essential_singularities(expr, var, assumptions=assumptions)
     bad = branch + cuts + essential
@@ -1274,14 +2322,14 @@ def function_meromorphic(expr, var, *, assumptions=S.true, details=False):
             exceptions=tuple(definite + conditional),
             source="singularity-analysis",
         )
-        return result if details else result.primary
+        return result if return_result else result.primary
     if conditional:
         bad_guard = simplify_condition(
             Or(*[item.guard for item in conditional]), assumptions=assumptions
         )
         cases = (
-            ConditionalValue(Meromorphicity.NOT_MEROMORPHIC, bad_guard),
-            ConditionalValue(Meromorphicity.MEROMORPHIC, sp.Not(bad_guard)),
+            ConditionalExpression(Meromorphicity.NOT_MEROMORPHIC, bad_guard),
+            ConditionalExpression(Meromorphicity.MEROMORPHIC, sp.Not(bad_guard)),
         )
         result = PropertyResult(
             Meromorphicity.UNKNOWN,
@@ -1296,20 +2344,20 @@ def function_meromorphic(expr, var, *, assumptions=S.true, details=False):
     if reg.primary is S.true:
         return (
             PropertyResult(Meromorphicity.MEROMORPHIC, source="registry")
-            if details
+            if return_result
             else Meromorphicity.MEROMORPHIC
         )
     if reg.primary is S.false:
         return (
             PropertyResult(Meromorphicity.NOT_MEROMORPHIC, source="registry")
-            if details
+            if return_result
             else Meromorphicity.NOT_MEROMORPHIC
         )
     entire = evaluate_property(expr, "Entire", mode="complex", assumptions=assumptions)
     if entire.primary is S.true:
         return (
             PropertyResult(Meromorphicity.MEROMORPHIC, source="entire")
-            if details
+            if return_result
             else Meromorphicity.MEROMORPHIC
         )
     if (
@@ -1320,7 +2368,7 @@ def function_meromorphic(expr, var, *, assumptions=S.true, details=False):
         # obstruction above: any remaining isolated singularities are poles.
         return (
             PropertyResult(Meromorphicity.MEROMORPHIC, source="analytic-with-poles")
-            if details
+            if return_result
             else Meromorphicity.MEROMORPHIC
         )
     # Closure of meromorphic functions under arithmetic.
@@ -1332,18 +2380,18 @@ def function_meromorphic(expr, var, *, assumptions=S.true, details=False):
         if vals and all(v == Meromorphicity.MEROMORPHIC for v in vals):
             return (
                 PropertyResult(Meromorphicity.MEROMORPHIC, source="closure")
-                if details
+                if return_result
                 else Meromorphicity.MEROMORPHIC
             )
         if any(v == Meromorphicity.NOT_MEROMORPHIC for v in vals):
             return (
                 PropertyResult(Meromorphicity.NOT_MEROMORPHIC, source="closure")
-                if details
+                if return_result
                 else Meromorphicity.NOT_MEROMORPHIC
             )
     return (
         PropertyResult(Meromorphicity.UNKNOWN, source="insufficient-evidence")
-        if details
+        if return_result
         else Meromorphicity.UNKNOWN
     )
 
@@ -1365,13 +2413,13 @@ def _condition_to_set(condition, var):
         return None
 
 
-def function_continuous(
+def _function_continuous_impl(
     expr,
     var,
     *,
     domain=S.Reals,
     assumptions=S.true,
-    details=False,
+    return_result=False,
     _domain_ready=False,
 ):
     """Test continuity on the function's natural real domain by default."""
@@ -1380,7 +2428,7 @@ def function_continuous(
     if len(vv) > 1:
         val = _multivariate_structural_continuity(expr, vv)
         result = PropertyResult(val, source="multivariate-structural-continuity")
-        return result if details else val
+        return result if return_result else val
     var = vv[0]
     domain_cond = (
         sp.sympify(domain)
@@ -1399,19 +2447,21 @@ def function_continuous(
         split = evaluate_parameter_strata(
             domain_cond,
             var,
-            lambda branch_domain: function_continuous(
+            lambda branch_domain: _function_continuous_impl(
                 expr,
                 var,
                 domain=branch_domain,
                 assumptions=assumptions,
-                details=details,
+                return_result=return_result,
                 _domain_ready=True,
             ),
             source="continuity-parameter-stratification",
         )
         if split is not None:
             return split
-    discontinuities = function_discontinuities(expr, var, assumptions=assumptions)
+    discontinuities = _function_discontinuity_records(
+        expr, var, assumptions=assumptions
+    )
     actual = []
     uncertain = []
     for d in discontinuities:
@@ -1428,13 +2478,13 @@ def function_continuous(
             exceptions=tuple(actual),
             source="discontinuity-analysis",
         )
-        return result if details else result.primary
+        return result if return_result else result.primary
     if isinstance(expr, sp.Piecewise) and not uncertain:
         from .real_analysis.piecewise import piecewise_branches
 
         branches = piecewise_branches(expr, var, domain_cond)
         branch_values = [
-            function_continuous(
+            _function_continuous_impl(
                 branch.expression,
                 var,
                 domain=branch.condition,
@@ -1447,7 +2497,7 @@ def function_continuous(
         if all(v == Continuity.CONTINUOUS for v in branch_values):
             return (
                 PropertyResult(Continuity.CONTINUOUS, source="piecewise-analysis")
-                if details
+                if return_result
                 else Continuity.CONTINUOUS
             )
     natural_set = _condition_to_set(domain_cond, var)
@@ -1459,7 +2509,7 @@ def function_continuous(
                     PropertyResult(
                         Continuity.CONTINUOUS, source="sympy.continuous_domain"
                     )
-                    if details
+                    if return_result
                     else Continuity.CONTINUOUS
                 )
             missing = natural_set - cset
@@ -1469,7 +2519,7 @@ def function_continuous(
                     exceptions=(missing,),
                     source="sympy.continuous_domain",
                 )
-                return result if details else result.primary
+                return result if return_result else result.primary
         except NotImplementedError:
             pass
         except SYMBOLIC_QUERY_ERRORS:
@@ -1480,18 +2530,18 @@ def function_continuous(
     if analytic == Analyticity.ANALYTIC:
         return (
             PropertyResult(Continuity.CONTINUOUS, source="analyticity")
-            if details
+            if return_result
             else Continuity.CONTINUOUS
         )
     if expr.func is sp.Abs:
         return (
             PropertyResult(Continuity.CONTINUOUS, source="Abs")
-            if details
+            if return_result
             else Continuity.CONTINUOUS
         )
     return (
         PropertyResult(Continuity.UNKNOWN, source="insufficient-evidence")
-        if details
+        if return_result
         else Continuity.UNKNOWN
     )
 
@@ -1679,7 +2729,8 @@ def _function_singularity_analysis_impl(
                 )
                 bp.extend(
                     _conditioned(
-                        function_branchpoints(e, var, assumptions=assumptions), guard
+                        _function_branchpoint_records(e, var, assumptions=assumptions),
+                        guard,
                     )
                 )
             dc.extend(
@@ -1694,7 +2745,7 @@ def _function_singularity_analysis_impl(
                 )
             )
             localp = _conditioned(
-                function_poles(e, var, assumptions=assumptions), guard
+                _function_pole_records(e, var, assumptions=assumptions), guard
             )
             if inside_essential:
                 es.extend(
@@ -1719,7 +2770,10 @@ def _function_singularity_analysis_impl(
             if not complex_mode:
                 di.extend(
                     _conditioned(
-                        function_discontinuities(e, var, assumptions=assumptions), guard
+                        _function_discontinuity_records(
+                            e, var, assumptions=assumptions
+                        ),
+                        guard,
                     )
                 )
             if not _primitive_known(e, var):
@@ -1764,4 +2818,32 @@ def function_singularity_analysis(
 
     return property_proof_context(expr, var, assumptions=assumptions).singularities(
         domain=domain, ignore_unknown=ignore_unknown
+    )
+
+
+def function_analytic(
+    expr, var, *, domain=S.Reals, assumptions=S.true, return_result=False
+):
+    """Classify analyticity on the requested domain."""
+    return _function_analytic_impl(
+        expr,
+        var,
+        domain=domain,
+        assumptions=assumptions,
+        return_result=return_result,
+        _domain_ready=False,
+    )
+
+
+def function_continuous(
+    expr, var, *, domain=S.Reals, assumptions=S.true, return_result=False
+):
+    """Classify continuity on the requested domain."""
+    return _function_continuous_impl(
+        expr,
+        var,
+        domain=domain,
+        assumptions=assumptions,
+        return_result=return_result,
+        _domain_ready=False,
     )

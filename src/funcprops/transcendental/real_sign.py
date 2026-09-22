@@ -5,6 +5,7 @@ import contextlib
 import mpmath as mp
 import sympy as sp
 
+from ..exactness import certify_zero
 from ..exceptions import SYMBOLIC_QUERY_ERRORS
 
 
@@ -13,7 +14,7 @@ def _exact_sign(expr):
     expr = sp.sympify(expr)
     with contextlib.suppress(*SYMBOLIC_QUERY_ERRORS):
         expr = sp.simplify(expr)
-    if expr.is_zero is True:
+    if certify_zero(expr) is True:
         return 0
     if expr.is_positive is True:
         return 1

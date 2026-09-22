@@ -16,6 +16,7 @@ from sympy.core.relational import (
 )
 from sympy.sets.contains import Contains
 
+from ..exactness import certify_identity_equal
 from ..exceptions import SYMBOLIC_QUERY_ERRORS
 from .computation import clean_pairs
 from .core import RestrictedExpr, restrict
@@ -181,7 +182,10 @@ def _not_affine_bound(piece, z):
         return None
     # Only use the shortcut when the relational actually constrains that affine expression.
     aff = contains_aff
-    if not (simplify(rel.lhs - aff) == 0 or simplify(rel.rhs - aff) == 0):
+    if not (
+        certify_identity_equal(rel.lhs, aff) is True
+        or certify_identity_equal(rel.rhs, aff) is True
+    ):
         return None
     negated = None
     if isinstance(rel, StrictLessThan):

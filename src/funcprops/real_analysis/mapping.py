@@ -4,8 +4,9 @@ import sympy as sp
 from sympy import S
 
 from .. import _semialg
+from ..exactness import certify_identity_equal, certify_zero
 from ..exceptions import SYMBOLIC_QUERY_ERRORS
-from ..results import ConditionalValue, Monotonicity, PropertyResult, TruthValue
+from ..results import ConditionalExpression, Monotonicity, PropertyResult, TruthValue
 from ..stratification import (
     combine_truth_results,
     exact_set_equal,
@@ -132,9 +133,10 @@ def _full_rank_condition(A, rank):
     for rows in combinations(range(m), rank):
         for cols in combinations(range(n), rank):
             det = sp.simplify(A.extract(rows, cols).det())
-            if det.is_zero is False:
+            zero = certify_zero(det)
+            if zero is False:
                 return S.true
-            if det.is_zero is not True:
+            if zero is None:
                 minors.append(sp.Ne(det, 0))
     return sp.Or(*minors) if minors else S.false
 
@@ -147,8 +149,8 @@ def _rank_truth_result(A, required_rank, *, source):
         return TruthValue.FALSE
     return normalize_cases(
         (
-            ConditionalValue(TruthValue.TRUE, condition),
-            ConditionalValue(TruthValue.FALSE, sp.Not(condition)),
+            ConditionalExpression(TruthValue.TRUE, condition),
+            ConditionalExpression(TruthValue.FALSE, sp.Not(condition)),
         ),
         source=source,
     )
@@ -195,9 +197,10 @@ def _injective_structural_closure(expr, var, domain, partition):
     transform = _affine_output_transform(expr, var)
     if transform is not None:
         scale, inner, _ = transform
-        if scale.is_nonzero is True:
+        scale_zero = certify_zero(scale)
+        if scale_zero is False:
             return function_injective(inner, var, domain=domain, partition=partition)
-        if scale.is_zero is True:
+        if scale_zero is True:
             return (
                 TruthValue.TRUE
                 if _domain_at_most_one_point(domain, var)
@@ -256,7 +259,7 @@ def function_injective(expr, var, *, domain=True, partition=None):
         for c in m.cases:
             v = _injectivity_from_monotonicity(c.value, dom, var)
             if v is not TruthValue.UNKNOWN:
-                cases.append(ConditionalValue(v, c.condition))
+                cases.append(ConditionalExpression(v, c.condition))
         if cases:
             return normalize_cases(
                 cases, source="monotonicity-injectivity-stratification"
@@ -273,7 +276,7 @@ def function_injective(expr, var, *, domain=True, partition=None):
         partition
         if partition is not None
         and getattr(partition, "domain", None) == condition_to_set(dom, var)
-        else monotonic_partition(expr, var, domain=dom)
+        else monotonic_partition(expr, var, domain=dom, return_result=True)
     )
     pv = injectivity_from_monotonic_partition(part)
     if pv is not TruthValue.UNKNOWN:
@@ -295,18 +298,21 @@ def function_injective(expr, var, *, domain=True, partition=None):
             d = sp.simplify(ds.measure - p)
             if d.is_positive is True:
                 return TruthValue.FALSE
-            if d.is_zero is True and not ds.left_open and not ds.right_open:
+            if certify_zero(d) is True and not ds.left_open and not ds.right_open:
                 return TruthValue.FALSE
 
     # Symmetry is a cheap exact disproof on symmetric domains, provided the
     # domain contains some nonzero point.
     ds = condition_to_set(dom, var)
     symmetric = ds is S.Reals or (
-        isinstance(ds, sp.Interval) and sp.simplify(ds.start + ds.end) == 0
+        isinstance(ds, sp.Interval)
+        and certify_identity_equal(ds.start, -ds.end) is True
     )
     if symmetric:
         try:
-            if sp.simplify(expr.xreplace({var: -var}) - expr) == 0 and expr.has(var):
+            if certify_identity_equal(
+                expr.xreplace({var: -var}), expr
+            ) is True and expr.has(var):
                 if ds is S.Reals or (isinstance(ds, sp.Interval) and ds.measure != 0):
                     return TruthValue.FALSE
         except SYMBOLIC_QUERY_ERRORS:
@@ -344,7 +350,7 @@ def function_surjective(expr, var, *, domain=True, codomain=S.Reals):
     if isinstance(r, PropertyResult):
         return normalize_cases(
             (
-                ConditionalValue(
+                ConditionalExpression(
                     _surjectivity_from_range(c.value, y, target), c.condition
                 )
                 for c in r.cases

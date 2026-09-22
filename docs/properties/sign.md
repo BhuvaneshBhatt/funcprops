@@ -9,7 +9,7 @@ Sign classification determines whether an expression is positive, nonnegative, z
 ## API and return values
 
 ```python
-function_sign(expr, var=None, *, domain=True, strict_inequalities=True, all_properties=False)
+function_sign(expr, var=None, *, domain=True, strict_inequalities=True, all_properties=False, assumptions=True)
 ```
 
 A Sign value or PropertyResult containing guarded parameter cases and implied weaker sign classes.

@@ -9,7 +9,7 @@ The domain is the set of input values for which the expression is defined under 
 ## API and return values
 
 ```python
-function_domain(expr, var, *, domain=Reals, stratified=False)
+function_domain(expr, var, *, domain=Reals, stratified=False, assumptions=True)
 ```
 
 A SymPy logical condition, or a stratified result when parameter cases must be separated.

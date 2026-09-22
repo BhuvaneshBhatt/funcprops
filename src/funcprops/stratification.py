@@ -32,7 +32,7 @@ from .conditions import (
 )
 from .engine import simplify_condition
 from .exceptions import SIMPLIFICATION_ERRORS, SYMBOLIC_QUERY_ERRORS
-from .results import ConditionalValue, PropertyResult, TruthValue
+from .results import ConditionalExpression, PropertyResult, TruthValue
 
 
 def semantic_condition(condition):
@@ -122,7 +122,7 @@ def parameter_symbols(expr, var=None, *extra):
 
 
 def normalize_cases(
-    cases: Iterable[ConditionalValue],
+    cases: Iterable[ConditionalExpression],
     *,
     source=None,
     primary=None,
@@ -180,7 +180,7 @@ def normalize_cases(
                     adjusted.append((value, cond))
             merged = [(TruthValue.UNKNOWN, conflict), *adjusted]
 
-    out: list[ConditionalValue] = []
+    out: list[ConditionalExpression] = []
     covered = S.false
     for value, cond in merged:
         try:
@@ -189,7 +189,7 @@ def normalize_cases(
             effective = sp.And(cond, sp.Not(covered))
         if effective is S.false:
             continue
-        out.append(ConditionalValue(value, effective))
+        out.append(ConditionalExpression(value, effective))
         try:
             covered = sp.simplify(sp.simplify_logic(sp.Or(covered, cond)))
         except SYMBOLIC_QUERY_ERRORS:
@@ -209,10 +209,52 @@ def normalize_cases(
     )
 
 
+def resolve_result_assumptions(result, assumptions):
+    """Filter a parameter-stratified result through known assumptions.
+
+    A uniquely implied stratum is returned as its compact value.  Otherwise
+    impossible strata are removed and the remaining conditional result keeps
+    its original proof metadata.
+    """
+    if not isinstance(result, PropertyResult):
+        return result
+    assumptions = semantic_condition(assumptions)
+    if assumptions is S.true or not result.cases:
+        return result
+
+    from .assumptions import entails
+
+    remaining = []
+    implied = []
+    for case in result.cases:
+        if entails(case.condition, assumptions) is True:
+            implied.append(case.value)
+            continue
+        if entails(sp.Not(case.condition, evaluate=False), assumptions) is True:
+            continue
+        remaining.append(case)
+
+    if implied:
+        first = implied[0]
+        if all(value == first for value in implied):
+            return first
+    if not remaining:
+        return result.primary if result.primary is not None else result
+    return normalize_cases(
+        remaining,
+        source=result.source,
+        primary=result.primary
+        if result.primary in {c.value for c in remaining}
+        else None,
+        all_properties=result.all_properties,
+        evidence=result.evidence,
+    )
+
+
 def map_conditional(value, mapper: Callable[[Any], Any], *, source=None):
     if not isinstance(value, PropertyResult):
         return mapper(value)
-    cases = [ConditionalValue(mapper(c.value), c.condition) for c in value.cases]
+    cases = [ConditionalExpression(mapper(c.value), c.condition) for c in value.cases]
     primary = mapper(value.primary) if value.primary is not None else None
     return normalize_cases(
         cases, primary=primary, source=source or value.source, evidence=value.evidence
@@ -309,10 +351,14 @@ def combine_truth_results(a, b, *, op="and", source="combined"):
     if not isinstance(a, PropertyResult) and not isinstance(b, PropertyResult):
         return scalar(a, b)
     acases = (
-        a.cases if isinstance(a, PropertyResult) else (ConditionalValue(a, S.true),)
+        a.cases
+        if isinstance(a, PropertyResult)
+        else (ConditionalExpression(a, S.true),)
     )
     bcases = (
-        b.cases if isinstance(b, PropertyResult) else (ConditionalValue(b, S.true),)
+        b.cases
+        if isinstance(b, PropertyResult)
+        else (ConditionalExpression(b, S.true),)
     )
     cases = []
     for ca in acases:
@@ -322,7 +368,7 @@ def combine_truth_results(a, b, *, op="and", source="combined"):
             except SYMBOLIC_QUERY_ERRORS:
                 cond = sp.And(ca.condition, cb.condition)
             if cond is not S.false:
-                cases.append(ConditionalValue(scalar(ca.value, cb.value), cond))
+                cases.append(ConditionalExpression(scalar(ca.value, cb.value), cond))
     return normalize_cases(cases, source=source)
 
 
@@ -403,7 +449,7 @@ def stratify_boolean_by_parameters(
         params.discard(var)
         if params:
             continue
-        cases.append(ConditionalValue(value, guard))
+        cases.append(ConditionalExpression(value, guard))
     if not cases:
         return PropertyResult(primary=c, source=source)
     return normalize_cases(cases, source=source)
@@ -415,9 +461,9 @@ def result_cases(result):
         if result.cases:
             return result.cases
         if result.primary is not None:
-            return (ConditionalValue(result.primary, S.true),)
+            return (ConditionalExpression(result.primary, S.true),)
         return ()
-    return (ConditionalValue(result, S.true),)
+    return (ConditionalExpression(result, S.true),)
 
 
 def guarded_result(result, guard, *, source=None):
@@ -430,7 +476,7 @@ def guarded_result(result, guard, *, source=None):
         except SYMBOLIC_QUERY_ERRORS:
             cond = sp.And(guard, case.condition)
         if cond is not S.false:
-            cases.append(ConditionalValue(case.value, cond))
+            cases.append(ConditionalExpression(case.value, cond))
     if not cases:
         return PropertyResult(primary=None, source=source)
     evidence = result.evidence if isinstance(result, PropertyResult) else ()
@@ -488,7 +534,7 @@ def evaluate_parameter_strata(
             except SYMBOLIC_QUERY_ERRORS:
                 guard = sp.And(domain_case.condition, item.condition)
             if guard is not S.false:
-                cases.append(ConditionalValue(item.value, guard))
+                cases.append(ConditionalExpression(item.value, guard))
     if not cases:
         return None
     return normalize_cases(cases, source=source, evidence=tuple(evidence))

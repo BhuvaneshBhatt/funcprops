@@ -9,7 +9,7 @@ A meromorphic function is analytic except for isolated poles on the domain under
 ## API and return values
 
 ```python
-function_meromorphic(expr, var, *, assumptions=True, details=False)
+function_meromorphic(expr, var, *, assumptions=True, return_result=False)
 ```
 
 Meromorphicity.MEROMORPHIC, NOT_MEROMORPHIC, or UNKNOWN.
@@ -29,7 +29,7 @@ import sympy as sp
 import funcprops as fp
 
 x, y = sp.symbols("x y", real=True)
-result = fp.function_meromorphic(1 / x, x)
+result = fp.function_meromorphic(1/x, x)
 result
 ```
 

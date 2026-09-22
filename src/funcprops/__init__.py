@@ -3,18 +3,27 @@
 from .api import (
     function_analytic,
     function_bijective,
+    function_boundary_behavior,
     function_boundedness,
     function_branchcuts,
     function_branchpoints,
+    function_change_of_variables,
+    function_complete_monotonicity,
     function_complex_zeros,
     function_continuous,
     function_convexity,
+    function_determinant_nonvanishing,
     function_differentiability,
     function_discontinuities,
     function_domain,
+    function_geometry,
     function_homogeneity,
     function_injective,
+    function_jacobian,
+    function_level_boundedness,
+    function_local_invertibility,
     function_meromorphic,
+    function_mode_existence,
     function_monotonicity,
     function_oscillation,
     function_periodicity,
@@ -26,10 +35,31 @@ from .api import (
     function_smoothness,
     function_surjective,
     function_symmetry,
+    function_transformation_geometry,
     function_zeros,
 )
+from .assumptions import (
+    PropertyDecision,
+    PropertyEnforcementError,
+    PropertyKnowledge,
+    PropertyProvenance,
+    clear_entailment_cache,
+    decide,
+    entails,
+    normalize_assumptions,
+    require_decision,
+)
+from .cache_control import cache_info, clear_caches
 from .dlmf import DLMFFact, dlmf_audit_report, dlmf_facts
+from .geometry import (
+    BoundaryBehavior,
+    BoundaryLimit,
+    FunctionGeometry,
+    LevelBoundednessCertificate,
+    ModeExistenceCertificate,
+)
 from .real_analysis.advanced_convexity import ConvexityCertificate
+from .real_analysis.complete_monotonicity import CompleteMonotonicityCertificate
 from .real_analysis.monotonic_certificates import (
     IndexedMonotonicPartition,
     InverseSolutionCertificate,
@@ -47,15 +77,62 @@ from .real_analysis.monotonic_certificates import (
     solve_monotonic_inverse,
 )
 from .real_analysis.oscillation import OscillationCertificate
+from .real_analysis.piecewise import (
+    PiecewiseBoundary,
+    PiecewiseBoundaryCertificate,
+    PiecewiseBranch,
+    PiecewiseDecomposition,
+    certify_piecewise_boundaries,
+    piecewise_decomposition,
+)
 from .real_analysis.smoothness import SmoothnessResult
 from .real_analysis.structural_properties import (
     HomogeneityResult,
     PeriodicityResult,
     SymmetryResult,
 )
-from .registry import Family, FunctionRegistry, RuleCase, registry
+from .registry import (
+    Family,
+    FunctionRegistry,
+    FunctionSlot,
+    InstantiatedPropertyRule,
+    PropertyRule,
+    RuleCase,
+    registry,
+)
+from .registry_derivatives import (
+    ChainRuleCertificate,
+    ChainRuleTerm,
+    DerivativeRule,
+    GradientCertificate,
+    GradientComponent,
+    HessianCertificate,
+    IdentityRule,
+    InstantiatedDerivativeRule,
+    InstantiatedIdentityRule,
+    JacobianCertificate,
+    MultivariateChainRuleCertificate,
+    registry_derivative,
+    registry_gradient,
+    registry_hessian,
+    registry_jacobian,
+    registry_multivariate_chain_rule,
+    rewrite_with_registry,
+)
+from .registry_transport import (
+    AnalysisSubject,
+    SubjectMap,
+    TransportedPropertyRule,
+    transport_instantiated_rule,
+)
 from .results import *
 from .singularities import SingularityAnalysis
+from .statistical_special_functions import (
+    MittagLefflerE,
+    OwenT,
+    RegularizedGammaP,
+    RegularizedGammaQ,
+)
 from .transcendental import (
     AlgebraizationResult,
     AnalyticNeighborhoodCertificate,
@@ -105,6 +182,12 @@ from .transcendental import (
     zero_geometry,
     zero_ordering_bounds,
 )
+from .transformation import (
+    ChangeOfVariablesCertificate,
+    DeterminantNonvanishingCertificate,
+    LocalInvertibilityCertificate,
+    TransformationGeometry,
+)
 from .verification import (
     verify_certificate,
     verify_convexity_certificate,
@@ -119,6 +202,10 @@ from .verification import (
     verify_zero_geometry,
 )
 
+from importlib.metadata import version
+
+__version__ = version("funcprops")
+
 __all__ = [
     name
     for name in globals()
@@ -129,6 +216,30 @@ __all__ = [
         "FunctionRegistry",
         "Family",
         "RuleCase",
+        "FunctionSlot",
+        "PropertyRule",
+        "InstantiatedPropertyRule",
+        "AnalysisSubject",
+        "SubjectMap",
+        "TransportedPropertyRule",
+        "transport_instantiated_rule",
+        "IdentityRule",
+        "DerivativeRule",
+        "InstantiatedIdentityRule",
+        "InstantiatedDerivativeRule",
+        "GradientComponent",
+        "GradientCertificate",
+        "JacobianCertificate",
+        "HessianCertificate",
+        "MultivariateChainRuleCertificate",
+        "ChainRuleTerm",
+        "ChainRuleCertificate",
+        "registry_gradient",
+        "registry_derivative",
+        "registry_jacobian",
+        "registry_hessian",
+        "registry_multivariate_chain_rule",
+        "rewrite_with_registry",
         "Analyticity",
         "Meromorphicity",
         "Monotonicity",
@@ -145,8 +256,21 @@ __all__ = [
         "DetailedPropertyResult",
         "SupportsDetailedPropertyResult",
         "as_detailed_result",
-        "ConditionalValue",
+        "ConditionalExpression",
+        "PropertyDecision",
+        "PropertyEnforcementError",
+        "PropertyKnowledge",
+        "PropertyProvenance",
+        "clear_entailment_cache",
+        "cache_info",
+        "clear_caches",
+        "explain_result",
+        "decide",
+        "entails",
+        "normalize_assumptions",
+        "require_decision",
         "Singularity",
+        "SingularityResult",
         "SingularityKind",
         "SingularityAnalysis",
         "PeriodicSet",
@@ -191,6 +315,12 @@ __all__ = [
         "InverseSolutionCertificate",
         "PartitionRange",
         "OscillationCertificate",
+        "certify_piecewise_boundaries",
+        "piecewise_decomposition",
+        "PiecewiseDecomposition",
+        "PiecewiseBoundaryCertificate",
+        "PiecewiseBoundary",
+        "PiecewiseBranch",
         "monotonic_decomposition",
         "monotonic_partition",
         "solve_monotonic_inverse",
@@ -205,6 +335,20 @@ __all__ = [
         "indexed_tail_integer_bracket",
         "SmoothnessResult",
         "ConvexityCertificate",
+        "CompleteMonotonicityCertificate",
+        "OwenT",
+        "MittagLefflerE",
+        "RegularizedGammaP",
+        "RegularizedGammaQ",
+        "BoundaryBehavior",
+        "BoundaryLimit",
+        "FunctionGeometry",
+        "LevelBoundednessCertificate",
+        "ModeExistenceCertificate",
+        "ChangeOfVariablesCertificate",
+        "DeterminantNonvanishingCertificate",
+        "LocalInvertibilityCertificate",
+        "TransformationGeometry",
         "DLMFFact",
         "dlmf_facts",
         "dlmf_audit_report",

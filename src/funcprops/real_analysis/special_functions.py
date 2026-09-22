@@ -13,7 +13,9 @@ from dataclasses import dataclass
 import sympy as sp
 from sympy import S
 
+from ..exactness import certify_identity_equal
 from ..exceptions import SYMBOLIC_QUERY_ERRORS
+from ..stratification import semantic_condition
 
 
 @dataclass(frozen=True)
@@ -222,6 +224,24 @@ def _real_guard(a):
     return S.true if a.is_real is True else sp.Contains(a, S.Reals)
 
 
+def _besseli_successive_ratio_order(expr, var):
+    """Return nu for I_{nu+1}(x)/I_nu(x), else None."""
+    expr = sp.sympify(expr)
+    var = sp.sympify(var)
+    num, den = sp.fraction(expr)
+    if (
+        num.func is sp.besseli
+        and den.func is sp.besseli
+        and len(num.args) == 2
+        and len(den.args) == 2
+        and num.args[1] == var
+        and den.args[1] == var
+        and certify_identity_equal(num.args[0], den.args[0] + 1) is True
+    ):
+        return den.args[0]
+    return None
+
+
 def _positive_axis(domain, var):
     try:
         from .common import condition_to_set
@@ -278,6 +298,15 @@ def positive_axis_domain_strata(expr, var):
     ):
         a = expr.args[0]
         return ((var > 0, a > 0, "DLMF 8.2.1-8.2.2"),)
+    from ..statistical_special_functions import RegularizedGammaP, RegularizedGammaQ
+
+    if (
+        expr.func in (RegularizedGammaP, RegularizedGammaQ)
+        and len(expr.args) == 2
+        and expr.args[1] == var
+    ):
+        a = expr.args[0]
+        return ((var >= 0, a > 0, "regularized incomplete gamma integral"),)
     if expr.func is sp.beta and len(expr.args) == 2 and expr.args[1] == var:
         a = expr.args[0]
         return ((var > 0, a > 0, "DLMF 5.12.1 + Gamma quotient"),)
@@ -305,6 +334,15 @@ def positive_axis_range_strata(expr, var, y):
     expr = sp.sympify(expr)
     var = sp.sympify(var)
     y = sp.sympify(y)
+    nu_ratio = _besseli_successive_ratio_order(expr, var)
+    if nu_ratio is not None:
+        return (
+            (
+                sp.And(y > 0, y < 1),
+                sp.And(_real_guard(nu_ratio), nu_ratio >= -sp.Rational(1, 2)),
+                "classical modified-Bessel quotient theorem",
+            ),
+        )
     if expr.func is sp.besselk and len(expr.args) == 2 and expr.args[1] == var:
         nu = expr.args[0]
         return ((y > 0, _real_guard(nu), "DLMF 10.37 + 10.27.3 + endpoint limits"),)
@@ -316,6 +354,21 @@ def positive_axis_range_strata(expr, var, y):
         return (
             (y > 1, sp.And(rg, sp.Eq(nu, 0)), "DLMF 10.37 + 10.30 limiting forms"),
             (y > 0, sp.And(rg, nu > 0), "DLMF 10.37 + 10.30 limiting forms"),
+        )
+    from ..statistical_special_functions import RegularizedGammaP, RegularizedGammaQ
+
+    if (
+        expr.func in (RegularizedGammaP, RegularizedGammaQ)
+        and len(expr.args) == 2
+        and expr.args[1] == var
+    ):
+        a = expr.args[0]
+        return (
+            (
+                sp.And(y > 0, y < 1),
+                a > 0,
+                "regularized incomplete gamma endpoint limits",
+            ),
         )
     if expr.func is sp.beta and len(expr.args) == 2 and expr.args[1] == var:
         a = expr.args[0]
@@ -368,6 +421,33 @@ def special_function_range_strata(expr, var, y, domain):
         and not ds.right_open
     )
 
+    from ..statistical_special_functions import RegularizedGammaP, RegularizedGammaQ
+
+    if (
+        expr.func in (RegularizedGammaP, RegularizedGammaQ)
+        and len(expr.args) == 2
+        and expr.args[1] == var
+        and (pos_open or pos_closed)
+    ):
+        a = expr.args[0]
+        if pos_open:
+            cond = sp.And(y > 0, y < 1)
+        elif expr.func is RegularizedGammaP:
+            cond = sp.And(y >= 0, y < 1)
+        else:
+            cond = sp.And(y > 0, y <= 1)
+        return ((cond, a > 0, "regularized incomplete gamma endpoint limits"),)
+
+    if (
+        expr.func is sp.marcumq
+        and len(expr.args) == 3
+        and expr.args[2] == var
+        and (pos_open or pos_closed)
+    ):
+        m, a, _ = expr.args
+        cond = sp.And(y > 0, y < 1) if pos_open else sp.And(y > 0, y <= 1)
+        return ((cond, sp.And(m > 0, a >= 0), "Marcum Q survival-function range"),)
+
     if (
         expr.func is sp.besseli
         and len(expr.args) == 2
@@ -417,11 +497,107 @@ def special_function_range_strata(expr, var, y, domain):
     return ()
 
 
-def positive_axis_monotonicity_strata(expr, var):
+def positive_axis_monotonicity_strata(expr, var, domain=None):
     from ..results import Monotonicity
+    from ..statistical_special_functions import MittagLefflerE, OwenT
 
     expr = sp.sympify(expr)
     var = sp.sympify(var)
+    nu_ratio = _besseli_successive_ratio_order(expr, var)
+    if nu_ratio is not None:
+        return (
+            (
+                Monotonicity.STRICTLY_INCREASING,
+                sp.And(_real_guard(nu_ratio), nu_ratio >= -sp.Rational(1, 2)),
+                "classical modified-Bessel quotient theorem",
+            ),
+        )
+    from ..statistical_special_functions import RegularizedGammaP, RegularizedGammaQ
+
+    if expr.func is RegularizedGammaP and len(expr.args) == 2 and expr.args[1] == var:
+        return (
+            (
+                Monotonicity.STRICTLY_INCREASING,
+                expr.args[0] > 0,
+                "regularized lower gamma derivative",
+            ),
+        )
+    if expr.func is RegularizedGammaQ and len(expr.args) == 2 and expr.args[1] == var:
+        return (
+            (
+                Monotonicity.STRICTLY_DECREASING,
+                expr.args[0] > 0,
+                "regularized upper gamma derivative",
+            ),
+        )
+    if expr.func is sp.polygamma and len(expr.args) == 2 and expr.args[1] == var:
+        n = expr.args[0]
+        if n == 0:
+            return ((Monotonicity.STRICTLY_INCREASING, S.true, "trigamma positivity"),)
+        odd = sp.And(sp.Contains(n, S.Integers), n >= 1, sp.Eq(sp.Mod(n, 2), 1))
+        even = sp.And(sp.Contains(n, S.Integers), n >= 1, sp.Eq(sp.Mod(n, 2), 0))
+        return (
+            (Monotonicity.STRICTLY_DECREASING, odd, "polygamma sign theorem"),
+            (Monotonicity.STRICTLY_INCREASING, even, "polygamma sign theorem"),
+        )
+    if expr.func is sp.erf and expr.args == (var,):
+        return ((Monotonicity.STRICTLY_INCREASING, S.true, "erf derivative"),)
+    if expr.func is sp.erfc and expr.args == (var,):
+        return ((Monotonicity.STRICTLY_DECREASING, S.true, "erfc derivative"),)
+    if expr.func is OwenT and len(expr.args) == 2 and expr.args[1] == var:
+        return ((Monotonicity.STRICTLY_INCREASING, S.true, "Owen T derivative"),)
+    if expr.func is sp.marcumq and len(expr.args) == 3:
+        m, a, b = expr.args
+        if b == var:
+            return (
+                (
+                    Monotonicity.STRICTLY_DECREASING,
+                    sp.And(m > 0, a >= 0),
+                    "Marcum Q threshold monotonicity",
+                ),
+            )
+        if a == var:
+            return (
+                (
+                    Monotonicity.STRICTLY_INCREASING,
+                    sp.And(m > 0, b > 0),
+                    "Marcum Q noncentrality monotonicity",
+                ),
+            )
+    if expr.func is MittagLefflerE and len(expr.args) == 2 and expr.args[1] == -var:
+        alpha = expr.args[0]
+        return (
+            (
+                Monotonicity.NONINCREASING,
+                sp.And(alpha > 0, alpha <= 1),
+                "Pollard complete monotonicity",
+            ),
+        )
+    if (
+        expr.func in (sp.betainc, sp.betainc_regularized)
+        and len(expr.args) == 4
+        and expr.args[2] == 0
+        and expr.args[3] == var
+        and domain is not None
+    ):
+        a, b = expr.args[:2]
+        try:
+            on_unit = (
+                sp.simplify_logic(
+                    sp.Implies(semantic_condition(domain), sp.And(var > 0, var < 1))
+                )
+                is S.true
+            )
+        except SYMBOLIC_QUERY_ERRORS:
+            on_unit = False
+        if on_unit:
+            return (
+                (
+                    Monotonicity.STRICTLY_INCREASING,
+                    sp.And(a > 0, b > 0),
+                    "incomplete beta integrand positivity",
+                ),
+            )
     if expr.func is sp.besselk and len(expr.args) == 2 and expr.args[1] == var:
         return (
             (
@@ -471,6 +647,65 @@ def positive_axis_sign_strata(expr, var):
 
     expr = sp.sympify(expr)
     var = sp.sympify(var)
+    from ..statistical_special_functions import (
+        MittagLefflerE,
+        OwenT,
+        RegularizedGammaP,
+        RegularizedGammaQ,
+    )
+
+    nu_ratio = _besseli_successive_ratio_order(expr, var)
+    if nu_ratio is not None:
+        return (
+            (
+                Sign.POSITIVE,
+                sp.And(_real_guard(nu_ratio), nu_ratio >= -sp.Rational(1, 2)),
+                "classical modified-Bessel quotient theorem",
+            ),
+        )
+
+    if (
+        expr.func in (RegularizedGammaP, RegularizedGammaQ)
+        and len(expr.args) == 2
+        and expr.args[1] == var
+    ):
+        return (
+            (
+                Sign.POSITIVE,
+                expr.args[0] > 0,
+                "regularized incomplete gamma positivity",
+            ),
+        )
+    if expr.func is OwenT and len(expr.args) == 2 and expr.args[1] == var:
+        return (
+            (Sign.POSITIVE, _real_guard(expr.args[0]), "Owen T integral positivity"),
+        )
+    if expr.func is sp.marcumq and len(expr.args) == 3 and expr.args[2] == var:
+        m, a, _ = expr.args
+        return (
+            (
+                Sign.POSITIVE,
+                sp.And(m > 0, a >= 0),
+                "Marcum Q survival-function positivity",
+            ),
+        )
+    if expr.func is sp.polygamma and len(expr.args) == 2 and expr.args[1] == var:
+        n = expr.args[0]
+        pos = sp.And(sp.Contains(n, S.Integers), n >= 1, sp.Eq(sp.Mod(n, 2), 1))
+        neg = sp.And(sp.Contains(n, S.Integers), n >= 1, sp.Eq(sp.Mod(n, 2), 0))
+        return (
+            (Sign.POSITIVE, pos, "polygamma series"),
+            (Sign.NEGATIVE, neg, "polygamma series"),
+        )
+    if expr.func is MittagLefflerE and len(expr.args) == 2 and expr.args[1] == -var:
+        alpha = expr.args[0]
+        return (
+            (
+                Sign.POSITIVE,
+                sp.And(alpha > 0, alpha <= 1),
+                "Pollard complete monotonicity",
+            ),
+        )
     if expr.func is sp.besselk and len(expr.args) == 2 and expr.args[1] == var:
         return ((Sign.POSITIVE, _real_guard(expr.args[0]), "DLMF 10.37 + 10.27.3"),)
     if expr.func is sp.besseli and len(expr.args) == 2 and expr.args[1] == var:
@@ -484,14 +719,6 @@ def positive_axis_sign_strata(expr, var):
         and expr.args[1] == var
     ):
         return ((Sign.POSITIVE, expr.args[0] > 0, "DLMF 8.2.1-8.2.2"),)
-    if expr.func is sp.polygamma and len(expr.args) == 2 and expr.args[1] == var:
-        n = expr.args[0]
-        pos = sp.And(sp.Contains(n, S.Integers), n >= 1, sp.Eq(sp.Mod(n, 2), 1))
-        neg = sp.And(sp.Contains(n, S.Integers), n >= 1, sp.Eq(sp.Mod(n, 2), 0))
-        return (
-            (Sign.POSITIVE, pos, "polygamma series"),
-            (Sign.NEGATIVE, neg, "polygamma series"),
-        )
     return ()
 
 
@@ -500,6 +727,31 @@ def positive_axis_convexity_strata(expr, var):
 
     expr = sp.sympify(expr)
     var = sp.sympify(var)
+    from ..statistical_special_functions import MittagLefflerE
+
+    nu_ratio = _besseli_successive_ratio_order(expr, var)
+    if nu_ratio is not None:
+        return (
+            (
+                Convexity.CONCAVE,
+                sp.And(_real_guard(nu_ratio), nu_ratio >= -sp.Rational(1, 2)),
+                "classical modified-Bessel quotient theorem",
+            ),
+        )
+    if expr.func is sp.loggamma and len(expr.args) == 1 and expr.args[0] == var:
+        return ((Convexity.STRICTLY_CONVEX, S.true, "trigamma positivity"),)
+    if (
+        expr.func is sp.polygamma
+        and len(expr.args) == 2
+        and expr.args[1] == var
+        and expr.args[0] == 0
+    ):
+        return ((Convexity.STRICTLY_CONCAVE, S.true, "polygamma sign theorem"),)
+    if expr.func is MittagLefflerE and len(expr.args) == 2 and expr.args[1] == -var:
+        alpha = expr.args[0]
+        return (
+            (Convexity.CONVEX, sp.And(alpha > 0, alpha <= 1), "complete monotonicity"),
+        )
     if expr.func is sp.besselk and len(expr.args) == 2 and expr.args[1] == var:
         return (
             (

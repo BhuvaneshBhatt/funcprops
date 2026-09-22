@@ -5,6 +5,7 @@ from dataclasses import dataclass
 import sympy as sp
 from sympy import S
 
+from ..exactness import certify_zero
 from ..exceptions import SYMBOLIC_QUERY_ERRORS
 
 
@@ -128,7 +129,7 @@ def _avoids_negative_real_axis(g, var, rect):
     cd = _affine_data(g, var)
     if cd is not None:
         c, _ = cd
-        axis_aligned = c.is_real is True or sp.simplify(sp.re(c)) == 0
+        axis_aligned = c.is_real is True or certify_zero(sp.re(c)) is True
         if axis_aligned:
             return False
     return None
@@ -137,9 +138,10 @@ def _avoids_negative_real_axis(g, var, rect):
 def _nonzero_on_rectangle(g, var, rect):
     if not g.has(var):
         z = sp.simplify(g)
-        if z.is_zero is True:
+        zero = certify_zero(z)
+        if zero is True:
             return False
-        if z.is_zero is False:
+        if zero is False:
             return True
         return None
     try:

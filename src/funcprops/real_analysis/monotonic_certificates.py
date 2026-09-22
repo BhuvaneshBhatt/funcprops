@@ -7,6 +7,7 @@ from functools import lru_cache
 import sympy as sp
 from sympy import S
 
+from ..exactness import certify_equal, certify_zero
 from ..exceptions import SYMBOLIC_QUERY_ERRORS
 from ..results import Monotonicity, TruthValue
 from .common import condition_to_set, exact_order_real_points
@@ -175,8 +176,13 @@ def _monotone_head(expr, X):
     return None
 
 
-def monotonic_decomposition(expr, var, *, strict=True, continuous=True):
-    """Find ``expr = F(inner)`` with a certified monotone outer ``F``."""
+def _monotonic_decomposition_result(expr, var, *, strict=True, continuous=True):
+    """Find ``expr = F(inner)`` with a certified monotone outer ``F``.
+
+    By default return the mathematical decomposition
+    ``(inner, outer, direction, condition)``.  With ``return_result=True``
+    return the full :class:`MonotonicDecomposition` certificate object.
+    """
     expr = sp.sympify(expr)
     var = sp.sympify(var)
     if not expr.has(var):
@@ -210,7 +216,7 @@ def monotonic_decomposition(expr, var, *, strict=True, continuous=True):
             )
     if expr.is_Mul:
         c, dep = expr.as_independent(var, as_Add=False)
-        if dep != expr and c.is_real is True and c.is_zero is not True:
+        if dep != expr and c.is_real is True and certify_zero(c) is False:
             if c.is_positive is True:
                 return MonotonicDecomposition(
                     expr,
@@ -360,6 +366,25 @@ def monotonic_decomposition(expr, var, *, strict=True, continuous=True):
             except SYMBOLIC_QUERY_ERRORS:
                 pass
     return None
+
+
+def monotonic_decomposition(
+    expr, var, *, strict=True, continuous=True, return_result=False
+):
+    """Find ``expr = F(inner)`` with a certified monotone outer ``F``.
+
+    The ordinary result is the mathematical quadruple
+    ``(inner, outer, direction, condition)``.  ``direction`` is ``1`` for an
+    increasing outer map and ``-1`` for a decreasing one.  Use
+    ``return_result=True`` for inverse information, provenance, and replayable
+    certification metadata.
+    """
+    result = _monotonic_decomposition_result(
+        expr, var, strict=strict, continuous=continuous
+    )
+    if return_result or result is None:
+        return result
+    return (result.inner, result.outer, result.direction, result.condition)
 
 
 def _endpoint_limit(expr, var, v, left, open_, domain=S.true, assumptions=S.true):
@@ -532,8 +557,8 @@ def _monotonic_partition_on_set(expr, var, domain_set):
     )
 
 
-def monotonic_partition(expr, var, *, domain=True):
-    """Return a cached exact finite or indexed partition into monotone cells."""
+def _monotonic_partition_result(expr, var, *, domain=True):
+    """Return the rich cached exact finite or indexed monotonic partition."""
     expr = sp.sympify(expr)
     var = sp.sympify(var)
     if isinstance(domain, sp.Set):
@@ -552,6 +577,23 @@ def monotonic_partition(expr, var, *, domain=True):
         return _monotonic_partition_on_set(expr, var, ds)
     except TypeError:
         return _monotonic_partition_on_set.__wrapped__(expr, var, ds)
+
+
+def monotonic_partition(expr, var, *, domain=True, return_result=False):
+    """Partition a real domain into intervals of certified monotonicity.
+
+    Complete finite partitions are returned by default as ordered
+    ``(interval, direction)`` pairs.  If the result is incomplete or uses an
+    indexed infinite description, the structured :class:`MonotonicPartition`
+    is retained so completeness information is not lost.  Set
+    ``return_result=True`` to always receive the structured result.
+    """
+    result = _monotonic_partition_result(expr, var, domain=domain)
+    if return_result:
+        return result
+    if result.complete and result.indexed is None:
+        return tuple((cell.interval, cell.direction) for cell in result.cells)
+    return result
 
 
 def clear_monotonic_partition_cache():
@@ -591,7 +633,9 @@ def _cell_image(cell: MonotonicInterval):
 
 def range_from_monotonic_partition(expr, var, partition=None, *, domain=True):
     """Exact image set when a finite monotonic partition is complete."""
-    part = partition or monotonic_partition(expr, var, domain=domain)
+    part = partition
+    if not isinstance(part, MonotonicPartition):
+        part = monotonic_partition(expr, var, domain=domain, return_result=True)
     if not part.complete or part.indexed is not None or not part.cells:
         return PartitionRange(None, False, part)
     images = []
@@ -608,7 +652,19 @@ def range_from_monotonic_partition(expr, var, partition=None, *, domain=True):
 
 
 def injectivity_from_monotonic_partition(partition):
-    """Three-valued injectivity conclusion derived only from a complete partition."""
+    """Three-valued injectivity conclusion from a compact or rich partition."""
+    if isinstance(partition, tuple):
+        directions = [
+            item[1] for item in partition if isinstance(item, tuple) and len(item) == 2
+        ]
+        if len(directions) != len(partition) or not directions:
+            return TruthValue.UNKNOWN
+        if set(directions) in (
+            {Monotonicity.STRICTLY_INCREASING},
+            {Monotonicity.STRICTLY_DECREASING},
+        ):
+            return TruthValue.TRUE
+        return TruthValue.UNKNOWN
     if not isinstance(partition, MonotonicPartition) or not partition.complete:
         return TruthValue.UNKNOWN
     if partition.indexed is not None:
@@ -722,7 +778,9 @@ def solve_monotonic_inverse(expr, var, value, *, domain=True, partition=None):
     expr = sp.sympify(expr)
     var = sp.sympify(var)
     value = sp.sympify(value)
-    part = partition or monotonic_partition(expr, var, domain=domain)
+    part = partition
+    if not isinstance(part, MonotonicPartition):
+        part = monotonic_partition(expr, var, domain=domain, return_result=True)
     eq = sp.Eq(expr, value)
     if not part.complete:
         ds = part.domain if isinstance(part.domain, sp.Set) else S.Reals
@@ -805,7 +863,7 @@ def solve_monotonic_inverse(expr, var, value, *, domain=True, partition=None):
     boundaries.extend(part.critical_points)
     for q in boundaries:
         try:
-            if sp.simplify(expr.subs(var, q) - value).is_zero is True:
+            if certify_equal(expr.subs(var, q), value) is True:
                 sols.append(sp.FiniteSet(q))
         except SYMBOLIC_QUERY_ERRORS:
             pass
@@ -857,7 +915,7 @@ def quick_nonmonotonicity_witness(expr, var, domain):
             signs.append(1)
         elif d.is_negative is True:
             signs.append(-1)
-        elif d.is_zero is True:
+        elif certify_zero(d) is True:
             signs.append(0)
         else:
             return None

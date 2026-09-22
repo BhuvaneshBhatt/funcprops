@@ -9,10 +9,10 @@ Analyticity certifies local representation by convergent power series throughout
 ## API and return values
 
 ```python
-function_analytic(expr, var, *, domain=Reals, assumptions=True, details=False)
+function_analytic(expr, var, *, domain=Reals, assumptions=True, return_result=False)
 ```
 
-Analyticity.ANALYTIC, NOT_ANALYTIC, or UNKNOWN; details expose evidence and exceptional loci.
+Analyticity.ANALYTIC, NOT_ANALYTIC, or UNKNOWN; return_result=True exposes evidence and exceptional loci.
 
 ## Domains, assumptions, and parameters
 

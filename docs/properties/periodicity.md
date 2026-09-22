@@ -4,15 +4,15 @@
 
 ## Mathematical definition
 
-Periodicity detects constants, periodic functions and certified aperiodic cases; detailed results can include a period.
+Periodicity detects constants, periodic functions and certified aperiodic cases; return_result=True can include a certified period.
 
 ## API and return values
 
 ```python
-function_periodicity(expr, var, *, domain=True, assumptions=True, details=False)
+function_periodicity(expr, var, *, domain=True, assumptions=True, return_result=False)
 ```
 
-A Periodicity value or detailed result containing the period and evidence.
+A Periodicity value by default; return_result=True returns the period and evidence when available.
 
 ## Domains, assumptions, and parameters
 
@@ -29,7 +29,7 @@ import sympy as sp
 import funcprops as fp
 
 x, y = sp.symbols("x y", real=True)
-result = fp.function_periodicity(sp.sin(3 * x), x, details=True)
+result = fp.function_periodicity(sp.sin(3*x), x, return_result=True)
 result
 ```
 

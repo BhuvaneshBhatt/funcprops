@@ -9,7 +9,7 @@ from funcprops import (
     function_surjective,
 )
 from funcprops.results import (
-    ConditionalValue,
+    ConditionalExpression,
     Convexity,
     PropertyResult,
     Sign,
@@ -47,14 +47,14 @@ def test_truth_conflicts_are_order_independent_and_explicitly_unknown():
     a = sp.symbols("a", real=True)
     first = normalize_cases(
         (
-            ConditionalValue(TruthValue.TRUE, a >= 0),
-            ConditionalValue(TruthValue.FALSE, a <= 0),
+            ConditionalExpression(TruthValue.TRUE, a >= 0),
+            ConditionalExpression(TruthValue.FALSE, a <= 0),
         )
     )
     second = normalize_cases(
         (
-            ConditionalValue(TruthValue.FALSE, a <= 0),
-            ConditionalValue(TruthValue.TRUE, a >= 0),
+            ConditionalExpression(TruthValue.FALSE, a <= 0),
+            ConditionalExpression(TruthValue.TRUE, a >= 0),
         )
     )
     assert _specialize(first, a, 0) is TruthValue.UNKNOWN

@@ -51,10 +51,12 @@ def test_mapping():
 
 
 def test_smoothness_abs_exp():
-    a = function_smoothness(sp.Abs(x), x)
+    assert function_smoothness(sp.Abs(x), x) is TruthValue.FALSE
+    assert function_smoothness(sp.exp(x), x) is TruthValue.TRUE
+    a = function_smoothness(sp.Abs(x), x, return_result=True)
     assert a.continuity is Continuity.CONTINUOUS
     assert sp.Eq(x, 0) in a.exceptional_loci
-    e = function_smoothness(sp.exp(x), x)
+    e = function_smoothness(sp.exp(x), x, return_result=True)
     assert e.smooth is True and e.differentiability_order is sp.oo
 
 

@@ -1,17 +1,22 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Iterable
+from functools import lru_cache
 from itertools import product
 
+import mpmath as mp
 from sympy import (
     Add,
     Derivative,
+    E,
     I,
     Mul,
     Piecewise,
     S,
     Symbol,
     diff,
+    elliptic_pi,
+    lambdify,
     log,
     pi,
     simplify,
@@ -26,16 +31,31 @@ from .core import RestrictedExpr, Undefined, get_branch_rule
 
 Pair = tuple[object, object]
 
+_BOOLEAN_SIMPLIFY_OP_LIMIT = 12
+
+
+def _bounded_condition_simplify(cond):
+    cond = sympify(cond)
+    if cond in (S.true, S.false):
+        return cond
+    if cond.func is And:
+        cond = And(*cond.args, evaluate=False)
+    if cond.func is Boolean and getattr(cond, "func", None).__name__ == "Or":
+        cond = cond.func(*cond.args, evaluate=False)
+    if cond.count_ops() > _BOOLEAN_SIMPLIFY_OP_LIMIT:
+        return cond
+    try:
+        return simplify(cond)
+    except SYMBOLIC_QUERY_ERRORS:
+        return cond
+
 
 def unsatisfiable_q(cond, symbols, assumptions=True) -> bool:
-    """Best-effort unsatisfiability check using SymPy simplification and SAT search."""
+    """Best-effort unsatisfiability check using bounded simplification and SAT search."""
     cond = sympify(cond)
     symbols = tuple(symbols) if isinstance(symbols, (list, tuple, set)) else (symbols,)
     ass = sympify(assumptions)
-    try:
-        simp = simplify(And(cond, ass))
-    except SYMBOLIC_QUERY_ERRORS:
-        simp = And(cond, ass)
+    simp = _bounded_condition_simplify(And(cond, ass))
     if simp is S.false:
         return True
     if simp is S.true:
@@ -49,10 +69,7 @@ def unsatisfiable_q(cond, symbols, assumptions=True) -> bool:
 def condition_simplify(cond, symbols, assumptions=True):
     """Simplify a Boolean condition and drop it to False if provably unsatisfiable."""
     cond = sympify(cond)
-    try:
-        simp = simplify(cond)
-    except SYMBOLIC_QUERY_ERRORS:
-        simp = cond
+    simp = _bounded_condition_simplify(cond)
     if simp is S.false or simp is False:
         return S.false
     if simp is S.true or simp is True:
@@ -585,6 +602,155 @@ def _sample_from_condition(cond, z: Symbol):
     return None
 
 
+@lru_cache(maxsize=128)
+def _mpmath_numeric_callable(expr, z):
+    """Compile a reusable generic mpmath evaluator.
+
+    Elliptic Pi is routed around mpmath's adaptive implementation separately, so
+    generic samples can use SymPy's standard mpmath lambdify mapping.  This keeps
+    complex functions such as log mapped to mpmath rather than Python ``math``.
+    """
+    return mp.mp, lambdify(z, expr, modules="mpmath", cse=False)
+
+
+def _exact_mpmath_constant(value, ctx=mp):
+    """Translate exact SymPy constants used by branch samples without ``evalf``."""
+    value = sympify(value)
+    if value is S.Zero:
+        return ctx.mpf("0")
+    if value is S.One:
+        return ctx.mpf("1")
+    if value is I:
+        return ctx.j
+    if value is pi:
+        return ctx.pi
+    if value is E:
+        return ctx.e
+    if value.is_Integer:
+        return ctx.mpf(str(value))
+    if value.is_Rational:
+        return ctx.mpf(str(value.p)) / ctx.mpf(str(value.q))
+    if value.is_Float:
+        return ctx.mpf(str(value))
+    if value.is_Add:
+        return sum((_exact_mpmath_constant(a, ctx) for a in value.args), ctx.mpf("0"))
+    if value.is_Mul:
+        out = ctx.mpf("1")
+        for a in value.args:
+            out *= _exact_mpmath_constant(a, ctx)
+        return out
+    if value.is_Pow:
+        return _exact_mpmath_constant(value.base, ctx) ** _exact_mpmath_constant(
+            value.exp, ctx
+        )
+    raise ValueError(f"unsupported exact branch-sample constant: {value!r}")
+
+
+def _as_mpmath_complex(value, dps, ctx=mp):
+    with ctx.workdps(max(15, int(dps))):
+        return ctx.mpc(_exact_mpmath_constant(value, ctx))
+
+
+def _sympy_mpmath_number(value, dps):
+    """Convert an mpmath scalar to a precision-tagged SymPy number via decimal strings."""
+    digits = max(15, int(dps))
+    if isinstance(value, mp.mpc):
+        re = sympify(mp.nstr(value.real, digits))
+        im = sympify(mp.nstr(value.imag, digits))
+        return re + I * im
+    return sympify(mp.nstr(value, digits))
+
+
+def _numeric_mpmath_value_inprocess(expr, z, point, dps):
+    ctx, fn = _mpmath_numeric_callable(sympify(expr), z)
+    with ctx.workdps(max(15, int(dps))):
+        value = fn(_as_mpmath_complex(point, dps, ctx))
+        return _sympy_mpmath_number(value, dps)
+
+
+def _fixed_simpson_integral(ctx, endpoint, n_num, m_num, panels=1024):
+    """Integrate the elliptic-Pi amplitude integrand with a fixed work count."""
+
+    def integrand(t):
+        angle = endpoint * t
+        sin2 = ctx.sin(angle) ** 2
+        return endpoint / ((1 - n_num * sin2) * ctx.sqrt(1 - m_num * sin2))
+
+    h = ctx.mpf(1) / panels
+    total = integrand(ctx.mpf(0)) + integrand(ctx.mpf(1))
+    for j in range(1, panels):
+        total += (4 if j % 2 else 2) * integrand(j * h)
+    return total * h / 3
+
+
+def _elliptic_pi_complete_fixed(ctx, n_num, m_num):
+    """Deterministically evaluate complete elliptic Pi on mpmath's branch.
+
+    For real ``m > 1`` the real integration segment crosses the square-root
+    branch point.  Evaluating on two fixed contours just below the endpoint and
+    linearly extrapolating to the boundary reproduces mpmath's lower-half-plane
+    continuation without invoking its adaptive Carlson/quadrature machinery.
+    Elsewhere the straight principal contour is nonsingular and a fixed Simpson
+    rule suffices.
+    """
+    if not ctx.im(n_num) and not ctx.im(m_num) and ctx.re(m_num) > 1:
+        eps_outer = ctx.mpf("0.02")
+        eps_inner = ctx.mpf("0.01")
+        outer = _fixed_simpson_integral(
+            ctx, ctx.pi / 2 - ctx.j * eps_outer, n_num, m_num, panels=2048
+        )
+        inner = _fixed_simpson_integral(
+            ctx, ctx.pi / 2 - ctx.j * eps_inner, n_num, m_num, panels=2048
+        )
+        return 2 * inner - outer
+    return _fixed_simpson_integral(ctx, ctx.pi / 2, n_num, m_num, panels=2048)
+
+
+def _elliptic_pi_complete_mpmath(expr, dps):
+    n, m = expr.args
+    ctx = mp.mp.clone()
+    with ctx.workdps(max(15, int(dps))):
+        n_num = _exact_mpmath_constant(n, ctx)
+        m_num = _exact_mpmath_constant(m, ctx)
+        value = _elliptic_pi_complete_fixed(ctx, n_num, m_num)
+        return _sympy_mpmath_number(value, dps)
+
+
+def _elliptic_pi_amplitude_mpmath(expr, z, point, dps):
+    """Evaluate incomplete elliptic Pi with a deterministic fixed quadrature.
+
+    The amplitude is reduced by its pi quasi-period.  Both the principal-strip
+    integral and the complete-Pi correction use fixed-work Simpson contours, so
+    this path is independent of warmed adaptive-quadrature state in mpmath.
+    """
+    n, phi_expr, m = expr.args
+    if phi_expr != z:
+        return None
+    ctx = mp.mp.clone()
+    with ctx.workdps(max(15, int(dps))):
+        phi = _as_mpmath_complex(point, dps, ctx)
+        n_num = _exact_mpmath_constant(n, ctx)
+        m_num = _exact_mpmath_constant(m, ctx)
+        k = int(ctx.floor(ctx.re(phi) / ctx.pi + ctx.mpf("0.5")))
+        reduced = phi - k * ctx.pi
+        principal = _fixed_simpson_integral(ctx, reduced, n_num, m_num)
+        if k:
+            principal += 2 * k * _elliptic_pi_complete_fixed(ctx, n_num, m_num)
+        return _sympy_mpmath_number(principal, dps)
+
+
+def _numeric_mpmath_value(expr, z, point, dps):
+    expr = sympify(expr)
+    if expr.func is elliptic_pi:
+        if len(expr.args) == 2:
+            return _elliptic_pi_complete_mpmath(expr, dps)
+        if len(expr.args) == 3:
+            specialized = _elliptic_pi_amplitude_mpmath(expr, z, point, dps)
+            if specialized is not None:
+                return specialized
+    return _numeric_mpmath_value_inprocess(expr, z, point, dps)
+
+
 def numeric_branch_cut_jumps(
     expr, vars_list, wprec: int = 30, step_size=None, assumptions=True
 ):
@@ -614,8 +780,13 @@ def numeric_branch_cut_jumps(
         if sample is None:
             continue
         point, normal = sample
-        f_plus = (expr.subs(z, point + step * normal)).evalf(wprec)
-        f_minus = (expr.subs(z, point - step * normal)).evalf(wprec)
+        plus_point = point + step * normal
+        minus_point = point - step * normal
+        f_plus = _numeric_mpmath_value(expr, z, plus_point, wprec)
+        f_minus = _numeric_mpmath_value(expr, z, minus_point, wprec)
+        expected = _numeric_mpmath_value(
+            jump_expr, z, point if jump_expr.has(z) else S.Zero, wprec
+        )
         out.append(
             {
                 "BranchCondition": cond,
@@ -623,10 +794,8 @@ def numeric_branch_cut_jumps(
                 "Normal": normal,
                 "fPlus": f_plus,
                 "fMinus": f_minus,
-                "Jump": (f_plus - f_minus).evalf(wprec),
-                "ExpectedJump": jump_expr.subs(z, point).evalf(wprec)
-                if jump_expr.has(z)
-                else jump_expr.evalf(wprec),
+                "Jump": f_plus - f_minus,
+                "ExpectedJump": expected,
             }
         )
     return out

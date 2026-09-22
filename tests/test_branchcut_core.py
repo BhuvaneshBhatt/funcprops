@@ -316,3 +316,47 @@ def test_numeric_branch_cut_jumps_elliptic_pi_amplitude():
         out, key=lambda rec: abs(complex(rec["Jump"]) - complex(rec["ExpectedJump"]))
     )
     assert abs(complex(best["Jump"]) - complex(best["ExpectedJump"])) < 2
+
+
+def test_numeric_branch_samples_do_not_use_sympy_evalf(monkeypatch):
+    import funcprops.branchcuts.computation as computation
+
+    z = symbols("z")
+    expr = elliptic_pi(S.Half, z, S(3))
+
+    def forbidden_evalf(*args, **kwargs):
+        raise AssertionError(
+            "SymPy evalf must not be used for numerical branch samples"
+        )
+
+    from sympy import Expr
+
+    monkeypatch.setattr(Expr, "evalf", forbidden_evalf)
+    value = computation._numeric_mpmath_value(expr, z, pi / 2 + I / 2, 30)
+    assert value.is_number
+
+
+def test_numeric_branch_callable_is_reused():
+    import funcprops.branchcuts.computation as computation
+
+    z = symbols("z")
+    expr = elliptic_pi(S.Half, z, S(3))
+    assert computation._mpmath_numeric_callable(
+        expr, z
+    ) is computation._mpmath_numeric_callable(expr, z)
+
+
+def test_elliptic_pi_branch_sampling_avoids_adaptive_ellippi(monkeypatch):
+    """The warmed elliptic-Pi branch sampler must use only fixed-work contours."""
+    import mpmath as mp
+
+    z = Symbol("z", complex=True)
+
+    def forbidden_ellippi(*args, **kwargs):
+        raise AssertionError("adaptive mpmath ellippi must not be used here")
+
+    monkeypatch.setattr(type(mp.mp), "ellippi", forbidden_ellippi)
+    out = numeric_branch_cut_jumps(elliptic_pi(S.Half, z, S(3)), [z], wprec=30)
+    assert out
+    target = complex(0.7114612197, -3.5079395031)
+    assert min(abs(complex(rec["Jump"]) - target) for rec in out) < 1e-5

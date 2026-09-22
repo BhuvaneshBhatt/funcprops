@@ -37,7 +37,8 @@ from .conditions import (
     AUnequalQ,
     NonTerminatingQ,
 )
-from .results import ConditionalValue, PropertyResult
+from .exactness import certify_equal
+from .results import ConditionalExpression, PropertyResult
 
 
 class ConditionTruth(str, Enum):
@@ -104,17 +105,17 @@ def _semantic_predicate(node):
     if cls is AOddQ:
         return _ask_predicate(a, "is_odd", Q.odd)
     if cls is AUnequalQ and len(args) == 2:
-        d = sp.simplify(args[0] - args[1])
-        if d == 0:
+        equal = certify_equal(args[0], args[1])
+        if equal is True:
             return S.false
-        if d.is_zero is False:
+        if equal is False:
             return S.true
         return None
     if cls is AEqualQ and len(args) == 2:
-        d = sp.simplify(args[0] - args[1])
-        if d == 0:
+        equal = certify_equal(args[0], args[1])
+        if equal is True:
             return S.true
-        if d.is_zero is False:
+        if equal is False:
             return S.false
         return None
     if cls in (AAssumedQ, AAssumedIneqQ):
@@ -311,7 +312,7 @@ def evaluate_property(
         )
         if effective is S.false:
             continue
-        out.append(ConditionalValue(c.value, effective))
+        out.append(ConditionalExpression(c.value, effective))
         covered = simplify_condition(Or(covered, c.condition), assumptions=assumptions)
         if effective is S.true:
             # An unconditional rule at this precedence level shadows every

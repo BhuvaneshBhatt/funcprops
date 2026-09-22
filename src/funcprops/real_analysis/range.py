@@ -5,8 +5,9 @@ from sympy import S
 
 from .. import _semialg
 from ..engine import evaluate_property
+from ..exactness import certify_zero
 from ..exceptions import POLYNOMIAL_ERRORS, SYMBOLIC_QUERY_ERRORS
-from ..results import ConditionalValue, PropertyResult
+from ..results import ConditionalExpression, PropertyResult
 from ..stratification import (
     evaluate_parameter_strata,
     normalize_cases,
@@ -79,7 +80,8 @@ def _registry_range(expr, var, y):
         if pguard is S.true:
             return cond
         return normalize_cases(
-            (ConditionalValue(cond, pguard),), source="registry-range-stratification"
+            (ConditionalExpression(cond, pguard),),
+            source="registry-range-stratification",
         )
     if r.cases:
         cases = []
@@ -88,7 +90,7 @@ def _registry_range(expr, var, y):
             if cond is not None:
                 cond = _refine_interval_attainment(expr, var, cond, y)
                 cases.append(
-                    ConditionalValue(
+                    ConditionalExpression(
                         cond, sp.And(semantic_condition(c.condition), pguard)
                     )
                 )
@@ -223,16 +225,16 @@ def _affine_transform(expr, var, y, domain):
             return set_to_condition(_scale_interval(ss, A, B, 1), y)
         if A.is_negative:
             return set_to_condition(_scale_interval(ss, A, B, -1), y)
-        if A.is_zero:
+        if certify_zero(A) is True:
             return sp.Eq(y, B)
         return normalize_cases(
             (
-                ConditionalValue(
+                ConditionalExpression(
                     set_to_condition(_scale_interval(ss, A, B, 1), y),
                     sp.And(extra, A > 0),
                 ),
-                ConditionalValue(sp.Eq(y, B), sp.And(extra, sp.Eq(A, 0))),
-                ConditionalValue(
+                ConditionalExpression(sp.Eq(y, B), sp.And(extra, sp.Eq(A, 0))),
+                ConditionalExpression(
                     set_to_condition(_scale_interval(ss, A, B, -1), y),
                     sp.And(extra, A < 0),
                 ),
@@ -247,7 +249,7 @@ def _affine_transform(expr, var, y, domain):
             if isinstance(tr, PropertyResult):
                 cases.extend(tr.cases)
             elif tr is not None:
-                cases.append(ConditionalValue(tr, c.condition))
+                cases.append(ConditionalExpression(tr, c.condition))
         return (
             normalize_cases(cases, source="affine-range-stratification")
             if cases
@@ -278,8 +280,8 @@ def _parameterized_elementary_range(expr, var, y, domain_condition):
             real_guard = S.true if A.is_real is True else sp.Contains(A, S.Reals)
             return normalize_cases(
                 (
-                    ConditionalValue(y > 0, sp.And(real_guard, sp.Ne(A, 0))),
-                    ConditionalValue(sp.Eq(y, 1), sp.Eq(A, 0)),
+                    ConditionalExpression(y > 0, sp.And(real_guard, sp.Ne(A, 0))),
+                    ConditionalExpression(sp.Eq(y, 1), sp.Eq(A, 0)),
                 ),
                 source="positive-power-range-stratification",
             )
@@ -298,8 +300,8 @@ def _parameterized_elementary_range(expr, var, y, domain_condition):
             if A.free_symbols and A.is_real is True and B.is_real is True:
                 return normalize_cases(
                     (
-                        ConditionalValue(y > 0, sp.Ne(A, 0)),
-                        ConditionalValue(sp.Eq(y, sp.exp(B)), sp.Eq(A, 0)),
+                        ConditionalExpression(y > 0, sp.Ne(A, 0)),
+                        ConditionalExpression(sp.Eq(y, sp.exp(B)), sp.Eq(A, 0)),
                     ),
                     source="exp-affine-range-stratification",
                 )
@@ -328,7 +330,7 @@ def _early_range_stage(expr, var, y, domain_condition, constraints):
     sfacts = special_function_range_strata(expr, var, y, sf_domain)
     if sfacts:
         out = normalize_cases(
-            (ConditionalValue(v, g) for v, g, *_ in sfacts),
+            (ConditionalExpression(v, g) for v, g, *_ in sfacts),
             source="dlmf-special-function-range-stratification",
             evidence=tuple(src for *_, src in sfacts),
         )
@@ -349,7 +351,7 @@ def _early_range_stage(expr, var, y, domain_condition, constraints):
         facts = positive_axis_range_strata(expr, var, y)
         if facts:
             out = normalize_cases(
-                (ConditionalValue(v, g) for v, g, *_ in facts),
+                (ConditionalExpression(v, g) for v, g, *_ in facts),
                 source="special-function-range-stratification",
                 evidence=tuple(src for *_, src in facts),
             )
@@ -381,7 +383,31 @@ def _semialgebraic_range_stage(expr, var, y, domain_condition, method, kwargs):
         return None
 
 
-def function_range(
+def _piecewise_range(expr, var, y, domain_condition, method, kwargs):
+    from .piecewise import combine_piecewise_conditions, piecewise_decomposition
+
+    decomp = piecewise_decomposition(expr, var, domain_condition)
+    if not decomp.complete:
+        return None
+    images = []
+    for branch in decomp.branches:
+        image = _function_range_impl(
+            branch.expression,
+            var,
+            y,
+            constraints=branch.condition,
+            method=method,
+            partition=None,
+            _domain_ready=True,
+            **kwargs,
+        )
+        if isinstance(image, PropertyResult):
+            return None
+        images.append(image)
+    return combine_piecewise_conditions(images)
+
+
+def _function_range_impl(
     expr,
     var,
     y,
@@ -410,7 +436,7 @@ def function_range(
         split = evaluate_parameter_strata(
             domain_condition,
             var,
-            lambda branch_domain: function_range(
+            lambda branch_domain: _function_range_impl(
                 expr,
                 var,
                 y,
@@ -426,6 +452,11 @@ def function_range(
             return split
     if not expr.has(var):
         return sp.Eq(y, expr)
+
+    if isinstance(expr, sp.Piecewise):
+        merged = _piecewise_range(expr, var, y, domain_condition, method, kwargs)
+        if merged is not None:
+            return merged
 
     early = _early_range_stage(expr, var, y, domain_condition, constraints)
     if early is not None:
@@ -515,7 +546,7 @@ def function_range(
             from ..transcendental.zero_geometry import zero_geometry
 
             if part is None and zero_geometry(expr, var, derivative_order=1, domain=ds):
-                part = monotonic_partition(expr, var, domain=ds)
+                part = monotonic_partition(expr, var, domain=ds, return_result=True)
         except SYMBOLIC_QUERY_ERRORS:
             pass
     if part is not None:
@@ -528,7 +559,7 @@ def function_range(
         return sp.simplify(r)
 
     if part is None and isinstance(ds, sp.Interval):
-        part = monotonic_partition(expr, var, domain=ds)
+        part = monotonic_partition(expr, var, domain=ds, return_result=True)
         prange = range_from_monotonic_partition(expr, var, part)
         if prange.complete and isinstance(prange.image, sp.Set):
             return set_to_condition(prange.image, y)
@@ -550,3 +581,19 @@ def function_range(
     except SYMBOLIC_QUERY_ERRORS:
         pass
     return sp.Function("UnknownRange")(expr, var, y)
+
+
+def function_range(
+    expr, var, y, *, constraints=True, method="auto", partition=None, **kwargs
+):
+    """Return the real range as a Boolean condition in ``y``."""
+    return _function_range_impl(
+        expr,
+        var,
+        y,
+        constraints=constraints,
+        method=method,
+        partition=partition,
+        _domain_ready=False,
+        **kwargs,
+    )

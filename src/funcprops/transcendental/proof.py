@@ -6,6 +6,7 @@ from enum import Enum
 import sympy as sp
 from sympy import S
 
+from ..exactness import certify_zero
 from ..exceptions import SYMBOLIC_QUERY_ERRORS
 
 
@@ -28,7 +29,7 @@ def extended_real_sign(value):
         return 1
     if value is -sp.oo:
         return -1
-    if value == 0 or value.is_zero is True:
+    if certify_zero(value) is True:
         return 0
     if value.is_positive is True:
         return 1

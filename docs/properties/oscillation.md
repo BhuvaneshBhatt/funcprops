@@ -9,10 +9,10 @@ Oscillation distinguishes persistent oscillation, finite oscillatory behavior, a
 ## API and return values
 
 ```python
-function_oscillation(expr, var, *, domain=True, details=False, partition=None)
+function_oscillation(expr, var, *, domain=True, return_result=False, partition=None, assumptions=True)
 ```
 
-An Oscillation classification; details can expose supporting partitions/evidence.
+An Oscillation classification by default; return_result=True exposes supporting partitions and evidence.
 
 ## Domains, assumptions, and parameters
 

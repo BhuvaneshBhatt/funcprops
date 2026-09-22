@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from examples.property_examples import EXAMPLES
+from examples.property_examples import EXAMPLES, STATISTICAL_SPECIAL_FUNCTION_EXAMPLES
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "docs" / "notebooks" / "function-properties-tour.ipynb"
@@ -23,7 +23,12 @@ GROUPS = [
     ),
     (
         "Shape and variation",
-        {"function_monotonicity", "function_convexity", "function_oscillation"},
+        {
+            "function_monotonicity",
+            "function_convexity",
+            "function_complete_monotonicity",
+            "function_oscillation",
+        },
     ),
     (
         "Regularity",
@@ -53,6 +58,25 @@ GROUPS = [
             "function_branchcuts",
             "function_singularities",
             "function_singularity_analysis",
+        },
+    ),
+    (
+        "Optimization and function geometry",
+        {
+            "function_boundary_behavior",
+            "function_level_boundedness",
+            "function_mode_existence",
+            "function_geometry",
+        },
+    ),
+    (
+        "Transformation geometry",
+        {
+            "function_jacobian",
+            "function_determinant_nonvanishing",
+            "function_local_invertibility",
+            "function_change_of_variables",
+            "function_transformation_geometry",
         },
     ),
 ]
@@ -104,6 +128,23 @@ def main() -> None:
                     )
                 )
                 cells.append(code(case.code + "\nresult"))
+    cells.append(md("## Statistical special functions"))
+    cells.append(
+        md(
+            "These examples exercise the theorem-backed statistical function layer. "
+            "See [Statistical special functions](../statistical_special_functions.md) "
+            "for supported families, parameter guards, and provenance."
+        )
+    )
+    for case in STATISTICAL_SPECIAL_FUNCTION_EXAMPLES:
+        cells.append(
+            md(
+                f"### {case.title}\n\n<!-- example-id: {case.example_id} -->\n\n"
+                f"**Application.** {case.application}\n\n"
+                f"Expected result: {case.expected}."
+            )
+        )
+        cells.append(code(case.code + "\nresult"))
     cells.append(
         md(
             "## Where to go next\n\nUse the [property reference](../properties/index.md) for comprehensive documentation. For parameterized functions, try the same query both without assumptions and after imposing a parameter guard; for piecewise functions, inspect how branch properties and interface conditions combine. Detailed result modes are especially useful when a downstream proof needs replayable evidence rather than only a classification."

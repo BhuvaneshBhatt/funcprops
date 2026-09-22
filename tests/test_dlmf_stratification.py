@@ -74,7 +74,7 @@ def test_incomplete_beta_parameter_dependent_endpoint():
 
 def test_zeta_registry_pole_not_erased_by_failed_local_series():
     s = sp.symbols("s")
-    poles = function_poles(sp.zeta(s), s)
+    poles = function_poles(sp.zeta(s), s, return_result=True)
     assert any(p.condition == sp.Eq(s, 1) for p in poles)
 
 

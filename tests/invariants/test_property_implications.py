@@ -11,7 +11,7 @@ x = sp.symbols("x", real=True)
 def test_analytic_implies_smooth_differentiable_and_continuous():
     for expr in (sp.exp(x), sp.sin(x), x**4 + x + 1):
         assert fp.function_analytic(expr, x) is fp.Analyticity.ANALYTIC
-        assert fp.function_smoothness(expr, x).smooth is True
+        assert fp.function_smoothness(expr, x, return_result=True).smooth is True
         assert fp.function_differentiability(expr, x) is fp.Differentiability.SMOOTH
         assert fp.function_continuous(expr, x) is fp.Continuity.CONTINUOUS
 

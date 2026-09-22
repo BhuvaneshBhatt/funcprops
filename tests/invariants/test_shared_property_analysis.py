@@ -93,7 +93,7 @@ def test_shared_relation_prover_reuses_sign_reasoning():
 
 def test_convexity_details_use_one_certificate_type():
     x = sp.symbols("x", real=True)
-    result = fp.function_convexity(x**2, x, details=True)
+    result = fp.function_convexity(x**2, x, return_result=True)
     certificate = result.evidence[0]
 
     assert isinstance(certificate, fp.ConvexityCertificate)

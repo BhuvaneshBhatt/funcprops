@@ -7,6 +7,7 @@ from sympy import S
 from sympy.polys.polyerrors import PolynomialError
 
 from ..engine import simplify_condition
+from ..exactness import certify_identity_equal, certify_identity_zero
 from ..results import Homogeneity, Periodicity, Symmetry
 from ..transcendental.periodic import common_period_values, positive_period
 from .common import normalize_variables
@@ -54,20 +55,7 @@ class HomogeneityResult:
 
 
 def _zero(expr):
-    q = sp.simplify(expr)
-    if q == 0 or q.is_zero is True:
-        return True
-    if q.is_zero is False:
-        return False
-    try:
-        eq = q.equals(0)
-        if eq is True:
-            return True
-        if eq is False:
-            return False
-    except (TypeError, ValueError, NotImplementedError):
-        pass
-    return None
+    return certify_identity_zero(expr)
 
 
 def _period_from_frequency(arg, var):
@@ -76,7 +64,7 @@ def _period_from_frequency(arg, var):
         a = sp.simplify(sp.diff(arg, var))
         if a.has(var) or a == 0:
             return None
-        if sp.simplify(sp.diff(arg, var, 2)) != 0:
+        if certify_identity_zero(sp.diff(arg, var, 2)) is False:
             return None
         p = sp.simplify(2 * sp.pi / sp.Abs(a))
         return p if p.is_positive is True else None
@@ -129,7 +117,9 @@ def _visible_incommensurate_periods(expr, var):
     return len(ps) > 1 and common_period_values(*ps) is None
 
 
-def function_periodicity(expr, var, *, domain=True, assumptions=True, details=False):
+def function_periodicity(
+    expr, var, *, domain=True, assumptions=True, return_result=False
+):
     """Classify exact real periodicity and return a certified period in detail mode.
 
     A period propagated through composition/sums/products is certified but is
@@ -142,7 +132,7 @@ def function_periodicity(expr, var, *, domain=True, assumptions=True, details=Fa
         r = PeriodicityResult(
             Periodicity.CONSTANT, None, domain, ("independent-of-variable",), False
         )
-        return r if details else r.classification
+        return r if return_result else r.classification
     direct = positive_period(expr, var)
     p = direct if direct is not None else _period_of(expr, var)
     # Preserve a symbolic affine-frequency theorem instead of degrading to
@@ -158,7 +148,7 @@ def function_periodicity(expr, var, *, domain=True, assumptions=True, details=Fa
             b = sp.simplify(arg - a * var)
             affine = (
                 not a.has(var)
-                and sp.simplify(sp.diff(arg, var, 2)) == 0
+                and certify_identity_zero(sp.diff(arg, var, 2)) is True
                 and not b.has(var)
             )
         except (TypeError, ValueError, NotImplementedError):
@@ -175,7 +165,7 @@ def function_periodicity(expr, var, *, domain=True, assumptions=True, details=Fa
                     ("zero-affine-frequency",),
                     False,
                 )
-                return r if details else r.classification
+                return r if return_result else r.classification
             base = sp.pi if expr.func in (sp.tan, sp.cot) else 2 * sp.pi
             cp = sp.simplify(base / sp.Abs(a))
             cond = S.true if nonzero_guard is S.true else sp.Ne(a, 0)
@@ -187,7 +177,7 @@ def function_periodicity(expr, var, *, domain=True, assumptions=True, details=Fa
             r = PeriodicityResult(
                 Periodicity.PERIODIC, cp, domain, evidence, None, cond
             )
-            return r if details else r.classification
+            return r if return_result else r.classification
     if p is not None:
         # Replay the shift identity before accepting structural propagation.
         z = _zero(expr.subs(var, var + p) - expr)
@@ -201,7 +191,7 @@ def function_periodicity(expr, var, *, domain=True, assumptions=True, details=Fa
                 True
                 if primitive_minimal
                 and direct is not None
-                and sp.simplify(direct - p) == 0
+                and certify_identity_equal(direct, p) is True
                 else None
             )
             ev = (
@@ -212,7 +202,7 @@ def function_periodicity(expr, var, *, domain=True, assumptions=True, details=Fa
             r = PeriodicityResult(
                 Periodicity.PERIODIC, sp.simplify(p), domain, ev, fundamental
             )
-            return r if details else r.classification
+            return r if return_result else r.classification
     try:
         if expr.is_polynomial(var) and sp.Poly(expr, var).degree() > 0:
             result = PeriodicityResult(
@@ -222,7 +212,7 @@ def function_periodicity(expr, var, *, domain=True, assumptions=True, details=Fa
                 ("nonconstant-polynomial",),
                 None,
             )
-            return result if details else result.classification
+            return result if return_result else result.classification
     except PolynomialError:
         pass
     if _visible_incommensurate_periods(expr, var):
@@ -233,9 +223,9 @@ def function_periodicity(expr, var, *, domain=True, assumptions=True, details=Fa
             ("incommensurate-component-periods",),
             None,
         )
-        return r if details else r.classification
+        return r if return_result else r.classification
     r = PeriodicityResult(Periodicity.UNKNOWN, None, domain, ())
-    return r if details else r.classification
+    return r if return_result else r.classification
 
 
 def _classify_about(expr, var, c, *, allow_central=False):
@@ -329,7 +319,7 @@ def _trig_center_family(expr, var):
         return None
 
 
-def function_symmetry(expr, var, *, center=0, domain=True, details=False):
+def function_symmetry(expr, var, *, center=0, domain=True, return_result=False):
     """Classify reflection symmetry about ``center``.
 
     Passing ``center=None`` requests exact center discovery. Detail mode also
@@ -353,7 +343,7 @@ def function_symmetry(expr, var, *, center=0, domain=True, details=False):
                     k,
                     families,
                 )
-                return r if details else cls
+                return r if return_result else cls
         pc = _polynomial_reflection_center(expr, var)
         if isinstance(pc, tuple) and pc == ("all-centers-central",):
             c = S.Zero
@@ -361,13 +351,15 @@ def function_symmetry(expr, var, *, center=0, domain=True, details=False):
             r = SymmetryResult(
                 cls, c, domain, ("affine-all-centers-central",), S.Reals, None, k, ()
             )
-            return r if details else cls
+            return r if return_result else cls
         candidates = pc if isinstance(pc, tuple) else (() if pc is None else (pc,))
         # A pointwise outer function preserves every even reflection center of
         # its varying argument. Verify on the full expression before accepting.
         if not candidates and len([a for a in expr.args if a.has(var)]) == 1:
             inner = next(a for a in expr.args if a.has(var))
-            ir = function_symmetry(inner, var, center=None, domain=domain, details=True)
+            ir = function_symmetry(
+                inner, var, center=None, domain=domain, return_result=True
+            )
             if ir.classification in (Symmetry.EVEN, Symmetry.BOTH):
                 candidates = (ir.center,)
         for c in candidates:
@@ -383,9 +375,9 @@ def function_symmetry(expr, var, *, center=0, domain=True, details=False):
                     k,
                     (),
                 )
-                return r if details else cls
+                return r if return_result else cls
         r = SymmetryResult(Symmetry.UNKNOWN, S.Zero, domain, (), candidates, None)
-        return r if details else r.classification
+        return r if return_result else r.classification
     c = sp.sympify(center)
     cls, reflected, k = _classify_about(expr, var, c)
     r = SymmetryResult(
@@ -398,7 +390,7 @@ def function_symmetry(expr, var, *, center=0, domain=True, details=False):
         k,
         (),
     )
-    return r if details else cls
+    return r if return_result else cls
 
 
 def _normalize_weights(vars_, weights):
@@ -472,7 +464,7 @@ def _infer_homogeneous_degree(expr, vars_, weights):
 
 
 def function_homogeneity(
-    expr, vars, *, degree=None, weights=None, assumptions=True, details=False
+    expr, vars, *, degree=None, weights=None, assumptions=True, return_result=False
 ):
     """Classify positive weighted homogeneity in one or more variables.
 
@@ -496,7 +488,7 @@ def function_homogeneity(
         r = HomogeneityResult(
             cls, rd, vv, ("zero-function-all-degrees",), ww, S.true, cases, assumptions
         )
-        return r if details else cls
+        return r if return_result else cls
     if degree is not None:
         d = sp.sympify(degree)
         if inferred not in (None, False):
@@ -555,4 +547,4 @@ def function_homogeneity(
         cases,
         assumptions,
     )
-    return r if details else cls
+    return r if return_result else cls

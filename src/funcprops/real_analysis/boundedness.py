@@ -4,7 +4,7 @@ import sympy as sp
 from sympy import S
 
 from ..exceptions import SYMBOLIC_QUERY_ERRORS
-from ..results import Boundedness, ConditionalValue, PropertyResult
+from ..results import Boundedness, ConditionalExpression, PropertyResult
 from ..stratification import normalize_cases
 from .common import combine_natural_domain_condition, condition_to_set
 from .domain import function_domain
@@ -154,7 +154,7 @@ def function_boundedness(expr, var, *, domain=True):
     if isinstance(cond, PropertyResult):
         out = normalize_cases(
             (
-                ConditionalValue(
+                ConditionalExpression(
                     _boundedness_from_range_condition(c.value, y), c.condition
                 )
                 for c in cond.cases

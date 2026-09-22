@@ -9,10 +9,10 @@ Discontinuity analysis locates points or guarded loci where continuity fails.
 ## API and return values
 
 ```python
-function_discontinuities(expr, var, *, assumptions=True)
+function_discontinuities(expr, var, *, assumptions=True, return_result=False)
 ```
 
-A tuple of Singularity records of kind DISCONTINUITY.
+A Boolean discontinuity locus by default; return_result=True returns the supporting Singularity records.
 
 ## Domains, assumptions, and parameters
 
@@ -29,8 +29,7 @@ import sympy as sp
 import funcprops as fp
 
 x, y = sp.symbols("x y", real=True)
-f = sp.Piecewise((0, x < 0), (1, True))
-result = fp.function_discontinuities(f, x)
+f = sp.Piecewise((0, x < 0), (1, True)); result = fp.function_discontinuities(f, x)
 result
 ```
 
@@ -50,7 +49,7 @@ Successful conclusions are exact symbolic claims over the stated domain and assu
 
 ## Known limitations
 
-An empty tuple means no discontinuity was certified by the analysis, not necessarily a completeness theorem unless the associated detailed analysis is complete.
+A false locus means no discontinuity was certified by the analysis, not necessarily a completeness theorem unless detailed singularity analysis is complete.
 
 `UNKNOWN` means that the available proof machinery did not certify the claim. It must not be interpreted as the negation of the property.
 

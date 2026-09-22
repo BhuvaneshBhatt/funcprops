@@ -29,7 +29,7 @@ import sympy as sp
 import funcprops as fp
 
 x, y = sp.symbols("x y", real=True)
-result = fp.function_singularity_analysis(1 / x, x)
+result = fp.function_singularity_analysis(1/x, x)
 result
 ```
 

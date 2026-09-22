@@ -17,7 +17,7 @@ through the same expensive path.
   branch/definition loci, analyticity, meromorphicity, and continuity.
 - `stratification.py` normalizes guarded alternatives and splits mixed
   variable/parameter domains for all property engines.
-- `_semialg.py` is the narrow adapter to semialg 1.1.0+ public root exports for
+- `_semialg.py` is the narrow adapter to semialg 1.2.0+ public root exports for
   exact semialgebraic domain, range, sign, monotonicity, convexity, smoothness, and mapping operations.
 - `real_analysis/` contains domain, sign/inequality, monotonicity, range, mapping,
   convexity, boundedness, smoothness, and structural-property reasoning.
@@ -78,12 +78,34 @@ The sign engine is the common exact inequality oracle. Relations such as `f >= g
 are reduced to the sign of `f - g`; derivative-based consumers therefore reuse the
 same proof ladder instead of maintaining independent inequality solvers.
 
-Finite `Piecewise` expressions are first converted to effective, non-overlapping
-branch domains. Sign and boundedness combine branch classifications directly.
-Monotonicity additionally verifies the direction of one-sided interface jumps.
-Convexity requires matching interface values and the appropriate ordering of
-one-sided derivative slopes. Unknown interface facts remain unknown rather than
-being inferred from compatible branch labels alone.
+Finite `Piecewise` expressions are first converted to a `PiecewiseDecomposition`
+of effective, non-overlapping connected branch cells. Every finite seam records
+left/right approach branches separately from the branch that owns the point.
+`PiecewiseBoundaryCertificate` computes one-sided values and derivatives on the
+selected branch expressions themselves, avoiding whole-Piecewise limit heuristics.
+Sign and boundedness combine branch classifications directly; zeros and ranges
+merge branch-local sets/images. Continuity, differentiability, smoothness,
+monotonicity, and convexity additionally require the appropriate certified seam
+conditions. Unknown interface facts remain unknown rather than being inferred
+from compatible branch labels alone. See [`docs/piecewise.md`](piecewise.md).
+
+## Singularity loci and restricted domains
+
+Singularity analysis uses Boolean loci rather than assuming singularities are
+isolated points. In several variables, rational denominators and elementary
+branch structures therefore remain as exact hypersurface or preimage conditions,
+such as `Eq(x + y, 0)` or the preimage of the principal logarithm cut. Complex
+ambient results expose these conditions explicitly through `re(...)` and
+`im(...)`.
+
+`ConditionalExpression` supplies a function-specific restriction independently of
+the ambient real/complex mode. The aggregate singularity query intersects the
+known locus with that restriction, using semialgebraic feasibility when available
+to certify empty intersections. Detailed singularity results retain the
+unrestricted locus and classify it against the restriction's ambient interior,
+boundary, and exterior. Thus an excluded support boundary remains available as
+geometry/evidence without being reported as a singularity of the restricted
+function itself.
 
 ## Zero geometry and interval decomposition
 
@@ -171,3 +193,55 @@ The resulting `DetailedPropertyResult` exposes `primary`, `cases`, `domain`,
 `all_properties` without forcing every property family into one public scalar
 type.  This keeps simple calls lightweight while giving orchestration and
 certificate tooling a stable structural contract.
+
+## Native registry theorem layers
+
+The native registry uses `FunctionSlot` placeholders, which are local positional
+arguments rather than global symbols. `PropertyRule` stores direct property
+facts. `IdentityRule` stores exact rewrites and `DerivativeRule` stores an exact
+partial derivative with respect to one function slot.
+
+First-derivative transport is replayable through `ChainRuleCertificate`. For a
+call `F(g1(x), ..., gn(x))`, `registry_derivative` requires a derivative theorem
+for every varying argument and constructs
+
+`sum_i (partial F / partial slot_i)(g1(x), ..., gn(x)) * diff(gi(x), x)`.
+
+Rule conditions are instantiated and retained on the certificate. A consumer
+must prove those conditions on its analysis domain before treating the
+certificate as applicable. The shared derivative cache consumes unconditional
+complete certificates; monotonicity can additionally consume a conditional
+certificate when its current assumptions imply the certificate condition.
+
+Registry coverage is tracked in `.github/registry/coverage-matrix.md`. The
+checked baseline is monotone: CI permits registry growth but rejects silent
+loss of an existing category/property coverage cell.
+
+## Native registry composition
+
+The native registry separates theorem localization from transport into a user
+query. `FunctionSlot` binds theorem-local argument positions without creating
+global-symbol dependencies. `SubjectMap` records how one or more theorem subjects
+map to the expressions in a concrete call.
+
+For a scalar composition
+
+\[
+x \longmapsto F(g_1(x),\ldots,g_n(x)),
+\]
+
+`registry_derivative` certifies the derivative as the registered outer gradient
+dotted with the path tangent `(g_1'(x), ..., g_n'(x))`. Missing or ambiguous
+partial-derivative rules leave the certificate incomplete; they are never guessed.
+Pointwise, regularity, finite joint-zero, and monotonicity-via-gradient transports
+use the same subject-map abstraction.
+
+For multiple independent analysis variables, the subject map stores the full
+Jacobian. First-order transport uses `JacobianCertificate`; second-order transport
+uses `HessianCertificate` and the multivariate chain rule. Convexity is certified
+from the composite Hessian rather than from unsafe closure heuristics.
+
+The same separation is used by `ConditionalExpression` and Piecewise analysis:
+conditions restrict the effective analysis domain, branch expressions are analyzed
+through the ordinary property engines, and boundary certificates determine whether
+branch-local conclusions merge into a global result.
