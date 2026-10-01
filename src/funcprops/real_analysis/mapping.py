@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from builtins import range as builtin_range
+
 import sympy as sp
 from sympy import S
 
@@ -15,23 +17,23 @@ from ..stratification import (
 )
 from ..transcendental.periodic import positive_period
 from .common import (
-    combine_natural_domain_condition,
+    combine_domain_condition,
     condition_to_set,
     is_semialgebraic_condition,
     is_semialgebraic_expression,
     normalize_variables,
 )
-from .domain import function_domain
+from .domain import domain as _domain
 from .monotonic_certificates import (
-    injectivity_from_monotonic_partition,
+    injectivity_from_partition,
     monotonic_partition,
 )
-from .monotonicity import function_monotonicity
-from .range import function_range
+from .monotonicity import monotonicity
+from .range import range
 
 
 def _combined_domain(expr, var, domain):
-    return combine_natural_domain_condition(function_domain(expr, var), domain, var)
+    return combine_domain_condition(_domain(expr, var), domain, var)
 
 
 def _semialg_mapping_result(expr, var, domain, *, codomain=True):
@@ -42,7 +44,7 @@ def _semialg_mapping_result(expr, var, domain, *, codomain=True):
     ):
         return None
     # semialg's mapping-properties query is currently nonparametric. Preserve
-    # funcprops' guarded parameter strata instead of quantifying/collapsing free
+    # funcprops' guarded parameter strata
     # coefficients as part of an ordinary mapping query.
     problem_symbols = sp.sympify(expr).free_symbols | sp.sympify(domain).free_symbols
     if problem_symbols - {var}:
@@ -130,8 +132,8 @@ def _full_rank_condition(A, rank):
     if rank > min(m, n):
         return S.false
     minors = []
-    for rows in combinations(range(m), rank):
-        for cols in combinations(range(n), rank):
+    for rows in combinations(builtin_range(m), rank):
+        for cols in combinations(builtin_range(n), rank):
             det = sp.simplify(A.extract(rows, cols).det())
             zero = certify_zero(det)
             if zero is False:
@@ -199,7 +201,7 @@ def _injective_structural_closure(expr, var, domain, partition):
         scale, inner, _ = transform
         scale_zero = certify_zero(scale)
         if scale_zero is False:
-            return function_injective(inner, var, domain=domain, partition=partition)
+            return injective(inner, var, domain=domain, partition=partition)
         if scale_zero is True:
             return (
                 TruthValue.TRUE
@@ -207,7 +209,7 @@ def _injective_structural_closure(expr, var, domain, partition):
                 else TruthValue.FALSE
             )
         if scale.free_symbols:
-            nonzero = function_injective(inner, var, domain=domain, partition=partition)
+            nonzero = injective(inner, var, domain=domain, partition=partition)
             zero = (
                 TruthValue.TRUE
                 if _domain_at_most_one_point(domain, var)
@@ -230,11 +232,11 @@ def _injective_structural_closure(expr, var, domain, partition):
     ):
         inner = expr.args[0]
         if inner != var and inner.has(var):
-            return function_injective(inner, var, domain=domain, partition=partition)
+            return injective(inner, var, domain=domain, partition=partition)
     return TruthValue.UNKNOWN
 
 
-def function_injective(expr, var, *, domain=True, partition=None):
+def injective(expr, var, *, domain=True, partition=None):
     """Classify injectivity on the requested domain using exact witnesses.
 
     Scalar functions reuse monotonicity and monotonic partitions before trying
@@ -253,7 +255,7 @@ def function_injective(expr, var, *, domain=True, partition=None):
     structural = _injective_structural_closure(expr, var, dom, partition)
     if structural is not TruthValue.UNKNOWN:
         return structural
-    m = function_monotonicity(expr, var, domain=dom, partition=partition)
+    m = monotonicity(expr, var, domain=dom, partition=partition)
     if isinstance(m, PropertyResult):
         cases = []
         for c in m.cases:
@@ -269,7 +271,7 @@ def function_injective(expr, var, *, domain=True, partition=None):
         if direct is not TruthValue.UNKNOWN:
             return direct
 
-    # Reuse the exact monotonic partition instead of solving derivative zeros
+    # Reuse the exact monotonic partition
     # again.  Same-direction strict cells cover stationary inflections; a
     # certified direction reversal gives an exact noninjectivity proof.
     part = (
@@ -278,7 +280,7 @@ def function_injective(expr, var, *, domain=True, partition=None):
         and getattr(partition, "domain", None) == condition_to_set(dom, var)
         else monotonic_partition(expr, var, domain=dom, return_result=True)
     )
-    pv = injectivity_from_monotonic_partition(part)
+    pv = injectivity_from_partition(part)
     if pv is not TruthValue.UNKNOWN:
         return pv
     if not expr.has(var):
@@ -327,7 +329,7 @@ def _surjectivity_from_range(cond, y, target):
     return exact_set_equal(rs, target)
 
 
-def function_surjective(expr, var, *, domain=True, codomain=S.Reals):
+def surjective(expr, var, *, domain=True, codomain=S.Reals):
     vv = normalize_variables(var)
     if len(vv) > 1:
         return _multivariate_mapping_truth(
@@ -344,7 +346,7 @@ def function_surjective(expr, var, *, domain=True, codomain=S.Reals):
     if target is None:
         return TruthValue.UNKNOWN
     try:
-        r = function_range(expr, var, y, constraints=dom)
+        r = range(expr, var, y, constraints=dom)
     except SYMBOLIC_QUERY_ERRORS:
         return TruthValue.UNKNOWN
     if isinstance(r, PropertyResult):
@@ -363,7 +365,7 @@ def function_surjective(expr, var, *, domain=True, codomain=S.Reals):
     return _surjectivity_from_range(r, y, target)
 
 
-def function_bijective(expr, var, *, domain=True, codomain=S.Reals):
+def bijective(expr, var, *, domain=True, codomain=S.Reals):
     vv = normalize_variables(var)
     if len(vv) > 1:
         return _multivariate_mapping_truth(
@@ -375,6 +377,6 @@ def function_bijective(expr, var, *, domain=True, codomain=S.Reals):
     backend = _semialg_mapping_result(expr, var, dom, codomain=codomain)
     if backend is not None and backend.bijective is not None:
         return _truth_from_backend(backend.bijective)
-    i = function_injective(expr, var, domain=dom)
-    s = function_surjective(expr, var, domain=dom, codomain=codomain)
+    i = injective(expr, var, domain=dom)
+    s = surjective(expr, var, domain=dom, codomain=codomain)
     return combine_truth_results(i, s, op="and", source="bijectivity-stratification")

@@ -2,10 +2,10 @@ import sympy as sp
 from sympy import S
 
 from funcprops import (
-    function_domain,
-    function_sign,
-    function_singularity_analysis,
+    domain,
     monotonic_partition,
+    sign,
+    singularity_analysis,
     symbolic_extremum_range,
 )
 from funcprops.proof_cache import (
@@ -19,9 +19,9 @@ from funcprops.transcendental.zero_geometry import zero_geometry
 def test_domain_cache_reused_across_property_calls():
     x = sp.symbols("x", real=True)
     clear_property_proof_cache()
-    assert function_domain(sp.exp(x), x) is S.true
+    assert domain(sp.exp(x), x) is S.true
     before = property_proof_cache_info()["domain"]
-    function_sign(sp.exp(x), x)
+    sign(sp.exp(x), x)
     after = property_proof_cache_info()["domain"]
     assert after.hits > before.hits
 
@@ -58,13 +58,13 @@ def test_singularity_cache_key_includes_assumptions():
     x, a = sp.symbols("x a", real=True)
     clear_property_proof_cache()
     e = sp.log(a * x)
-    r1 = function_singularity_analysis(e, x, domain=S.Complexes, assumptions=a > 0)
+    r1 = singularity_analysis(e, x, domain=S.Complexes, assumptions=a > 0)
     info1 = property_proof_cache_info()["singularity"]
-    r2 = function_singularity_analysis(e, x, domain=S.Complexes, assumptions=a > 0)
+    r2 = singularity_analysis(e, x, domain=S.Complexes, assumptions=a > 0)
     info2 = property_proof_cache_info()["singularity"]
     assert r1 == r2
     assert info2.hits == info1.hits + 1
-    function_singularity_analysis(e, x, domain=S.Complexes, assumptions=a < 0)
+    singularity_analysis(e, x, domain=S.Complexes, assumptions=a < 0)
     info3 = property_proof_cache_info()["singularity"]
     assert info3.misses == info2.misses + 1
 
@@ -72,7 +72,7 @@ def test_singularity_cache_key_includes_assumptions():
 def test_cache_is_lazy():
     x = sp.symbols("x", real=True)
     clear_property_proof_cache()
-    function_domain(sp.sin(x), x)
+    domain(sp.sin(x), x)
     info = property_proof_cache_info()
     assert info["domain"].misses >= 1
     assert info["sign"].misses == 0
@@ -86,4 +86,4 @@ def test_cached_domain_preserves_invalid_domain_error():
     import pytest
 
     with pytest.raises(ValueError):
-        function_domain(sp.exp(x), x, domain=sp.Integers)
+        domain(sp.exp(x), x, domain=sp.Integers)

@@ -403,8 +403,8 @@ def elliptic_pi_pole_seam(phi, n):
 
 def branch_rule_log(z):
     return BranchRule(
-        name="log",
-        jump_terms=(
+        "log",
+        (
             JumpTerm(
                 2 * pi * I,
                 real_lt(z, 0),
@@ -416,8 +416,8 @@ def branch_rule_log(z):
 
 def branch_rule_sqrt(z):
     return BranchRule(
-        name="sqrt",
-        jump_terms=(
+        "sqrt",
+        (
             JumpTerm(
                 2 * I * sqrt(-z),
                 real_lt(z, 0),
@@ -429,8 +429,8 @@ def branch_rule_sqrt(z):
 
 def branch_rule_power(z, a):
     return BranchRule(
-        name="power",
-        jump_terms=(
+        "power",
+        (
             JumpTerm(
                 2 * I * sin(pi * a) * (-z) ** a,
                 real_lt(z, 0) & ~Contains(a, S.Integers),
@@ -442,8 +442,8 @@ def branch_rule_power(z, a):
 
 def branch_rule_acos(z):
     return BranchRule(
-        name="acos",
-        jump_terms=(
+        "acos",
+        (
             JumpTerm(2 * I * acosh(z), real_gt(z, 1), "Right-hand cut."),
             JumpTerm(-2 * I * acosh(-z), real_lt(z, -1), "Left-hand cut."),
         ),
@@ -452,8 +452,8 @@ def branch_rule_acos(z):
 
 def branch_rule_asin(z):
     return BranchRule(
-        name="asin",
-        jump_terms=(
+        "asin",
+        (
             JumpTerm(-2 * I * acosh(z), real_gt(z, 1), "Right-hand cut."),
             JumpTerm(2 * I * acosh(-z), real_lt(z, -1), "Left-hand cut."),
         ),
@@ -462,8 +462,8 @@ def branch_rule_asin(z):
 
 def branch_rule_atanh(z):
     return BranchRule(
-        name="atanh",
-        jump_terms=(
+        "atanh",
+        (
             JumpTerm(-pi * I, real_gt(z, 1), "Cut on (1, oo)."),
             JumpTerm(pi * I, real_lt(z, -1), "Cut on (-oo, -1)."),
         ),
@@ -472,8 +472,8 @@ def branch_rule_atanh(z):
 
 def branch_rule_acosh(z):
     return BranchRule(
-        name="acosh",
-        jump_terms=(
+        "acosh",
+        (
             JumpTerm(
                 2 * I * acos(z), real_between(z, -1, 1), "Interior cut on (-1, 1)."
             ),
@@ -484,8 +484,8 @@ def branch_rule_acosh(z):
 
 def branch_rule_atan(z):
     return BranchRule(
-        name="atan",
-        jump_terms=(
+        "atan",
+        (
             JumpTerm(pi, imag_axis_gt(z, 1), "Upper imaginary-axis cut outside i."),
             JumpTerm(-pi, imag_axis_lt(z, -1), "Lower imaginary-axis cut outside -i."),
         ),
@@ -494,8 +494,8 @@ def branch_rule_atan(z):
 
 def branch_rule_asinh(z):
     return BranchRule(
-        name="asinh",
-        jump_terms=(
+        "asinh",
+        (
             JumpTerm(
                 2 * acosh(Abs(im(z))),
                 Eq(re(z), 0) & (Abs(im(z)) > 1),
@@ -507,8 +507,8 @@ def branch_rule_asinh(z):
 
 def branch_rule_acot(z):
     return BranchRule(
-        name="acot",
-        jump_terms=(
+        "acot",
+        (
             JumpTerm(-pi, imag_axis_gt(z, 1), "Upper imaginary-axis cut outside i."),
             JumpTerm(pi, imag_axis_lt(z, -1), "Lower imaginary-axis cut outside -i."),
         ),
@@ -517,8 +517,8 @@ def branch_rule_acot(z):
 
 def branch_rule_acoth(z):
     return BranchRule(
-        name="acoth",
-        jump_terms=(
+        "acoth",
+        (
             JumpTerm(-pi * I, real_between(z, 0, 1), "Mapped cut from atanh(1/z)."),
             JumpTerm(pi * I, real_between(z, -1, 0), "Mapped cut from atanh(1/z)."),
         ),
@@ -527,8 +527,8 @@ def branch_rule_acoth(z):
 
 def branch_rule_asec(z):
     return BranchRule(
-        name="asec",
-        jump_terms=(
+        "asec",
+        (
             JumpTerm(
                 2 * I * acosh(1 / z),
                 real_between(z, 0, 1),
@@ -545,8 +545,8 @@ def branch_rule_asec(z):
 
 def branch_rule_acsc(z):
     return BranchRule(
-        name="acsc",
-        jump_terms=(
+        "acsc",
+        (
             JumpTerm(
                 -2 * I * acosh(1 / z),
                 real_between(z, 0, 1),
@@ -563,8 +563,8 @@ def branch_rule_acsc(z):
 
 def branch_rule_asech(z):
     return BranchRule(
-        name="asech",
-        jump_terms=(
+        "asech",
+        (
             JumpTerm(2 * I * acos(1 / z), real_gt(z, 1), "Mapped cut from acosh(1/z)."),
             JumpTerm(
                 2 * pi * I,
@@ -577,8 +577,8 @@ def branch_rule_asech(z):
 
 def branch_rule_acsch(z):
     return BranchRule(
-        name="acsch",
-        jump_terms=(
+        "acsch",
+        (
             JumpTerm(
                 2 * acosh(Abs(im(z)) / Abs(z)),
                 Eq(re(z), 0) & (Abs(im(z)) < 1) & (Abs(im(z)) > 0),
@@ -590,8 +590,8 @@ def branch_rule_acsch(z):
 
 def branch_rule_expint_ei(z):
     return BranchRule(
-        name="Ei",
-        jump_terms=(
+        "Ei",
+        (
             JumpTerm(
                 2 * pi * I, real_lt(z, 0), "Principal cut on the negative real axis."
             ),
@@ -601,8 +601,8 @@ def branch_rule_expint_ei(z):
 
 def branch_rule_ci(z):
     return BranchRule(
-        name="Ci",
-        jump_terms=(
+        "Ci",
+        (
             JumpTerm(
                 2 * pi * I, real_lt(z, 0), "Principal cut on the negative real axis."
             ),
@@ -612,8 +612,8 @@ def branch_rule_ci(z):
 
 def branch_rule_chi(z):
     return BranchRule(
-        name="Chi",
-        jump_terms=(
+        "Chi",
+        (
             JumpTerm(
                 2 * pi * I, real_lt(z, 0), "Principal cut on the negative real axis."
             ),
@@ -623,8 +623,8 @@ def branch_rule_chi(z):
 
 def branch_rule_li(z):
     return BranchRule(
-        name="li",
-        jump_terms=(
+        "li",
+        (
             JumpTerm(
                 2 * pi * I,
                 real_between(z, 0, 1),
@@ -636,8 +636,8 @@ def branch_rule_li(z):
 
 def branch_rule_expint(z, nu):
     return BranchRule(
-        name="expint",
-        jump_terms=(
+        "expint",
+        (
             JumpTerm(
                 -2 * pi * I * (-z) ** (nu - 1) / gamma(nu),
                 real_lt(z, 0),
@@ -649,8 +649,8 @@ def branch_rule_expint(z, nu):
 
 def branch_rule_loggamma(z):
     return BranchRule(
-        name="loggamma",
-        jump_terms=(
+        "loggamma",
+        (
             JumpTerm(
                 2 * pi * I * floor(-z),
                 real_lt(z, 0) & ~Contains(z, S.Integers),
@@ -662,8 +662,8 @@ def branch_rule_loggamma(z):
 
 def branch_rule_polylog(z, s):
     return BranchRule(
-        name="polylog",
-        jump_terms=(
+        "polylog",
+        (
             JumpTerm(
                 2 * pi * I * log(z) ** (s - 1) / gamma(s),
                 real_gt(z, 1) & ~Contains(s, S.Integers),
@@ -680,8 +680,8 @@ def branch_rule_polylog(z, s):
 
 def branch_rule_lerchphi(z, s, a):
     return BranchRule(
-        name="lerchphi",
-        jump_terms=(
+        "lerchphi",
+        (
             JumpTerm(
                 2 * pi * I * z ** (-a) * log(z) ** (s - 1) / gamma(s),
                 real_gt(z, 1),
@@ -693,8 +693,8 @@ def branch_rule_lerchphi(z, s, a):
 
 def branch_rule_lambertw(z):
     return BranchRule(
-        name="LambertW",
-        jump_terms=(
+        "LambertW",
+        (
             JumpTerm(
                 LambertW(z) - LambertW(z, -1),
                 real_between(z, -1 / E, 0),
@@ -706,8 +706,8 @@ def branch_rule_lambertw(z):
 
 def branch_rule_hyperu(z, a, b):
     return BranchRule(
-        name="hyperu",
-        jump_terms=(
+        "hyperu",
+        (
             JumpTerm(
                 -2 * pi * I * z ** (1 - b) * hyper([1 + a - b], [2 - b], z),
                 real_lt(z, 0),
@@ -719,8 +719,8 @@ def branch_rule_hyperu(z, a, b):
 
 def branch_rule_besselj(z, nu):
     return BranchRule(
-        name="besselj",
-        jump_terms=(
+        "besselj",
+        (
             JumpTerm(
                 2 * I * sin(pi * nu) * besselj(nu, -z),
                 real_lt(z, 0) & ~Contains(nu, S.Integers),
@@ -732,8 +732,8 @@ def branch_rule_besselj(z, nu):
 
 def branch_rule_besseli(z, nu):
     return BranchRule(
-        name="besseli",
-        jump_terms=(
+        "besseli",
+        (
             JumpTerm(
                 2 * I * sin(pi * nu) * besseli(nu, -z),
                 real_lt(z, 0) & ~Contains(nu, S.Integers),
@@ -745,8 +745,8 @@ def branch_rule_besseli(z, nu):
 
 def branch_rule_bessely(z, nu):
     return BranchRule(
-        name="bessely",
-        jump_terms=(
+        "bessely",
+        (
             JumpTerm(
                 -2 * sin(pi * nu) * besselj(nu, -z),
                 real_lt(z, 0) & ~Contains(nu, S.Integers),
@@ -758,8 +758,8 @@ def branch_rule_bessely(z, nu):
 
 def branch_rule_besselk(z, nu):
     return BranchRule(
-        name="besselk",
-        jump_terms=(
+        "besselk",
+        (
             JumpTerm(
                 -I * (2 * sin(pi * nu) * besselk(nu, -z) + pi * besseli(nu, -z)),
                 real_lt(z, 0),
@@ -771,8 +771,8 @@ def branch_rule_besselk(z, nu):
 
 def branch_rule_hankel1(z, nu):
     return BranchRule(
-        name="hankel1",
-        jump_terms=(
+        "hankel1",
+        (
             JumpTerm(
                 2 * I * sin(pi * nu) * hankel2(nu, -z),
                 real_lt(z, 0),
@@ -784,8 +784,8 @@ def branch_rule_hankel1(z, nu):
 
 def branch_rule_hankel2(z, nu):
     return BranchRule(
-        name="hankel2",
-        jump_terms=(
+        "hankel2",
+        (
             JumpTerm(
                 -2 * I * sin(pi * nu) * hankel1(nu, -z),
                 real_lt(z, 0),
@@ -797,8 +797,8 @@ def branch_rule_hankel2(z, nu):
 
 def branch_rule_hyper(var, a_params, b_params):
     return BranchRule(
-        name="hyper",
-        jump_terms=(
+        "hyper",
+        (
             JumpTerm(
                 2
                 * pi
@@ -829,8 +829,8 @@ def branch_rule_betainc_regularized(z, a, b):
 
 def branch_rule_elliptic_k(m):
     return BranchRule(
-        name="elliptic_k",
-        jump_terms=(
+        "elliptic_k",
+        (
             JumpTerm(
                 (-2 * I) / sqrt(m) * elliptic_k(1 - 1 / m),
                 real_gt(m, 1),
@@ -842,8 +842,8 @@ def branch_rule_elliptic_k(m):
 
 def branch_rule_elliptic_e_m(m):
     return BranchRule(
-        name="elliptic_e",
-        jump_terms=(
+        "elliptic_e",
+        (
             JumpTerm(
                 2 * I * sqrt(m) * (elliptic_e(1 - 1 / m) - elliptic_k(1 - 1 / m)),
                 real_gt(m, 1),
@@ -855,8 +855,8 @@ def branch_rule_elliptic_e_m(m):
 
 def branch_rule_elliptic_pi_m(m, n):
     return BranchRule(
-        name="elliptic_pi",
-        jump_terms=(
+        "elliptic_pi",
+        (
             JumpTerm(
                 2 * I * sqrt(m) * elliptic_pi(n / (n - 1), 1 - 1 / m),
                 real_gt(m, 1) & ~Eq(n, 1),
@@ -868,8 +868,8 @@ def branch_rule_elliptic_pi_m(m, n):
 
 def branch_rule_elliptic_pi_n(n, m):
     return BranchRule(
-        name="elliptic_pi",
-        jump_terms=(
+        "elliptic_pi",
+        (
             JumpTerm(
                 -pi * I * sqrt(n) / sqrt((n - 1) * (n - m)),
                 real_gt(n, 1) & ~Eq(m, n),
@@ -881,8 +881,8 @@ def branch_rule_elliptic_pi_n(n, m):
 
 def branch_rule_assoc_legendre(z, nu, mu):
     return BranchRule(
-        name="assoc_legendre",
-        jump_terms=(
+        "assoc_legendre",
+        (
             JumpTerm(
                 2 * I * sin(pi * mu) * assoc_legendre(nu, mu, z),
                 real_between(z, -1, 1) & ~Contains(mu, S.Integers),
@@ -897,8 +897,8 @@ def branch_rule_hyper_2f1(z, a, b, c):
         (re(c) > 0) & (re(c - a) > 0) & (re(c - b) > 0) & (re(a) > 0) & (re(b) > 0)
     )
     return BranchRule(
-        name="hyp2f1",
-        jump_terms=(
+        "hyp2f1",
+        (
             JumpTerm(
                 2
                 * pi
@@ -916,8 +916,8 @@ def branch_rule_hyper_2f1(z, a, b, c):
 
 def branch_rule_elliptic_f_phi(phi, m):
     return BranchRule(
-        name="elliptic_f",
-        jump_terms=(
+        "elliptic_f",
+        (
             JumpTerm(
                 2 * elliptic_k(m),
                 amplitude_vertical_seam(phi),
@@ -929,8 +929,8 @@ def branch_rule_elliptic_f_phi(phi, m):
 
 def branch_rule_elliptic_e_phi(phi, m):
     return BranchRule(
-        name="elliptic_e",
-        jump_terms=(
+        "elliptic_e",
+        (
             JumpTerm(
                 2 * elliptic_e(m),
                 amplitude_vertical_seam(phi),
@@ -949,8 +949,8 @@ def branch_rule_elliptic_pi_phi(phi, n, m):
     seam_b = elliptic_sqrt_seam(phi, m) & ~elliptic_pi_pole_seam(phi, n)
     seam_c = elliptic_pi_pole_seam(phi, n) & ~Eq(m, n)
     return BranchRule(
-        name="elliptic_pi",
-        jump_terms=(
+        "elliptic_pi",
+        (
             JumpTerm(2 * elliptic_pi(n, m), seam_a, "Amplitude seam from cos(phi)^2."),
             JumpTerm(
                 2 * elliptic_pi(n, m), seam_b, "Square-root seam from 1 - m*sin(phi)^2."
@@ -997,8 +997,8 @@ def branch_rule_betainc_endpoint(var, a, b, sign=1, regularized=False):
             note += " Regularized by division through beta(a,b)."
         terms.append(JumpTerm(sign * factor * term.expr, term.cond, note))
     return BranchRule(
-        name="betainc_regularized" if regularized else "betainc",
-        jump_terms=tuple(terms),
+        "betainc_regularized" if regularized else "betainc",
+        tuple(terms),
     )
 
 

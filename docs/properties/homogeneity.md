@@ -1,6 +1,6 @@
 # Homogeneity
 
-`function_homogeneity`
+`homogeneity`
 
 ## Mathematical definition
 
@@ -9,14 +9,14 @@ A function is homogeneous when a common scaling of its variables produces a fixe
 ## API and return values
 
 ```python
-function_homogeneity(expr, vars, *, degree=None, weights=None, assumptions=True, return_result=False)
+homogeneity(expr, variables, *, degree=None, weights=None, assumptions=True, return_result=False)
 ```
 
 A Homogeneity value by default; return_result=True exposes degree, weights, and parameter conditions.
 
 ## Domains, assumptions, and parameters
 
-The query is interpreted on the supplied domain rather than from the expression in isolation. When symbolic parameters change the property, funcprops preserves those cases as guarded parameter strata instead of choosing a generic value. Assumptions are proof hypotheses: they can simplify a stratum or branch condition, but they do not justify numerical guessing.
+The query is interpreted on the supplied domain, not from the expression in isolation. When symbolic parameters change the property, funcprops preserves those cases as guarded parameter strata. Assumptions are proof hypotheses: they can simplify a stratum or branch condition, but they do not justify numerical guessing.
 
 ## Executable examples
 
@@ -29,7 +29,7 @@ import sympy as sp
 import funcprops as fp
 
 x, y = sp.symbols("x y", real=True)
-result = fp.function_homogeneity(x**2 + y**2, (x, y), return_result=True)
+result = fp.homogeneity(x**2 + y**2, (x, y), return_result=True)
 result
 ```
 
@@ -39,7 +39,7 @@ Application: Exploit scaling laws in dimensional analysis and optimization.
 
 ## Applications
 
-This property is useful whenever later mathematics depends on a global qualitative fact rather than isolated samples. Typical uses include symbolic preprocessing, theorem-hypothesis verification, optimization, inverse problems, robust numerical method selection, and simplifying downstream case analysis.
+This property is useful whenever later mathematics depends on a global qualitative fact, not isolated samples. Typical uses include symbolic preprocessing, theorem-hypothesis verification, optimization, inverse problems, robust numerical method selection, and simplifying downstream case analysis.
 
 ## How funcprops proves it
 
@@ -55,8 +55,8 @@ General nonpolynomial quasi-homogeneous identities may require simplification or
 
 ## Related properties
 
-- [`function_symmetry`](symmetry.md)
-- [`function_convexity`](convexity.md)
+- [`symmetry`](symmetry.md)
+- [`convexity`](convexity.md)
 
 ## Source
 

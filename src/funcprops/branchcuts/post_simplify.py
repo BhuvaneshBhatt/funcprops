@@ -160,7 +160,7 @@ def _not_affine_bound(piece, z):
 
     Normalize the negated relational through the same affine solver used for
     ordinary inequalities.  This keeps the threshold expressed in the actual
-    branch variable rather than in an intermediate affine expression.
+    branch variable.
     """
     piece = sympify(piece)
     if piece.func != Not or len(piece.args) != 1:
@@ -372,7 +372,15 @@ def simplify_branch_condition(cond, z):
         filtered.append(piece)
 
     out = []
-    if real_required:
+    # An order relation such as ``z > a`` already expresses that ``z`` lies
+    # on the ordered real axis.  Keep an explicit realness guard only when it
+    # carries information not represented by a normalized bound. In
+    # particular this turns pullbacks such as
+    # ``Contains(1 - z, Reals) & (1 - z < 0)`` into the clearer ``z > 1``.
+    # Non-real affine pullbacks (e.g. ``Contains(I*z, Reals)``) are not
+    # recognized by ``_contains_affine_real`` and therefore remain in
+    # ``filtered`` unchanged.
+    if real_required and lower is None and upper is None:
         out.append(Contains(z, S.Reals))
     if lower is not None:
         out.append(z > lower.value if lower.strict else z >= lower.value)

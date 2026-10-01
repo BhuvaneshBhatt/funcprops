@@ -1,6 +1,6 @@
 # Complex zeros
 
-`function_complex_zeros`
+`complex_zeros`
 
 ## Mathematical definition
 
@@ -9,14 +9,14 @@ Complex-zero isolation finds and certifies zeros inside a finite complex rectang
 ## API and return values
 
 ```python
-function_complex_zeros(expr, *args, assumptions=True, **kwargs)
+complex_zeros(expr, *args, assumptions=True, return_result=False, **kwargs)
 ```
 
 An exact finite set when available, or a ComplexRootIsolationResult containing certified rectangles, counts, completeness, and diagnostic evidence.
 
 ## Domains, assumptions, and parameters
 
-The query is interpreted on the supplied domain rather than from the expression in isolation. When symbolic parameters change the property, funcprops preserves those cases as guarded parameter strata instead of choosing a generic value. Assumptions are proof hypotheses: they can simplify a stratum or branch condition, but they do not justify numerical guessing.
+The query is interpreted on the supplied domain, not from the expression in isolation. When symbolic parameters change the property, funcprops preserves those cases as guarded parameter strata. Assumptions are proof hypotheses: they can simplify a stratum or branch condition, but they do not justify numerical guessing.
 
 ## Executable examples
 
@@ -29,7 +29,7 @@ import sympy as sp
 import funcprops as fp
 
 x, y = sp.symbols("x y", real=True)
-z = sp.symbols('z'); result = fp.function_complex_zeros(sp.exp(z) - 1, z, rectangle=(-1-sp.I, 1+sp.I), return_result=True)
+z = sp.symbols('z'); result = fp.complex_zeros(sp.exp(z) - 1, z, rectangle=(-1-sp.I, 1+sp.I), return_result=True)
 result
 ```
 
@@ -39,7 +39,7 @@ Application: Certify contour root counts before complex continuation, inversion,
 
 ## Applications
 
-This property is useful whenever later mathematics depends on a global qualitative fact rather than isolated samples. Typical uses include symbolic preprocessing, theorem-hypothesis verification, optimization, inverse problems, robust numerical method selection, and simplifying downstream case analysis.
+This property is useful whenever later mathematics depends on a global qualitative fact, not isolated samples. Typical uses include symbolic preprocessing, theorem-hypothesis verification, optimization, inverse problems, robust numerical method selection, and simplifying downstream case analysis.
 
 ## How funcprops proves it
 
@@ -55,8 +55,8 @@ General holomorphy and boundary nonvanishing may remain uncertified; numerical w
 
 ## Related properties
 
-- [`function_zeros`](zeros.md)
-- [`function_analytic`](analytic.md)
+- [`zeros`](zeros.md)
+- [`analytic`](analytic.md)
 
 ## Source
 

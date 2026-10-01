@@ -1,6 +1,6 @@
 # Symmetry
 
-`function_symmetry`
+`symmetry`
 
 ## Mathematical definition
 
@@ -9,14 +9,14 @@ Symmetry detects even, odd, both, central, neither, or unresolved symmetry relat
 ## API and return values
 
 ```python
-function_symmetry(expr, var, *, center=0, domain=True, return_result=False, assumptions=True)
+symmetry(expr, variable, *, center=0, domain=True, assumptions=True, return_result=False)
 ```
 
 A Symmetry value by default; return_result=True exposes center and evidence.
 
 ## Domains, assumptions, and parameters
 
-The query is interpreted on the supplied domain rather than from the expression in isolation. When symbolic parameters change the property, funcprops preserves those cases as guarded parameter strata instead of choosing a generic value. Assumptions are proof hypotheses: they can simplify a stratum or branch condition, but they do not justify numerical guessing.
+The query is interpreted on the supplied domain, not from the expression in isolation. When symbolic parameters change the property, funcprops preserves those cases as guarded parameter strata. Assumptions are proof hypotheses: they can simplify a stratum or branch condition, but they do not justify numerical guessing.
 
 ## Executable examples
 
@@ -29,7 +29,7 @@ import sympy as sp
 import funcprops as fp
 
 x, y = sp.symbols("x y", real=True)
-result = fp.function_symmetry(sp.cos(x), x)
+result = fp.symmetry(sp.cos(x), x)
 result
 ```
 
@@ -39,7 +39,7 @@ Application: Cut numerical or symbolic work in half on symmetric domains.
 
 ## Applications
 
-This property is useful whenever later mathematics depends on a global qualitative fact rather than isolated samples. Typical uses include symbolic preprocessing, theorem-hypothesis verification, optimization, inverse problems, robust numerical method selection, and simplifying downstream case analysis.
+This property is useful whenever later mathematics depends on a global qualitative fact, not isolated samples. Typical uses include symbolic preprocessing, theorem-hypothesis verification, optimization, inverse problems, robust numerical method selection, and simplifying downstream case analysis.
 
 ## How funcprops proves it
 
@@ -55,8 +55,8 @@ Symbolic equivalence that SymPy cannot prove can leave symmetry UNKNOWN even whe
 
 ## Related properties
 
-- [`function_periodicity`](periodicity.md)
-- [`function_injective`](injective.md)
+- [`periodicity`](periodicity.md)
+- [`injective`](injective.md)
 
 ## Source
 

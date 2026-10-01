@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 
 import mpmath as mp
@@ -109,8 +110,8 @@ def certified_real_interval_evaluate(expr, var, domain):
         b = _const_iv(domain.end)
         x = mp.iv.mpf([a.a, b.b])
         value = _eval(expr, var, x)
-        lo = float(value.a)
-        hi = float(value.b)
+        lo = math.nextafter(float(mp.mpf(value.a._mpi_[0])), -math.inf)
+        hi = math.nextafter(float(mp.mpf(value.b._mpi_[1])), math.inf)
     except (ValueError, TypeError, OverflowError, ZeroDivisionError):
         return None
     sign = 1 if lo > 0 else -1 if hi < 0 else 0
@@ -118,8 +119,8 @@ def certified_real_interval_evaluate(expr, var, domain):
         expr,
         var,
         domain,
-        str(value.a),
-        str(value.b),
+        repr(lo),
+        repr(hi),
         sign != 0,
         sign,
     )

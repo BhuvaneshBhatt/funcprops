@@ -1,6 +1,6 @@
 # Branch points
 
-`function_branchpoints`
+`branch_points`
 
 ## Mathematical definition
 
@@ -9,14 +9,14 @@ Branch-point analysis identifies points around which analytic continuation can c
 ## API and return values
 
 ```python
-function_branchpoints(expr, var, *, assumptions=True, return_result=False)
+branch_points(expr, variable, *, assumptions=True, return_result=False)
 ```
 
 A Boolean branch-point locus by default; return_result=True returns the supporting Singularity records.
 
 ## Domains, assumptions, and parameters
 
-The query is interpreted on the supplied domain rather than from the expression in isolation. When symbolic parameters change the property, funcprops preserves those cases as guarded parameter strata instead of choosing a generic value. Assumptions are proof hypotheses: they can simplify a stratum or branch condition, but they do not justify numerical guessing.
+The query is interpreted on the supplied domain, not from the expression in isolation. When symbolic parameters change the property, funcprops preserves those cases as guarded parameter strata. Assumptions are proof hypotheses: they can simplify a stratum or branch condition, but they do not justify numerical guessing.
 
 ## Executable examples
 
@@ -29,7 +29,7 @@ import sympy as sp
 import funcprops as fp
 
 x, y = sp.symbols("x y", real=True)
-result = fp.function_branchpoints(sp.log(x), x)
+result = fp.branch_points(sp.log(x), x)
 result
 ```
 
@@ -39,7 +39,7 @@ Application: Identify non-isolated analytic structure relevant to continuation a
 
 ## Applications
 
-This property is useful whenever later mathematics depends on a global qualitative fact rather than isolated samples. Typical uses include symbolic preprocessing, theorem-hypothesis verification, optimization, inverse problems, robust numerical method selection, and simplifying downstream case analysis.
+This property is useful whenever later mathematics depends on a global qualitative fact, not isolated samples. Typical uses include symbolic preprocessing, theorem-hypothesis verification, optimization, inverse problems, robust numerical method selection, and simplifying downstream case analysis.
 
 ## How funcprops proves it
 
@@ -55,8 +55,8 @@ General nested transcendental preimages can be difficult to reduce to a simple e
 
 ## Related properties
 
-- [`function_branchcuts`](branchcuts.md)
-- [`function_singularities`](singularities.md)
+- [`branch_cuts`](branch_cuts.md)
+- [`singularities`](singularities.md)
 
 ## Source
 

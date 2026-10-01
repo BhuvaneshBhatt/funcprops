@@ -8,8 +8,8 @@ from funcprops import (
     Monotonicity,
     PropertyIntervalDecomposition,
     PropertyResult,
-    function_convexity,
-    function_monotonicity,
+    convexity,
+    monotonicity,
     transcendental_roots,
     zero_geometry,
 )
@@ -74,7 +74,9 @@ def test_ferrers_q_named_function_interlacing_metadata():
 
 def test_monotonicity_consumes_bessel_derivative_geometry():
     nu = sp.symbols("nu", real=True, nonnegative=True)
-    r = function_monotonicity(sp.besselj(nu, x), x, domain=x > 0, intervals=True)
+    r = monotonicity(
+        sp.besselj(nu, x), x, domain=x > 0, intervals=True, return_result=True
+    )
     assert isinstance(r, PropertyResult)
     assert r.primary is Monotonicity.NOT_MONOTONE
     assert r.evidence and isinstance(r.evidence[0], PropertyIntervalDecomposition)
@@ -82,14 +84,14 @@ def test_monotonicity_consumes_bessel_derivative_geometry():
 
 
 def test_monotonicity_consumes_airy_derivative_geometry():
-    r = function_monotonicity(sp.airyai(x), x, intervals=True)
+    r = monotonicity(sp.airyai(x), x, intervals=True, return_result=True)
     assert isinstance(r, PropertyResult)
     assert r.primary is Monotonicity.NOT_MONOTONE
     assert r.evidence and r.evidence[0].boundary_geometry
 
 
 def test_convexity_airy_uses_ode_zero_geometry():
-    r = function_convexity(sp.airyai(x), x, intervals=True)
+    r = convexity(sp.airyai(x), x, intervals=True, return_result=True)
     assert isinstance(r, PropertyResult)
     assert r.primary is Convexity.NEITHER
     certificate = r.evidence[0]
@@ -102,10 +104,12 @@ def test_convexity_airy_uses_ode_zero_geometry():
 
 def test_orthogonal_derivative_geometry_drives_interval_reasoning():
     f = sp.legendre(4, x)
-    m = function_monotonicity(f, x, domain=(x > -1) & (x < 1), intervals=True)
+    m = monotonicity(
+        f, x, domain=(x > -1) & (x < 1), intervals=True, return_result=True
+    )
     assert isinstance(m, PropertyResult) and m.primary is Monotonicity.NOT_MONOTONE
     assert m.evidence and m.evidence[0].boundary_geometry
-    c = function_convexity(f, x, domain=(x > -1) & (x < 1), intervals=True)
+    c = convexity(f, x, domain=(x > -1) & (x < 1), intervals=True, return_result=True)
     assert isinstance(c, PropertyResult) and c.primary is Convexity.NEITHER
     assert c.evidence and isinstance(c.evidence[0], ConvexityCertificate)
     assert c.evidence[0].proof and c.evidence[0].proof[0].boundary_geometry
@@ -126,6 +130,6 @@ def test_indexed_zero_ordering_bounds_api():
 
 def test_sign_partition_orders_exact_algebraic_roots_mathematically():
     f = sp.diff(sp.legendre(4, x), x)
-    from funcprops import Sign, function_sign
+    from funcprops import Sign, sign
 
-    assert function_sign(f, x, domain=(x > -1) & (x < 1)) is Sign.SIGN_CHANGING
+    assert sign(f, x, domain=(x > -1) & (x < 1)) is Sign.SIGN_CHANGING

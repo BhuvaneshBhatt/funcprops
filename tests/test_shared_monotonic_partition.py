@@ -4,13 +4,13 @@ from funcprops import (
     Monotonicity,
     Oscillation,
     TruthValue,
-    function_injective,
-    function_monotonicity,
-    function_oscillation,
-    function_range,
+    certified_monotonic_inverse,
+    injective,
     monotonic_partition,
+    monotonicity,
+    oscillation,
+    range,
     range_from_monotonic_partition,
-    solve_monotonic_inverse,
     symbolic_extremum_range,
 )
 
@@ -32,9 +32,7 @@ def test_range_reuses_finite_partition_with_open_attainment():
     pr = range_from_monotonic_partition(x**2, x, p)
     assert pr.complete
     assert pr.image == sp.Interval.Ropen(0, 1)
-    assert function_range(x**2, x, y, constraints=(x > -1) & (x < 1)) == (
-        (y >= 0) & (y < 1)
-    )
+    assert range(x**2, x, y, constraints=(x > -1) & (x < 1)) == ((y >= 0) & (y < 1))
 
 
 def test_endpoint_derivative_zero_does_not_make_empty_cell():
@@ -50,17 +48,17 @@ def test_stationary_inflection_shared_partition_proves_injective():
     assert p.complete and len(p.cells) == 2
     assert all(c.direction is Monotonicity.STRICTLY_INCREASING for c in p.cells)
     assert (
-        function_monotonicity(x**3, x, domain=(x >= -2) & (x <= 2))
+        monotonicity(x**3, x, domain=(x >= -2) & (x <= 2))
         is Monotonicity.STRICTLY_INCREASING
     )
-    assert function_injective(x**3, x, domain=(x >= -2) & (x <= 2)) is TruthValue.TRUE
+    assert injective(x**3, x, domain=(x >= -2) & (x <= 2)) is TruthValue.TRUE
 
 
 def test_inverse_solver_uses_partition_cells():
     p = monotonic_partition(
         x**3 - 3 * x, x, domain=sp.Interval(-2, 2), return_result=True
     )
-    r = solve_monotonic_inverse(x**3 - 3 * x, x, 0, partition=p)
+    r = certified_monotonic_inverse(x**3 - 3 * x, x, 0, partition=p)
     assert r.complete
     assert r.partition is p
     assert r.solutions == sp.FiniteSet(-sp.sqrt(3), 0, sp.sqrt(3))
@@ -68,14 +66,11 @@ def test_inverse_solver_uses_partition_cells():
 
 def test_finite_and_indexed_oscillation_from_partition():
     assert (
-        function_oscillation(x**3 - 3 * x, x, domain=(x >= -2) & (x <= 2))
+        oscillation(x**3 - 3 * x, x, domain=(x >= -2) & (x <= 2))
         is Oscillation.FINITELY_OSCILLATORY
     )
     nu = sp.symbols("nu", real=True, nonnegative=True)
-    assert (
-        function_oscillation(sp.besselj(nu, x), x, domain=x > 0)
-        is Oscillation.OSCILLATORY
-    )
+    assert oscillation(sp.besselj(nu, x), x, domain=x > 0) is Oscillation.OSCILLATORY
 
 
 def test_indexed_phase_not_guessed_without_theorem():
@@ -95,16 +90,15 @@ def test_support_completeness_is_not_domain_completeness():
     assert not p.complete
     # The contained positive indexed family is still enough to prove oscillation.
     assert (
-        function_oscillation(sp.besselj(nu, x), x, domain=sp.S.Reals)
-        is Oscillation.OSCILLATORY
+        oscillation(sp.besselj(nu, x), x, domain=sp.S.Reals) is Oscillation.OSCILLATORY
     )
 
 
 def test_unknown_natural_domain_is_not_sympified_as_boolean():
     e = sp.Max(x, 0)
-    # This used to be able to raise SympifyError when function_domain returned
+    # This used to be able to raise SympifyError when domain returned
     # a PropertyResult.  The explicit/global domain now remains usable.
-    assert function_monotonicity(e, x) is Monotonicity.NONDECREASING
+    assert monotonicity(e, x) is Monotonicity.NONDECREASING
 
 
 def test_extrema_uses_partition_critical_points():

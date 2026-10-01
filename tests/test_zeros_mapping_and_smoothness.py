@@ -4,12 +4,12 @@ from funcprops import (
     Boundedness,
     Continuity,
     TruthValue,
-    function_bijective,
-    function_boundedness,
-    function_injective,
-    function_smoothness,
-    function_surjective,
-    function_zeros,
+    bijective,
+    boundedness,
+    injective,
+    smoothness,
+    surjective,
+    zeros,
 )
 from funcprops.transcendental import PeriodicSet, RootIsolationResult
 
@@ -18,54 +18,52 @@ y = sp.symbols("y", real=True)
 
 
 def test_zeros_periodic_and_exact():
-    z = function_zeros(sp.sin(x), x)
+    z = zeros(sp.sin(x), x)
     assert isinstance(z, PeriodicSet)
-    assert function_zeros(sp.exp(x) - 2, x) == sp.FiniteSet(sp.log(2))
-    assert function_zeros(sp.erf(x), x) == sp.FiniteSet(0)
+    assert zeros(sp.exp(x) - 2, x) == sp.FiniteSet(sp.log(2))
+    assert zeros(sp.erf(x), x) == sp.FiniteSet(0)
 
 
 def test_zeros_implicit_certificate():
-    z = function_zeros(x + sp.exp(x) - 3, x, domain=sp.Interval(0, 2))
+    z = zeros(x + sp.exp(x) - 3, x, domain=sp.Interval(0, 2))
     assert isinstance(z, RootIsolationResult) and z.complete and z.isolated_intervals
 
 
 def test_boundedness():
-    assert function_boundedness(sp.sin(x), x) is Boundedness.BOUNDED
-    assert function_boundedness(sp.exp(x), x) is Boundedness.BOUNDED_BELOW
-    assert function_boundedness(x, x) is Boundedness.UNBOUNDED
+    assert boundedness(sp.sin(x), x) is Boundedness.BOUNDED
+    assert boundedness(sp.exp(x), x) is Boundedness.BOUNDED_BELOW
+    assert boundedness(x, x) is Boundedness.UNBOUNDED
 
 
 def test_mapping():
-    assert function_injective(sp.exp(x), x) is TruthValue.TRUE
-    assert function_injective(x**2, x) is TruthValue.FALSE
-    assert function_injective(x**2, x, domain=x >= 0) is TruthValue.TRUE
+    assert injective(sp.exp(x), x) is TruthValue.TRUE
+    assert injective(x**2, x) is TruthValue.FALSE
+    assert injective(x**2, x, domain=x >= 0) is TruthValue.TRUE
     assert (
-        function_surjective(sp.exp(x), x, codomain=sp.Interval.open(0, sp.oo))
-        is TruthValue.TRUE
+        surjective(sp.exp(x), x, codomain=sp.Interval.open(0, sp.oo)) is TruthValue.TRUE
     )
-    assert function_surjective(sp.exp(x), x, codomain=sp.S.Reals) is TruthValue.FALSE
+    assert surjective(sp.exp(x), x, codomain=sp.S.Reals) is TruthValue.FALSE
     assert (
-        function_bijective(sp.exp(x), x, codomain=sp.Interval.open(0, sp.oo))
-        is TruthValue.TRUE
+        bijective(sp.exp(x), x, codomain=sp.Interval.open(0, sp.oo)) is TruthValue.TRUE
     )
 
 
 def test_smoothness_abs_exp():
-    assert function_smoothness(sp.Abs(x), x) is TruthValue.FALSE
-    assert function_smoothness(sp.exp(x), x) is TruthValue.TRUE
-    a = function_smoothness(sp.Abs(x), x, return_result=True)
+    assert smoothness(sp.Abs(x), x) == 0
+    assert smoothness(sp.exp(x), x) is sp.oo
+    a = smoothness(sp.Abs(x), x, return_result=True)
     assert a.continuity is Continuity.CONTINUOUS
     assert sp.Eq(x, 0) in a.exceptional_loci
-    e = function_smoothness(sp.exp(x), x, return_result=True)
+    e = smoothness(sp.exp(x), x, return_result=True)
     assert e.smooth is True and e.differentiability_order is sp.oo
 
 
-def test_certified_real_interval_isolation_multiple_transcendental_roots():
+def test_certified_interval_isolation_multiple_transcendental_roots():
     expr = sp.sin(x) - x / 10
-    z = function_zeros(expr, x, domain=sp.Interval(-10, 10), return_result=True)
+    z = zeros(expr, x, domain=sp.Interval(-10, 10), return_result=True)
     assert isinstance(z, RootIsolationResult)
     assert z.complete
-    assert z.method == "certified_real_interval_isolation"
+    assert z.method == "certified_interval_isolation"
     assert z.roots == (sp.Integer(0),)
     assert len(z.isolated_intervals) == 6
     assert len(z.roots) + len(z.isolated_intervals) == 7
@@ -80,10 +78,10 @@ def test_certified_real_interval_isolation_multiple_transcendental_roots():
         assert isolated.certificate.multiplicity == 1
 
 
-def test_certified_real_interval_isolation_keeps_metadata_optional():
+def test_certified_interval_isolation_keeps_metadata_optional():
     expr = sp.cos(x) - x
-    direct = function_zeros(expr, x, domain=sp.Interval(0, 1))
-    detailed = function_zeros(expr, x, domain=sp.Interval(0, 1), return_result=True)
+    direct = zeros(expr, x, domain=sp.Interval(0, 1))
+    detailed = zeros(expr, x, domain=sp.Interval(0, 1), return_result=True)
     assert isinstance(direct, RootIsolationResult)
     assert isinstance(detailed, RootIsolationResult)
     assert detailed.complete and len(detailed.isolated_intervals) == 1
@@ -92,7 +90,7 @@ def test_certified_real_interval_isolation_keeps_metadata_optional():
 
 def test_repeated_factor_lifts_isolation_and_multiplicity():
     expr = (sp.cos(x) - x) ** 2
-    z = function_zeros(expr, x, domain=sp.Interval(0, 1), return_result=True)
+    z = zeros(expr, x, domain=sp.Interval(0, 1), return_result=True)
     assert isinstance(z, RootIsolationResult)
     assert z.complete
     assert z.method == "repeated_factor_root_isolation"
@@ -109,7 +107,7 @@ def test_repeated_factor_lifts_isolation_and_multiplicity():
 
 def test_validated_numeric_even_root_requires_exact_validation():
     expr = x**2 + sp.sin(x) ** 2
-    z = function_zeros(
+    z = zeros(
         expr,
         x,
         domain=sp.Interval(-2, 2),

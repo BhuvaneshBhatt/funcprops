@@ -343,9 +343,9 @@ def _monotonic_decomposition_result(expr, var, *, strict=True, continuous=True):
                 dec = (Monotonicity.STRICTLY_DECREASING, Monotonicity.NONINCREASING)
                 if m in inc + dec:
                     d = 1 if m in inc else -1
-                    from .domain import function_domain
+                    from .domain import domain
 
-                    cond = function_domain(outer_expr, X)
+                    cond = domain(outer_expr, X)
                     cond = (
                         cond.xreplace({X: inner})
                         if isinstance(cond, sp.Basic)
@@ -565,9 +565,9 @@ def _monotonic_partition_result(expr, var, *, domain=True):
         ds = domain
     else:
         if domain is True:
-            from .domain import function_domain
+            from .domain import domain
 
-            cond = function_domain(expr, var)
+            cond = domain(expr, var)
         else:
             cond = sp.sympify(domain)
         ds = condition_to_set(cond, var)
@@ -651,7 +651,7 @@ def range_from_monotonic_partition(expr, var, partition=None, *, domain=True):
     return PartitionRange(image, True, part)
 
 
-def injectivity_from_monotonic_partition(partition):
+def injectivity_from_partition(partition):
     """Three-valued injectivity conclusion from a compact or rich partition."""
     if isinstance(partition, tuple):
         directions = [
@@ -768,7 +768,7 @@ def _certified_inverse_cell(expr, var, value, cell):
     return S.EmptySet, (CertifiedRootInterval(iv, cert),), True
 
 
-def solve_monotonic_inverse(expr, var, value, *, domain=True, partition=None):
+def certified_monotonic_inverse(expr, var, value, *, domain=True, partition=None):
     """Solve ``expr == value`` using a shared monotonic partition certificate.
 
     Finite cells are solved independently, with uniqueness guaranteed on each
@@ -877,15 +877,6 @@ def solve_monotonic_inverse(expr, var, value, *, domain=True, partition=None):
         evidence=(part,),
         isolated_intervals=tuple(isolated),
     )
-
-
-def certified_monotonic_inverse(expr, var, value, *, domain=True, partition=None):
-    """Certified reusable inverse primitive for a monotonic real function.
-
-    This is the explicit certification-oriented spelling of
-    :func:`solve_monotonic_inverse`; the latter is retained for compatibility.
-    """
-    return solve_monotonic_inverse(expr, var, value, domain=domain, partition=partition)
 
 
 def quick_nonmonotonicity_witness(expr, var, domain):

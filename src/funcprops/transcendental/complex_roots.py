@@ -8,6 +8,7 @@ import mpmath as mp
 import sympy as sp
 from sympy import S
 
+from ..engine import truth_bool
 from ..exceptions import SYMBOLIC_QUERY_ERRORS
 from .analytic import AnalyticNeighborhoodCertificate, holomorphic_on_rectangle
 
@@ -81,20 +82,6 @@ class ComplexRootIsolationResult:
         return self.complete
 
 
-def _truth(expr):
-    if expr in (True, S.true):
-        return True
-    if expr in (False, S.false):
-        return False
-    with contextlib.suppress(*SYMBOLIC_QUERY_ERRORS):
-        value = sp.simplify(expr)
-        if value is S.true:
-            return True
-        if value is S.false:
-            return False
-    return None
-
-
 def _normalize_rectangle(rectangle):
     if isinstance(rectangle, ComplexRectangle):
         rect = rectangle
@@ -112,9 +99,9 @@ def _normalize_rectangle(rectangle):
             sp.Min(bounds[2], bounds[3]),
             sp.Max(bounds[2], bounds[3]),
         )
-    if _truth(rect.re_min < rect.re_max) is not True:
+    if truth_bool(rect.re_min < rect.re_max) is not True:
         return None
-    if _truth(rect.im_min < rect.im_max) is not True:
+    if truth_bool(rect.im_min < rect.im_max) is not True:
         return None
     return rect
 
@@ -127,7 +114,7 @@ def _contains(rect: ComplexRectangle, root):
         rect.im_min <= sp.im(root),
         sp.im(root) <= rect.im_max,
     )
-    vals = tuple(_truth(q) for q in checks)
+    vals = tuple(truth_bool(q) for q in checks)
     if all(v is True for v in vals):
         return True
     if any(v is False for v in vals):
@@ -514,7 +501,7 @@ def isolate_complex_roots(
     )
 
 
-def function_complex_zeros(
+def complex_zeros(
     expr,
     var,
     *,

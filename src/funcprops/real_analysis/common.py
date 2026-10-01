@@ -4,7 +4,7 @@ import sympy as sp
 from sympy import S
 
 from ..exactness import certify_equal
-from ..exceptions import SYMBOLIC_QUERY_ERRORS
+from ..exceptions import POLYNOMIAL_ERRORS, SYMBOLIC_QUERY_ERRORS
 
 
 def is_semialgebraic_expression(expr: sp.Expr, var: sp.Symbol) -> bool:
@@ -48,11 +48,18 @@ def is_semialgebraic_condition(cond, var):
     return False
 
 
-def combine_domain(user_domain, natural_domain):
+def combine_domain(user_domain, natural_domain, var=None):
+    """Intersect user and natural domains without losing the analysis variable.
+
+    Set-valued domains require an explicit variable; using an unrelated dummy
+    makes the restriction independent of the queried function variable.
+    """
     if user_domain is None or user_domain is True or user_domain is S.true:
         return sp.sympify(natural_domain)
     if isinstance(user_domain, sp.Set):
-        return sp.And(sp.Contains(sp.Symbol("_fp_dummy"), user_domain), natural_domain)
+        if var is None:
+            raise ValueError("var is required when combining a Set-valued domain")
+        return sp.And(sp.Contains(sp.sympify(var), user_domain), natural_domain)
     return sp.simplify(sp.And(sp.sympify(user_domain), sp.sympify(natural_domain)))
 
 
@@ -179,7 +186,7 @@ def is_full_natural_domain(requested_domain, natural_domain):
 def exact_order_real_points(points):
     """Order exact real points only when every comparison is certified.
 
-    Returns ``None`` rather than using structural or floating-point ordering
+    Returns ``None``
     when a pair cannot be compared exactly.  This helper is shared by sign,
     monotonic-partition, extrema, and inverse reasoning.
     """
@@ -204,7 +211,7 @@ def exact_order_real_points(points):
     return tuple(out)
 
 
-def combine_natural_domain_condition(natural_domain, user_domain, var):
+def combine_domain_condition(natural_domain, user_domain, var):
     """Combine a natural-domain result with a requested real domain safely.
 
     A ``PropertyResult`` means the natural domain was not established as one
@@ -278,3 +285,35 @@ def normalize_domain_set(domain, variable):
     if isinstance(domain, sp.Set):
         return domain
     return condition_to_set(sp.sympify(domain), variable)
+
+
+def affine_real_parameter_guard(expr, var):
+    """Return ``(slope, offset, guard)`` for an affine real-valued expression.
+
+    ``guard`` is parameter-only and is sufficient for ``expr`` to be real for
+    every real ``var``.  ``None`` means that ``expr`` is not affine in ``var``.
+    """
+    expr, var = sp.sympify(expr), sp.sympify(var)
+    try:
+        p = sp.Poly(sp.expand(expr), var)
+    except POLYNOMIAL_ERRORS:
+        return None
+    if p.degree() > 1:
+        return None
+    slope = sp.simplify(p.coeff_monomial(var))
+    offset = sp.simplify(p.nth(0))
+    real_slope = (
+        S.true
+        if slope.is_real is True
+        else S.false
+        if slope.is_real is False
+        else sp.Q.real(slope)
+    )
+    real_offset = (
+        S.true
+        if offset.is_real is True
+        else S.false
+        if offset.is_real is False
+        else sp.Q.real(offset)
+    )
+    return slope, offset, sp.And(real_slope, real_offset)

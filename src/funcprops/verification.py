@@ -18,22 +18,6 @@ from .exceptions import SYMBOLIC_QUERY_ERRORS
 from .results import Monotonicity, Sign
 
 
-def _truth(q):
-    if q in (True, S.true):
-        return True
-    if q in (False, S.false):
-        return False
-    try:
-        z = sp.simplify(q)
-        if z is S.true:
-            return True
-        if z is S.false:
-            return False
-    except SYMBOLIC_QUERY_ERRORS:
-        pass
-    return None
-
-
 def verify_monotonic_decomposition(cert):
     from .real_analysis.monotonic_certificates import MonotonicDecomposition
 
@@ -135,7 +119,7 @@ def verify_convexity_certificate(expr, var, cert):
     return sg in (Sign.ZERO, Sign.NONNEGATIVE, Sign.POSITIVE)
 
 
-def verify_extremum_ordering_theorem(cert):
+def verify_extremum_ordering(cert):
     from .transcendental.extrema import ExtremumOrderingTheorem
 
     if not isinstance(cert, ExtremumOrderingTheorem):
@@ -178,7 +162,20 @@ def verify_indexed_tail_inversion(cert):
 
 @lru_cache(maxsize=1)
 def _certificate_verifiers():
+    from .certified_operations import (
+        ArgumentPrincipleResult,
+        ContinuationCertificate,
+        ContourDeformationCertificate,
+        EquationSolutionCertificate,
+        HomotopyCertificate,
+        InverseCertificate,
+        LaurentCertificate,
+        ResidueCertificate,
+        SingularityClassificationCertificate,
+        WindingCertificate,
+    )
     from .geometry import LevelBoundednessCertificate, ModeExistenceCertificate
+    from .integration import IntegralResult
     from .real_analysis.advanced_convexity import ConvexityCertificate
     from .real_analysis.complete_monotonicity import CompleteMonotonicityCertificate
     from .real_analysis.monotonic_certificates import (
@@ -236,6 +233,17 @@ def _certificate_verifiers():
         return verify_homogeneity_result(expr, cert)
 
     return (
+        (IntegralResult, self_verifying),
+        (InverseCertificate, self_verifying),
+        (EquationSolutionCertificate, self_verifying),
+        (LaurentCertificate, self_verifying),
+        (ResidueCertificate, self_verifying),
+        (WindingCertificate, self_verifying),
+        (ArgumentPrincipleResult, self_verifying),
+        (HomotopyCertificate, self_verifying),
+        (ContinuationCertificate, self_verifying),
+        (SingularityClassificationCertificate, self_verifying),
+        (ContourDeformationCertificate, self_verifying),
         (ChangeOfVariablesCertificate, self_verifying),
         (DeterminantNonvanishingCertificate, self_verifying),
         (LocalInvertibilityCertificate, self_verifying),
@@ -252,12 +260,12 @@ def _certificate_verifiers():
         (RootCertificate, lambda cert, expr, var: verify_root_certificate(cert)),
         (
             ExtremumFamilyCertificate,
-            lambda cert, expr, var: verify_extremum_family_certificate(cert),
+            lambda cert, expr, var: verify_extremum_family(cert),
         ),
         (ExtremumRange, lambda cert, expr, var: verify_extremum_range(cert)),
         (
             ExtremumOrderingTheorem,
-            lambda cert, expr, var: verify_extremum_ordering_theorem(cert),
+            lambda cert, expr, var: verify_extremum_ordering(cert),
         ),
         (CertifiedIntegerBracket, lambda cert, expr, var: verify_integer_bracket(cert)),
         (
@@ -295,7 +303,7 @@ def verify_root_certificate(cert):
     return bool(cert.method)
 
 
-def verify_extremum_family_certificate(cert):
+def verify_extremum_family(cert):
     from .transcendental.extrema import ExtremumFamilyCertificate
 
     if not isinstance(cert, ExtremumFamilyCertificate):
@@ -366,19 +374,37 @@ def verify_periodicity_result(expr, var, cert):
                 sp.tan,
                 sp.cot,
             ):
+                from .engine import simplify_condition
+
                 a = sp.simplify(sp.diff(expr.args[0], var))
-                return not a.has(var) and cert.conditions == sp.Ne(a, 0)
+                if a.has(var):
+                    return False
+                real_ok = simplify_condition(sp.Q.real(a), assumptions=cert.conditions)
+                nonzero_ok = simplify_condition(
+                    sp.Ne(a, 0), assumptions=cert.conditions
+                )
+                base = sp.pi if expr.func in (sp.tan, sp.cot) else 2 * sp.pi
+                period_ok = (
+                    certify_identity_equal(cert.period, sp.simplify(base / sp.Abs(a)))
+                    is True
+                )
+                return real_ok is S.true and nonzero_ok is S.true and period_ok
             return False
         except SYMBOLIC_QUERY_ERRORS:
             return False
     if cert.classification is Periodicity.APERIODIC:
         try:
-            return (
-                bool(expr.is_polynomial(var) and sp.Poly(expr, var).degree() > 0)
-                or "incommensurate-component-periods" in cert.evidence
-            )
+            if bool(expr.is_polynomial(var) and sp.Poly(expr, var).degree() > 0):
+                return True
+            if "incommensurate-component-periods" in cert.evidence:
+                from .real_analysis.structural_properties import (
+                    _visible_incommensurate_periods,
+                )
+
+                return _visible_incommensurate_periods(expr, var)
+            return False
         except SYMBOLIC_QUERY_ERRORS:
-            return "incommensurate-component-periods" in cert.evidence
+            return False
     return cert.classification.value == "unknown"
 
 
@@ -393,23 +419,23 @@ def verify_symmetry_result(expr, var, cert):
     c = sp.sympify(cert.center)
     try:
         ref = sp.simplify(expr.subs(var, 2 * c - var))
-        ev = certify_identity_equal(ref, expr) is True
-        od = certify_identity_equal(ref, -expr) is True
+        ev = certify_identity_equal(ref, expr)
+        od = certify_identity_equal(ref, -expr)
     except SYMBOLIC_QUERY_ERRORS:
         return False
     if cert.classification is Symmetry.BOTH:
-        return ev and od
+        return ev is True and od is True
     if cert.classification is Symmetry.EVEN:
-        return ev
+        return ev is True
     if cert.classification is Symmetry.ODD:
-        return od
+        return od is True
     if cert.classification is Symmetry.CENTRAL:
         try:
             return certify_identity_equal(ref + expr, 2 * cert.central_value) is True
         except SYMBOLIC_QUERY_ERRORS:
             return False
     if cert.classification is Symmetry.NEITHER:
-        return not ev and not od
+        return ev is False and od is False
     return True
 
 
@@ -433,7 +459,18 @@ def verify_homogeneity_result(expr, cert):
         return False
     expr = sp.sympify(expr)
     assumptions = getattr(cert, "assumptions", S.true)
-    if cert.classification is not Homogeneity.HOMOGENEOUS:
+    if cert.classification is Homogeneity.NOT_HOMOGENEOUS:
+        if not cert.cases:
+            return False
+        homogeneous_region = sp.Or(*(case.condition for case in cert.cases))
+        try:
+            return (
+                sp.simplify(sp.Implies(assumptions, sp.Not(homogeneous_region)))
+                is S.true
+            )
+        except SYMBOLIC_QUERY_ERRORS:
+            return False
+    if cert.classification is Homogeneity.UNKNOWN:
         return True
     if cert.degree is None:
         reduced = _substitute_equalities(expr, assumptions)

@@ -1,7 +1,7 @@
 from .algebraize import (
     AlgebraizationResult,
     algebraize,
-    algebraize_common_subexpressions,
+    algebraize_common_subexprs,
     algebraize_exponentials,
     algebraize_trig_circle,
     algebraize_trigonometric,
@@ -108,7 +108,7 @@ __all__ = [
     "ZeroInterlacing",
     "ZeroOrdering",
     "algebraize",
-    "algebraize_common_subexpressions",
+    "algebraize_common_subexprs",
     "algebraize_exponentials",
     "algebraize_trig_circle",
     "algebraize_trigonometric",

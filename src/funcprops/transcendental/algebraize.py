@@ -163,7 +163,7 @@ def algebraize_trig_circle(expr, var):
     )
 
 
-def algebraize_common_subexpressions(expr, var):
+def algebraize_common_subexprs(expr, var):
     expr = sp.sympify(expr)
     counts = {}
     for node in sp.preorder_traversal(expr):

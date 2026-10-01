@@ -12,16 +12,16 @@ from ..exactness import certify_identity_equal
 from ..exceptions import SYMBOLIC_QUERY_ERRORS
 from ..results import Analyticity, Continuity, TruthValue
 from ..singularities import (
-    function_analytic,
-    function_continuous,
-    function_discontinuities,
+    analytic,
+    continuous,
+    discontinuities,
 )
 from ..stratification import evaluate_parameter_strata
 from .common import (
-    combine_natural_domain_condition,
+    combine_domain_condition,
     condition_to_set,
 )
-from .domain import function_domain
+from .domain import domain as _domain
 
 
 @dataclass(frozen=True)
@@ -105,11 +105,29 @@ def _structurally_smooth(expr, var):
 
 
 def _smoothness_value(result):
-    """Return the compact mathematical C-infinity truth value."""
-    if result.smooth is True:
-        return TruthValue.TRUE
-    if result.smooth is False:
-        return TruthValue.FALSE
+    """Return the certified differentiability order.
+
+    ``0`` denotes C^0 regularity, positive integers denote the highest
+    certified finite C^k order, ``oo`` denotes C-infinity, and ``None``
+    means that no C^k regularity classification was certified.
+    """
+    return result.differentiability_order
+
+
+def smooth(expr, var, *, domain=True, max_order=6):
+    """Return whether ``expr`` is certified C-infinity on ``domain``.
+
+    This is the predicate companion to :func:`smoothness`, whose
+    mathematical default is the certified differentiability order.
+    """
+    result = _function_smoothness_impl(
+        expr, var, domain=domain, max_order=max_order, return_result=True
+    )
+    if isinstance(result, SmoothnessResult):
+        if result.smooth is True:
+            return TruthValue.TRUE
+        if result.smooth is False:
+            return TruthValue.FALSE
     return TruthValue.UNKNOWN
 
 
@@ -239,11 +257,11 @@ def _function_smoothness_impl(
     if isinstance(max_order, bool) or not isinstance(max_order, int) or max_order < 1:
         raise ValueError("max_order must be a positive integer")
 
-    natural_domain = function_domain(expr, var)
+    natural_domain = _domain(expr, var)
     requested_domain = (
         sp.sympify(domain)
         if _domain_ready
-        else combine_natural_domain_condition(natural_domain, domain, var)
+        else combine_domain_condition(natural_domain, domain, var)
     )
     if not _domain_ready:
         split = evaluate_parameter_strata(
@@ -265,12 +283,12 @@ def _function_smoothness_impl(
         piecewise = _piecewise_smoothness(expr, var, requested_domain, max_order)
         if piecewise is not None:
             return _smoothness_output(piecewise, return_result=return_result)
-    analyticity = function_analytic(expr, var, domain=requested_domain)
+    analyticity = analytic(expr, var, domain=requested_domain)
     if analyticity is Analyticity.ANALYTIC:
-        continuity = function_continuous(expr, var, domain=requested_domain)
+        continuity = continuous(expr, var, domain=requested_domain)
         exceptions = list(
             _domain_loci(
-                function_discontinuities(expr, var, return_result=True),
+                discontinuities(expr, var, return_result=True),
                 requested_domain,
                 var,
             )
@@ -290,7 +308,7 @@ def _function_smoothness_impl(
     backend = None
     if _semialg.eligible_problem(expr, var, domain=requested_domain):
         try:
-            backend = _semialg.function_smoothness(
+            backend = _semialg.smoothness(
                 expr, var, domain=requested_domain, max_order=max_order
             )
             # Negative/finite regularity results are safe to use immediately.
@@ -326,10 +344,10 @@ def _function_smoothness_impl(
         except (_semialg.SemialgUnavailable, *SYMBOLIC_QUERY_ERRORS):
             backend = None
 
-    continuity = function_continuous(expr, var, domain=requested_domain)
+    continuity = continuous(expr, var, domain=requested_domain)
     exceptions = list(
         _domain_loci(
-            function_discontinuities(expr, var, return_result=True),
+            discontinuities(expr, var, return_result=True),
             requested_domain,
             var,
         )
@@ -369,7 +387,7 @@ def _function_smoothness_impl(
             break
 
         loci = _domain_loci(
-            function_discontinuities(derivative, var, return_result=True),
+            discontinuities(derivative, var, return_result=True),
             requested_domain,
             var,
         )
@@ -422,8 +440,14 @@ def _function_smoothness_impl(
     )
 
 
-def function_smoothness(expr, var, *, domain=True, max_order=6, return_result=False):
-    """Analyze regularity up to ``max_order`` on a real domain."""
+def smoothness(expr, var, *, domain=True, max_order=6, return_result=False):
+    """Return the certified C^k order, or detailed regularity information.
+
+    The mathematical default is ``0`` for C^0, a positive integer for a
+    certified finite C^k order, ``oo`` for C-infinity, or ``None`` when no
+    regularity order is certified.  Use ``return_result=True`` for the full
+    :class:`SmoothnessResult`.
+    """
     return _function_smoothness_impl(
         expr,
         var,

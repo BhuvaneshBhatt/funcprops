@@ -6,13 +6,17 @@ from sympy import S
 from ..exceptions import SYMBOLIC_QUERY_ERRORS
 from ..results import Boundedness, ConditionalExpression, PropertyResult
 from ..stratification import normalize_cases
-from .common import combine_natural_domain_condition, condition_to_set
-from .domain import function_domain
+from .common import (
+    affine_real_parameter_guard,
+    combine_domain_condition,
+    condition_to_set,
+)
+from .domain import domain as _domain
 from .piecewise import (
     combine_piecewise_boundedness,
     piecewise_branches,
 )
-from .range import function_range
+from .range import range
 
 
 def _boundedness_from_range_condition(cond, y):
@@ -96,27 +100,51 @@ def _structural_boundedness(expr, var, domain):
     if not expr.has(var):
         return Boundedness.BOUNDED
     if expr.func in (sp.sin, sp.cos, sp.tanh, sp.atan):
-        return Boundedness.BOUNDED
+        arg = expr.args[0]
+        if arg.is_real is True:
+            return Boundedness.BOUNDED
+        affine = affine_real_parameter_guard(arg, var)
+        if affine is not None and affine[2] not in (S.false, S.true):
+            return normalize_cases(
+                (ConditionalExpression(Boundedness.BOUNDED, affine[2]),),
+                source="real-argument-boundedness",
+            )
+        return Boundedness.UNKNOWN
     if isinstance(expr, sp.Piecewise):
         branches = piecewise_branches(expr, var, domain)
         if branches:
             values = [
-                function_boundedness(branch.expression, var, domain=branch.condition)
+                boundedness(branch.expression, var, domain=branch.condition)
                 for branch in branches
             ]
             return combine_piecewise_boundedness(values)
     if expr.func is sp.Abs:
-        inner = function_boundedness(expr.args[0], var, domain=domain)
+        inner = boundedness(expr.args[0], var, domain=domain)
         if inner is Boundedness.BOUNDED:
             return Boundedness.BOUNDED
         return Boundedness.BOUNDED_BELOW
     if expr.func is sp.exp:
-        inner = function_boundedness(expr.args[0], var, domain=domain)
-        if inner in (Boundedness.BOUNDED, Boundedness.BOUNDED_ABOVE):
-            return Boundedness.BOUNDED
-        return Boundedness.BOUNDED_BELOW
+        arg = expr.args[0]
+        affine = affine_real_parameter_guard(arg, var)
+        real_guard = (
+            S.true if arg.is_real is True else affine[2] if affine is not None else None
+        )
+        if real_guard is S.false or real_guard is None:
+            return Boundedness.UNKNOWN
+        inner = boundedness(arg, var, domain=domain)
+        value = (
+            Boundedness.BOUNDED
+            if inner in (Boundedness.BOUNDED, Boundedness.BOUNDED_ABOVE)
+            else Boundedness.BOUNDED_BELOW
+        )
+        if real_guard is S.true:
+            return value
+        return normalize_cases(
+            (ConditionalExpression(value, real_guard),),
+            source="real-exponential-boundedness",
+        )
     if expr.is_Add:
-        values = [function_boundedness(a, var, domain=domain) for a in expr.args]
+        values = [boundedness(a, var, domain=domain) for a in expr.args]
         if not any(isinstance(v, PropertyResult) for v in values):
             upper = {Boundedness.BOUNDED, Boundedness.BOUNDED_ABOVE}
             lower = {Boundedness.BOUNDED, Boundedness.BOUNDED_BELOW}
@@ -129,26 +157,31 @@ def _structural_boundedness(expr, var, domain):
             if below:
                 return Boundedness.BOUNDED_BELOW
     if expr.is_Mul:
-        values = [function_boundedness(a, var, domain=domain) for a in expr.args]
+        values = [boundedness(a, var, domain=domain) for a in expr.args]
         if values and all(v is Boundedness.BOUNDED for v in values):
             return Boundedness.BOUNDED
     return Boundedness.UNKNOWN
 
 
-def function_boundedness(expr, var, *, domain=True):
+def boundedness(expr, var, *, domain=True):
     expr = sp.sympify(expr)
     var = sp.sympify(var)
+    try:
+        if sp.ask(sp.Q.real(expr)) is False:
+            return Boundedness.UNKNOWN
+    except SYMBOLIC_QUERY_ERRORS:
+        pass
     y = sp.Dummy("_y", real=True)
     structural = _structural_boundedness(expr, var, domain)
     if structural is not Boundedness.UNKNOWN:
         return structural
-    natural = function_domain(expr, var)
-    # function_range owns natural-domain intersection.  Passing an already
+    natural = _domain(expr, var)
+    # range owns natural-domain intersection.  Passing an already
     # combined mixed parameter/domain formula can obscure a simple user domain
     # (e.g. x>=0) and prevent endpoint-aware special-function rules from firing.
-    constraints = combine_natural_domain_condition(natural, domain, var)
+    constraints = combine_domain_condition(natural, domain, var)
     try:
-        cond = function_range(expr, var, y, constraints=constraints)
+        cond = range(expr, var, y, constraints=constraints)
     except SYMBOLIC_QUERY_ERRORS:
         return Boundedness.UNKNOWN
     if isinstance(cond, PropertyResult):

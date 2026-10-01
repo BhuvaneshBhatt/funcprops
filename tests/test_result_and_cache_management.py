@@ -5,22 +5,22 @@ from funcprops import (
     PropertyResult,
     as_detailed_result,
     cache_info,
+    change_of_variables,
     clear_caches,
     explain_result,
-    function_change_of_variables,
-    function_monotonicity,
+    monotonicity,
 )
 
 
 def test_assumptions_collapse_parameter_strata():
     a, x = sp.symbols("a x", real=True)
-    result = function_monotonicity(a * x, x, assumptions=a > 0)
+    result = monotonicity(a * x, x, assumptions=a > 0)
     assert result is Monotonicity.STRICTLY_INCREASING
 
 
 def test_detailed_result_exposes_self_verifying_certificate():
     x = sp.symbols("x", real=True)
-    cert = function_change_of_variables((2 * x,), x)
+    cert = change_of_variables((2 * x,), x)
     detail = as_detailed_result(cert)
     assert detail.primary == cert.classification
     assert detail.certificate is cert
@@ -35,7 +35,7 @@ def test_property_result_resolved_value():
 
 def test_unified_cache_management():
     x = sp.symbols("x", real=True)
-    function_monotonicity(x**2, x)
+    monotonicity(x**2, x)
     before = cache_info()
     assert "derivative" in before
     assert all(hasattr(info, "hits") for info in before.values())

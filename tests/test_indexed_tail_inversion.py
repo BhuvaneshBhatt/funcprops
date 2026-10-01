@@ -84,19 +84,19 @@ def test_airy_left_tail_inversion_reduces_infinite_envelope():
     assert r.lower != 0 and r.upper != 0
 
 
-def test_open_bessel_tail_keeps_attainment_unknown_when_endpoint_may_dominate():
+def test_bessel_tail_endpoint_attainment():
     A = sp.symbols("A", positive=True)
     r = symbolic_extremum_range(sp.besselj(1, x), x, sp.Interval.open(A, sp.oo))
     assert r.lower_attained is None
     assert r.upper_attained is None
 
 
-def test_public_function_range_uses_parameterized_tail_interval():
-    from funcprops import function_range
+def test_public_range_uses_parameterized_tail_interval():
+    from funcprops import range
 
     y = sp.symbols("y", real=True)
     A = sp.symbols("A", positive=True)
-    r = function_range(sp.besselj(1, x), x, y, constraints=x >= A)
+    r = range(sp.besselj(1, x), x, y, constraints=x >= A)
     assert isinstance(r, sp.logic.boolalg.Boolean)
     assert r.has(IndexedTailIndex)
     assert r.has(sp.besselj(1, A))

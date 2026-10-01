@@ -114,7 +114,7 @@ def test_function_slot_rejects_invalid_position():
         FunctionSlot(-1, "bad")
 
 
-def test_function_registry_registers_filters_matches_and_instantiates_native_rules():
+def test_registry_native_rule_lifecycle():
     from funcprops import FunctionRegistry
 
     nu, z = make_function_slots("nu", "z")

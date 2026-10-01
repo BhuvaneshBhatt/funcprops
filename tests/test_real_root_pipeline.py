@@ -1,10 +1,10 @@
 import sympy as sp
 
 from funcprops import (
+    certified_monotonic_inverse,
     exponential_fourier_count,
-    function_zeros,
     robust_real_sign,
-    solve_monotonic_inverse,
+    zeros,
 )
 from funcprops.transcendental.real_interval import certified_real_interval_evaluate
 
@@ -13,7 +13,7 @@ x = sp.symbols("x", real=True)
 
 def test_domain_cells_split_piecewise_exception_and_keep_zero_interval():
     expr = sp.Piecewise((0, x < 0), (x - 1, True))
-    result = function_zeros(expr, x, domain=sp.Interval(-2, 2), return_result=True)
+    result = zeros(expr, x, domain=sp.Interval(-2, 2), return_result=True)
     assert result.complete
     assert result.zero_intervals == (sp.Interval.Ropen(-2, 0),)
     assert result.roots == (sp.Integer(1),)
@@ -22,7 +22,7 @@ def test_domain_cells_split_piecewise_exception_and_keep_zero_interval():
 
 def test_domain_cells_do_not_cross_log_or_pole_boundaries():
     expr = sp.log(x - 1) / (x - 2)
-    result = function_zeros(expr, x, domain=sp.Interval(-10, 10), return_result=True)
+    result = zeros(expr, x, domain=sp.Interval(-10, 10), return_result=True)
     assert result.complete
     assert result.roots == ()
     assert "domain_cell_isolation" in result.method
@@ -41,7 +41,7 @@ def test_interval_arithmetic_can_prove_root_free_cell():
 
 def test_interval_arithmetic_derivative_can_certify_unique_root():
     expr = x + sp.exp(x) - 3
-    result = function_zeros(expr, x, domain=sp.Interval(-1, 1), return_result=True)
+    result = zeros(expr, x, domain=sp.Interval(-1, 1), return_result=True)
     assert result.complete
     assert len(result.isolated_intervals) == 1
     cert = result.isolated_intervals[0].certificate
@@ -54,7 +54,7 @@ def test_interval_arithmetic_derivative_can_certify_unique_root():
 
 
 def test_certified_monotonic_inverse_returns_isolating_interval():
-    cert = solve_monotonic_inverse(x + sp.exp(x), x, 3, domain=sp.Interval(-1, 2))
+    cert = certified_monotonic_inverse(x + sp.exp(x), x, 3, domain=sp.Interval(-1, 2))
     assert cert.complete
     assert len(cert.isolated_intervals) == 1
     iv = cert.isolated_intervals[0].interval

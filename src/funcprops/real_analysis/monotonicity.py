@@ -16,11 +16,12 @@ from ..stratification import (
     semantic_condition,
 )
 from .common import (
-    combine_natural_domain_condition,
+    affine_real_parameter_guard,
+    combine_domain_condition,
     condition_to_set,
     is_full_natural_domain,
 )
-from .domain import function_domain
+from .domain import domain as _domain
 from .monotonic_certificates import (
     monotonic_decomposition,
     monotonic_partition,
@@ -31,8 +32,9 @@ from .piecewise import (
     combine_piecewise_monotonicity,
     piecewise_decomposition,
 )
-from .sign import function_sign
+from .sign import sign
 from .special_functions import parameter_guard, positive_axis_monotonicity_strata
+from .staging import NO_STAGE_RESULT
 
 
 def _from_code(value):
@@ -96,7 +98,7 @@ def _compose_monotonicity(expr, var, domain):
     om = _direct_registry(outer, X)
     if om is Monotonicity.UNKNOWN and outer.func is sp.exp:
         om = Monotonicity.STRICTLY_INCREASING
-    im = function_monotonicity(inner, var, domain=domain)
+    im = monotonicity(inner, var, domain=domain)
     if isinstance(om, PropertyResult) or isinstance(im, PropertyResult):
         return Monotonicity.UNKNOWN
     inc = (Monotonicity.STRICTLY_INCREASING, Monotonicity.NONDECREASING)
@@ -136,7 +138,7 @@ def _closure_monotonicity(expr, var, domain):
         parts = [a for a in expr.args if a.has(var)]
         if not parts:
             return Monotonicity.CONSTANT
-        vals = [function_monotonicity(a, var, domain=domain) for a in parts]
+        vals = [monotonicity(a, var, domain=domain) for a in parts]
         if any(isinstance(v, PropertyResult) for v in vals):
             return Monotonicity.UNKNOWN
         if all(v in inc for v in vals):
@@ -152,11 +154,7 @@ def _closure_monotonicity(expr, var, domain):
                 else Monotonicity.NONINCREASING
             )
     if expr.func in (sp.Min, sp.Max):
-        vals = [
-            function_monotonicity(a, var, domain=domain)
-            for a in expr.args
-            if a.has(var)
-        ]
+        vals = [monotonicity(a, var, domain=domain) for a in expr.args if a.has(var)]
         if vals and not any(isinstance(v, PropertyResult) for v in vals):
             if all(v in inc for v in vals):
                 return Monotonicity.NONDECREASING
@@ -172,8 +170,8 @@ def _closure_monotonicity(expr, var, domain):
             vals = []
             signs = []
             for a in parts:
-                vals.append(function_monotonicity(a, var, domain=domain))
-                signs.append(function_sign(a, var, domain=domain))
+                vals.append(monotonicity(a, var, domain=domain))
+                signs.append(sign(a, var, domain=domain))
             if not any(isinstance(v, PropertyResult) for v in vals):
                 nonneg = all(q in (Sign.POSITIVE, Sign.NONNEGATIVE) for q in signs)
                 strictly_pos = all(q is Sign.POSITIVE for q in signs)
@@ -221,7 +219,7 @@ def _piecewise_monotonicity(expr, var, domain):
     if not branches:
         return Monotonicity.UNKNOWN
     values = [
-        function_monotonicity(b.expression, var, domain=b.condition)
+        monotonicity(b.expression, var, domain=b.condition)
         for b in branches
         if isinstance(b.domain, sp.Interval)
     ]
@@ -258,28 +256,37 @@ def _parameter_strata(expr, var, domain):
     if expr.func is sp.Pow and expr.base == var:
         a = expr.exp
         if a.free_symbols and domain == (var > 0):
+            real_a = S.true if a.is_real is True else sp.Q.real(a)
             return normalize_cases(
                 (
-                    ConditionalExpression(Monotonicity.STRICTLY_INCREASING, a > 0),
+                    ConditionalExpression(
+                        Monotonicity.STRICTLY_INCREASING, sp.And(real_a, a > 0)
+                    ),
                     ConditionalExpression(Monotonicity.CONSTANT, sp.Eq(a, 0)),
-                    ConditionalExpression(Monotonicity.STRICTLY_DECREASING, a < 0),
+                    ConditionalExpression(
+                        Monotonicity.STRICTLY_DECREASING, sp.And(real_a, a < 0)
+                    ),
                 ),
                 source="power-parameter-stratification",
             )
     if expr.func is sp.exp:
-        g = sp.expand(expr.args[0])
-        try:
-            p = sp.Poly(g, var)
-        except SYMBOLIC_QUERY_ERRORS:
-            p = None
-        if p is not None and p.degree() == 1:
-            a = p.coeff_monomial(var)
-            if a.free_symbols:
+        affine = affine_real_parameter_guard(expr.args[0], var)
+        if affine is not None:
+            a, _b, real_guard = affine
+            if real_guard is S.false:
+                return None
+            if a.free_symbols or real_guard is not S.true:
                 return normalize_cases(
                     (
-                        ConditionalExpression(Monotonicity.STRICTLY_INCREASING, a > 0),
-                        ConditionalExpression(Monotonicity.CONSTANT, sp.Eq(a, 0)),
-                        ConditionalExpression(Monotonicity.STRICTLY_DECREASING, a < 0),
+                        ConditionalExpression(
+                            Monotonicity.STRICTLY_INCREASING, sp.And(real_guard, a > 0)
+                        ),
+                        ConditionalExpression(
+                            Monotonicity.CONSTANT, sp.And(real_guard, sp.Eq(a, 0))
+                        ),
+                        ConditionalExpression(
+                            Monotonicity.STRICTLY_DECREASING, sp.And(real_guard, a < 0)
+                        ),
                     ),
                     source="exp-affine-parameter-stratification",
                 )
@@ -297,7 +304,7 @@ def _semialgebraic_monotonicity_stage(
     if intervals or not _semialg.eligible_problem(expr, var, domain=assumptions):
         return None
     try:
-        raw = _semialg.function_monotonicity(
+        raw = _semialg.monotonicity(
             expr,
             var,
             domain=assumptions,
@@ -311,9 +318,6 @@ def _semialgebraic_monotonicity_stage(
     classification = getattr(raw, "classification", raw)
     evidence = (raw,) if raw is not classification else ()
     return value, evidence
-
-
-_NO_MONOTONICITY_RESULT = object()
 
 
 def _monotonicity_output(value, *, intervals, return_result, source=None, evidence=()):
@@ -424,7 +428,7 @@ def _monotonicity_theorem_stage(
             source="semialg",
             evidence=evidence,
         )
-    return _NO_MONOTONICITY_RESULT
+    return NO_STAGE_RESULT
 
 
 def _monotonicity_fallback_stage(
@@ -446,7 +450,7 @@ def _monotonicity_fallback_stage(
         try:
             valid = sp.simplify_logic(sp.Implies(assumptions, dec.condition))
             if valid is S.true:
-                im = function_monotonicity(dec.inner, var, domain=assumptions)
+                im = monotonicity(dec.inner, var, domain=assumptions)
             else:
                 im = PropertyResult(None)
             if not isinstance(im, PropertyResult):
@@ -595,7 +599,7 @@ def _monotonicity_fallback_stage(
             "zero-derivative",
             (part,) if part is not None else (),
         )
-    s = function_sign(derivative, var, domain=assumptions, strict_inequalities=True)
+    s = sign(derivative, var, domain=assumptions, strict_inequalities=True)
     if isinstance(s, PropertyResult):
         out = normalize_cases(
             (ConditionalExpression(from_sign(c.value), c.condition) for c in s.cases),
@@ -658,11 +662,11 @@ def _classify_monotonicity(
     var = sp.sympify(var)
     if not expr.has(var):
         return Monotonicity.CONSTANT
-    natural = function_domain(expr, var)
+    natural = _domain(expr, var)
     assumptions = (
         sp.sympify(domain)
         if _domain_ready
-        else combine_natural_domain_condition(natural, domain, var)
+        else combine_domain_condition(natural, domain, var)
     )
     with contextlib.suppress(SYMBOLIC_QUERY_ERRORS):
         assumptions = sp.simplify(assumptions)
@@ -698,7 +702,7 @@ def _classify_monotonicity(
         return_result=return_result,
         partition=partition,
     )
-    if early is not _NO_MONOTONICITY_RESULT:
+    if early is not NO_STAGE_RESULT:
         return early
 
     return _monotonicity_fallback_stage(
@@ -764,7 +768,7 @@ def _format_monotonicity(result, *, strict_inequalities, all_properties):
     return primary
 
 
-def function_monotonicity(
+def monotonicity(
     expr,
     var,
     *,

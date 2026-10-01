@@ -30,6 +30,41 @@ class DLMFFact:
 
 DLMF_FACTS = (
     DLMFFact(
+        "erf",
+        "odd/strictly increasing/range",
+        "7.2,7.10",
+        "https://dlmf.nist.gov/7",
+        note="real x; derivative 2 exp(-x^2)/sqrt(pi)>0",
+    ),
+    DLMFFact(
+        "erfc",
+        "positive/strictly decreasing/range",
+        "7.2,7.10",
+        "https://dlmf.nist.gov/7",
+        note="real x; derivative -2 exp(-x^2)/sqrt(pi)<0",
+    ),
+    DLMFFact(
+        "polygamma",
+        "sign/monotonicity",
+        "5.15",
+        "https://dlmf.nist.gov/5.15",
+        note="positive real argument with order prerequisites",
+    ),
+    DLMFFact(
+        "airyai",
+        "real zeros/oscillation",
+        "9.9",
+        "https://dlmf.nist.gov/9.9",
+        note="real zeros are negative and simple",
+    ),
+    DLMFFact(
+        "airybi",
+        "real zeros/oscillation",
+        "9.9",
+        "https://dlmf.nist.gov/9.9",
+        note="real zeros are negative and simple",
+    ),
+    DLMFFact(
         "besseli",
         "positive/increasing",
         "10.37",
@@ -178,7 +213,7 @@ def dlmf_facts(family: str | None = None):
 
     The generated audit contributes one provenance record per exact formula or
     narrowly scoped DLMF section.  Helper/wrapper families are marked
-    ``derived`` rather than being misrepresented as DLMF-native functions.
+    ``derived``.
     """
     facts = list(DLMF_FACTS)
     try:
@@ -765,3 +800,38 @@ def positive_axis_convexity_strata(expr, var):
             (Convexity.STRICTLY_CONVEX, expr.args[0] > 0, "derived from beta quotient"),
         )
     return ()
+
+
+# Additional theorem-oriented catalogue facts used by cross-property reasoning.
+EXPANDED_SPECIAL_FUNCTION_FACTS = (
+    DLMFFact(
+        "LambertW",
+        "principal branch positive/increasing",
+        "4.13",
+        "https://dlmf.nist.gov/4.13",
+        note="real x>0 on W_0; derivative is positive",
+    ),
+    DLMFFact(
+        "zeta",
+        "positive/decreasing",
+        "25.2",
+        "https://dlmf.nist.gov/25.2",
+        note="real s>1 from the Dirichlet series and its differentiated series",
+    ),
+    DLMFFact(
+        "struveh",
+        "differential-equation/real-axis structure",
+        "11.2",
+        "https://dlmf.nist.gov/11.2",
+        status="derived",
+        note="catalogue hook; property claims require guarded theorem records",
+    ),
+    DLMFFact(
+        "polylog",
+        "principal branch/series domain",
+        "25.12",
+        "https://dlmf.nist.gov/25.12",
+        note="series facts are used only inside their convergence domain",
+    ),
+)
+DLMF_FACTS = DLMF_FACTS + EXPANDED_SPECIAL_FUNCTION_FACTS

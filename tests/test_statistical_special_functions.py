@@ -3,7 +3,7 @@ import sympy as sp
 import funcprops as fp
 
 
-def test_custom_statistical_heads_have_exact_derivatives_and_special_values():
+def test_statistical_heads_exact_rules():
     h, a, x, alpha = sp.symbols("h a x alpha", real=True)
     assert fp.OwenT(h, 0) == 0
     assert fp.OwenT(0, a) == sp.atan(a) / (2 * sp.pi)
@@ -31,30 +31,24 @@ def test_regularized_gamma_heads_rewrite_and_differentiate():
 
 def test_loggamma_and_digamma_geometry_on_positive_axis():
     x = sp.symbols("x", positive=True)
+    assert fp.convexity(sp.loggamma(x), x, domain=x > 0) is fp.Convexity.STRICTLY_CONVEX
     assert (
-        fp.function_convexity(sp.loggamma(x), x, domain=x > 0)
-        is fp.Convexity.STRICTLY_CONVEX
-    )
-    assert (
-        fp.function_monotonicity(sp.digamma(x), x, domain=x > 0)
+        fp.monotonicity(sp.digamma(x), x, domain=x > 0)
         is fp.Monotonicity.STRICTLY_INCREASING
     )
-    assert (
-        fp.function_convexity(sp.digamma(x), x, domain=x > 0)
-        is fp.Convexity.STRICTLY_CONCAVE
-    )
+    assert fp.convexity(sp.digamma(x), x, domain=x > 0) is fp.Convexity.STRICTLY_CONCAVE
 
 
 def test_polygamma_sign_and_monotonicity_parity_strata():
     x = sp.symbols("x", positive=True)
-    assert fp.function_sign(sp.polygamma(1, x), x, domain=x > 0) is fp.Sign.POSITIVE
-    assert fp.function_sign(sp.polygamma(2, x), x, domain=x > 0) is fp.Sign.NEGATIVE
+    assert fp.sign(sp.polygamma(1, x), x, domain=x > 0) is fp.Sign.POSITIVE
+    assert fp.sign(sp.polygamma(2, x), x, domain=x > 0) is fp.Sign.NEGATIVE
     assert (
-        fp.function_monotonicity(sp.polygamma(1, x), x, domain=x > 0)
+        fp.monotonicity(sp.polygamma(1, x), x, domain=x > 0)
         is fp.Monotonicity.STRICTLY_DECREASING
     )
     assert (
-        fp.function_monotonicity(sp.polygamma(2, x), x, domain=x > 0)
+        fp.monotonicity(sp.polygamma(2, x), x, domain=x > 0)
         is fp.Monotonicity.STRICTLY_INCREASING
     )
 
@@ -64,24 +58,14 @@ def test_regularized_gamma_monotonicity_and_range():
     x, y = sp.symbols("x y", real=True)
     p = fp.RegularizedGammaP(a, x)
     q = fp.RegularizedGammaQ(a, x)
+    assert fp.monotonicity(p, x, domain=x > 0) is fp.Monotonicity.STRICTLY_INCREASING
+    assert fp.monotonicity(q, x, domain=x > 0) is fp.Monotonicity.STRICTLY_DECREASING
     assert (
-        fp.function_monotonicity(p, x, domain=x > 0)
-        is fp.Monotonicity.STRICTLY_INCREASING
-    )
-    assert (
-        fp.function_monotonicity(q, x, domain=x > 0)
-        is fp.Monotonicity.STRICTLY_DECREASING
-    )
-    assert (
-        sp.simplify_logic(
-            fp.function_range(p, x, y, constraints=x > 0) ^ sp.And(y > 0, y < 1)
-        )
+        sp.simplify_logic(fp.range(p, x, y, constraints=x > 0) ^ sp.And(y > 0, y < 1))
         is sp.false
     )
     assert (
-        sp.simplify_logic(
-            fp.function_range(q, x, y, constraints=x > 0) ^ sp.And(y > 0, y < 1)
-        )
+        sp.simplify_logic(fp.range(q, x, y, constraints=x > 0) ^ sp.And(y > 0, y < 1))
         is sp.false
     )
 
@@ -92,12 +76,11 @@ def test_regularized_beta_is_increasing_on_probability_support():
     expr = sp.betainc_regularized(a, b, 0, x)
     support = sp.And(x > 0, x < 1)
     assert (
-        fp.function_monotonicity(expr, x, domain=support)
-        is fp.Monotonicity.STRICTLY_INCREASING
+        fp.monotonicity(expr, x, domain=support) is fp.Monotonicity.STRICTLY_INCREASING
     )
     assert (
         sp.simplify_logic(
-            fp.function_range(expr, x, y, constraints=support) ^ sp.And(y > 0, y < 1)
+            fp.range(expr, x, y, constraints=support) ^ sp.And(y > 0, y < 1)
         )
         is sp.false
     )
@@ -107,22 +90,19 @@ def test_owen_t_is_positive_and_increasing_in_second_argument():
     h = sp.symbols("h", real=True)
     a = sp.symbols("a", positive=True)
     expr = fp.OwenT(h, a)
-    assert fp.function_sign(expr, a, domain=a > 0) is fp.Sign.POSITIVE
-    assert (
-        fp.function_monotonicity(expr, a, domain=a > 0)
-        is fp.Monotonicity.STRICTLY_INCREASING
-    )
+    assert fp.sign(expr, a, domain=a > 0) is fp.Sign.POSITIVE
+    assert fp.monotonicity(expr, a, domain=a > 0) is fp.Monotonicity.STRICTLY_INCREASING
 
 
 def test_marcum_q_threshold_and_noncentrality_monotonicity():
     m = sp.symbols("m", positive=True)
     a, b = sp.symbols("a b", positive=True)
     assert (
-        fp.function_monotonicity(sp.marcumq(m, a, b), b, domain=b > 0)
+        fp.monotonicity(sp.marcumq(m, a, b), b, domain=b > 0)
         is fp.Monotonicity.STRICTLY_DECREASING
     )
     assert (
-        fp.function_monotonicity(sp.marcumq(m, a, b), a, domain=a > 0)
+        fp.monotonicity(sp.marcumq(m, a, b), a, domain=a > 0)
         is fp.Monotonicity.STRICTLY_INCREASING
     )
 
@@ -130,7 +110,7 @@ def test_marcum_q_threshold_and_noncentrality_monotonicity():
 def test_marcum_q_probability_range_on_positive_threshold():
     m, a = sp.symbols("m a", positive=True)
     b, y = sp.symbols("b y", real=True)
-    result = fp.function_range(sp.marcumq(m, a, b), b, y, constraints=b > 0)
+    result = fp.range(sp.marcumq(m, a, b), b, y, constraints=b > 0)
     assert sp.simplify_logic(result ^ sp.And(y > 0, y < 1)) is sp.false
 
 
@@ -138,16 +118,12 @@ def test_mittag_leffler_complete_monotonicity_is_parameter_conditioned():
     alpha = sp.symbols("alpha", real=True)
     x = sp.symbols("x", nonnegative=True)
     expr = fp.MittagLefflerE(alpha, -x)
-    unresolved = fp.function_complete_monotonicity(expr, x, domain=x >= 0)
-    assert isinstance(unresolved, fp.PropertyResult)
-    assert len(unresolved.cases) == 1
-    assert unresolved.cases[0].value is fp.TruthValue.TRUE
+    unresolved = fp.complete_monotonicity(expr, x, domain=x >= 0)
+    assert isinstance(unresolved, sp.Piecewise)
+    assert unresolved.subs(alpha, sp.Rational(1, 2)) is sp.S.true
+    assert str(unresolved.subs(alpha, 2)) == "unknown"
     assert (
-        sp.simplify_logic(unresolved.cases[0].condition ^ sp.And(alpha > 0, alpha <= 1))
-        is sp.false
-    )
-    assert (
-        fp.function_complete_monotonicity(
+        fp.complete_monotonicity(
             expr,
             x,
             domain=x >= 0,
@@ -161,9 +137,9 @@ def test_mittag_leffler_geometry_follows_complete_monotonicity():
     alpha = sp.symbols("alpha", positive=True)
     x = sp.symbols("x", positive=True)
     expr = fp.MittagLefflerE(alpha, -x)
-    mono = fp.function_monotonicity(expr, x, domain=x > 0)
-    convex = fp.function_convexity(expr, x, domain=x > 0)
-    sign = fp.function_sign(expr, x, domain=x > 0)
+    mono = fp.monotonicity(expr, x, domain=x > 0, return_result=True)
+    convex = fp.convexity(expr, x, domain=x > 0, return_result=True)
+    sign = fp.sign(expr, x, domain=x > 0, return_result=True)
     assert isinstance(mono, fp.PropertyResult)
     assert mono.cases[0].value is fp.Monotonicity.NONINCREASING
     assert isinstance(convex, fp.PropertyResult)
@@ -176,13 +152,13 @@ def test_besselk_complete_monotonicity_requires_open_positive_axis():
     nu = sp.symbols("nu", real=True)
     x = sp.symbols("x", real=True)
     assert (
-        fp.function_complete_monotonicity(
+        fp.complete_monotonicity(
             sp.besselk(nu, x), x, domain=x > 0, assumptions=sp.Contains(nu, sp.S.Reals)
         )
         is fp.TruthValue.TRUE
     )
     assert (
-        fp.function_complete_monotonicity(
+        fp.complete_monotonicity(
             sp.besselk(nu, x), x, domain=x >= 0, assumptions=sp.Contains(nu, sp.S.Reals)
         )
         is fp.TruthValue.UNKNOWN
@@ -192,7 +168,7 @@ def test_besselk_complete_monotonicity_requires_open_positive_axis():
 def test_complete_monotonicity_certificate_replays_generically():
     alpha = sp.symbols("alpha", positive=True)
     x = sp.symbols("x", nonnegative=True)
-    cert = fp.function_complete_monotonicity(
+    cert = fp.complete_monotonicity(
         fp.MittagLefflerE(alpha, -x),
         x,
         domain=x >= 0,
@@ -210,10 +186,10 @@ def test_modified_bessel_statistical_ratio_geometry():
     ratio = sp.besseli(nu + 1, x) / sp.besseli(nu, x)
     domain = x > 0
 
-    mono = fp.function_monotonicity(ratio, x, domain=domain)
-    sign = fp.function_sign(ratio, x, domain=domain)
-    convex = fp.function_convexity(ratio, x, domain=domain)
-    rg = fp.function_range(ratio, x, y, constraints=domain)
+    mono = fp.monotonicity(ratio, x, domain=domain, return_result=True)
+    sign = fp.sign(ratio, x, domain=domain, return_result=True)
+    convex = fp.convexity(ratio, x, domain=domain, return_result=True)
+    rg = fp.range(ratio, x, y, constraints=domain, return_result=True)
 
     for result, expected in (
         (mono, fp.Monotonicity.STRICTLY_INCREASING),

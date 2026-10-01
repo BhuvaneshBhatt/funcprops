@@ -1,7 +1,7 @@
 """Adapter to semialg's public exact real-function API.
 
 funcprops owns the public property vocabulary and evidence objects. semialg
-provides the exact backend for semialgebraic functions on semialgebraic real
+provides the exact backend for semialgebraic functions on a semialgebraic real
 domains, including domain, range, sign, monotonicity, convexity, smoothness,
 and mapping-property calculations. Imports remain lazy so catalogue and
 complex-analysis queries do not load the backend until a real-domain proof
@@ -27,29 +27,27 @@ def _public_function(name: str) -> Callable:
         import semialg
     except ImportError as exc:
         raise SemialgUnavailable(
-            "funcprops real-analysis queries require semialg>=1.2.0"
+            "funcprops real-analysis queries require semialg>=1.3.0"
         ) from exc
 
     try:
         function = getattr(semialg, name)
     except AttributeError as exc:
         raise SemialgUnavailable(
-            f"semialg>=1.2.0 does not provide the required public function {name!r}"
+            f"semialg>=1.3.0 does not provide the required public function {name!r}"
         ) from exc
     if not callable(function):
         raise SemialgUnavailable(f"semialg public attribute {name!r} is not callable")
     return function
 
 
-def function_domain(expr, variable):
+def domain(expr, variable):
     """Return semialg's recognized real-domain condition."""
     function = _public_function("function_domain")
     return function(sp.sympify(expr), [variable])
 
 
-def function_range(
-    expr, variable, value_symbol, *, constraints=True, method="qe", **kwargs
-):
+def range(expr, variable, value_symbol, *, constraints=True, method="qe", **kwargs):
     """Return an exact real-range condition from semialg."""
     function = _public_function("function_range")
     return function(
@@ -62,9 +60,7 @@ def function_range(
     )
 
 
-def function_convexity(
-    expr, variable, *, domain=True, strict_inequalities=True, **kwargs
-):
+def convexity(expr, variable, *, domain=True, strict_inequalities=True, **kwargs):
     """Return semialg's strongest certified convexity classification."""
     properties = kwargs.pop("properties", "primary")
     return_result = kwargs.pop("return_result", False)
@@ -87,7 +83,7 @@ def function_convexity(
     )
 
 
-def function_monotonicity(expr, variable, *, domain=True, return_result=False):
+def monotonicity(expr, variable, *, domain=True, return_result=False):
     """Return semialg's exact monotonicity classification."""
     function = _public_function("function_monotonicity")
     return function(
@@ -98,7 +94,7 @@ def function_monotonicity(expr, variable, *, domain=True, return_result=False):
     )
 
 
-def function_smoothness(expr, variable, *, domain=True, max_order=6):
+def smoothness(expr, variable, *, domain=True, max_order=6):
     """Return semialg's exact regularity result on a semialgebraic domain."""
     function = _public_function("function_smoothness")
     return function(
@@ -143,7 +139,7 @@ def is_satisfiable(condition, variables):
     return bool(function(sp.sympify(condition), normalized))
 
 
-def function_sign(expr, variable, *, assumptions=True, return_result=False):
+def sign(expr, variable, *, assumptions=True, return_result=False):
     """Return semialg's canonical exact sign classification."""
     function = _public_function("function_sign")
     return function(
@@ -154,7 +150,7 @@ def function_sign(expr, variable, *, assumptions=True, return_result=False):
     )
 
 
-def function_sign_partition(expr, variable, *, domain=True):
+def sign_partition(expr, variable, *, domain=True):
     """Return semialg's exact univariate sign partition."""
     function = _public_function("function_sign_partition")
     return function(sp.sympify(expr), variable, domain=domain)

@@ -19,11 +19,12 @@ from ..stratification import (
 from ..transcendental.algebraize import algebraize
 from ..transcendental.roots import transcendental_roots
 from .common import (
-    combine_natural_domain_condition,
+    affine_real_parameter_guard,
+    combine_domain_condition,
     condition_to_set,
     exact_order_real_points,
 )
-from .domain import function_domain
+from .domain import domain as _domain
 from .piecewise import combine_piecewise_sign, piecewise_branches
 from .special_functions import positive_axis_sign_strata
 
@@ -80,15 +81,16 @@ def _registry_sign(expr, var, assumptions=S.true):
 
 
 def _constant_sign_strata(expr):
-    """Exact parameter strata for a real constant with unresolved sign."""
+    """Exact parameter strata for a constant whose real sign is unresolved."""
     expr = sp.sympify(expr)
     if not expr.free_symbols or expr.is_real is False:
         return Sign.UNKNOWN
+    real_guard = S.true if expr.is_real is True else sp.Q.real(expr)
     return normalize_cases(
         (
-            ConditionalExpression(Sign.POSITIVE, expr > 0),
-            ConditionalExpression(Sign.ZERO, sp.Eq(expr, 0)),
-            ConditionalExpression(Sign.NEGATIVE, expr < 0),
+            ConditionalExpression(Sign.POSITIVE, sp.And(real_guard, expr > 0)),
+            ConditionalExpression(Sign.ZERO, sp.And(real_guard, sp.Eq(expr, 0))),
+            ConditionalExpression(Sign.NEGATIVE, sp.And(real_guard, expr < 0)),
         ),
         source="constant-parameter-sign",
     )
@@ -98,13 +100,11 @@ def _semialg_sign(expr, var, assumptions):
     if not _semialg.eligible_problem(expr, var, domain=assumptions):
         return Sign.UNKNOWN
     try:
-        raw = _semialg.function_sign(
-            expr, var, assumptions=assumptions, return_result=True
-        )
+        raw = _semialg.sign(expr, var, assumptions=assumptions, return_result=True)
         value = _semialg.normalize_sign(raw)
         if value is not Sign.UNKNOWN:
             return value
-        pieces = _semialg.function_sign_partition(expr, var, domain=assumptions)
+        pieces = _semialg.sign_partition(expr, var, domain=assumptions)
         signs = {
             str(
                 getattr(
@@ -202,7 +202,19 @@ def _special_sign_strata(expr, var, domain):
 
 def _structural_sign(expr, var, domain):
     if expr.func is sp.exp:
-        return Sign.POSITIVE
+        affine = affine_real_parameter_guard(expr.args[0], var)
+        if affine is not None:
+            _a, _b, guard = affine
+            if guard is S.true:
+                return Sign.POSITIVE
+            if guard is not S.false:
+                return normalize_cases(
+                    (ConditionalExpression(Sign.POSITIVE, guard),),
+                    source="real-exponential-positivity",
+                )
+        elif expr.args[0].is_real is True:
+            return Sign.POSITIVE
+        return Sign.UNKNOWN
     if expr.func is sp.gamma:
         ds = condition_to_set(domain, var)
         pos = (
@@ -350,6 +362,15 @@ def _function_sign(expr, var, domain):
     if not expr.has(var):
         s = _constant_sign(expr)
         return _constant_sign_strata(expr) if s is Sign.UNKNOWN else s
+    # Real sign is undefined for an affine exponential whose exponent is
+    # provably non-real on the real analysis axis.  Do not let later
+    # algebraization reinterpret exp(complex) as a positive real variable.
+    if expr.func is sp.exp:
+        affine = affine_real_parameter_guard(expr.args[0], var)
+        if affine is not None and affine[2] is S.false:
+            return Sign.UNKNOWN
+    if expr.func is sp.Pow and expr.exp.is_real is False:
+        return Sign.UNKNOWN
     # Specialized theorem strata can be sharper than generic product closure
     # (for example a Bessel quotient whose numerator/denominator have weaker
     # individual positivity guards).
@@ -400,8 +421,8 @@ def _function_sign_public_impl(
             return _constant_sign(expr)
         var = syms[0]
     var = sp.sympify(var)
-    natural = function_domain(expr, var)
-    assumptions = combine_natural_domain_condition(natural, domain, var)
+    natural = _domain(expr, var)
+    assumptions = combine_domain_condition(natural, domain, var)
     split = evaluate_parameter_strata(
         assumptions,
         var,
@@ -441,7 +462,7 @@ def _sign_implications(value):
     return ()
 
 
-def function_sign(
+def sign(
     expr, var=None, *, domain=True, strict_inequalities=True, all_properties=False
 ):
     """Classify sign, optionally returning weaker implied sign properties."""
@@ -485,7 +506,7 @@ def prove_relation(relation, var=None, *, domain=True):
     """Prove a scalar real relation by reducing it to the shared sign engine.
 
     Equality and order relations are normalized to the sign of ``lhs-rhs``.
-    Conditional parameter results are preserved rather than collapsed to an
+    Conditional parameter results are preserved
     unknown Boolean.
     """
     relation = sp.sympify(relation)
@@ -494,7 +515,7 @@ def prove_relation(relation, var=None, *, domain=True):
     if not isinstance(relation, sp.core.relational.Relational):
         raise TypeError("relation must be a SymPy equality or inequality")
     expr = sp.simplify(relation.lhs - relation.rhs)
-    sign = function_sign(expr, var, domain=domain)
+    sign_value = sign(expr, var, domain=domain)
 
     def classify(value):
         if isinstance(relation, sp.StrictGreaterThan):
@@ -562,4 +583,4 @@ def prove_relation(relation, var=None, *, domain=True):
             source="relation-from-sign",
             evidence=sign.evidence,
         )
-    return classify(sign)
+    return classify(sign_value)

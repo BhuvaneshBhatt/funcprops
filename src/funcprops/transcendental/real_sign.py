@@ -39,7 +39,7 @@ def _interval_eval(expr):
     """Evaluate a numeric exp/log elementary expression with interval arithmetic.
 
     This intentionally supports a small audited vocabulary. Unsupported heads raise
-    ``ValueError`` so callers remain conservative rather than silently falling back
+    ``ValueError`` so callers remain conservative
     to ordinary floating-point evaluation.
     """
     expr = sp.sympify(expr)

@@ -1,6 +1,6 @@
 # Jacobian
 
-`function_jacobian`
+`jacobian`
 
 ## Mathematical definition
 
@@ -9,14 +9,14 @@ The Jacobian is the matrix of first partial derivatives of an explicit coordinat
 ## API and return values
 
 ```python
-function_jacobian(expressions, variables, *, return_result=False)
+jacobian(expressions, variables, *, assumptions=True, return_result=False)
 ```
 
 The exact SymPy Jacobian matrix by default; return_result=True returns a replayable JacobianCertificate with derivative evidence.
 
 ## Domains, assumptions, and parameters
 
-The query is interpreted on the supplied domain rather than from the expression in isolation. When symbolic parameters change the property, funcprops preserves those cases as guarded parameter strata instead of choosing a generic value. Assumptions are proof hypotheses: they can simplify a stratum or branch condition, but they do not justify numerical guessing.
+The query is interpreted on the supplied domain, not from the expression in isolation. When symbolic parameters change the property, funcprops preserves those cases as guarded parameter strata. Assumptions are proof hypotheses: they can simplify a stratum or branch condition, but they do not justify numerical guessing.
 
 ## Executable examples
 
@@ -29,7 +29,7 @@ import sympy as sp
 import funcprops as fp
 
 x, y = sp.symbols("x y", real=True)
-result = fp.function_jacobian((2*x + y, x - y), (x, y))
+result = fp.jacobian((2*x + y, x - y), (x, y))
 result
 ```
 
@@ -39,7 +39,7 @@ Application: Compute a replayable derivative matrix for a coordinate transformat
 
 ## Applications
 
-This property is useful whenever later mathematics depends on a global qualitative fact rather than isolated samples. Typical uses include symbolic preprocessing, theorem-hypothesis verification, optimization, inverse problems, robust numerical method selection, and simplifying downstream case analysis.
+This property is useful whenever later mathematics depends on a global qualitative fact, not isolated samples. Typical uses include symbolic preprocessing, theorem-hypothesis verification, optimization, inverse problems, robust numerical method selection, and simplifying downstream case analysis.
 
 ## How funcprops proves it
 
@@ -55,8 +55,8 @@ The Jacobian matrix alone does not establish injectivity, global invertibility, 
 
 ## Related properties
 
-- [`function_determinant_nonvanishing`](determinant_nonvanishing.md)
-- [`function_transformation_geometry`](transformation_geometry.md)
+- [`determinant_nonvanishing`](determinant_nonvanishing.md)
+- [`transformation_geometry`](transformation_geometry.md)
 
 ## Source
 

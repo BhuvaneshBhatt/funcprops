@@ -190,7 +190,7 @@ class TransformationGeometry:
     change_of_variables: ChangeOfVariablesCertificate
 
 
-def function_jacobian(expressions, variables, *, return_result=False):
+def jacobian(expressions, variables, *, return_result=False):
     """Return the Jacobian matrix; request its certificate with ``return_result=True``."""
     certificate = registry_jacobian(
         normalize_expressions(expressions), normalize_variables(variables)
@@ -198,7 +198,7 @@ def function_jacobian(expressions, variables, *, return_result=False):
     return certificate if return_result else certificate.jacobian
 
 
-def _determinant_nonvanishing_from_jacobian(
+def _det_nonzero_from_jacobian(
     expressions, variables, jacobian, *, domain=S.Reals, assumptions=S.true
 ):
     if len(expressions) != len(variables):
@@ -279,14 +279,14 @@ def _determinant_nonvanishing_from_jacobian(
     )
 
 
-def function_determinant_nonvanishing(
+def determinant_nonvanishing(
     expressions, variables, *, domain=S.Reals, assumptions=S.true, return_result=False
 ):
     """Return whether the Jacobian determinant is nonzero throughout the domain."""
     expressions = normalize_expressions(expressions)
     variables = normalize_variables(variables)
     jacobian = registry_jacobian(expressions, variables)
-    certificate = _determinant_nonvanishing_from_jacobian(
+    certificate = _det_nonzero_from_jacobian(
         expressions, variables, jacobian, domain=domain, assumptions=assumptions
     )
     return certificate if return_result else certificate.classification
@@ -314,14 +314,14 @@ def _local_invertibility_from_facts(expressions, variables, jacobian, nonvanishi
     )
 
 
-def function_local_invertibility(
+def local_invertibility(
     expressions, variables, *, domain=S.Reals, assumptions=S.true, return_result=False
 ):
     """Return whether the inverse function theorem certifies local invertibility."""
     expressions = normalize_expressions(expressions)
     variables = normalize_variables(variables)
     jacobian = registry_jacobian(expressions, variables)
-    nonvanishing = _determinant_nonvanishing_from_jacobian(
+    nonvanishing = _det_nonzero_from_jacobian(
         expressions, variables, jacobian, domain=domain, assumptions=assumptions
     )
     certificate = _local_invertibility_from_facts(
@@ -361,14 +361,12 @@ def _change_of_variables_from_facts(
     )
 
 
-def function_change_of_variables(
-    expressions, variables, *, domain=S.Reals, assumptions=S.true
-):
+def change_of_variables(expressions, variables, *, domain=S.Reals, assumptions=S.true):
     """Certify the local differential change-of-variables factor ``Abs(det J)``."""
     expressions = normalize_expressions(expressions)
     variables = normalize_variables(variables)
     jacobian = registry_jacobian(expressions, variables)
-    nonvanishing = _determinant_nonvanishing_from_jacobian(
+    nonvanishing = _det_nonzero_from_jacobian(
         expressions, variables, jacobian, domain=domain, assumptions=assumptions
     )
     local = _local_invertibility_from_facts(
@@ -384,14 +382,14 @@ def function_change_of_variables(
     )
 
 
-def function_transformation_geometry(
+def transformation_geometry(
     expressions, variables, *, domain=S.Reals, assumptions=S.true
 ):
     """Return the combined transformation-geometry summary."""
     expressions = normalize_expressions(expressions)
     variables = normalize_variables(variables)
     jacobian = registry_jacobian(expressions, variables)
-    nonvanishing = _determinant_nonvanishing_from_jacobian(
+    nonvanishing = _det_nonzero_from_jacobian(
         expressions, variables, jacobian, domain=domain, assumptions=assumptions
     )
     local = _local_invertibility_from_facts(

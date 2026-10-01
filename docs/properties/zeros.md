@@ -1,6 +1,6 @@
 # Zeros
 
-`function_zeros`
+`zeros`
 
 ## Mathematical definition
 
@@ -9,14 +9,14 @@ The zero set contains the domain points at which the expression is exactly zero.
 ## API and return values
 
 ```python
-function_zeros(expr, var, *, domain=True, return_result=False, allow_numerical=False, assumptions=True)
+zeros(expr, variable, *, domain=True, allow_numerical=False, assumptions=True, return_result=False)
 ```
 
 Usually a SymPy Set; return_result=True exposes structured/conditional information.
 
 ## Domains, assumptions, and parameters
 
-The query is interpreted on the supplied domain rather than from the expression in isolation. When symbolic parameters change the property, funcprops preserves those cases as guarded parameter strata instead of choosing a generic value. Assumptions are proof hypotheses: they can simplify a stratum or branch condition, but they do not justify numerical guessing.
+The query is interpreted on the supplied domain, not from the expression in isolation. When symbolic parameters change the property, funcprops preserves those cases as guarded parameter strata. Assumptions are proof hypotheses: they can simplify a stratum or branch condition, but they do not justify numerical guessing.
 
 ## Executable examples
 
@@ -29,7 +29,7 @@ import sympy as sp
 import funcprops as fp
 
 x, y = sp.symbols("x y", real=True)
-result = fp.function_zeros((x - 1) * (x + 2), x)
+result = fp.zeros((x - 1) * (x + 2), x)
 result
 ```
 
@@ -39,7 +39,7 @@ Application: Locate exact roots used for sign partitions and critical-event anal
 
 ## Applications
 
-This property is useful whenever later mathematics depends on a global qualitative fact rather than isolated samples. Typical uses include symbolic preprocessing, theorem-hypothesis verification, optimization, inverse problems, robust numerical method selection, and simplifying downstream case analysis.
+This property is useful whenever later mathematics depends on a global qualitative fact, not isolated samples. Typical uses include symbolic preprocessing, theorem-hypothesis verification, optimization, inverse problems, robust numerical method selection, and simplifying downstream case analysis.
 
 ## How funcprops proves it
 
@@ -49,14 +49,14 @@ Successful conclusions are exact symbolic claims over the stated domain and assu
 
 ## Known limitations
 
-Infinite or transcendental zero sets may require structured representations, and numerical roots are opt-in rather than silently mixed with exact results.
+Infinite or transcendental zero sets may require structured representations, and numerical roots are opt-in and are not mixed with exact results.
 
 `UNKNOWN` means that the available proof machinery did not certify the claim. It must not be interpreted as the negation of the property.
 
 ## Related properties
 
-- [`function_sign`](sign.md)
-- [`function_oscillation`](oscillation.md)
+- [`sign`](sign.md)
+- [`oscillation`](oscillation.md)
 
 ## Source
 

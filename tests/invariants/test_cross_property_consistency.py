@@ -16,26 +16,26 @@ x, y = sp.symbols("x y", real=True)
 
 def test_analytic_implies_continuous_and_smooth_for_entire_examples():
     for f in (sp.exp(x), sp.sin(x), x**4 + 2 * x):
-        assert fp.function_analytic(f, x) is Analyticity.ANALYTIC
-        assert fp.function_continuous(f, x) is Continuity.CONTINUOUS
-        assert fp.function_smoothness(f, x, return_result=True).smooth is True
+        assert fp.analytic(f, x) is Analyticity.ANALYTIC
+        assert fp.continuous(f, x) is Continuity.CONTINUOUS
+        assert fp.smoothness(f, x, return_result=True).smooth is True
 
 
 def test_strict_monotonicity_implies_injectivity():
     for f in (x, x**3, sp.exp(x)):
-        m = fp.function_monotonicity(f, x)
+        m = fp.monotonicity(f, x)
         if m in (Monotonicity.STRICTLY_INCREASING, Monotonicity.STRICTLY_DECREASING):
-            assert fp.function_injective(f, x) is TruthValue.TRUE
+            assert fp.injective(f, x) is TruthValue.TRUE
 
 
 def test_bijective_implies_both_mapping_properties():
-    assert fp.function_bijective(x, x) is TruthValue.TRUE
-    assert fp.function_injective(x, x) is TruthValue.TRUE
-    assert fp.function_surjective(x, x) is TruthValue.TRUE
+    assert fp.bijective(x, x) is TruthValue.TRUE
+    assert fp.injective(x, x) is TruthValue.TRUE
+    assert fp.surjective(x, x) is TruthValue.TRUE
 
 
 def test_strong_convexity_implies_convex_family():
-    c = fp.function_convexity(x**2, x, all_properties=True)
+    c = fp.convexity(x**2, x, all_properties=True)
     if isinstance(c, tuple):
         assert any(
             v
@@ -46,8 +46,8 @@ def test_strong_convexity_implies_convex_family():
 
 def test_equivalent_expression_invariance():
     forms = (x**2 + 2 * x + 1, (x + 1) ** 2, sp.expand((x + 1) ** 2))
-    signs = [fp.function_sign(f, x) for f in forms]
-    cvs = [fp.function_convexity(f, x) for f in forms]
+    signs = [fp.sign(f, x) for f in forms]
+    cvs = [fp.convexity(f, x) for f in forms]
     assert len(set(signs)) == 1
     assert len(set(cvs)) == 1
 
@@ -55,7 +55,7 @@ def test_equivalent_expression_invariance():
 def test_domain_sensitive_non_equivalence_is_preserved():
     f = (x**2 - 1) / (x - 1)
     g = x + 1
-    assert fp.function_domain(f, x) != fp.function_domain(g, x)
+    assert fp.domain(f, x) != fp.domain(g, x)
 
 
 def test_cache_order_invariance():
@@ -63,14 +63,14 @@ def test_cache_order_invariance():
     D = sp.Interval(-2, 2)
     clear_property_proof_cache()
     a = (
-        fp.function_sign(f, x, domain=D),
-        fp.function_monotonicity(f, x, domain=D),
-        fp.function_injective(f, x, domain=D),
+        fp.sign(f, x, domain=D),
+        fp.monotonicity(f, x, domain=D),
+        fp.injective(f, x, domain=D),
     )
     clear_property_proof_cache()
-    b0 = fp.function_injective(f, x, domain=D)
-    b1 = fp.function_monotonicity(f, x, domain=D)
-    b2 = fp.function_sign(f, x, domain=D)
+    b0 = fp.injective(f, x, domain=D)
+    b1 = fp.monotonicity(f, x, domain=D)
+    b2 = fp.sign(f, x, domain=D)
     assert a == (b2, b1, b0)
 
 
@@ -86,16 +86,16 @@ def test_cache_assumption_normalization_is_order_insensitive():
 def test_semialg_delegation_parity_for_semialgebraic_range():
     from funcprops import _semialg
 
-    expected = _semialg.function_range(x**2, x, y)
-    assert fp.function_range(x**2, x, y) == expected
+    expected = _semialg.range(x**2, x, y)
+    assert fp.range(x**2, x, y) == expected
 
 
 def test_semialg_delegation_parity_for_domain():
     from funcprops import _semialg
 
     clear_property_proof_cache()
-    expected = _semialg.function_domain(sp.sqrt(1 - x**2), x)
-    got = fp.function_domain(sp.sqrt(1 - x**2), x)
+    expected = _semialg.domain(sp.sqrt(1 - x**2), x)
+    got = fp.domain(sp.sqrt(1 - x**2), x)
     assert got.as_set() == expected.as_set() == sp.Interval(-1, 1)
 
 
@@ -103,14 +103,14 @@ def test_semialg_delegation_parity_for_convexity():
     from funcprops import _semialg
 
     clear_property_proof_cache()
-    expected = _semialg.function_convexity(x**2, x)
-    got = fp.function_convexity(x**2, x)
+    expected = _semialg.convexity(x**2, x)
+    got = fp.convexity(x**2, x)
     assert got == expected
 
 
 def test_periodicity_metamorphic_affine_pullback():
-    a = fp.function_periodicity(sp.sin(x), x, return_result=True)
-    b = fp.function_periodicity(sp.sin(3 * x + 1), x, return_result=True)
+    a = fp.periodicity(sp.sin(x), x, return_result=True)
+    b = fp.periodicity(sp.sin(3 * x + 1), x, return_result=True)
     assert (
         a.classification is Periodicity.PERIODIC
         and b.classification is Periodicity.PERIODIC
@@ -120,12 +120,12 @@ def test_periodicity_metamorphic_affine_pullback():
 
 def test_symmetry_equivalent_expression_invariance():
     f = (x + 1) ** 2 + (x - 1) ** 2
-    assert fp.function_symmetry(f, x) is fp.Symmetry.EVEN
-    assert fp.function_symmetry(sp.expand(f), x) is fp.Symmetry.EVEN
+    assert fp.symmetry(f, x) is fp.Symmetry.EVEN
+    assert fp.symmetry(sp.expand(f), x) is fp.Symmetry.EVEN
 
 
 def test_homogeneity_product_degree_adds():
-    a = fp.function_homogeneity(x**2, (x,), return_result=True)
-    b = fp.function_homogeneity(x**3, (x,), return_result=True)
-    c = fp.function_homogeneity(x**5, (x,), return_result=True)
+    a = fp.homogeneity(x**2, (x,), return_result=True)
+    b = fp.homogeneity(x**3, (x,), return_result=True)
+    c = fp.homogeneity(x**5, (x,), return_result=True)
     assert a.degree + b.degree == c.degree

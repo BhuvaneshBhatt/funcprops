@@ -608,7 +608,7 @@ def _mpmath_numeric_callable(expr, z):
 
     Elliptic Pi is routed around mpmath's adaptive implementation separately, so
     generic samples can use SymPy's standard mpmath lambdify mapping.  This keeps
-    complex functions such as log mapped to mpmath rather than Python ``math``.
+    complex functions such as log mapped to mpmath.
     """
     return mp.mp, lambdify(z, expr, modules="mpmath", cse=False)
 

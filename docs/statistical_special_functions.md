@@ -10,7 +10,7 @@ The core SymPy families include `loggamma`, `digamma`/`polygamma`, incomplete an
 - `MittagLefflerE(alpha, z)` and `MittagLefflerE(alpha, beta, z)`;
 - `RegularizedGammaP(a, x)` and `RegularizedGammaQ(a, x)`.
 
-The new heads provide exact symbolic derivatives and selected elementary special values/rewrite identities. They are not numerical-library replacements; their main purpose is to let the common funcprops theorem engines reason about them symbolically.
+These symbolic heads provide exact symbolic derivatives and selected elementary special values/rewrite identities. They are not numerical-library replacements; their main purpose is to let the common funcprops theorem engines reason about them symbolically.
 
 ## Theorem coverage
 
@@ -26,7 +26,7 @@ On their certified probability domains, the theorem registry includes:
 - complete monotonicity, positivity, monotone decrease, and convexity consequences for `MittagLefflerE(alpha, -x)` when `0 < alpha <= 1`;
 - complete monotonicity of `besselk(nu, x)` on `x > 0` for real `nu`, alongside the existing Bessel-I/K positivity and monotonicity facts.
 
-Every parameter-sensitive statement is a sufficient theorem with an explicit guard. Outside those guards the package returns a conditional result or `UNKNOWN` instead of extrapolating numerically.
+Every parameter-sensitive statement is a sufficient theorem with an explicit guard. Outside those guards the package returns a conditional result or `UNKNOWN`.
 
 ## Executable examples
 
@@ -37,7 +37,7 @@ Every parameter-sensitive statement is a sufficient theorem with an explicit gua
 Application: Reason symbolically about Gamma-family CDFs without numerical sampling.
 
 ```python
-a = sp.symbols('a', positive=True); result = fp.function_monotonicity(fp.RegularizedGammaP(a, x), x, domain=x > 0)
+a = sp.symbols('a', positive=True); result = fp.monotonicity(fp.RegularizedGammaP(a, x), x, domain=x > 0)
 ```
 
 Expected: strict increase on ``x > 0`` for ``a > 0``.
@@ -61,7 +61,7 @@ Expected: the exact positive derivative with respect to the second argument.
 Application: Analyze noncentral-tail probabilities and detection thresholds structurally.
 
 ```python
-m, a, b = sp.symbols('m a b', positive=True); result = fp.function_monotonicity(sp.marcumq(m, a, b), b, domain=b > 0)
+m, a, b = sp.symbols('m a b', positive=True); result = fp.monotonicity(sp.marcumq(m, a, b), b, domain=b > 0)
 ```
 
 Expected: strict decrease in the positive threshold.
@@ -73,7 +73,7 @@ Expected: strict decrease in the positive threshold.
 Application: Certify Laplace-transform geometry in fractional stochastic and reliability models.
 
 ```python
-alpha = sp.symbols('alpha', positive=True); t = sp.symbols('t', nonnegative=True); result = fp.function_complete_monotonicity(fp.MittagLefflerE(alpha, -t), t, domain=t >= 0, assumptions=alpha <= 1)
+alpha = sp.symbols('alpha', positive=True); t = sp.symbols('t', nonnegative=True); result = fp.complete_monotonicity(fp.MittagLefflerE(alpha, -t), t, domain=t >= 0, assumptions=alpha <= 1)
 ```
 
 Expected: complete monotonicity for ``0 < alpha <= 1``.
@@ -85,7 +85,7 @@ Expected: complete monotonicity for ``0 < alpha <= 1``.
 Application: Support directional-statistics and noncentral-distribution parameter geometry.
 
 ```python
-nu = sp.symbols('nu', nonnegative=True); t = sp.symbols('t', positive=True); ratio = sp.besseli(nu + 1, t) / sp.besseli(nu, t); result = fp.function_monotonicity(ratio, t, domain=t > 0)
+nu = sp.symbols('nu', nonnegative=True); t = sp.symbols('t', positive=True); ratio = sp.besseli(nu + 1, t) / sp.besseli(nu, t); result = fp.monotonicity(ratio, t, domain=t > 0)
 ```
 
 Expected: strict increase for nonnegative ``nu`` on ``t > 0``.

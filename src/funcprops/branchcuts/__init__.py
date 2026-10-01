@@ -1,7 +1,7 @@
 """Symbolic principal-branch cuts, boundary jumps, and restrictions.
 
 The low-level API computes cut conditions and jumps.  The property-level
-:func:`funcprops.function_branchcuts` query converts those loci into the common
+:func:`funcprops.branchcuts` query converts those loci into the common
 funcprops singularity vocabulary.
 """
 
@@ -55,6 +55,7 @@ def branch_cut_conditions(expr, variable, *, assumptions=True):
 
     def add(cond):
         cond = simplify_condition(sympify(cond), assumptions=assumptions)
+        cond = simplify_branch_condition(cond, variable)
         if cond is S.false:
             return
         key = repr(cond)

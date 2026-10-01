@@ -1,6 +1,6 @@
 # Smoothness
 
-`function_smoothness`
+`smoothness`
 
 ## Mathematical definition
 
@@ -9,14 +9,14 @@ Smoothness records continuity, the certified differentiability order, C-infinity
 ## API and return values
 
 ```python
-function_smoothness(expr, var, *, domain=True, max_order=6, return_result=False, assumptions=True)
+smoothness(expr, variable, *, domain=True, max_order=6, assumptions=True, return_result=False)
 ```
 
 A SmoothnessResult with regularity fields and evidence.
 
 ## Domains, assumptions, and parameters
 
-The query is interpreted on the supplied domain rather than from the expression in isolation. When symbolic parameters change the property, funcprops preserves those cases as guarded parameter strata instead of choosing a generic value. Assumptions are proof hypotheses: they can simplify a stratum or branch condition, but they do not justify numerical guessing.
+The query is interpreted on the supplied domain, not from the expression in isolation. When symbolic parameters change the property, funcprops preserves those cases as guarded parameter strata. Assumptions are proof hypotheses: they can simplify a stratum or branch condition, but they do not justify numerical guessing.
 
 ## Executable examples
 
@@ -29,17 +29,17 @@ import sympy as sp
 import funcprops as fp
 
 x, y = sp.symbols("x y", real=True)
-result = fp.function_smoothness(sp.exp(x), x)
+result = fp.smoothness(sp.exp(x), x)
 result
 ```
 
-Expected: ``TruthValue.TRUE``.
+Expected: ``oo`` (C-infinity).
 
 Application: Verify regularity assumptions required by approximation and differential methods.
 
 ## Applications
 
-This property is useful whenever later mathematics depends on a global qualitative fact rather than isolated samples. Typical uses include symbolic preprocessing, theorem-hypothesis verification, optimization, inverse problems, robust numerical method selection, and simplifying downstream case analysis.
+This property is useful whenever later mathematics depends on a global qualitative fact, not isolated samples. Typical uses include symbolic preprocessing, theorem-hypothesis verification, optimization, inverse problems, robust numerical method selection, and simplifying downstream case analysis.
 
 ## How funcprops proves it
 
@@ -55,9 +55,9 @@ Finite-order search can understate differentiability when no structural C-infini
 
 ## Related properties
 
-- [`function_differentiability`](differentiability.md)
-- [`function_analytic`](analytic.md)
-- [`function_continuous`](continuous.md)
+- [`differentiability`](differentiability.md)
+- [`analytic`](analytic.md)
+- [`continuous`](continuous.md)
 
 ## Source
 

@@ -8,9 +8,9 @@ from sympy import S
 from ..exceptions import SYMBOLIC_QUERY_ERRORS
 from ..results import ConditionalExpression, Convexity, Monotonicity, Sign
 from ..stratification import implication_guard, normalize_cases
-from .common import condition_to_set
-from .monotonicity import function_monotonicity
-from .sign import function_sign
+from .common import affine_real_parameter_guard, condition_to_set
+from .monotonicity import monotonicity
+from .sign import sign
 
 
 @dataclass(frozen=True)
@@ -41,14 +41,17 @@ def parameterized_power_convexity(expr, var, domain):
     if not positive_domain:
         # Rich parameter domains can contain Contains/NotContains predicates,
         # which SymPy's LRA-backed ask() does not accept.  Use the package's
-        # three-valued implication reducer instead of passing arbitrary domain
+        # three-valued implication reducer
         # formulae into ask().
         positive_domain = implication_guard(domain, var > 0, var) is S.true
     if not positive_domain and domain != (var > 0):
         return None
+    real_a = S.true if a.is_real is True else sp.Q.real(a)
     cases = (
-        ConditionalExpression(Convexity.STRICTLY_CONVEX, sp.Or(a < 0, a > 1)),
-        ConditionalExpression(Convexity.STRICTLY_CONCAVE, sp.And(a > 0, a < 1)),
+        ConditionalExpression(
+            Convexity.STRICTLY_CONVEX, sp.And(real_a, sp.Or(a < 0, a > 1))
+        ),
+        ConditionalExpression(Convexity.STRICTLY_CONCAVE, sp.And(real_a, a > 0, a < 1)),
         ConditionalExpression(Convexity.AFFINE, sp.Or(sp.Eq(a, 0), sp.Eq(a, 1))),
     )
     return normalize_cases(cases, source="power-parameter-stratification")
@@ -57,20 +60,20 @@ def parameterized_power_convexity(expr, var, domain):
 def parameterized_exp_convexity(expr, var):
     if expr.func is not sp.exp:
         return None
-    g = sp.expand(expr.args[0])
-    try:
-        p = sp.Poly(g, var)
-    except SYMBOLIC_QUERY_ERRORS:
+    affine = affine_real_parameter_guard(expr.args[0], var)
+    if affine is None:
         return None
-    if p.degree() != 1:
+    a, _b, real_guard = affine
+    if real_guard is S.false:
         return None
-    a = p.coeff_monomial(var)
-    if not a.free_symbols:
+    if not a.free_symbols and real_guard is S.true:
         return None
     return normalize_cases(
         (
-            ConditionalExpression(Convexity.STRICTLY_CONVEX, sp.Ne(a, 0)),
-            ConditionalExpression(Convexity.AFFINE, sp.Eq(a, 0)),
+            ConditionalExpression(
+                Convexity.STRICTLY_CONVEX, sp.And(real_guard, sp.Ne(a, 0))
+            ),
+            ConditionalExpression(Convexity.AFFINE, sp.And(real_guard, sp.Eq(a, 0))),
         ),
         source="exp-affine-parameter-stratification",
     )
@@ -149,13 +152,13 @@ def secondary_convexity_properties(expr, var, domain, primary):
     props = list(convexity_implications(primary))
     evidence = []
     # Positive f: log-convexity/concavity reduces exactly to convexity of log(f).
-    s = function_sign(expr, var, domain=domain)
+    s = sign(expr, var, domain=domain)
     if s is Sign.POSITIVE:
         try:
             from ..proof_cache import cached_derivative
 
             d2log = sp.simplify(cached_derivative(sp.log(expr), var, order=2))
-            ls = function_sign(d2log, var, domain=domain)
+            ls = sign(d2log, var, domain=domain)
             if ls in (Sign.POSITIVE, Sign.NONNEGATIVE, Sign.ZERO):
                 props.append(Convexity.LOG_CONVEX)
             if ls in (Sign.NEGATIVE, Sign.NONPOSITIVE, Sign.ZERO):
@@ -163,7 +166,7 @@ def secondary_convexity_properties(expr, var, domain, primary):
         except SYMBOLIC_QUERY_ERRORS:
             pass
     # Every monotone univariate function is both quasiconvex and quasiconcave.
-    m = function_monotonicity(expr, var, domain=domain)
+    m = monotonicity(expr, var, domain=domain)
     if m in (
         Monotonicity.STRICTLY_INCREASING,
         Monotonicity.NONDECREASING,
@@ -179,9 +182,7 @@ def secondary_convexity_properties(expr, var, domain, primary):
         if isinstance(ds, sp.Interval):
             from ..proof_cache import cached_derivative
 
-            sg = function_sign(
-                cached_derivative(expr, var, order=1), var, domain=domain
-            )
+            sg = sign(cached_derivative(expr, var, order=1), var, domain=domain)
             if sg in (Sign.POSITIVE, Sign.NEGATIVE):
                 props.extend((Convexity.PSEUDOCONVEX, Convexity.PSEUDOCONCAVE))
     except SYMBOLIC_QUERY_ERRORS:

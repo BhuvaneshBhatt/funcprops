@@ -31,8 +31,8 @@ def test_monotonic_partition_helpers_directly():
     assert p.complete and len(p.cells) == 3
     r = fp.range_from_monotonic_partition(x**3 - 3 * x, x, p)
     assert r.complete and r.image is not None
-    assert fp.injectivity_from_monotonic_partition(p) is TruthValue.FALSE
-    inv = fp.solve_monotonic_inverse(
+    assert fp.injectivity_from_partition(p) is TruthValue.FALSE
+    inv = fp.certified_monotonic_inverse(
         x**3 - 3 * x, x, 0, domain=sp.Interval(-2, 2), partition=p
     )
     assert inv.complete and inv.solutions == sp.FiniteSet(-sp.sqrt(3), 0, sp.sqrt(3))
@@ -90,7 +90,7 @@ def test_certificate_replay_tail_and_extremum_theorem():
     cert = fp.indexed_tail_inversion(z, fp.IndexedZero("BesselJ", 3, 0, 0, "positive"))
     assert fp.verify_indexed_tail_inversion(cert)
     th = fp.extremum_ordering_theorems(sp.airyai(x), x)
-    assert th and all(fp.verify_extremum_ordering_theorem(t) for t in th)
+    assert th and all(fp.verify_extremum_ordering(t) for t in th)
 
 
 def test_remaining_exported_helpers_direct_contracts():
@@ -121,44 +121,49 @@ def test_remaining_exported_helpers_direct_contracts():
 
 def test_exported_function_api_contract_manifest_is_complete():
     tested = {
-        "function_domain",
-        "function_range",
-        "function_branchcuts",
-        "function_branchpoints",
-        "function_poles",
-        "function_singularities",
-        "function_singularity_analysis",
-        "function_discontinuities",
-        "function_analytic",
-        "function_meromorphic",
-        "function_continuous",
-        "function_differentiability",
-        "function_monotonicity",
-        "function_convexity",
-        "function_sign",
-        "function_zeros",
-        "function_boundedness",
-        "function_injective",
-        "function_surjective",
-        "function_bijective",
-        "function_smoothness",
-        "function_oscillation",
-        "function_periodicity",
-        "function_symmetry",
-        "function_homogeneity",
-        "function_complex_zeros",
-        "function_complete_monotonicity",
-        "function_boundary_behavior",
-        "function_level_boundedness",
-        "function_mode_existence",
-        "function_geometry",
-        "function_jacobian",
-        "function_determinant_nonvanishing",
-        "function_local_invertibility",
-        "function_change_of_variables",
-        "function_transformation_geometry",
+        "domain",
+        "range",
+        "branch_cuts",
+        "branch_points",
+        "poles",
+        "singularities",
+        "singularity_analysis",
+        "discontinuities",
+        "analytic",
+        "meromorphic",
+        "continuous",
+        "differentiability",
+        "monotonicity",
+        "convexity",
+        "sign",
+        "zeros",
+        "boundedness",
+        "injective",
+        "surjective",
+        "bijective",
+        "smoothness",
+        "lipschitz",
+        "uniformly_continuous",
+        "holder_regularity",
+        "variation",
+        "integrability",
+        "oscillation",
+        "periodicity",
+        "symmetry",
+        "homogeneity",
+        "complex_zeros",
+        "complete_monotonicity",
+        "boundary_behavior",
+        "level_boundedness",
+        "mode_existence",
+        "geometry",
+        "jacobian",
+        "determinant_nonvanishing",
+        "local_invertibility",
+        "change_of_variables",
+        "transformation_geometry",
     }
-    exported = {n for n in fp.__all__ if n.startswith("function_")}
+    exported = {name for name, _category, _summary in fp.properties()}
     assert exported == tested
 
 
@@ -170,7 +175,7 @@ def test_certificate_replay_root_extremum_range_and_bracket():
         fp.verify_root_certificate(c) for c in roots.certificates
     )
     ex = fp.extremum_geometry(sp.airyai(x), x)
-    assert ex and all(fp.verify_extremum_family_certificate(c) for c in ex)
+    assert ex and all(fp.verify_extremum_family(c) for c in ex)
     er = fp.symbolic_extremum_range(x**2, x, sp.Interval(-1, 2))
     assert fp.verify_extremum_range(er)
     k = sp.Symbol("k", integer=True, positive=True)
@@ -182,74 +187,56 @@ def test_certificate_replay_root_extremum_range_and_bracket():
 def test_exported_helper_contract_manifest_is_complete():
     import inspect
 
-    exported = {
-        n
-        for n in fp.__all__
-        if callable(getattr(fp, n))
-        and not inspect.isclass(getattr(fp, n))
-        and not n.startswith("function_")
+    property_queries = {name for name, _category, _summary in fp.properties()} | {
+        "smooth"
     }
-    tested = {
+    exported_helpers = {
+        name
+        for name in fp.__all__
+        if callable(getattr(fp, name))
+        and not inspect.isclass(getattr(fp, name))
+        and name not in property_queries
+    }
+    assert exported_helpers == {
         "registry",
         "as_detailed_result",
         "cache_info",
         "clear_caches",
         "explain_result",
-        "monotonic_decomposition",
-        "monotonic_partition",
-        "solve_monotonic_inverse",
-        "range_from_monotonic_partition",
-        "injectivity_from_monotonic_partition",
-        "clear_monotonic_partition_cache",
-        "dlmf_facts",
-        "dlmf_audit_report",
+        "properties",
         "verify_certificate",
-        "verify_monotonic_decomposition",
-        "verify_monotonic_partition",
-        "verify_zero_geometry",
-        "verify_convexity_certificate",
-        "verify_extremum_ordering_theorem",
-        "verify_indexed_tail_inversion",
-        "verify_root_certificate",
-        "verify_extremum_family_certificate",
-        "verify_extremum_range",
-        "verify_integer_bracket",
-        "zero_geometry",
-        "property_interval_decomposition",
-        "zero_ordering_bounds",
-        "indexed_tail_inversion",
-        "indexed_tail_integer_bracket",
-        "extremum_geometry",
-        "extremum_ordering_theorems",
-        "simplify_extremum_range",
-        "symbolic_extremum_range",
-        "transcendental_roots",
-        "reduce_univariate_condition",
-        "algebraize",
-        "holomorphic_on_rectangle",
-        "analytic_neighborhood",
-        "certified_monotonic_inverse",
-        "robust_real_sign",
-        "exponential_fourier_count",
-        "exponential_polynomial_terms",
-        "argument_principle_count",
-        "isolate_complex_roots",
-        "transport_instantiated_rule",
-        "registry_derivative",
-        "registry_gradient",
-        "registry_jacobian",
-        "registry_hessian",
-        "registry_multivariate_chain_rule",
-        "rewrite_with_registry",
-        "piecewise_decomposition",
-        "certify_piecewise_boundaries",
-        "normalize_assumptions",
         "decide",
         "entails",
-        "require_decision",
-        "clear_entailment_cache",
+        "affine_global_mapping",
+        "argument_principle_rectangle",
+        "close_assumptions",
+        "close_theorems",
+        "derivative_cell_root_count",
+        "explain",
+        "minimize_strata",
+        "refine_parameter_cells",
+        "rouche_polynomial_circle",
+        "route_proofs",
+        "specialize_cells",
+        "affine_trig_root_family",
+        "analyze_transcendental_real",
+        "executable_special_theorems",
+        "polynomial_transition_locus",
+        "rouche_polynomial_rectangle",
+        "structured_zero_geometry",
+        "integrate",
+        "inverse",
+        "solve",
+        "laurent_series",
+        "residue",
+        "classify_singularity",
+        "winding_number",
+        "argument_principle",
+        "homotopic",
+        "deform_contour",
+        "analytic_continue",
+        "monodromy",
     }
-    assert exported == tested
 
 
 def test_monotonic_partition_default_is_compact_mathematical_result():
@@ -285,7 +272,7 @@ def test_monotonic_decomposition_default_is_compact_mathematical_result():
 def test_compact_monotonic_partition_composes_with_public_helpers():
     x = sp.symbols("x", real=True)
     compact = fp.monotonic_partition(x**3, x, domain=sp.Interval(-2, 2))
-    assert fp.injectivity_from_monotonic_partition(compact) is TruthValue.TRUE
+    assert fp.injectivity_from_partition(compact) is TruthValue.TRUE
     pr = fp.range_from_monotonic_partition(x**3, x, compact, domain=sp.Interval(-2, 2))
     assert pr.complete is True
     assert pr.image == sp.Interval(-8, 8)

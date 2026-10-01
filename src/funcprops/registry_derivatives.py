@@ -200,7 +200,7 @@ def registry_gradient(expr, *, registry=None, positions=None) -> GradientCertifi
 
     Conditional strata remain explicit: each requested argument position must
     have exactly one matching derivative theorem. Ambiguous or missing partials
-    make the certificate incomplete rather than selecting a theorem heuristically.
+    make the certificate incomplete.
     """
     from .registry import registry as default_registry
 
@@ -458,7 +458,7 @@ def registry_hessian(expr, *, registry=None, positions=None) -> HessianCertifica
     )
 
 
-def registry_multivariate_chain_rule(
+def registry_chain_rule(
     expr, variables, *, registry=None, second_order=False
 ) -> MultivariateChainRuleCertificate:
     """Transport registered derivatives through a multivariate inner map."""

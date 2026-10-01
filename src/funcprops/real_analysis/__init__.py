@@ -1,6 +1,6 @@
-from .convexity import function_convexity
-from .domain import function_domain
-from .monotonicity import function_monotonicity
+from .convexity import convexity
+from .domain import domain
+from .monotonicity import monotonicity
 from .piecewise import (
     PiecewiseBoundary,
     PiecewiseBoundaryCertificate,
@@ -9,8 +9,8 @@ from .piecewise import (
     certify_piecewise_boundaries,
     piecewise_decomposition,
 )
-from .range import function_range
-from .sign import function_sign
+from .range import range
+from .sign import sign
 
 __all__ = [
     "InverseSolutionCertificate",
@@ -21,29 +21,28 @@ __all__ = [
     "PiecewiseBranch",
     "PiecewiseDecomposition",
     "SmoothnessResult",
+    "bijective",
+    "boundedness",
     "certified_monotonic_inverse",
     "certify_piecewise_boundaries",
     "clear_monotonic_partition_cache",
-    "function_bijective",
-    "function_boundedness",
-    "function_convexity",
-    "function_domain",
-    "function_injective",
-    "function_monotonicity",
-    "function_oscillation",
-    "function_range",
-    "function_sign",
-    "function_smoothness",
-    "function_surjective",
-    "function_zeros",
-    "injectivity_from_monotonic_partition",
+    "convexity",
+    "domain",
+    "injective",
+    "injectivity_from_partition",
+    "monotonicity",
+    "oscillation",
     "piecewise_decomposition",
+    "range",
     "range_from_monotonic_partition",
-    "solve_monotonic_inverse",
+    "sign",
+    "smoothness",
+    "surjective",
+    "zeros",
 ]
 
-from .boundedness import function_boundedness
-from .mapping import function_bijective, function_injective, function_surjective
+from .boundedness import boundedness
+from .mapping import bijective, injective, surjective
 from .monotonic_certificates import (
     IndexedMonotonicPartition,
     InverseSolutionCertificate,
@@ -54,13 +53,12 @@ from .monotonic_certificates import (
     PartitionRange,
     certified_monotonic_inverse,
     clear_monotonic_partition_cache,
-    injectivity_from_monotonic_partition,
+    injectivity_from_partition,
     monotonic_decomposition,
     monotonic_partition,
     quick_nonmonotonicity_witness,
     range_from_monotonic_partition,
-    solve_monotonic_inverse,
 )
-from .oscillation import OscillationCertificate, function_oscillation
-from .smoothness import SmoothnessResult, function_smoothness
-from .zeros import function_zeros
+from .oscillation import OscillationCertificate, oscillation
+from .smoothness import SmoothnessResult, smoothness
+from .zeros import zeros

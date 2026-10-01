@@ -11,7 +11,7 @@ def test_affine_interval_simplification():
     z = Symbol("z", complex=True)
     cond = Contains(2 * z, S.Reals) & (2 * z > 0) & (2 * z < 1)
     simp = simplify_branch_condition(cond, z)
-    assert str(simp) == str(Contains(z, S.Reals) & (z > 0) & (z < S.Half))
+    assert simp == ((z > 0) & (z < S.Half))
 
 
 def test_impossible_dual_log_real_conditions():
@@ -46,7 +46,7 @@ def test_redundant_log_real_positive_interval():
     z = Symbol("z", complex=True)
     cond = Contains(z, S.Reals) & (z > 1) & (z < 2) & Contains(log(z - 1), S.Reals)
     simp = simplify_branch_condition(cond, z)
-    assert str(simp) == str(Contains(z, S.Reals) & (z > 1) & (z < 2))
+    assert simp == ((z > 1) & (z < 2))
 
 
 def test_impossible_shifted_log_real_on_positive_interval():
@@ -66,4 +66,4 @@ def test_negated_affine_cut_predicate():
     cond = Not(Contains(1 - z, S.Reals) & (1 - z < 0)) & Contains(z, S.Reals)
     simp = simplify_branch_condition(cond, z)
     # Current dominant normalization should capture z <= 1.
-    assert str(simp) == str(Contains(z, S.Reals) & (z <= 1))
+    assert simp == (z <= 1)

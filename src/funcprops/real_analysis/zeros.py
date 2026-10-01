@@ -13,7 +13,7 @@ from ..transcendental.roots import (
     transcendental_roots,
 )
 from .common import condition_to_set
-from .domain import function_domain
+from .domain import domain as _domain
 
 
 def _merge_root_results(results, domain_set):
@@ -254,7 +254,7 @@ def _piecewise_zero_set(expr, var, domain_set, *, return_result, allow_numerical
     for branch in decomp.branches:
         if branch.domain is None:
             return None
-        value = function_zeros(
+        value = zeros(
             branch.expression,
             var,
             domain=branch.domain,
@@ -292,7 +292,7 @@ def _function_zeros_impl(
     """
     expr = sp.sympify(expr)
     var = sp.sympify(var)
-    natural = function_domain(expr, var)
+    natural = _domain(expr, var)
     if isinstance(natural, PropertyResult):
         # Unknown natural-domain information must not erase an explicit user
         # restriction. Fall back to the requested set/condition only.
@@ -370,9 +370,7 @@ def _function_zeros_impl(
     )
 
 
-def function_zeros(
-    expr, var, *, domain=True, return_result=False, allow_numerical=False
-):
+def zeros(expr, var, *, domain=True, return_result=False, allow_numerical=False):
     """Return the certified real zeros of ``expr`` on the requested domain."""
     return _function_zeros_impl(
         expr,

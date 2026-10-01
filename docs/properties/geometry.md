@@ -1,6 +1,6 @@
 # Function geometry
 
-`function_geometry`
+`geometry`
 
 ## Mathematical definition
 
@@ -9,14 +9,14 @@ Function geometry combines regularity, analyticity, convexity, singularities, bo
 ## API and return values
 
 ```python
-function_geometry(expr, variables, *, domain=Reals, assumptions=True)
+geometry(expr, variables, *, domain=Reals, assumptions=True, return_result=False)
 ```
 
 A FunctionGeometry object containing the component property results and certificates.
 
 ## Domains, assumptions, and parameters
 
-The query is interpreted on the supplied domain rather than from the expression in isolation. When symbolic parameters change the property, funcprops preserves those cases as guarded parameter strata instead of choosing a generic value. Assumptions are proof hypotheses: they can simplify a stratum or branch condition, but they do not justify numerical guessing.
+The query is interpreted on the supplied domain, not from the expression in isolation. When symbolic parameters change the property, funcprops preserves those cases as guarded parameter strata. Assumptions are proof hypotheses: they can simplify a stratum or branch condition, but they do not justify numerical guessing.
 
 ## Executable examples
 
@@ -29,7 +29,7 @@ import sympy as sp
 import funcprops as fp
 
 x, y = sp.symbols("x y", real=True)
-result = fp.function_geometry(x**2, x)
+result = fp.geometry(x**2, x)
 result
 ```
 
@@ -39,7 +39,7 @@ Application: Collect structural facts for optimization and probability workflows
 
 ## Applications
 
-This property is useful whenever later mathematics depends on a global qualitative fact rather than isolated samples. Typical uses include symbolic preprocessing, theorem-hypothesis verification, optimization, inverse problems, robust numerical method selection, and simplifying downstream case analysis.
+This property is useful whenever later mathematics depends on a global qualitative fact, not isolated samples. Typical uses include symbolic preprocessing, theorem-hypothesis verification, optimization, inverse problems, robust numerical method selection, and simplifying downstream case analysis.
 
 ## How funcprops proves it
 
@@ -55,9 +55,9 @@ The summary is only as complete as its component proof engines; unresolved compo
 
 ## Related properties
 
-- [`function_convexity`](convexity.md)
-- [`function_singularities`](singularities.md)
-- [`function_mode_existence`](mode_existence.md)
+- [`convexity`](convexity.md)
+- [`singularities`](singularities.md)
+- [`mode_existence`](mode_existence.md)
 
 ## Source
 

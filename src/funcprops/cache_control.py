@@ -22,8 +22,9 @@ def _cache_registry():
     from .registry import registry
     from .singularities import (
         _cached_complexify_equality_locus,
-        _canonical_multivariate_registry_records,
+        _canonical_multivar_records,
     )
+    from .singularities.records import _denominator_singularity_records
     from .verification import _certificate_verifiers
 
     return {
@@ -41,8 +42,9 @@ def _cache_registry():
         "zero_geometry": _zero_geometry_cached,
         "monotonic_partition": _monotonic_partition_on_set,
         "registry": registry,
-        "multivariate_registry": _canonical_multivariate_registry_records,
+        "multivariate_registry": _canonical_multivar_records,
         "complexified_locus": _cached_complexify_equality_locus,
+        "denominator_singularities": _denominator_singularity_records,
         "certificate_verifiers": _certificate_verifiers,
     }
 

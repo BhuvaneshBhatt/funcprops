@@ -2,8 +2,7 @@
 
 ``FunctionGeometry`` combines regularity, convexity, singularity, boundary escape,
 level-boundedness, and structural mode-existence information. These routines are
-proof-conservative: unsupported geometry is reported as ``TruthValue.UNKNOWN``
-rather than inferred numerically.
+proof-conservative: unsupported geometry is reported as ``TruthValue.UNKNOWN``.
 """
 
 from __future__ import annotations
@@ -16,13 +15,17 @@ from sympy import S
 
 from .exceptions import SYMBOLIC_QUERY_ERRORS
 from .real_analysis.common import normalize_domain_set, normalize_variables
-from .real_analysis.convexity import function_convexity
-from .real_analysis.smoothness import function_smoothness
+from .real_analysis.convexity import convexity as _convexity
+from .real_analysis.smoothness import smoothness as _smoothness
 from .results import Analyticity, Continuity, Convexity, SingularityResult, TruthValue
 from .singularities import (
-    function_analytic,
-    function_continuous,
-    function_singularities,
+    analytic as _analytic,
+)
+from .singularities import (
+    continuous,
+)
+from .singularities import (
+    singularities as _singularities,
 )
 
 
@@ -218,7 +221,7 @@ def _unbounded_endpoints(domain):
     return ()
 
 
-def function_boundary_behavior(expr, var, *, domain=S.Reals):
+def boundary_behavior(expr, var, *, domain=S.Reals):
     """Certify explicit univariate limits at unbounded real-domain endpoints."""
     expr = sp.sympify(expr)
     vv = normalize_variables(var)
@@ -269,7 +272,7 @@ def _separable_terms(expr, variables):
 def _univariate_level_boundedness(expr, variable, domain, behavior=None):
     real_domain = _real_set(domain, variable)
     if behavior is None:
-        behavior = function_boundary_behavior(expr, variable, domain=domain)
+        behavior = boundary_behavior(expr, variable, domain=domain)
     if (
         isinstance(real_domain, sp.Set)
         and real_domain is not S.Reals
@@ -348,7 +351,7 @@ def _level_boundedness_certificate(expr, variables, *, domain=S.Reals):
     # Current multivariate certificates target the whole Euclidean domain.
     whole_space = domain in (S.Reals, True, S.true, None)
     if whole_space:
-        convexity = function_convexity(expr, vv)
+        convexity = _convexity(expr, vv)
         if convexity is Convexity.STRONGLY_CONVEX:
             return LevelBoundednessCertificate(
                 TruthValue.TRUE, S.Reals, None, "strong-convexity", (convexity,)
@@ -372,7 +375,7 @@ def _level_boundedness_certificate(expr, variables, *, domain=S.Reals):
     )
 
 
-def function_level_boundedness(expr, variables, *, domain=S.Reals, return_result=False):
+def level_boundedness(expr, variables, *, domain=S.Reals, return_result=False):
     """Return whether all sublevel sets are bounded.
 
     Use ``return_result=True`` for the structural certificate and proof source.
@@ -389,14 +392,14 @@ def _mode_existence_certificate(expr, variables, *, domain=S.Reals, sense="max")
     vv = normalize_variables(variables)
     objective = expr if sense == "min" else -expr
     level_boundedness = _level_boundedness_certificate(objective, vv, domain=domain)
-    continuity = function_continuous(expr, vv if len(vv) > 1 else vv[0], domain=domain)
+    continuity = continuous(expr, vv if len(vv) > 1 else vv[0], domain=domain)
     resolved_domain, domain_closed = _resolved_domain_and_closed(domain, vv)
     return _mode_existence_from_facts(
         sense, continuity, level_boundedness, resolved_domain, domain_closed
     )
 
 
-def function_mode_existence(
+def mode_existence(
     expr, variables, *, domain=S.Reals, sense="max", return_result=False
 ):
     """Return whether a global minimum or maximum is structurally guaranteed.
@@ -409,17 +412,15 @@ def function_mode_existence(
     return certificate if return_result else certificate.classification
 
 
-def function_geometry(expr, variables, *, domain=S.Reals, assumptions=S.true):
+def geometry(expr, variables, *, domain=S.Reals, assumptions=S.true):
     """Summarize regularity, convexity, singularity, and escape geometry."""
     expr = sp.sympify(expr)
     vv = normalize_variables(variables)
     var_arg = vv if len(vv) > 1 else vv[0]
-    continuity = function_continuous(
-        expr, var_arg, domain=domain, assumptions=assumptions
-    )
-    analytic = function_analytic(expr, var_arg, domain=domain, assumptions=assumptions)
+    continuity = continuous(expr, var_arg, domain=domain, assumptions=assumptions)
+    analytic = _analytic(expr, var_arg, domain=domain, assumptions=assumptions)
     if len(vv) == 1:
-        smooth = function_smoothness(
+        smooth = _smoothness(
             expr, vv[0], domain=domain, max_order=2, return_result=True
         )
         ck_order = getattr(smooth, "highest_continuous_derivative", None)
@@ -436,11 +437,11 @@ def function_geometry(expr, variables, *, domain=S.Reals, assumptions=S.true):
     else:
         ck_order = sp.oo if analytic is Analyticity.ANALYTIC else None
         c2 = TruthValue.TRUE if analytic is Analyticity.ANALYTIC else TruthValue.UNKNOWN
-    convexity = function_convexity(expr, var_arg, domain=domain)
-    singularities = function_singularities(
+    convexity = _convexity(expr, var_arg, domain=domain)
+    singularities = _singularities(
         expr, var_arg, domain=S.Complexes, assumptions=assumptions, return_result=True
     )
-    boundary = function_boundary_behavior(expr, var_arg, domain=domain)
+    boundary = boundary_behavior(expr, var_arg, domain=domain)
     if len(vv) == 1:
         level = _univariate_level_boundedness(expr, vv[0], domain, boundary)
     else:

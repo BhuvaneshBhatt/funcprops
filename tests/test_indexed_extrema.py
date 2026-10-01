@@ -6,9 +6,9 @@ from funcprops import (
     ExtremumRange,
     IndexedExtremumValue,
     IndexedZero,
+    boundedness,
     extremum_geometry,
-    function_boundedness,
-    function_range,
+    range,
     symbolic_extremum_range,
 )
 
@@ -38,13 +38,13 @@ def test_closed_bounded_exact_critical_range():
     assert r.as_condition(y) == sp.And(y >= -2, y <= 2)
 
 
-def test_function_range_uses_finite_extrema():
-    r = function_range(x**3 - 3 * x, x, y, constraints=sp.And(x >= -2, x <= 2))
+def test_range_uses_finite_extrema():
+    r = range(x**3 - 3 * x, x, y, constraints=sp.And(x >= -2, x <= 2))
     assert sp.simplify_logic(sp.Equivalent(r, sp.And(y >= -2, y <= 2))) is S.true
 
 
 def test_bessel_semiaxis_range_is_exact_indexed_envelope():
-    r = function_range(sp.besselj(0, x), x, y, constraints=x > 0)
+    r = range(sp.besselj(0, x), x, y, constraints=x > 0)
     # 0.13 simplifies the indexed envelope using exact extremum ordering.
     expected_lower = sp.besselj(0, IndexedZero("BesselJ", 2, 0, 1, "positive"))
     assert (
@@ -54,17 +54,15 @@ def test_bessel_semiaxis_range_is_exact_indexed_envelope():
 
 
 def test_airy_negative_semiaxis_range_is_indexed_not_false():
-    r = function_range(sp.airyai(x), x, y, constraints=x <= 0)
+    r = range(sp.airyai(x), x, y, constraints=x <= 0)
     lo = sp.airyai(IndexedZero("AiryAi", 2, S.NaN, 1, "negative"))
     hi = sp.airyai(IndexedZero("AiryAi", 1, S.NaN, 1, "negative"))
     assert sp.simplify_logic(sp.Equivalent(r, sp.And(y >= lo, y <= hi))) is S.true
 
 
 def test_indexed_extremum_range_drives_boundedness():
-    assert (
-        function_boundedness(sp.besselj(0, x), x, domain=x > 0) == Boundedness.BOUNDED
-    )
-    assert function_boundedness(sp.airyai(x), x, domain=x <= 0) == Boundedness.BOUNDED
+    assert boundedness(sp.besselj(0, x), x, domain=x > 0) == Boundedness.BOUNDED
+    assert boundedness(sp.airyai(x), x, domain=x <= 0) == Boundedness.BOUNDED
 
 
 def test_open_finite_interval_keeps_attainment_unknown():

@@ -3,9 +3,9 @@
 ## Why would I use this?
 
 Many symbolic questions have more than one mathematically valid answer because a
-parameter has not been fixed. `funcprops` keeps those cases explicit instead of
-choosing one silently. It also exposes replayable certificates for proofs that
-need to be inspected, logged, or rechecked later.
+parameter has not been fixed. `funcprops` keeps those cases explicit rather than
+choosing one without evidence. It also exposes replayable certificates for proofs
+that need to be inspected, logged, or rechecked later.
 
 ## Resolving parameter-dependent results
 
@@ -17,13 +17,27 @@ import sympy as sp
 import funcprops as fp
 
 a, x = sp.symbols("a x", real=True)
-fp.function_monotonicity(a*x, x, assumptions=a > 0)
+fp.monotonicity(a*x, x, assumptions=a > 0)
 # Monotonicity.STRICTLY_INCREASING
 ```
 
-Without sufficient assumptions, a query may return `PropertyResult` with guarded
-cases. The `.resolved` property returns an unconditional compact value when one is
-available.
+Without sufficient assumptions, a property query may have several guarded cases.
+The root API projects a fully or partially stratified `PropertyResult` to a SymPy
+`Piecewise` by default. Any uncovered region receives an explicit symbolic
+`unknown` fallback rather than being interpreted as false.
+
+```python
+fp.injective(a*x, x)
+# Piecewise((True, Ne(a, 0)), (False, True))
+
+result = fp.injective(a*x, x, return_result=True)
+result.cases
+# certified guarded cases with evidence/provenance retained
+```
+
+For a rich `PropertyResult`, `.resolved` returns an unconditional compact value
+when one is available, and `.as_piecewise()` performs the same compact projection
+used by the public API.
 
 ## A common detailed view
 
@@ -32,7 +46,7 @@ certificate objects onto `DetailedPropertyResult` without changing the default
 return types of the public APIs.
 
 ```python
-result = fp.function_change_of_variables((2*x,), x)
+result = fp.change_of_variables((2*x,), x)
 detail = fp.as_detailed_result(result)
 print(detail.primary)
 print(detail.certificate)

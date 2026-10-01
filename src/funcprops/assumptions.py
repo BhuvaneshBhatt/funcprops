@@ -111,6 +111,34 @@ def _structural_entailment(condition: sp.Expr, assumptions: sp.Expr) -> bool | N
     keys = {_atom_key(clause) for clause in clauses}
     if _atom_key(condition) in keys:
         return True
+    # Cheap ordered-real closure: an explicit comparison with zero proves
+    # realness; a strict comparison also proves nonzeroness.
+    if isinstance(condition, sp.Contains) and condition.args[1] is S.Reals:
+        target = condition.args[0]
+        for clause in clauses:
+            if isinstance(
+                clause,
+                (sp.StrictGreaterThan, sp.StrictLessThan, sp.GreaterThan, sp.LessThan),
+            ):
+                if (clause.lhs == target and clause.rhs == 0) or (
+                    clause.rhs == target and clause.lhs == 0
+                ):
+                    return True
+    if isinstance(condition, sp.Unequality):
+        target = (
+            condition.lhs
+            if condition.rhs == 0
+            else condition.rhs
+            if condition.lhs == 0
+            else None
+        )
+        if target is not None:
+            for clause in clauses:
+                if isinstance(clause, (sp.StrictGreaterThan, sp.StrictLessThan)) and (
+                    (clause.lhs == target and clause.rhs == 0)
+                    or (clause.rhs == target and clause.lhs == 0)
+                ):
+                    return True
     neg = _normalize_logic(sp.Not(condition, evaluate=False))
     if _atom_key(neg) in keys:
         return False
@@ -151,7 +179,7 @@ def _affine_equalities_consistent(expr: sp.Expr) -> bool | None:
     def union(left: sp.Symbol, right: sp.Symbol) -> None:
         a, b = find(left), find(right)
         if a != b:
-            # Use a stable representative so normalization is deterministic.
+            # Use a stable representative so normalization is determinstic.
             if sp.default_sort_key(a) <= sp.default_sort_key(b):
                 parent[b] = a
             else:
@@ -254,7 +282,7 @@ def entails(condition: sp.Expr, assumptions: sp.Expr | bool = True) -> bool | No
 
     The implementation is deliberately bounded: structural and affine Eq/Ne
     reasoning precede SymPy's assumptions engine; unresolved predicates remain
-    unresolved instead of invoking general-purpose SAT/QE.
+    unresolved.
     """
     return _entails_cached(_normalize_logic(condition), _normalize_logic(assumptions))
 

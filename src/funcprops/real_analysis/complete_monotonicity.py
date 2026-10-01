@@ -28,7 +28,7 @@ class CompleteMonotonicityCertificate:
         return self.classification
 
     def verify(self):
-        value = function_complete_monotonicity(
+        value = complete_monotonicity(
             self.expression,
             self.variable,
             domain=self.domain,
@@ -75,12 +75,12 @@ def _positive_axis(domain, var):
         return False
 
 
-def function_complete_monotonicity(
+def complete_monotonicity(
     expr, var, *, domain=S.Reals, assumptions=S.true, return_result=False
 ):
     """Certify ``(-1)^n f^(n)(x) >= 0`` for every integer ``n>=0``.
 
-    The implementation is theorem-driven: it returns UNKNOWN rather than testing a
+    The implementation is theorem-driven: it returns UNKNOWN
     finite number of derivatives and extrapolating.
     """
     expr, var = sp.sympify(expr), sp.sympify(var)

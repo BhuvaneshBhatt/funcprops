@@ -1,6 +1,6 @@
 # Singularity analysis
 
-`function_singularity_analysis`
+`singularity_analysis`
 
 ## Mathematical definition
 
@@ -9,14 +9,14 @@ Detailed singularity analysis reports analytic obstructions together with comple
 ## API and return values
 
 ```python
-function_singularity_analysis(expr, var, *, domain=Complexes, assumptions=True, ignore_unknown=False)
+singularity_analysis(expr, variable, *, domain=Complexes, assumptions=True, ignore_unknown=False, return_result=False)
 ```
 
 A SingularityAnalysis object containing singularity groups, domain exterior, completeness, unknown heads, and provenance.
 
 ## Domains, assumptions, and parameters
 
-The query is interpreted on the supplied domain rather than from the expression in isolation. When symbolic parameters change the property, funcprops preserves those cases as guarded parameter strata instead of choosing a generic value. Assumptions are proof hypotheses: they can simplify a stratum or branch condition, but they do not justify numerical guessing.
+The query is interpreted on the supplied domain, not from the expression in isolation. When symbolic parameters change the property, funcprops preserves those cases as guarded parameter strata. Assumptions are proof hypotheses: they can simplify a stratum or branch condition, but they do not justify numerical guessing.
 
 ## Executable examples
 
@@ -29,7 +29,7 @@ import sympy as sp
 import funcprops as fp
 
 x, y = sp.symbols("x y", real=True)
-result = fp.function_singularity_analysis(1/x, x)
+result = fp.singularity_analysis(1/x, x)
 result
 ```
 
@@ -39,7 +39,7 @@ Application: Inspect completeness and provenance when a downstream proof require
 
 ## Applications
 
-This property is useful whenever later mathematics depends on a global qualitative fact rather than isolated samples. Typical uses include symbolic preprocessing, theorem-hypothesis verification, optimization, inverse problems, robust numerical method selection, and simplifying downstream case analysis.
+This property is useful whenever later mathematics depends on a global qualitative fact, not isolated samples. Typical uses include symbolic preprocessing, theorem-hypothesis verification, optimization, inverse problems, robust numerical method selection, and simplifying downstream case analysis.
 
 ## How funcprops proves it
 
@@ -55,8 +55,8 @@ complete=False is an explicit warning that the returned inventory is not exhaust
 
 ## Related properties
 
-- [`function_singularities`](singularities.md)
-- [`function_discontinuities`](discontinuities.md)
+- [`singularities`](singularities.md)
+- [`discontinuities`](discontinuities.md)
 
 ## Source
 

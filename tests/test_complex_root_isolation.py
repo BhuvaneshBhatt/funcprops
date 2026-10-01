@@ -34,7 +34,7 @@ def test_argument_principle_refuses_boundary_zero():
 
 def test_complex_isolation_separates_three_sine_roots():
     z = sp.symbols("z")
-    result = fp.function_complex_zeros(
+    result = fp.complex_zeros(
         sp.sin(z),
         z,
         rectangle=(-4 - sp.I, 4 + sp.I),
@@ -52,7 +52,7 @@ def test_complex_isolation_separates_three_sine_roots():
 
 def test_exact_complex_roots_are_returned_as_mathematical_set():
     z = sp.symbols("z")
-    roots = fp.function_complex_zeros(
+    roots = fp.complex_zeros(
         z**3 - 1,
         z,
         rectangle=(-2 - 2 * sp.I, 2 + 2 * sp.I),

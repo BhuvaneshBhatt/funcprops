@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import sympy as sp
 from exprtest import zerotest
+from sympy import S
 
 
 def certify_zero(expr, assumptions=True) -> bool | None:
@@ -67,3 +68,33 @@ def certify_identity_zero(expr) -> bool | None:
 def certify_identity_equal(left, right) -> bool | None:
     """Return whether two symbolic formulas are identically equal."""
     return certify_identity_zero(sp.sympify(left) - sp.sympify(right))
+
+
+def certify_identity_equal_on_domain(
+    left, right, var, *, domain=S.Reals, assumptions=S.true
+):
+    """Certify an identity for property transfer without erasing branch/domain data.
+
+    Formula identity is necessary but not sufficient when rewriting can change the
+    natural domain (for example a cancelled rational hole).  Non-structural
+    transfers therefore also require equality of the relevant natural domains.
+    """
+    left, right, var = sp.sympify(left), sp.sympify(right), sp.sympify(var)
+    if left == right:
+        return True
+    if certify_identity_equal(left, right) is not True:
+        return None
+    try:
+        from .real_analysis.domain import domain as function_domain
+
+        dl = function_domain(left, var, domain=domain)
+        dr = function_domain(right, var, domain=domain)
+        if dl == dr:
+            return True
+        from .stratification import exact_set_equal
+
+        if isinstance(dl, sp.Set) and isinstance(dr, sp.Set):
+            return exact_set_equal(dl, dr) is True
+    except (TypeError, ValueError, NotImplementedError):
+        return None
+    return None

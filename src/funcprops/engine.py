@@ -2,7 +2,7 @@
 
 This module turns the declarative catalogue-derived registry into an actual
 rule engine.  It is intentionally conservative: unknown parameter conditions
-remain symbolic rather than being guessed true or false.
+remain symbolic.
 """
 
 from __future__ import annotations
@@ -212,6 +212,23 @@ def simplify_condition(condition, *, assumptions=S.true):
     if c is False:
         return S.false
     return c
+
+
+def truth_bool(condition):
+    """Return True/False for cheaply decidable Boolean expressions, else None."""
+    if condition in (True, S.true):
+        return True
+    if condition in (False, S.false):
+        return False
+    try:
+        value = sp.simplify(condition)
+    except (TypeError, ValueError, NotImplementedError, ZeroDivisionError):
+        return None
+    if value is S.true:
+        return True
+    if value is S.false:
+        return False
+    return None
 
 
 def truth_value(condition, *, assumptions=S.true) -> ConditionTruth:

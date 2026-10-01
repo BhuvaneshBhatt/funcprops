@@ -653,10 +653,10 @@ def _certified_range_on_interval(expr, var, interval):
     """Return an exact range set on ``interval`` when funcprops can certify it."""
     try:
         from ..real_analysis.common import condition_to_set, set_to_condition
-        from ..real_analysis.range import function_range
+        from ..real_analysis.range import range
 
         y = sp.Dummy("y", real=True)
-        cond = function_range(
+        cond = range(
             expr,
             var,
             y,
@@ -848,7 +848,7 @@ def _certified_interval_resolution(expr, var, domain):
     )
 
 
-def _certified_real_interval_isolation(expr, var, domain):
+def _certified_interval_isolation(expr, var, domain):
     """Certify all real roots on a finite interval from a complete monotone partition.
 
     Candidate discovery is delegated to the existing exact derivative-zero/monotonicity
@@ -983,9 +983,9 @@ def _certified_real_interval_isolation(expr, var, domain):
 
     roots = _sort_unique(roots)
     method = (
-        "certified_real_interval_isolation"
+        "certified_interval_isolation"
         if complete
-        else "partial_certified_real_interval_isolation"
+        else "partial_certified_interval_isolation"
     )
     return RootIsolationResult(
         roots,
@@ -1346,7 +1346,7 @@ def transcendental_roots(expr, var, domain=S.Reals, *, allow_numerical=True):
         _exponential_fourier_count,
         _certified_interval_resolution,
         _certified_monotone_interval,
-        _certified_real_interval_isolation,
+        _certified_interval_isolation,
     ):
         r = fn(expr, var, domain)
         if r is not None:

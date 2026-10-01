@@ -6,7 +6,7 @@ from funcprops import (
     ExtremumRange,
     IndexedZero,
     extremum_ordering_theorems,
-    function_range,
+    range,
     symbolic_extremum_range,
 )
 
@@ -56,8 +56,8 @@ def test_bessel_j_positive_order_first_two_extrema_dominate():
     assert r.lower_attained is True and r.upper_attained is True
 
 
-def test_function_range_collapses_j0_envelope():
-    r = function_range(sp.besselj(0, x), x, y, constraints=x > 0)
+def test_range_collapses_j0_envelope():
+    r = range(sp.besselj(0, x), x, y, constraints=x > 0)
     if isinstance(r, ExtremumRange):
         assert r.as_condition(y) is not None
         assert r.upper == 1 and r.upper_attained is False

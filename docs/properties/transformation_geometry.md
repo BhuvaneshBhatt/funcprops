@@ -1,6 +1,6 @@
 # Transformation geometry
 
-`function_transformation_geometry`
+`transformation_geometry`
 
 ## Mathematical definition
 
@@ -9,14 +9,14 @@ Transformation geometry collects the derivative, determinant, local-invertibilit
 ## API and return values
 
 ```python
-function_transformation_geometry(expressions, variables, *, domain=Reals, assumptions=True)
+transformation_geometry(expressions, variables, *, domain=Reals, assumptions=True, return_result=False)
 ```
 
 A TransformationGeometry summary containing the exact Jacobian and the associated transformation certificates.
 
 ## Domains, assumptions, and parameters
 
-The query is interpreted on the supplied domain rather than from the expression in isolation. When symbolic parameters change the property, funcprops preserves those cases as guarded parameter strata instead of choosing a generic value. Assumptions are proof hypotheses: they can simplify a stratum or branch condition, but they do not justify numerical guessing.
+The query is interpreted on the supplied domain, not from the expression in isolation. When symbolic parameters change the property, funcprops preserves those cases as guarded parameter strata. Assumptions are proof hypotheses: they can simplify a stratum or branch condition, but they do not justify numerical guessing.
 
 ## Executable examples
 
@@ -29,7 +29,7 @@ import sympy as sp
 import funcprops as fp
 
 x, y = sp.symbols("x y", real=True)
-result = fp.function_transformation_geometry((x + y, x - y), (x, y))
+result = fp.transformation_geometry((x + y, x - y), (x, y))
 result
 ```
 
@@ -39,7 +39,7 @@ Application: Inspect all transformation certificates with one query.
 
 ## Applications
 
-This property is useful whenever later mathematics depends on a global qualitative fact rather than isolated samples. Typical uses include symbolic preprocessing, theorem-hypothesis verification, optimization, inverse problems, robust numerical method selection, and simplifying downstream case analysis.
+This property is useful whenever later mathematics depends on a global qualitative fact, not isolated samples. Typical uses include symbolic preprocessing, theorem-hypothesis verification, optimization, inverse problems, robust numerical method selection, and simplifying downstream case analysis.
 
 ## How funcprops proves it
 
@@ -55,8 +55,8 @@ Global bijectivity is outside this local summary and must be established separat
 
 ## Related properties
 
-- [`function_jacobian`](jacobian.md)
-- [`function_change_of_variables`](change_of_variables.md)
+- [`jacobian`](jacobian.md)
+- [`change_of_variables`](change_of_variables.md)
 
 ## Source
 

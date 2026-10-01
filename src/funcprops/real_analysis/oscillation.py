@@ -10,8 +10,8 @@ from ..exceptions import SYMBOLIC_QUERY_ERRORS
 from ..results import Oscillation
 from ..stratification import evaluate_parameter_strata
 from ..transcendental.periodic import positive_period
-from .common import combine_natural_domain_condition, condition_to_set
-from .domain import function_domain
+from .common import combine_domain_condition, condition_to_set
+from .domain import domain as _domain
 from .monotonic_certificates import MonotonicPartition, monotonic_partition
 
 
@@ -43,11 +43,11 @@ def _function_oscillation_impl(
     """
     expr = sp.sympify(expr)
     var = sp.sympify(var)
-    natural = function_domain(expr, var)
+    natural = _domain(expr, var)
     cond = (
         sp.sympify(domain)
         if _domain_ready
-        else combine_natural_domain_condition(natural, domain, var)
+        else combine_domain_condition(natural, domain, var)
     )
     with contextlib.suppress(SYMBOLIC_QUERY_ERRORS):
         cond = sp.simplify(cond)
@@ -114,9 +114,9 @@ def _function_oscillation_impl(
     # nonoscillation when critical-point partitioning itself is incomplete.
     try:
         from ..results import Monotonicity
-        from .monotonicity import function_monotonicity
+        from .monotonicity import monotonicity
 
-        m = function_monotonicity(expr, var, domain=cond, partition=part)
+        m = monotonicity(expr, var, domain=cond, partition=part)
         if m in (
             Monotonicity.STRICTLY_INCREASING,
             Monotonicity.NONDECREASING,
@@ -151,9 +151,7 @@ def _function_oscillation_impl(
     return out if return_result else out.classification
 
 
-def function_oscillation(
-    expr, var, *, domain=True, return_result=False, partition=None
-):
+def oscillation(expr, var, *, domain=True, return_result=False, partition=None):
     """Classify real oscillation on the requested domain."""
     return _function_oscillation_impl(
         expr,

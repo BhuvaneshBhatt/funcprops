@@ -3,7 +3,7 @@
 `funcprops` uses SymPy semantics as its execution model, the NIST Digital Library
 of Mathematical Functions (DLMF) as the primary reference for standard special
 functions, and the imported property catalogue as a source of candidate facts.
-The audit therefore verifies catalogue claims rather than copying them blindly.
+The audit therefore verifies catalogue claims.
 
 The generated machine-readable manifest is
 `src/funcprops/data/dlmf_audit.json`. Regenerate it with:

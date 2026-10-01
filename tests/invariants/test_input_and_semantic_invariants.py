@@ -2,11 +2,11 @@ import sympy as sp
 from sympy import S
 
 from funcprops import (
-    function_bijective,
-    function_convexity,
-    function_injective,
-    function_sign,
-    function_surjective,
+    bijective,
+    convexity,
+    injective,
+    sign,
+    surjective,
 )
 from funcprops.results import (
     ConditionalExpression,
@@ -31,14 +31,14 @@ def _specialize(result, symbol, value):
 
 def test_nonsemialgebraic_domain_is_not_sent_to_semialg_sign_backend():
     x = sp.symbols("x", real=True)
-    assert function_sign(x, x, domain=sp.sin(x) > 0) is Sign.UNKNOWN
+    assert sign(x, x, domain=sp.sin(x) > 0) is Sign.UNKNOWN
 
 
 def test_parameterized_multivariate_affine_mapping_is_stratified():
     x, y, a = sp.symbols("x y a", real=True)
     f = (a * x, y)
-    for query in (function_injective, function_surjective, function_bijective):
-        result = query(f, (x, y))
+    for query in (injective, surjective, bijective):
+        result = query(f, (x, y), return_result=True)
         assert _specialize(result, a, 2) is TruthValue.TRUE
         assert _specialize(result, a, 0) is TruthValue.FALSE
 
@@ -65,27 +65,27 @@ def test_truth_conflicts_are_order_independent_and_explicitly_unknown():
 
 def test_convexity_does_not_promote_local_curvature_on_unresolved_domain():
     x = sp.symbols("x", real=True)
-    assert function_convexity(x**2, x, domain=sp.sin(x) > 0) is Convexity.UNKNOWN
+    assert convexity(x**2, x, domain=sp.sin(x) > 0) is Convexity.UNKNOWN
 
 
 def test_disconnected_semialgebraic_domain_is_not_globally_convex():
     x = sp.symbols("x", real=True)
     domain = (x < -1) | (x > 1)
-    assert function_convexity(x**2, x, domain=domain) is Convexity.NEITHER
+    assert convexity(x**2, x, domain=domain) is Convexity.NEITHER
 
 
 def test_semialg_sign_partition_detects_disconnected_sign_change():
     x = sp.symbols("x", real=True)
-    assert function_sign(x, x, domain=sp.Ne(x, 0)) is Sign.SIGN_CHANGING
+    assert sign(x, x, domain=sp.Ne(x, 0)) is Sign.SIGN_CHANGING
 
 
 def test_backend_smoothness_claim_is_validated_at_boundary():
-    from funcprops import function_differentiability
+    from funcprops import differentiability
     from funcprops.results import Differentiability
 
     x = sp.symbols("x", real=True)
     expr = x ** sp.Rational(3, 2)
     assert (
-        function_differentiability(expr, x, domain=x >= 0, order=1)
+        differentiability(expr, x, domain=x >= 0, order=1)
         is Differentiability.DIFFERENTIABLE
     )

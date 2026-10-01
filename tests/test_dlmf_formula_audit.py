@@ -2,11 +2,11 @@ import sympy as sp
 
 from funcprops import (
     Analyticity,
+    analytic,
+    branch_cuts,
     dlmf_audit_report,
     dlmf_facts,
-    function_analytic,
-    function_branchcuts,
-    function_domain,
+    domain,
     transcendental_roots,
 )
 from funcprops.conditions import AIntegerQ, parse_catalogue_expression
@@ -60,23 +60,23 @@ def test_catalogue_parser_roundtrips_boolean_relations():
 def test_assoc_legendre_domain_catalogue_condition_no_longer_crashes():
     x = sp.symbols("x", real=True)
     n = sp.symbols("n", integer=True, nonnegative=True)
-    dom = function_domain(sp.assoc_legendre(n, 1, x), x)
+    dom = domain(sp.assoc_legendre(n, 1, x), x)
     # The exact catalogue rule is parameter-aware; the important regression is
     # that mixed parameter membership is preserved as a Boolean condition.
     assert dom is not None
     assert sp.simplify(dom.subs(x, 0)) is sp.S.true
 
 
-def test_generalized_hypergeometric_entire_case_is_analytic_on_natural_complex_domain():
+def test_hypergeometric_entire_analyticity():
     z, a = sp.symbols("z a")
     expr = sp.hyper([a], [sp.Rational(3, 2)], z)  # p=q
-    assert function_analytic(expr, z, domain=sp.S.Complexes) is Analyticity.ANALYTIC
+    assert analytic(expr, z, domain=sp.S.Complexes) is Analyticity.ANALYTIC
 
 
-def test_generalized_hypergeometric_terminating_case_suppresses_principal_cut():
+def test_terminating_hypergeometric_has_no_principal_cut():
     z, b, c = sp.symbols("z b c")
     expr = sp.hyper([-2, b], [c], z)  # p=q+1 but terminating polynomial
-    records = function_branchcuts(expr, z, mode="records")
+    records = branch_cuts(expr, z, mode="records")
     assert not any(r.source == "DLMF 16.2(iii)" for r in records)
 
 
@@ -95,7 +95,7 @@ def test_associated_legendre_integer_zero_count_on_ferrers_interval():
     assert fam.support == sp.Interval.open(-1, 1)
 
 
-def test_associated_legendre_zero_count_is_not_claimed_complete_on_all_reals():
+def test_legendre_zero_count_scope():
     x = sp.symbols("x", real=True)
     n = sp.symbols("n", integer=True, positive=True)
     result = transcendental_roots(
@@ -108,7 +108,7 @@ def test_associated_legendre_zero_count_is_not_claimed_complete_on_all_reals():
     assert result.parametric_families
 
 
-def test_spherical_bessel_positive_zero_family_is_certified_and_interlacing():
+def test_spherical_bessel_zero_interlacing():
     x = sp.symbols("x", real=True)
     result = transcendental_roots(
         sp.jn(2, x),
@@ -158,12 +158,12 @@ def test_symbolic_chebyshev_zeros_use_exact_dlmf_indexed_formula():
 def test_incomplete_elliptic_f_parameter_branch_condition_is_recorded():
     phi = sp.symbols("phi", real=True)
     m = sp.symbols("m")
-    records = function_branchcuts(sp.elliptic_f(phi, m), m, mode="records")
+    records = branch_cuts(sp.elliptic_f(phi, m), m, mode="records")
     assert any(r.source == "DLMF 19.2.4-19.2.5" for r in records)
 
 
 def test_elliptic_pi_characteristic_does_not_get_endpoint_only_fake_cut():
     n, phi = sp.symbols("n phi", real=True)
     expr = sp.elliptic_pi(n, phi, sp.Rational(1, 2))
-    records = function_branchcuts(expr, n, mode="records")
+    records = branch_cuts(expr, n, mode="records")
     assert not any("19.2.7 pole locus" in r.source for r in records)

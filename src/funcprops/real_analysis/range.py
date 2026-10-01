@@ -6,7 +6,7 @@ from sympy import S
 from .. import _semialg
 from ..engine import evaluate_property
 from ..exactness import certify_zero
-from ..exceptions import POLYNOMIAL_ERRORS, SYMBOLIC_QUERY_ERRORS
+from ..exceptions import SYMBOLIC_QUERY_ERRORS
 from ..results import ConditionalExpression, PropertyResult
 from ..stratification import (
     evaluate_parameter_strata,
@@ -15,12 +15,13 @@ from ..stratification import (
 )
 from ..transcendental.algebraize import algebraize
 from .common import (
-    combine_natural_domain_condition,
+    affine_real_parameter_guard,
+    combine_domain_condition,
     condition_to_set,
     is_full_natural_domain,
     set_to_condition,
 )
-from .domain import function_domain
+from .domain import domain
 from .monotonic_certificates import monotonic_partition, range_from_monotonic_partition
 from .special_functions import (
     parameter_guard,
@@ -40,7 +41,7 @@ def _refine_interval_attainment(expr, var, cond, y):
     s = condition_to_set(cond, y)
     if not isinstance(s, sp.Interval):
         return cond
-    natural = function_domain(expr, var)
+    natural = domain(expr, var)
     ds = condition_to_set(natural, var)
     if ds is None:
         return cond
@@ -101,10 +102,10 @@ def _registry_range(expr, var, y):
 
 def _monotone_image_interval(outer, X, inner_set):
     from ..results import Monotonicity
-    from .monotonicity import function_monotonicity
+    from .monotonicity import monotonicity
 
     dom = set_to_condition(inner_set, X)
-    m = function_monotonicity(outer, X, domain=dom)
+    m = monotonicity(outer, X, domain=dom)
     inc = m in (Monotonicity.STRICTLY_INCREASING, Monotonicity.NONDECREASING)
     dec = m in (Monotonicity.STRICTLY_DECREASING, Monotonicity.NONINCREASING)
     if not (inc or dec):
@@ -157,12 +158,12 @@ def _composition_range(expr, var, y, domain_condition):
         return None
     i, inner = varying[0]
     # A primitive f(x) is not a nontrivial composition.  Recursing through
-    # function_range(x, ...) and then asking monotonicity of the same primitive
+    # range(x, ...) and then asking monotonicity of the same primitive
     # can manufacture bogus empty/False images for oscillatory functions.
     if inner == var:
         return None
     u = sp.Dummy("u", real=True)
-    rc = function_range(inner, var, u, constraints=domain_condition)
+    rc = range(inner, var, u, constraints=domain_condition)
     if isinstance(rc, PropertyResult):
         return None
     inner_set = condition_to_set(rc, u)
@@ -202,8 +203,7 @@ def _scale_interval(s, A, B, sign):
 def _affine_transform(expr, var, y, domain):
     """Transform an exact inner range through ``A*g(x) + B``.
 
-    Parameter-dependent coefficient signs are preserved as conditional strata
-    instead of choosing an orientation heuristically.
+    Parameter-dependent coefficient signs are preserved as conditional strata.
     """
     # Identify A*g(x)+B where A and B are independent of the input variable.
     terms = sp.Add.make_args(sp.expand(expr))
@@ -213,7 +213,7 @@ def _affine_transform(expr, var, y, domain):
     if coeff.has(var) or not rest.has(var) or rest == expr:
         return None
     u = sp.Dummy("u", real=True)
-    inner = function_range(rest, var, u, constraints=domain)
+    inner = range(rest, var, u, constraints=domain)
 
     def transform(cond, extra=S.true):
         ss = condition_to_set(cond, u)
@@ -290,18 +290,17 @@ def _parameterized_elementary_range(expr, var, y, domain_condition):
     # exp(a*x+b): nonzero real slope maps R bijectively to (0,oo); zero
     # slope is the singleton exp(b).
     if expr.func is sp.exp:
-        try:
-            p = sp.Poly(sp.expand(expr.args[0]), var)
-        except POLYNOMIAL_ERRORS:
-            p = None
-        if p is not None and p.degree() <= 1:
-            A = p.coeff_monomial(var)
-            B = p.nth(0)
-            if A.free_symbols and A.is_real is True and B.is_real is True:
+        affine = affine_real_parameter_guard(expr.args[0], var)
+        if affine is not None:
+            A, B, real_guard = affine
+            if A.free_symbols or B.free_symbols or real_guard is not S.true:
+                real_b = S.true if B.is_real is True else sp.Q.real(B)
                 return normalize_cases(
                     (
-                        ConditionalExpression(y > 0, sp.Ne(A, 0)),
-                        ConditionalExpression(sp.Eq(y, sp.exp(B)), sp.Eq(A, 0)),
+                        ConditionalExpression(y > 0, sp.And(real_guard, sp.Ne(A, 0))),
+                        ConditionalExpression(
+                            sp.Eq(y, sp.exp(B)), sp.And(real_b, sp.Eq(A, 0))
+                        ),
                     ),
                     source="exp-affine-range-stratification",
                 )
@@ -371,7 +370,7 @@ def _semialgebraic_range_stage(expr, var, y, domain_condition, method, kwargs):
             else sp.simplify(structural)
         )
     try:
-        return _semialg.function_range(
+        return _semialg.range(
             expr,
             var,
             y,
@@ -404,7 +403,7 @@ def _piecewise_range(expr, var, y, domain_condition, method, kwargs):
         if isinstance(image, PropertyResult):
             return None
         images.append(image)
-    return combine_piecewise_conditions(images)
+    return combine_piecewise_conditions(images, y)
 
 
 def _function_range_impl(
@@ -426,11 +425,11 @@ def _function_range_impl(
     expr = sp.sympify(expr)
     var = sp.sympify(var)
     y = sp.sympify(y)
-    natural = function_domain(expr, var)
+    natural = domain(expr, var)
     domain_condition = (
         sp.sympify(constraints)
         if _domain_ready
-        else combine_natural_domain_condition(natural, constraints, var)
+        else combine_domain_condition(natural, constraints, var)
     )
     if not _domain_ready:
         split = evaluate_parameter_strata(
@@ -487,7 +486,7 @@ def _function_range_impl(
         except SYMBOLIC_QUERY_ERRORS:
             pass
         try:
-            raw = _semialg.function_range(
+            raw = _semialg.range(
                 ar.expression,
                 u,
                 y,
@@ -583,9 +582,7 @@ def _function_range_impl(
     return sp.Function("UnknownRange")(expr, var, y)
 
 
-def function_range(
-    expr, var, y, *, constraints=True, method="auto", partition=None, **kwargs
-):
+def range(expr, var, y, *, constraints=True, method="auto", partition=None, **kwargs):
     """Return the real range as a Boolean condition in ``y``."""
     return _function_range_impl(
         expr,

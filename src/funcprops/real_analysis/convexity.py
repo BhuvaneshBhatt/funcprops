@@ -29,15 +29,17 @@ from .advanced_convexity import (
     strong_convexity,
 )
 from .common import (
-    combine_natural_domain_condition,
+    affine_real_parameter_guard,
+    combine_domain_condition,
     condition_to_set,
     normalize_variables,
 )
-from .domain import function_domain
-from .monotonicity import function_monotonicity
+from .domain import domain as _domain
+from .monotonicity import monotonicity
 from .piecewise import certify_piecewise_boundaries, piecewise_decomposition
-from .sign import function_sign
+from .sign import sign
 from .special_functions import parameter_guard, positive_axis_convexity_strata
+from .staging import NO_STAGE_RESULT
 
 
 def _from_code(value):
@@ -84,7 +86,7 @@ def _normalize_semialg(value):
 
 def _sum_closure(expr, var, domain, strict):
     classes = [
-        function_convexity(a, var, domain=domain, strict_inequalities=strict)
+        convexity(a, var, domain=domain, strict_inequalities=strict)
         for a in expr.args
         if a.has(var)
     ]
@@ -119,8 +121,8 @@ def _composition(expr, var, domain, strict):
     oc = _registry_convexity(outer, X)
     if outer.func is sp.exp and oc is Convexity.UNKNOWN:
         oc = Convexity.STRICTLY_CONVEX
-    om = function_monotonicity(outer, X)
-    ic = function_convexity(inner, var, domain=domain, strict_inequalities=strict)
+    om = monotonicity(outer, X)
+    ic = convexity(inner, var, domain=domain, strict_inequalities=strict)
     inc = om in (Monotonicity.STRICTLY_INCREASING, Monotonicity.NONDECREASING)
     dec = om in (Monotonicity.STRICTLY_DECREASING, Monotonicity.NONINCREASING)
     if (
@@ -186,11 +188,11 @@ def _flip_convexity(v):
     }.get(v, Convexity.UNKNOWN)
 
 
-def _multivariate_constant_hessian_convexity(expr, variables):
+def _constant_hessian_convexity(expr, variables):
     """Exact classification for expressions with a constant symmetric Hessian.
 
     This intentionally handles only the zero-cost exact case. Variable
-    Hessians remain on the established scalar/semialgebraic paths rather than
+    Hessians remain on the established scalar/semialgebraic paths
     triggering expensive multivariate inequality solving here.
     """
     vv = tuple(variables)
@@ -245,7 +247,7 @@ def _piecewise_convexity(expr, var, domain, strict):
     if not branches:
         return Convexity.UNKNOWN
     classes = [
-        function_convexity(
+        convexity(
             branch.expression,
             var,
             domain=branch.condition,
@@ -328,7 +330,7 @@ def _semialgebraic_convexity_stage(
     if not _semialg.eligible_problem(expr, var, domain=assumptions):
         return None
     try:
-        raw = _semialg.function_convexity(
+        raw = _semialg.convexity(
             expr,
             var,
             domain=assumptions,
@@ -341,19 +343,16 @@ def _semialgebraic_convexity_stage(
     return value if value is not Convexity.UNKNOWN else None
 
 
-_NO_CONVEXITY_RESULT = object()
-
-
 def _multivariate_convexity_stage(
     expr, var, *, all_properties, return_result, intervals
 ):
     if not isinstance(var, (tuple, list, sp.Tuple)):
-        return _NO_CONVEXITY_RESULT
+        return NO_STAGE_RESULT
     variables = normalize_variables(var)
     primary = (
         Convexity.AFFINE
         if not any(expr.has(v) for v in variables)
-        else _multivariate_constant_hessian_convexity(expr, variables)
+        else _constant_hessian_convexity(expr, variables)
     )
     detailed = all_properties or return_result or intervals
     if primary is Convexity.UNKNOWN:
@@ -408,7 +407,7 @@ def _convexity_domain_stage(assumptions, domain, var, *, detailed):
         if isinstance(requested_set, sp.Set)
         else S.Reals
     )
-    return geometry_domain, _NO_CONVEXITY_RESULT
+    return geometry_domain, NO_STAGE_RESULT
 
 
 def _convexity_fallback_stage(
@@ -463,7 +462,7 @@ def _convexity_fallback_stage(
             c = _function_convexity_impl(
                 dep, var, domain=assumptions, strict_inequalities=strict_inequalities
             )
-            sg = function_sign(const, var)
+            sg = sign(const, var)
             if isinstance(c, PropertyResult) or isinstance(sg, PropertyResult):
                 ccases = (
                     c.cases
@@ -525,7 +524,7 @@ def _convexity_fallback_stage(
             primary = Convexity.AFFINE
             source = "second-derivative"
         elif d2 is not None:
-            sg = function_sign(d2, var, domain=assumptions, strict_inequalities=True)
+            sg = sign(d2, var, domain=assumptions, strict_inequalities=True)
             if isinstance(sg, PropertyResult):
                 out = normalize_cases(
                     (
@@ -629,9 +628,15 @@ def _function_convexity_impl(
         return_result=return_result,
         intervals=intervals,
     )
-    if multivariate is not _NO_CONVEXITY_RESULT:
+    if multivariate is not NO_STAGE_RESULT:
         return multivariate
     var = sp.sympify(var)
+    if expr.func is sp.exp:
+        affine = affine_real_parameter_guard(expr.args[0], var)
+        if affine is not None and affine[2] is S.false:
+            return Convexity.UNKNOWN
+    if expr.func is sp.Pow and expr.exp.is_real is False:
+        return Convexity.UNKNOWN
     if not expr.has(var):
         primary = Convexity.AFFINE
         return (
@@ -644,11 +649,11 @@ def _function_convexity_impl(
             if (all_properties or return_result)
             else primary
         )
-    natural = function_domain(expr, var)
+    natural = _domain(expr, var)
     assumptions = (
         sp.sympify(domain)
         if _domain_ready
-        else combine_natural_domain_condition(natural, domain, var)
+        else combine_domain_condition(natural, domain, var)
     )
     if not _domain_ready:
         split = evaluate_parameter_strata(
@@ -675,7 +680,7 @@ def _function_convexity_impl(
         var,
         detailed=all_properties or return_result or intervals,
     )
-    if domain_result is not _NO_CONVEXITY_RESULT:
+    if domain_result is not NO_STAGE_RESULT:
         return domain_result
     piecewise = _piecewise_convexity(expr, var, assumptions, strict_inequalities)
     if piecewise is not Convexity.UNKNOWN:
@@ -777,7 +782,7 @@ def _function_convexity_impl(
     )
 
 
-def function_convexity(
+def convexity(
     expr,
     var,
     *,

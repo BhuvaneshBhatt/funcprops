@@ -10,7 +10,6 @@ a limit of the whole Piecewise expression.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from itertools import pairwise
 
 import sympy as sp
 from sympy import S
@@ -311,24 +310,6 @@ def certify_piecewise_boundaries(decomposition, *, max_order=1):
     return tuple(out)
 
 
-def piecewise_interface_limits(branches, var, *, derivative_order=0):
-    """Backward-compatible interface-limit view used by older property engines."""
-    if not branches or any(not isinstance(b.domain, sp.Interval) for b in branches):
-        return None
-    ordered = tuple(sorted(branches, key=lambda b: sp.default_sort_key(b.domain.start)))
-    out = []
-    for left, right in pairwise(ordered):
-        boundary = left.domain.end
-        if certify_equal(boundary, right.domain.start) is not True:
-            return None
-        left_value = _side_limit(left, var, boundary, "-", derivative_order)
-        right_value = _side_limit(right, var, boundary, "+", derivative_order)
-        if left_value is None or right_value is None:
-            return None
-        out.append((boundary, left_value, right_value))
-    return tuple(out)
-
-
 def combine_piecewise_sets(values):
     """Merge branch-local exact sets without losing openness/endpoints."""
     all_values = tuple(values)
@@ -338,10 +319,26 @@ def combine_piecewise_sets(values):
     return sp.Union(*vals) if vals else S.EmptySet
 
 
-def combine_piecewise_conditions(values):
-    """Merge branch-local Boolean image conditions by disjunction."""
+def combine_piecewise_conditions(values, variable=None):
+    """Merge branch-local image conditions, using exact set union when possible."""
     vals = tuple(sp.sympify(v) for v in values)
-    return sp.simplify_logic(sp.Or(*vals)) if vals else S.false
+    if not vals:
+        return S.false
+    if variable is None:
+        symbols = set().union(*(v.free_symbols for v in vals))
+        variable = next(iter(symbols)) if len(symbols) == 1 else None
+    if variable is not None:
+        sets = tuple(condition_to_set(v, variable) for v in vals)
+        if all(isinstance(q, sp.Set) for q in sets):
+            union = sp.Union(*sets)
+            if union == S.Reals:
+                return S.true
+            if union == S.EmptySet:
+                return S.false
+            # Preserve branch-local witnesses for ordinary unions; callers and
+            # existing replay tests may rely on them even when one image is
+            # arithmetically redundant in another.
+    return sp.simplify_logic(sp.Or(*vals))
 
 
 def _scalar_value(result):

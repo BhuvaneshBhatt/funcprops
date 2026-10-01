@@ -176,8 +176,17 @@ def _preimage_of_zero_result(result, subject_map: SubjectMap, var, domain):
         if result is S.EmptySet:
             return S.EmptySet
         if isinstance(result, sp.Equality):
+            # Registry equalities are stated in the theorem subject.  Pull them
+            # back through the instantiated subject map before solving in the
+            # analysis variable; solving the outer equality directly can ignore
+            # the inner map entirely.
+            slots = subject_map.source_slots
+            if len(slots) != 1:
+                return None
+            slot_symbol = slots[0]
+            pulled = result.xreplace({slot_symbol: inner})
             try:
-                return sp.solveset(result, var, domain=dom)
+                return sp.solveset(pulled, var, domain=dom)
             except (NotImplementedError, TypeError, ValueError):
                 return None
         return None
@@ -207,28 +216,28 @@ def _inner_regularity(prop, expressions, var, restricted):
     evidence = []
     for inner in expressions:
         if prop == "continuity":
-            from .singularities import function_continuous
+            from .singularities import continuous
 
-            value = function_continuous(inner, var, domain=restricted)
+            value = continuous(inner, var, domain=restricted)
             ok = value is Continuity.CONTINUOUS
         elif prop == "differentiability":
-            from .real_analysis.differentiability import function_differentiability
+            from .real_analysis.differentiability import differentiability
 
-            value = function_differentiability(inner, var, domain=restricted)
+            value = differentiability(inner, var, domain=restricted)
             ok = value in {
                 Differentiability.DIFFERENTIABLE,
                 Differentiability.CK,
                 Differentiability.SMOOTH,
             }
         elif prop == "smoothness":
-            from .real_analysis.smoothness import function_smoothness
+            from .real_analysis.smoothness import smoothness
 
-            value = function_smoothness(inner, var, domain=restricted)
+            value = smoothness(inner, var, domain=restricted)
             ok = value is TruthValue.TRUE
         else:
-            from .singularities import function_analytic
+            from .singularities import analytic
 
-            value = function_analytic(inner, var, domain=restricted)
+            value = analytic(inner, var, domain=restricted)
             ok = value is Analyticity.ANALYTIC
         evidence.append((inner, value))
         if not ok:
@@ -236,7 +245,7 @@ def _inner_regularity(prop, expressions, var, restricted):
     return True, tuple(evidence)
 
 
-def _transport_scalar_instantiated_rule(
+def _transport_scalar_rule(
     instantiated: InstantiatedPropertyRule,
     analysis_var,
     *,
@@ -309,13 +318,11 @@ def _transport_scalar_instantiated_rule(
 
     if prop == "monotonicity":
         if len(expressions) == 1:
-            from .real_analysis.monotonicity import function_monotonicity
+            from .real_analysis.monotonicity import monotonicity
 
             base_domain = S.Reals if domain is True else domain
             restricted = restrict_domain(base_domain, cond, var)
-            inner_direction = function_monotonicity(
-                expressions[0], var, domain=restricted
-            )
+            inner_direction = monotonicity(expressions[0], var, domain=restricted)
             result = _compose_monotonicity(instantiated.result, inner_direction)
             complete = result is not Monotonicity.UNKNOWN
             return TransportedPropertyRule(
@@ -328,7 +335,7 @@ def _transport_scalar_instantiated_rule(
                 evidence=(("inner-monotonicity", inner_direction),),
             )
 
-        from .real_analysis.sign import function_sign
+        from .real_analysis.sign import sign
         from .registry_derivatives import registry_derivative
 
         cert = registry_derivative(instantiated.expression, var, registry=registry)
@@ -345,7 +352,7 @@ def _transport_scalar_instantiated_rule(
         combined_condition = sp.And(cond, cert.conditions)
         base_domain = S.Reals if domain is True else domain
         restricted = restrict_domain(base_domain, combined_condition, var)
-        derivative_sign = function_sign(cert.derivative, var, domain=restricted)
+        derivative_sign = sign(cert.derivative, var, domain=restricted)
         result = _monotonicity_from_derivative_sign(derivative_sign)
         return TransportedPropertyRule(
             instantiated,
@@ -419,9 +426,7 @@ def _multivariate_inner_regularity(prop, expressions, variables):
     return True, tuple(evidence)
 
 
-def _transport_multivariate_instantiated_rule(
-    instantiated, variables, *, domain=True, registry=None
-):
+def _transport_multivar_rule(instantiated, variables, *, domain=True, registry=None):
     variables = tuple(sp.sympify(v) for v in variables)
     subject_map = SubjectMap.from_instantiated(instantiated, variables)
     prop = instantiated.rule.property.lower()
@@ -455,9 +460,9 @@ def _transport_multivariate_instantiated_rule(
         )
 
     if prop == "convexity":
-        from .registry_derivatives import registry_multivariate_chain_rule
+        from .registry_derivatives import registry_chain_rule
 
-        cert = registry_multivariate_chain_rule(
+        cert = registry_chain_rule(
             instantiated.expression, variables, registry=registry, second_order=True
         )
         if not cert.complete or cert.hessian is None:
@@ -513,12 +518,12 @@ def transport_instantiated_rule(
     if isinstance(analysis_var, (tuple, list, sp.Tuple)):
         variables = tuple(analysis_var)
         if len(variables) == 1:
-            return _transport_scalar_instantiated_rule(
+            return _transport_scalar_rule(
                 instantiated, variables[0], domain=domain, registry=registry
             )
-        return _transport_multivariate_instantiated_rule(
+        return _transport_multivar_rule(
             instantiated, variables, domain=domain, registry=registry
         )
-    return _transport_scalar_instantiated_rule(
+    return _transport_scalar_rule(
         instantiated, analysis_var, domain=domain, registry=registry
     )

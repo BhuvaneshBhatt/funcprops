@@ -16,7 +16,7 @@ class NativeFamilyRegistration:
 
     Registration data stays explicit so CI can count native coverage without
     executing property analyzers. Only facts whose slot semantics are
-    unambiguous are promoted here.
+    unambigous are promoted here.
     """
 
     family: str
@@ -50,6 +50,23 @@ def _unary_entire(family: str, head, derivative, *, identities=()):
             ),
         ),
         identity_rules=tuple(identities(z) if callable(identities) else identities),
+    )
+
+
+def _derivative_family(family, head, slot, result, *, source=None, **rule_options):
+    """Declare a family with one exact argument-derivative theorem."""
+    return NativeFamilyRegistration(
+        family,
+        head,
+        derivative_rules=(
+            DerivativeRule(
+                head,
+                with_respect_to=slot,
+                result=result,
+                source=source or f"native:{family}:argument-derivative",
+                **rule_options,
+            ),
+        ),
     )
 
 
@@ -104,47 +121,30 @@ def native_family_registrations() -> tuple[NativeFamilyRegistration, ...]:
     nu = FunctionSlot(0, "nu")
     z = FunctionSlot(1, "z")
     registrations.append(
-        NativeFamilyRegistration(
+        _derivative_family(
             "besselj",
             sp.besselj,
-            derivative_rules=(
-                DerivativeRule(
-                    sp.besselj,
-                    with_respect_to=z,
-                    result=(sp.besselj(nu - 1, z) - sp.besselj(nu + 1, z)) / 2,
-                    source="native:besselj:argument-derivative",
-                ),
-            ),
+            z,
+            (sp.besselj(nu - 1, z) - sp.besselj(nu + 1, z)) / 2,
         )
     )
     registrations.append(
-        NativeFamilyRegistration(
+        _derivative_family(
             "besseli",
             sp.besseli,
-            derivative_rules=(
-                DerivativeRule(
-                    sp.besseli,
-                    with_respect_to=z,
-                    result=(sp.besseli(nu - 1, z) + sp.besseli(nu + 1, z)) / 2,
-                    source="native:besseli:argument-derivative",
-                ),
-            ),
+            z,
+            (sp.besseli(nu - 1, z) + sp.besseli(nu + 1, z)) / 2,
         )
     )
 
     z0 = FunctionSlot(0, "z")
     registrations.append(
-        NativeFamilyRegistration(
+        _derivative_family(
             "gamma",
             sp.gamma,
-            derivative_rules=(
-                DerivativeRule(
-                    sp.gamma,
-                    with_respect_to=z0,
-                    result=sp.gamma(z0) * sp.polygamma(0, z0),
-                    source="native:gamma:derivative",
-                ),
-            ),
+            z0,
+            sp.gamma(z0) * sp.polygamma(0, z0),
+            source="native:gamma:derivative",
         )
     )
 

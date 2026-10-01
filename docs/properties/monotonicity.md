@@ -1,6 +1,6 @@
 # Monotonicity
 
-`function_monotonicity`
+`monotonicity`
 
 ## Mathematical definition
 
@@ -9,14 +9,14 @@ Monotonicity classifies a function as strictly increasing/decreasing, weakly mon
 ## API and return values
 
 ```python
-function_monotonicity(expr, var, *, domain=True, strict_inequalities=True, all_properties=False, intervals=False, return_result=False, partition=None, assumptions=True)
+monotonicity(expr, variable, *, domain=True, strict_inequalities=True, all_properties=False, intervals=False, partition=None, assumptions=True, return_result=False)
 ```
 
-A Monotonicity value, PropertyResult, or interval decomposition when requested.
+A Monotonicity value, a SymPy Piecewise for parameter-dependent classifications, or an interval decomposition when requested; `return_result=True` preserves the full PropertyResult when one is produced.
 
 ## Domains, assumptions, and parameters
 
-The query is interpreted on the supplied domain rather than from the expression in isolation. When symbolic parameters change the property, funcprops preserves those cases as guarded parameter strata instead of choosing a generic value. Assumptions are proof hypotheses: they can simplify a stratum or branch condition, but they do not justify numerical guessing.
+The query is interpreted on the supplied domain, not from the expression in isolation. When symbolic parameters change the property, funcprops preserves those cases as guarded parameter strata. Assumptions are proof hypotheses: they can simplify a stratum or branch condition, but they do not justify numerical guessing.
 
 ## Executable examples
 
@@ -29,7 +29,7 @@ import sympy as sp
 import funcprops as fp
 
 x, y = sp.symbols("x y", real=True)
-result = fp.function_monotonicity(sp.exp(x), x)
+result = fp.monotonicity(sp.exp(x), x)
 result
 ```
 
@@ -39,7 +39,7 @@ Application: Certify uniqueness of inverse values and one-dimensional optimizati
 
 ## Applications
 
-This property is useful whenever later mathematics depends on a global qualitative fact rather than isolated samples. Typical uses include symbolic preprocessing, theorem-hypothesis verification, optimization, inverse problems, robust numerical method selection, and simplifying downstream case analysis.
+This property is useful whenever later mathematics depends on a global qualitative fact, not isolated samples. Typical uses include symbolic preprocessing, theorem-hypothesis verification, optimization, inverse problems, robust numerical method selection, and simplifying downstream case analysis.
 
 ## How funcprops proves it
 
@@ -49,15 +49,15 @@ Successful conclusions are exact symbolic claims over the stated domain and assu
 
 ## Known limitations
 
-Disconnected domains and functions with many turning points may require interval output rather than a single global class.
+Disconnected domains and functions with many turning points may require interval output.
 
 `UNKNOWN` means that the available proof machinery did not certify the claim. It must not be interpreted as the negation of the property.
 
 ## Related properties
 
-- [`function_sign`](sign.md)
-- [`function_injective`](injective.md)
-- [`function_range`](range.md)
+- [`sign`](sign.md)
+- [`injective`](injective.md)
+- [`range`](range.md)
 
 ## Source
 

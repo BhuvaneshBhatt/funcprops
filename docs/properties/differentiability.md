@@ -1,6 +1,6 @@
 # Differentiability
 
-`function_differentiability`
+`differentiability`
 
 ## Mathematical definition
 
@@ -9,14 +9,14 @@ Differentiability asks whether derivatives exist throughout a domain, optionally
 ## API and return values
 
 ```python
-function_differentiability(expr, var, *, domain=True, order=None, all_properties=False, return_result=False, max_order=6, assumptions=True)
+differentiability(expr, variable, *, domain=True, order=None, all_properties=False, max_order=6, assumptions=True, return_result=False)
 ```
 
-A Differentiability value or PropertyResult with regularity evidence.
+A Differentiability value or a SymPy Piecewise for parameter-dependent classifications; `return_result=True` preserves the full PropertyResult with regularity evidence.
 
 ## Domains, assumptions, and parameters
 
-The query is interpreted on the supplied domain rather than from the expression in isolation. When symbolic parameters change the property, funcprops preserves those cases as guarded parameter strata instead of choosing a generic value. Assumptions are proof hypotheses: they can simplify a stratum or branch condition, but they do not justify numerical guessing.
+The query is interpreted on the supplied domain, not from the expression in isolation. When symbolic parameters change the property, funcprops preserves those cases as guarded parameter strata. Assumptions are proof hypotheses: they can simplify a stratum or branch condition, but they do not justify numerical guessing.
 
 ## Executable examples
 
@@ -29,7 +29,7 @@ import sympy as sp
 import funcprops as fp
 
 x, y = sp.symbols("x y", real=True)
-result = fp.function_differentiability(sp.Abs(x), x)
+result = fp.differentiability(sp.Abs(x), x)
 result
 ```
 
@@ -39,7 +39,7 @@ Application: Check whether derivative-based solvers are valid on an entire domai
 
 ## Applications
 
-This property is useful whenever later mathematics depends on a global qualitative fact rather than isolated samples. Typical uses include symbolic preprocessing, theorem-hypothesis verification, optimization, inverse problems, robust numerical method selection, and simplifying downstream case analysis.
+This property is useful whenever later mathematics depends on a global qualitative fact, not isolated samples. Typical uses include symbolic preprocessing, theorem-hypothesis verification, optimization, inverse problems, robust numerical method selection, and simplifying downstream case analysis.
 
 ## How funcprops proves it
 
@@ -55,9 +55,9 @@ The bounded max_order search is a certification limit, not a claim that higher d
 
 ## Related properties
 
-- [`function_smoothness`](smoothness.md)
-- [`function_continuous`](continuous.md)
-- [`function_analytic`](analytic.md)
+- [`smoothness`](smoothness.md)
+- [`continuous`](continuous.md)
+- [`analytic`](analytic.md)
 
 ## Source
 

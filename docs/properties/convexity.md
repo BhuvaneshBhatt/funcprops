@@ -1,6 +1,6 @@
 # Convexity
 
-`function_convexity`
+`convexity`
 
 ## Mathematical definition
 
@@ -9,14 +9,14 @@ Convexity classifies ordinary, strict, strong, affine, concave, log-, quasi-, an
 ## API and return values
 
 ```python
-function_convexity(expr, var, *, domain=True, strict_inequalities=True, all_properties=False, return_result=False, intervals=False, assumptions=True, **kwargs)
+convexity(expr, variable, *, domain=True, strict_inequalities=True, all_properties=False, intervals=False, assumptions=True, return_result=False, **kwargs)
 ```
 
-A Convexity value or PropertyResult; detailed results carry a normalized ConvexityCertificate.
+A Convexity value or a SymPy Piecewise for parameter-dependent classifications; `return_result=True` preserves the full PropertyResult and normalized ConvexityCertificate.
 
 ## Domains, assumptions, and parameters
 
-The query is interpreted on the supplied domain rather than from the expression in isolation. When symbolic parameters change the property, funcprops preserves those cases as guarded parameter strata instead of choosing a generic value. Assumptions are proof hypotheses: they can simplify a stratum or branch condition, but they do not justify numerical guessing.
+The query is interpreted on the supplied domain, not from the expression in isolation. When symbolic parameters change the property, funcprops preserves those cases as guarded parameter strata. Assumptions are proof hypotheses: they can simplify a stratum or branch condition, but they do not justify numerical guessing.
 
 ## Executable examples
 
@@ -29,7 +29,7 @@ import sympy as sp
 import funcprops as fp
 
 x, y = sp.symbols("x y", real=True)
-result = fp.function_convexity(x**2, x)
+result = fp.convexity(x**2, x)
 result
 ```
 
@@ -39,7 +39,7 @@ Application: Guarantee uniqueness and conditioning properties in optimization mo
 
 ## Applications
 
-This property is useful whenever later mathematics depends on a global qualitative fact rather than isolated samples. Typical uses include symbolic preprocessing, theorem-hypothesis verification, optimization, inverse problems, robust numerical method selection, and simplifying downstream case analysis.
+This property is useful whenever later mathematics depends on a global qualitative fact, not isolated samples. Typical uses include symbolic preprocessing, theorem-hypothesis verification, optimization, inverse problems, robust numerical method selection, and simplifying downstream case analysis.
 
 ## How funcprops proves it
 
@@ -49,14 +49,14 @@ Successful conclusions are exact symbolic claims over the stated domain and assu
 
 ## Known limitations
 
-Secondary notions are often certified by sufficient implications rather than complete decision procedures; nonconvex does not imply every weaker notion is absent.
+Secondary notions are often certified by sufficient implications.
 
 `UNKNOWN` means that the available proof machinery did not certify the claim. It must not be interpreted as the negation of the property.
 
 ## Related properties
 
-- [`function_sign`](sign.md)
-- [`function_monotonicity`](monotonicity.md)
+- [`sign`](sign.md)
+- [`monotonicity`](monotonicity.md)
 
 ## Source
 

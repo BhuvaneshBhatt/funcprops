@@ -69,12 +69,12 @@ def test_invalid_derivative_order_rejected():
 
 
 def test_differentiability_uses_raw_derivative_without_factorization():
-    from funcprops import function_differentiability
+    from funcprops import differentiability
 
     x = sp.symbols("x")
     f = sp.Abs(x)
     clear_property_proof_cache()
-    function_differentiability(f, x)
+    differentiability(f, x)
     info = property_proof_cache_info()
     assert info["derivative"].misses >= 1
     assert info["factored_derivative"].misses == 0

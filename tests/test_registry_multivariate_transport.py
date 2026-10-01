@@ -12,9 +12,9 @@ from funcprops import (
     PropertyRule,
     Sign,
     SubjectMap,
+    registry_chain_rule,
     registry_hessian,
     registry_jacobian,
-    registry_multivariate_chain_rule,
     transport_instantiated_rule,
 )
 
@@ -74,9 +74,7 @@ def test_registered_outer_hessian_from_partial_rules():
 def test_multivariate_chain_rule_gradient_and_hessian():
     reg = _quadratic_registry()
     x, y = sp.symbols("x y", real=True)
-    cert = registry_multivariate_chain_rule(
-        G(x + y, x - y), (x, y), registry=reg, second_order=True
-    )
+    cert = registry_chain_rule(G(x + y, x - y), (x, y), registry=reg, second_order=True)
     assert isinstance(cert, MultivariateChainRuleCertificate)
     assert cert.complete is True
     assert cert.gradient == sp.ImmutableMatrix([6 * x - 2 * y, -2 * x + 6 * y])
@@ -102,9 +100,7 @@ def test_missing_outer_partial_refuses_second_order_transport():
     u = FunctionSlot(0, "u")
     reg = FunctionRegistry([], derivative_rules=[DerivativeRule(G, u, 2 * u)])
     x, y = sp.symbols("x y", real=True)
-    cert = registry_multivariate_chain_rule(
-        G(x, y), (x, y), registry=reg, second_order=True
-    )
+    cert = registry_chain_rule(G(x, y), (x, y), registry=reg, second_order=True)
     assert cert.complete is False
     assert cert.hessian is None
 

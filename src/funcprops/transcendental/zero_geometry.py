@@ -396,6 +396,16 @@ def _zero_geometry_impl(expr, var, *, derivative_order=0, domain=S.Reals):
             return _zero_geometry_impl(
                 dep, var, derivative_order=derivative_order, domain=domain
             )
+    # Elementary complete indexed families share the same ZeroGeometry contract.
+    if derivative_order == 0:
+        try:
+            from ..infinite_root_families import structured_zero_geometry
+
+            sg = structured_zero_geometry(expr, var)
+        except (TypeError, ValueError, NotImplementedError):
+            sg = None
+        if sg is not None:
+            return (sg,)
     # For requested derivative geometry, prefer the base family's theorem.
     for fn in (_bessel_geometry, _airy_geometry):
         g = fn(expr, var, derivative_order)
@@ -538,7 +548,7 @@ def property_interval_decomposition(
     """Build an exact interval-pattern certificate from derivative zero geometry.
 
     Infinite indexed boundaries are represented by ``boundary_geometry`` and an
-    alternating flag rather than materializing infinitely many intervals.
+    alternating flag.
     """
     expr = sp.sympify(expr)
     var = sp.sympify(var)
@@ -916,7 +926,7 @@ def indexed_tail_integer_bracket(
 
     Currently formula-level rigorous for positive Bessel-J function and first
     derivative zero families with nonnegative real order.  Unsupported families
-    return ``None`` rather than using asymptotic estimates without error bounds.
+    return ``None``.
     """
     if not isinstance(zero_template, IndexedZero):
         raise TypeError("zero_template must be an IndexedZero")

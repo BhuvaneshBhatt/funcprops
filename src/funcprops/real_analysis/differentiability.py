@@ -9,7 +9,7 @@ from ..results import (
     PropertyResult,
 )
 from ..stratification import normalize_cases
-from .smoothness import function_smoothness
+from .smoothness import smoothness as _smoothness
 
 
 def _differentiability_implications(
@@ -53,7 +53,7 @@ def _classify_smoothness(smoothness, order):
     return Differentiability.UNKNOWN
 
 
-def function_differentiability(
+def differentiability(
     expr,
     var,
     *,
@@ -93,7 +93,7 @@ def function_differentiability(
     from ..proof_cache import cached_derivative
 
     cached_derivative(expr, var, order=1)
-    smoothness = function_smoothness(
+    smoothness = _smoothness(
         expr, var, domain=domain, max_order=probe_order, return_result=True
     )
     if isinstance(smoothness, PropertyResult):

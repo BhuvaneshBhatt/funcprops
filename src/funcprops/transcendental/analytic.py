@@ -5,6 +5,7 @@ from dataclasses import dataclass
 import sympy as sp
 from sympy import S
 
+from ..engine import truth_bool
 from ..exactness import certify_zero
 from ..exceptions import SYMBOLIC_QUERY_ERRORS
 
@@ -23,22 +24,6 @@ class AnalyticNeighborhoodCertificate:
 
 
 _ENTIRE = (sp.exp, sp.sin, sp.cos, sp.sinh, sp.cosh, sp.erf, sp.erfc, sp.erfi)
-
-
-def _truth3(expr):
-    if expr in (True, S.true):
-        return True
-    if expr in (False, S.false):
-        return False
-    try:
-        q = sp.simplify(expr)
-        if q is S.true:
-            return True
-        if q is S.false:
-            return False
-    except SYMBOLIC_QUERY_ERRORS:
-        pass
-    return None
 
 
 def _all3(values):
@@ -60,7 +45,7 @@ def _rect_contains(rect, z):
         sp.Le(sp.im(a), sp.im(z)),
         sp.Le(sp.im(z), sp.im(b)),
     )
-    vals = [_truth3(t) for t in tests]
+    vals = [truth_bool(t) for t in tests]
     if any(v is False for v in vals):
         return False
     if all(v is True for v in vals):

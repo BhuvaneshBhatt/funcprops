@@ -28,13 +28,13 @@ f = sp.Symbol("f", real=True)
     ],
 )
 def test_real_continuity_regressions(expr, var, expected):
-    assert fp.function_continuous(expr, var) is expected
+    assert fp.continuous(expr, var) is expected
 
 
 def test_restricted_real_continuity_regressions():
-    assert fp.function_continuous(sp.log(x), x, domain=x > 0) is Continuity.CONTINUOUS
-    assert fp.function_continuous(sp.sqrt(x), x, domain=x > 0) is Continuity.CONTINUOUS
-    assert fp.function_continuous(sp.sqrt(x), x, domain=x >= 0) is Continuity.CONTINUOUS
+    assert fp.continuous(sp.log(x), x, domain=x > 0) is Continuity.CONTINUOUS
+    assert fp.continuous(sp.sqrt(x), x, domain=x > 0) is Continuity.CONTINUOUS
+    assert fp.continuous(sp.sqrt(x), x, domain=x >= 0) is Continuity.CONTINUOUS
 
 
 @pytest.mark.parametrize(
@@ -52,12 +52,12 @@ def test_restricted_real_continuity_regressions():
     ],
 )
 def test_analyticity_regressions(expr, var, domain, expected):
-    assert fp.function_analytic(expr, var, domain=domain) is expected
+    assert fp.analytic(expr, var, domain=domain) is expected
 
 
 def test_nonsmooth_head_is_not_real_analytic_but_restriction_can_be():
-    assert fp.function_analytic(sp.Abs(x), x) is Analyticity.NOT_ANALYTIC
-    assert fp.function_analytic(sp.Abs(x), x, domain=x > 0) is Analyticity.ANALYTIC
+    assert fp.analytic(sp.Abs(x), x) is Analyticity.NOT_ANALYTIC
+    assert fp.analytic(sp.Abs(x), x, domain=x > 0) is Analyticity.ANALYTIC
 
 
 @pytest.mark.parametrize(
@@ -76,7 +76,7 @@ def test_nonsmooth_head_is_not_real_analytic_but_restriction_can_be():
     ],
 )
 def test_scalar_bijectivity_regressions(expr, expected):
-    assert fp.function_bijective(expr, x) is expected
+    assert fp.bijective(expr, x) is expected
 
 
 @pytest.mark.parametrize(
@@ -110,11 +110,11 @@ def test_scalar_bijectivity_regressions(expr, expected):
 )
 def test_convexity_regressions(expr, expected_set):
     var = (x, y) if expr.has(y) else x
-    assert fp.function_convexity(expr, var) in expected_set
+    assert fp.convexity(expr, var) in expected_set
 
 
 def test_concavity_on_positive_log_domain():
-    assert fp.function_convexity(sp.log(x), x, domain=x > 0) in (
+    assert fp.convexity(sp.log(x), x, domain=x > 0) in (
         Convexity.CONCAVE,
         Convexity.STRICTLY_CONCAVE,
         Convexity.STRONGLY_CONCAVE,
@@ -122,29 +122,23 @@ def test_concavity_on_positive_log_domain():
 
 
 def test_discontinuity_records_for_tangent_and_gamma():
-    tan_records = fp.function_discontinuities(sp.tan(x), x, return_result=True)
+    tan_records = fp.discontinuities(sp.tan(x), x, return_result=True)
     assert tan_records and any(r.condition == sp.Eq(sp.cos(x), 0) for r in tan_records)
-    gamma_records = fp.function_discontinuities(sp.gamma(x), x, return_result=True)
+    gamma_records = fp.discontinuities(sp.gamma(x), x, return_result=True)
     assert gamma_records
 
 
-def test_differentiability_uses_domain_regularities_not_symbolic_diff_existence():
+def test_differentiability_uses_domain_regularity():
     from funcprops.results import Differentiability
 
+    assert fp.differentiability(sp.Abs(x), x) is Differentiability.NOT_DIFFERENTIABLE
+    assert fp.differentiability(sp.Abs(x), x, domain=x > 0) is Differentiability.SMOOTH
     assert (
-        fp.function_differentiability(sp.Abs(x), x)
-        is Differentiability.NOT_DIFFERENTIABLE
-    )
-    assert (
-        fp.function_differentiability(sp.Abs(x), x, domain=x > 0)
-        is Differentiability.SMOOTH
-    )
-    assert (
-        fp.function_differentiability(x ** sp.Rational(3, 2), x, domain=x >= 0, order=1)
+        fp.differentiability(x ** sp.Rational(3, 2), x, domain=x >= 0, order=1)
         is Differentiability.DIFFERENTIABLE
     )
     assert (
-        fp.function_differentiability(x ** sp.Rational(3, 2), x, domain=x >= 0, order=2)
+        fp.differentiability(x ** sp.Rational(3, 2), x, domain=x >= 0, order=2)
         is Differentiability.NOT_DIFFERENTIABLE
     )
 
@@ -152,7 +146,7 @@ def test_differentiability_uses_domain_regularities_not_symbolic_diff_existence(
 def test_differentiability_all_properties_reports_implication_closure():
     from funcprops.results import Differentiability
 
-    r = fp.function_differentiability(sp.exp(x), x, all_properties=True)
+    r = fp.differentiability(sp.exp(x), x, all_properties=True, return_result=True)
     assert r.primary is Differentiability.SMOOTH
     assert r.all_properties == (Differentiability.CK, Differentiability.DIFFERENTIABLE)
     assert r.evidence

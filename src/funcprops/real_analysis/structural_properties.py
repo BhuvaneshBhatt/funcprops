@@ -117,9 +117,7 @@ def _visible_incommensurate_periods(expr, var):
     return len(ps) > 1 and common_period_values(*ps) is None
 
 
-def function_periodicity(
-    expr, var, *, domain=True, assumptions=True, return_result=False
-):
+def periodicity(expr, var, *, domain=True, assumptions=True, return_result=False):
     """Classify exact real periodicity and return a certified period in detail mode.
 
     A period propagated through composition/sums/products is certified but is
@@ -135,7 +133,7 @@ def function_periodicity(
         return r if return_result else r.classification
     direct = positive_period(expr, var)
     p = direct if direct is not None else _period_of(expr, var)
-    # Preserve a symbolic affine-frequency theorem instead of degrading to
+    # Preserve a symbolic affine-frequency theorem
     # Unknown merely because the frequency may vanish on a parameter stratum.
     if (
         p is None
@@ -154,9 +152,16 @@ def function_periodicity(
         except (TypeError, ValueError, NotImplementedError):
             affine = False
             a = None
-        if affine and a is not None and a.is_real is not False and a != 0:
-            zero_guard = simplify_condition(sp.Eq(a, 0), assumptions=assumptions)
-            nonzero_guard = simplify_condition(sp.Ne(a, 0), assumptions=assumptions)
+        if affine and a is not None and a != 0:
+            real_guard = simplify_condition(sp.Q.real(a), assumptions=assumptions)
+            if real_guard is S.false:
+                real_guard = S.false
+            zero_guard = simplify_condition(
+                sp.And(real_guard, sp.Eq(a, 0)), assumptions=assumptions
+            )
+            nonzero_guard = simplify_condition(
+                sp.And(real_guard, sp.Ne(a, 0)), assumptions=assumptions
+            )
             if zero_guard is S.true:
                 r = PeriodicityResult(
                     Periodicity.CONSTANT,
@@ -168,16 +173,21 @@ def function_periodicity(
                 return r if return_result else r.classification
             base = sp.pi if expr.func in (sp.tan, sp.cot) else 2 * sp.pi
             cp = sp.simplify(base / sp.Abs(a))
-            cond = S.true if nonzero_guard is S.true else sp.Ne(a, 0)
-            evidence = (
-                ("affine-frequency",)
-                if cond is S.true
-                else ("conditional-affine-frequency",)
-            )
-            r = PeriodicityResult(
-                Periodicity.PERIODIC, cp, domain, evidence, None, cond
-            )
-            return r if return_result else r.classification
+            if nonzero_guard is S.false:
+                # No real nonzero-frequency stratum is compatible with the
+                # assumptions, so this theorem does not apply.
+                nonzero_guard = None
+            cond = nonzero_guard
+            if cond is not None:
+                evidence = (
+                    ("affine-frequency",)
+                    if cond is S.true
+                    else ("conditional-affine-frequency",)
+                )
+                r = PeriodicityResult(
+                    Periodicity.PERIODIC, cp, domain, evidence, None, cond
+                )
+                return r if return_result else r.classification
     if p is not None:
         # Replay the shift identity before accepting structural propagation.
         z = _zero(expr.subs(var, var + p) - expr)
@@ -319,7 +329,7 @@ def _trig_center_family(expr, var):
         return None
 
 
-def function_symmetry(expr, var, *, center=0, domain=True, return_result=False):
+def symmetry(expr, var, *, center=0, domain=True, return_result=False):
     """Classify reflection symmetry about ``center``.
 
     Passing ``center=None`` requests exact center discovery. Detail mode also
@@ -357,9 +367,7 @@ def function_symmetry(expr, var, *, center=0, domain=True, return_result=False):
         # its varying argument. Verify on the full expression before accepting.
         if not candidates and len([a for a in expr.args if a.has(var)]) == 1:
             inner = next(a for a in expr.args if a.has(var))
-            ir = function_symmetry(
-                inner, var, center=None, domain=domain, return_result=True
-            )
+            ir = symmetry(inner, var, center=None, domain=domain, return_result=True)
             if ir.classification in (Symmetry.EVEN, Symmetry.BOTH):
                 candidates = (ir.center,)
         for c in candidates:
@@ -463,7 +471,7 @@ def _infer_homogeneous_degree(expr, vars_, weights):
     return None, ()
 
 
-def function_homogeneity(
+def homogeneity(
     expr, vars, *, degree=None, weights=None, assumptions=True, return_result=False
 ):
     """Classify positive weighted homogeneity in one or more variables.
@@ -526,7 +534,18 @@ def function_homogeneity(
                 cls = Homogeneity.HOMOGENEOUS
                 rd = applicable[0].degree
             else:
-                cls = Homogeneity.NOT_HOMOGENEOUS
+                homogeneous_region = sp.Or(*(c.condition for c in cases))
+                try:
+                    excludes_all = sp.simplify(
+                        sp.Implies(assumptions, sp.Not(homogeneous_region))
+                    )
+                except (TypeError, ValueError, NotImplementedError):
+                    excludes_all = None
+                cls = (
+                    Homogeneity.NOT_HOMOGENEOUS
+                    if excludes_all is S.true
+                    else Homogeneity.UNKNOWN
+                )
                 rd = None
         elif inferred is None:
             cls = Homogeneity.UNKNOWN
@@ -535,8 +554,8 @@ def function_homogeneity(
             cls = Homogeneity.HOMOGENEOUS
             rd = sp.sympify(inferred)
     cond = S.true
-    if cases and cls is not Homogeneity.HOMOGENEOUS:
-        cond = sp.Or(*(c.condition for c in cases))
+    if cases and cls is Homogeneity.NOT_HOMOGENEOUS:
+        cond = sp.Not(sp.Or(*(c.condition for c in cases)))
     r = HomogeneityResult(
         cls,
         rd,

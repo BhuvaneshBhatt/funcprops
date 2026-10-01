@@ -1,6 +1,6 @@
 # Domain
 
-`function_domain`
+`domain`
 
 ## Mathematical definition
 
@@ -9,14 +9,14 @@ The domain is the set of input values for which the expression is defined under 
 ## API and return values
 
 ```python
-function_domain(expr, var, *, domain=Reals, stratified=False, assumptions=True)
+domain(expr, variable, *, domain=Reals, stratified=False, assumptions=True, return_result=False)
 ```
 
 A SymPy logical condition, or a stratified result when parameter cases must be separated.
 
 ## Domains, assumptions, and parameters
 
-The query is interpreted on the supplied domain rather than from the expression in isolation. When symbolic parameters change the property, funcprops preserves those cases as guarded parameter strata instead of choosing a generic value. Assumptions are proof hypotheses: they can simplify a stratum or branch condition, but they do not justify numerical guessing.
+The query is interpreted on the supplied domain, not from the expression in isolation. When symbolic parameters change the property, funcprops preserves those cases as guarded parameter strata. Assumptions are proof hypotheses: they can simplify a stratum or branch condition, but they do not justify numerical guessing.
 
 ## Executable examples
 
@@ -29,7 +29,7 @@ import sympy as sp
 import funcprops as fp
 
 x, y = sp.symbols("x y", real=True)
-result = fp.function_domain(sp.sqrt(x - 1) / (x - 2), x)
+result = fp.domain(sp.sqrt(x - 1) / (x - 2), x)
 result
 ```
 
@@ -39,7 +39,7 @@ Application: Validate the admissible input region before symbolic optimization o
 
 ## Applications
 
-This property is useful whenever later mathematics depends on a global qualitative fact rather than isolated samples. Typical uses include symbolic preprocessing, theorem-hypothesis verification, optimization, inverse problems, robust numerical method selection, and simplifying downstream case analysis.
+This property is useful whenever later mathematics depends on a global qualitative fact, not isolated samples. Typical uses include symbolic preprocessing, theorem-hypothesis verification, optimization, inverse problems, robust numerical method selection, and simplifying downstream case analysis.
 
 ## How funcprops proves it
 
@@ -55,8 +55,8 @@ Complicated transcendental preimages and unresolved parameter relations can prev
 
 ## Related properties
 
-- [`function_continuous`](continuous.md)
-- [`function_singularities`](singularities.md)
+- [`continuous`](continuous.md)
+- [`singularities`](singularities.md)
 
 ## Source
 

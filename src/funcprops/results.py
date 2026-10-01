@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Protocol, runtime_checkable
 
-from sympy import Basic, Piecewise, S, sympify
+from sympy import Basic, Piecewise, S, Symbol, sympify
 
 
 class TruthValue(str, Enum):
@@ -129,6 +129,9 @@ class ConditionalExpression:
     value: Any
     condition: Basic = S.true
 
+    def __str__(self):
+        return f"{self.condition} -> {self.value}"
+
 
 @dataclass(frozen=True)
 class Singularity:
@@ -205,22 +208,56 @@ class PropertyResult:
         values = {case.value for case in self.cases if case.condition is S.true}
         return next(iter(values)) if len(values) == 1 else None
 
+    def __str__(self):
+        if self.primary is not None:
+            return str(self.primary)
+        if self.cases:
+            return "; ".join(str(case) for case in self.cases)
+        return "unknown"
+
+    def _repr_html_(self):
+        if self.primary is not None:
+            return f"<b>Result:</b> {self.primary}"
+        if self.cases:
+            rows = "".join(
+                f"<tr><td>{case.condition}</td><td>{case.value}</td></tr>"
+                for case in self.cases
+            )
+            return (
+                "<table><thead><tr><th>Condition</th><th>Result</th></tr></thead>"
+                f"<tbody>{rows}</tbody></table>"
+            )
+        return "<b>Result:</b> unknown"
+
     def as_detailed_result(self):
         """Project this result onto the package-wide detailed-result protocol."""
         return as_detailed_result(self)
 
     def as_piecewise(self):
+        """Return the compact symbolic value represented by this result.
+
+        Conditional classifications become a SymPy ``Piecewise``.  An explicit
+        ``unknown`` fallback is appended so an uncovered parameter region is
+        never silently interpreted as false (or left to Piecewise's implicit
+        ``nan`` fallback).  Exhaustive complementary cases are simplified by
+        SymPy in the usual way.
+        """
         if not self.cases:
             return self.primary
-        pairs = []
-        for c in self.cases:
-            if isinstance(c.value, Basic):
-                v = c.value
-            elif isinstance(c.value, Enum):
-                v = sympify(c.value.value, evaluate=False)
-            else:
-                v = sympify(c.value, evaluate=False)
-            pairs.append((v, c.condition))
+
+        def symbolic_value(value):
+            if value is TruthValue.TRUE:
+                return S.true
+            if value is TruthValue.FALSE:
+                return S.false
+            if isinstance(value, Basic):
+                return value
+            if isinstance(value, Enum):
+                return Symbol(str(value.value))
+            return sympify(value, evaluate=False)
+
+        pairs = [(symbolic_value(c.value), c.condition) for c in self.cases]
+        pairs.append((Symbol("unknown"), S.true))
         return Piecewise(*pairs)
 
 
@@ -250,6 +287,25 @@ class DetailedPropertyResult:
             return self.primary
         values = {case.value for case in self.cases if case.condition is S.true}
         return next(iter(values)) if len(values) == 1 else None
+
+    def __str__(self):
+        return explain_result(self)
+
+    def _repr_html_(self):
+        fields = [
+            ("Result", self.primary if self.primary is not None else "conditional")
+        ]
+        if self.domain is not None:
+            fields.append(("Domain", self.domain))
+        if self.cases:
+            fields.append(("Cases", len(self.cases)))
+        if self.source:
+            fields.append(("Proof route", self.source.replace("-", " ")))
+        fields.append(
+            ("Certified", "yes" if self.certificate is not None else "not recorded")
+        )
+        rows = "".join(f"<tr><th>{k}</th><td>{v}</td></tr>" for k, v in fields)
+        return f"<table><tbody>{rows}</tbody></table>"
 
 
 @runtime_checkable
@@ -310,7 +366,10 @@ def explain_result(value):
     if detail.primary is not None:
         parts.append(f"Result: {detail.primary}.")
     elif detail.cases:
-        parts.append(f"Result depends on {len(detail.cases)} parameter case(s).")
+        rendered = "; ".join(
+            f"{case.condition} -> {case.value}" for case in detail.cases
+        )
+        parts.append(f"Cases: {rendered}.")
     else:
         parts.append("Result is unresolved.")
     if detail.source:

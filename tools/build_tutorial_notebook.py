@@ -14,69 +14,69 @@ GROUPS = [
     (
         "Domains and values",
         {
-            "function_domain",
-            "function_range",
-            "function_sign",
-            "function_zeros",
-            "function_boundedness",
+            "domain",
+            "range",
+            "sign",
+            "zeros",
+            "boundedness",
         },
     ),
     (
         "Shape and variation",
         {
-            "function_monotonicity",
-            "function_convexity",
-            "function_complete_monotonicity",
-            "function_oscillation",
+            "monotonicity",
+            "convexity",
+            "complete_monotonicity",
+            "oscillation",
         },
     ),
     (
         "Regularity",
         {
-            "function_continuous",
-            "function_differentiability",
-            "function_smoothness",
-            "function_analytic",
+            "continuous",
+            "differentiability",
+            "smoothness",
+            "analytic",
         },
     ),
     (
         "Mapping properties",
-        {"function_injective", "function_surjective", "function_bijective"},
+        {"injective", "surjective", "bijective"},
     ),
     (
         "Structural properties",
-        {"function_periodicity", "function_symmetry", "function_homogeneity"},
+        {"periodicity", "symmetry", "homogeneity"},
     ),
     (
         "Complex analytic structure",
         {
-            "function_complex_zeros",
-            "function_meromorphic",
-            "function_discontinuities",
-            "function_poles",
-            "function_branchpoints",
-            "function_branchcuts",
-            "function_singularities",
-            "function_singularity_analysis",
+            "complex_zeros",
+            "meromorphic",
+            "discontinuities",
+            "poles",
+            "branch_points",
+            "branch_cuts",
+            "singularities",
+            "singularity_analysis",
         },
     ),
     (
         "Optimization and function geometry",
         {
-            "function_boundary_behavior",
-            "function_level_boundedness",
-            "function_mode_existence",
-            "function_geometry",
+            "boundary_behavior",
+            "level_boundedness",
+            "mode_existence",
+            "geometry",
         },
     ),
     (
         "Transformation geometry",
         {
-            "function_jacobian",
-            "function_determinant_nonvanishing",
-            "function_local_invertibility",
-            "function_change_of_variables",
-            "function_transformation_geometry",
+            "jacobian",
+            "determinant_nonvanishing",
+            "local_invertibility",
+            "change_of_variables",
+            "transformation_geometry",
         },
     ),
 ]
@@ -119,7 +119,7 @@ def main() -> None:
         cells.append(md(f"## {heading}"))
         for name in sorted(names):
             for case in by_name[name]:
-                page = name.removeprefix("function_")
+                page = name.removeprefix("")
                 cells.append(
                     md(
                         f"### `{name}` — {case.title}\n\n<!-- example-id: {case.example_id} -->\n\n"
@@ -147,7 +147,7 @@ def main() -> None:
         cells.append(code(case.code + "\nresult"))
     cells.append(
         md(
-            "## Where to go next\n\nUse the [property reference](../properties/index.md) for comprehensive documentation. For parameterized functions, try the same query both without assumptions and after imposing a parameter guard; for piecewise functions, inspect how branch properties and interface conditions combine. Detailed result modes are especially useful when a downstream proof needs replayable evidence rather than only a classification."
+            "## Where to go next\n\nUse the [property reference](../properties/index.md) for comprehensive documentation. For parameterized functions, try the same query both without assumptions and after imposing a parameter guard; for piecewise functions, inspect how branch properties and interface conditions combine. Detailed result modes are especially useful when a downstream proof needs replayable evidence."
         )
     )
     notebook = {

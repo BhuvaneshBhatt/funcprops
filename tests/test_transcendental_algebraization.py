@@ -1,10 +1,10 @@
 import sympy as sp
 
 from funcprops import (
-    function_convexity,
-    function_monotonicity,
-    function_range,
-    function_sign,
+    convexity,
+    monotonicity,
+    range,
+    sign,
 )
 from funcprops.results import Convexity, Monotonicity, Sign
 from funcprops.transcendental import (
@@ -72,25 +72,22 @@ def test_hyperbolic_algebraization():
 
 
 def test_sign_uses_exponential_algebraization():
-    assert function_sign(sp.exp(2 * x) - 3 * sp.exp(x) + 2, x) is Sign.SIGN_CHANGING
+    assert sign(sp.exp(2 * x) - 3 * sp.exp(x) + 2, x) is Sign.SIGN_CHANGING
 
 
 def test_monotonicity_uses_algebraized_derivative():
     # derivative = 2*exp(2x)-3*exp(x) changes sign on R
-    assert (
-        function_monotonicity(sp.exp(2 * x) - 3 * sp.exp(x), x)
-        is Monotonicity.NOT_MONOTONE
-    )
+    assert monotonicity(sp.exp(2 * x) - 3 * sp.exp(x), x) is Monotonicity.NOT_MONOTONE
 
 
 def test_range_uses_exponential_algebraization():
-    r = function_range(sp.exp(2 * x) - 2 * sp.exp(x), x, y)
+    r = range(sp.exp(2 * x) - 2 * sp.exp(x), x, y)
     s = r.as_set()
     assert s == sp.Interval(-1, sp.oo)
 
 
 def test_convexity_uses_algebraized_second_derivative():
-    assert function_convexity(sp.exp(x) + sp.exp(2 * x), x) is Convexity.STRICTLY_CONVEX
+    assert convexity(sp.exp(x) + sp.exp(2 * x), x) is Convexity.STRICTLY_CONVEX
 
 
 def test_condition_to_intervals_helper():

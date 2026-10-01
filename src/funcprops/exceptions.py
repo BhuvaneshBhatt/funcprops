@@ -3,7 +3,7 @@
 Fallback code should catch the smallest operation-specific family that can
 legitimately be raised by the SymPy operation being attempted.  The aggregate
 ``SYMBOLIC_QUERY_ERRORS`` remains for compatibility at broad orchestration
-boundaries, while new proof code should prefer the narrower groups below.
+boundaries; proof code should prefer the narrower groups below.
 """
 
 from sympy.core.function import PoleError

@@ -1,6 +1,6 @@
 # Determinant nonvanishing
 
-`function_determinant_nonvanishing`
+`determinant_nonvanishing`
 
 ## Mathematical definition
 
@@ -9,14 +9,14 @@ For a square coordinate map, determinant nonvanishing asks whether det J is nonz
 ## API and return values
 
 ```python
-function_determinant_nonvanishing(expressions, variables, *, domain=Reals, assumptions=True, return_result=False)
+determinant_nonvanishing(expressions, variables, *, domain=Reals, assumptions=True, return_result=False)
 ```
 
 TruthValue.TRUE, FALSE, or UNKNOWN by default; return_result=True returns the determinant-nonvanishing certificate and evidence.
 
 ## Domains, assumptions, and parameters
 
-The query is interpreted on the supplied domain rather than from the expression in isolation. When symbolic parameters change the property, funcprops preserves those cases as guarded parameter strata instead of choosing a generic value. Assumptions are proof hypotheses: they can simplify a stratum or branch condition, but they do not justify numerical guessing.
+The query is interpreted on the supplied domain, not from the expression in isolation. When symbolic parameters change the property, funcprops preserves those cases as guarded parameter strata. Assumptions are proof hypotheses: they can simplify a stratum or branch condition, but they do not justify numerical guessing.
 
 ## Executable examples
 
@@ -29,7 +29,7 @@ import sympy as sp
 import funcprops as fp
 
 x, y = sp.symbols("x y", real=True)
-result = fp.function_determinant_nonvanishing((2*x + y, x - y), (x, y))
+result = fp.determinant_nonvanishing((2*x + y, x - y), (x, y))
 result
 ```
 
@@ -39,7 +39,7 @@ Application: Check the inverse-function-theorem rank hypothesis on an entire dom
 
 ## Applications
 
-This property is useful whenever later mathematics depends on a global qualitative fact rather than isolated samples. Typical uses include symbolic preprocessing, theorem-hypothesis verification, optimization, inverse problems, robust numerical method selection, and simplifying downstream case analysis.
+This property is useful whenever later mathematics depends on a global qualitative fact, not isolated samples. Typical uses include symbolic preprocessing, theorem-hypothesis verification, optimization, inverse problems, robust numerical method selection, and simplifying downstream case analysis.
 
 ## How funcprops proves it
 
@@ -55,8 +55,8 @@ Nonsquare maps and determinant zero sets outside the supported symbolic/semialge
 
 ## Related properties
 
-- [`function_jacobian`](jacobian.md)
-- [`function_local_invertibility`](local_invertibility.md)
+- [`jacobian`](jacobian.md)
+- [`local_invertibility`](local_invertibility.md)
 
 ## Source
 

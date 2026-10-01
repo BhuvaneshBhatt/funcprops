@@ -19,7 +19,7 @@ def _direct_property_calls(path: Path) -> Counter[str]:
         if isinstance(node, ast.ImportFrom) and node.module:
             if node.module == "funcprops" or node.module.startswith("funcprops."):
                 for alias in node.names:
-                    if alias.name.startswith("function_"):
+                    if alias.name in api.__all__:
                         imported[alias.asname or alias.name] = alias.name
 
     calls: Counter[str] = Counter()
@@ -27,7 +27,7 @@ def _direct_property_calls(path: Path) -> Counter[str]:
         if not isinstance(node, ast.Call):
             continue
         target = node.func
-        if isinstance(target, ast.Attribute) and target.attr.startswith("function_"):
+        if isinstance(target, ast.Attribute) and target.attr in api.__all__:
             calls[target.attr] += 1
         elif isinstance(target, ast.Name) and target.id in imported:
             calls[imported[target.id]] += 1

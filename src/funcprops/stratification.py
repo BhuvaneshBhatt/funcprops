@@ -150,7 +150,7 @@ def normalize_cases(
 
     # Truth-valued strata are mutually exclusive claims.  If independently
     # derived TRUE and FALSE guards overlap, make that overlap explicitly
-    # UNKNOWN instead of letting insertion order decide the answer.
+    # UNKNOWN.
     true_cond = S.false
     false_cond = S.false
     for value, cond in merged:

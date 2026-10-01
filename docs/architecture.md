@@ -17,7 +17,7 @@ through the same expensive path.
   branch/definition loci, analyticity, meromorphicity, and continuity.
 - `stratification.py` normalizes guarded alternatives and splits mixed
   variable/parameter domains for all property engines.
-- `_semialg.py` is the narrow adapter to semialg 1.2.0+ public root exports for
+- `_semialg.py` is the narrow adapter to semialg 1.0.0+ public root exports for
   exact semialgebraic domain, range, sign, monotonicity, convexity, smoothness, and mapping operations.
 - `real_analysis/` contains domain, sign/inequality, monotonicity, range, mapping,
   convexity, boundedness, smoothness, and structural-property reasoning.
@@ -40,12 +40,12 @@ whose branch or pole structure changes with an order or shape parameter.
 `PropertyResult` is the shared representation for guarded alternatives. Mixed
 variable/parameter conditions are stratified before a property engine runs, and
 nested guarded results are flattened back into the same representation. Internal
-transformations preserve cases rather than looking only at the primary
+transformations preserve cases
 classification.
 
 Three-valued logic is a correctness requirement. An undecidable set relation,
 branch-locus intersection, singularity search, or domain conversion must remain
-unknown rather than being coerced through Python truthiness.
+unknown.
 
 ## Real-property proof flow
 
@@ -76,7 +76,7 @@ never consumed as an exhaustive zero set.
 
 The sign engine is the common exact inequality oracle. Relations such as `f >= g`
 are reduced to the sign of `f - g`; derivative-based consumers therefore reuse the
-same proof ladder instead of maintaining independent inequality solvers.
+same proof ladder.
 
 Finite `Piecewise` expressions are first converted to a `PiecewiseDecomposition`
 of effective, non-overlapping connected branch cells. Every finite seam records
@@ -86,12 +86,12 @@ selected branch expressions themselves, avoiding whole-Piecewise limit heuristic
 Sign and boundedness combine branch classifications directly; zeros and ranges
 merge branch-local sets/images. Continuity, differentiability, smoothness,
 monotonicity, and convexity additionally require the appropriate certified seam
-conditions. Unknown interface facts remain unknown rather than being inferred
+conditions. Unknown interface facts remain unknown
 from compatible branch labels alone. See [`docs/piecewise.md`](piecewise.md).
 
 ## Singularity loci and restricted domains
 
-Singularity analysis uses Boolean loci rather than assuming singularities are
+Singularity analysis uses Boolean loci
 isolated points. In several variables, rational denominators and elementary
 branch structures therefore remain as exact hypersurface or preimage conditions,
 such as `Eq(x + y, 0)` or the preimage of the principal logarithm cut. Complex
@@ -115,7 +115,7 @@ parameter guards, counts, simplicity, ordering, and interlacing.
 
 First-derivative zero geometry feeds monotonic decomposition; second-derivative
 geometry feeds convexity decomposition. Finite exact roots create concrete cells.
-Complete infinite families create symbolic indexed cells rather than a finite
+Complete infinite families create symbolic indexed cells
 numerical truncation.
 
 Indexed-tail inversion adds exact inverse-index objects for semi-infinite domains:
@@ -179,15 +179,17 @@ known to use it, such as `Boolean.as_set()` on custom Boolean predicates.
 
 ## Executable documentation and invariant tests
 
-The property reference, tutorial notebook, and specification tests share one canonical example corpus in `examples/property_examples.py`. Every public `function_*` query has a page under `docs/properties/` with a common structure: mathematical definition, public API and parameters, domain/assumption semantics, executable examples, applications, proof strategy, limitations, and related properties. The tutorial notebook is built from those same examples rather than maintaining a second set of snippets.
+The property reference, tutorial notebook, and specification tests share one canonical example corpus in `examples/property_examples.py`. Every public `function_*` query has a page under `docs/properties/` with a common structure: mathematical definition, public API and parameters, domain/assumption semantics, executable examples, applications, proof strategy, limitations, and related properties. The tutorial notebook is built from those same examples.
 
 Tests are separated by purpose. `tests/specification/` checks documented behavior and executes the tutorial, while `tests/invariants/` checks mathematical laws that must hold across proof routes: implication chains, parameter specialization, piecewise interface compatibility, expression-rewrite invariance, certificate replay, and cross-property consistency. Regression tests remain focused on particular algorithms and previously discovered edge cases. This separation makes a failure identify whether the public contract, a mathematical invariant, or an implementation-specific regression was violated.
 
 
 ## Detailed-result protocol
 
-Compact property APIs keep their established return types.  Downstream code that
-needs a uniform representation can call `funcprops.as_detailed_result(value)`.
+Compact property APIs return their direct mathematical value when unconditional.
+A parameter-stratified `PropertyResult` is projected to a SymPy `Piecewise` at the
+root public boundary; `return_result=True` preserves the rich result. Downstream
+code that already has a compact value can call `funcprops.as_detailed_result(value)`.
 The resulting `DetailedPropertyResult` exposes `primary`, `cases`, `domain`,
 `complete`, `source`, `evidence`, `certificate`, `exceptions`, and
 `all_properties` without forcing every property family into one public scalar
@@ -197,7 +199,7 @@ certificate tooling a stable structural contract.
 ## Native registry theorem layers
 
 The native registry uses `FunctionSlot` placeholders, which are local positional
-arguments rather than global symbols. `PropertyRule` stores direct property
+arguments. `PropertyRule` stores direct property
 facts. `IdentityRule` stores exact rewrites and `DerivativeRule` stores an exact
 partial derivative with respect to one function slot.
 
@@ -239,7 +241,7 @@ use the same subject-map abstraction.
 For multiple independent analysis variables, the subject map stores the full
 Jacobian. First-order transport uses `JacobianCertificate`; second-order transport
 uses `HessianCertificate` and the multivariate chain rule. Convexity is certified
-from the composite Hessian rather than from unsafe closure heuristics.
+from the composite Hessian.
 
 The same separation is used by `ConditionalExpression` and Piecewise analysis:
 conditions restrict the effective analysis domain, branch expressions are analyzed

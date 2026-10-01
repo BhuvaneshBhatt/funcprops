@@ -137,9 +137,8 @@ class PeriodicSet:
     def affine_pullback(self, a, b=0, variable=None):
         """Exact pullback under ``t = a*x + b`` for nonzero real ``a``.
 
-        The previous implementation normalized by inspecting only five nearby
-        period copies, which was not valid for arbitrarily large/symbolic
-        translations.  A modular ConditionSet is exact for every shift.
+        The modular condition is exact for arbitrary real translations and
+        does not depend on inspecting a finite window of period copies.
         """
         a = sp.sympify(a)
         b = sp.sympify(b)

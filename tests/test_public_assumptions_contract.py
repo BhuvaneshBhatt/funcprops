@@ -9,16 +9,16 @@ from funcprops import (
     TruthValue,
     clear_entailment_cache,
     decide,
+    determinant_nonvanishing,
     entails,
-    function_determinant_nonvanishing,
-    function_singularities,
     normalize_assumptions,
     require_decision,
+    singularities,
 )
 
 
 def test_public_symbolic_property_queries_expose_neutral_assumptions():
-    exempt = {"function_jacobian"}
+    exempt = {"jacobian"}
     for name in sorted(item for item in dir(funcprops) if item.startswith("function_")):
         if name in exempt:
             continue
@@ -42,8 +42,8 @@ def test_assumption_normalization_is_canonical_and_idempotent():
 
 def test_same_determinant_query_becomes_decisive_with_assumptions():
     x, a = sp.symbols("x a", real=True)
-    unresolved = function_determinant_nonvanishing((a * x,), (x,), return_result=True)
-    resolved = function_determinant_nonvanishing(
+    unresolved = determinant_nonvanishing((a * x,), (x,), return_result=True)
+    resolved = determinant_nonvanishing(
         (a * x,), (x,), assumptions=a > 0, return_result=True
     )
     assert unresolved.classification is TruthValue.UNKNOWN
@@ -63,7 +63,7 @@ def test_affine_boolean_partition_is_proved_without_false_pruning():
 
 def test_dummy_singularity_query_does_not_leak_proxy_symbols():
     dummy = sp.Dummy("z")
-    locus = function_singularities(sp.log(dummy), dummy, sp.S.Complexes)
+    locus = singularities(sp.log(dummy), dummy, sp.S.Complexes)
     assert locus.free_symbols <= {dummy}
 
 
@@ -86,4 +86,4 @@ def test_affine_equalities_do_not_create_false_contradictions():
 
 def test_parameter_assumptions_do_not_change_domain_output():
     x, a = sp.symbols("x a", real=True)
-    assert funcprops.function_domain(sp.log(x), x, assumptions=a > 0) == (x > 0)
+    assert funcprops.domain(sp.log(x), x, assumptions=a > 0) == (x > 0)

@@ -7,15 +7,15 @@ from funcprops import (
     PropertyResult,
     TruthValue,
     as_detailed_result,
-    function_convexity,
-    function_monotonicity,
-    function_range,
+    convexity,
+    monotonicity,
+    range,
 )
 from funcprops.results import ConditionalExpression
 from funcprops.stratification import stratify_boolean_by_parameters
 
 
-def test_semialg_parameter_guard_satisfiability_removes_real_contradictions():
+def test_semialg_guard_removes_contradictions():
     x, a = sp.symbols("x a", real=True)
     condition = sp.Or(sp.And(a > 0, a < 0, x > 1), sp.And(a <= 0, x < 2))
     result = stratify_boolean_by_parameters(condition, x)
@@ -52,12 +52,12 @@ def test_detailed_property_result_wraps_compact_and_property_results():
 
 def test_staged_range_monotonicity_convexity_preserve_expected_results():
     x, y = sp.symbols("x y", real=True)
-    assert function_range(x**2, x, y) == (y >= 0)
-    assert function_monotonicity(x**2, x, domain=x >= 0) in {
+    assert range(x**2, x, y) == (y >= 0)
+    assert monotonicity(x**2, x, domain=x >= 0) in {
         Monotonicity.STRICTLY_INCREASING,
         Monotonicity.NONDECREASING,
     }
-    assert function_convexity(x**2, x) in {
+    assert convexity(x**2, x) in {
         Convexity.STRICTLY_CONVEX,
         Convexity.STRONGLY_CONVEX,
     }

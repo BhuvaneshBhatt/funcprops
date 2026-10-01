@@ -1,6 +1,6 @@
 # Analyticity
 
-`function_analytic`
+`analytic`
 
 ## Mathematical definition
 
@@ -9,14 +9,14 @@ Analyticity certifies local representation by convergent power series throughout
 ## API and return values
 
 ```python
-function_analytic(expr, var, *, domain=Reals, assumptions=True, return_result=False)
+analytic(expr, variable, *, domain=Reals, assumptions=True, return_result=False)
 ```
 
-Analyticity.ANALYTIC, NOT_ANALYTIC, or UNKNOWN; return_result=True exposes evidence and exceptional loci.
+Analyticity.ANALYTIC, NOT_ANALYTIC, or UNKNOWN. Parameter-stratified results are returned as a SymPy `Piecewise` by default; `return_result=True` preserves the rich result and evidence.
 
 ## Domains, assumptions, and parameters
 
-The query is interpreted on the supplied domain rather than from the expression in isolation. When symbolic parameters change the property, funcprops preserves those cases as guarded parameter strata instead of choosing a generic value. Assumptions are proof hypotheses: they can simplify a stratum or branch condition, but they do not justify numerical guessing.
+The query is interpreted on the supplied domain, not from the expression in isolation. When symbolic parameters change the property, funcprops preserves those cases as guarded parameter strata. Assumptions are proof hypotheses: they can simplify a stratum or branch condition, but they do not justify numerical guessing.
 
 ## Executable examples
 
@@ -29,7 +29,7 @@ import sympy as sp
 import funcprops as fp
 
 x, y = sp.symbols("x y", real=True)
-result = fp.function_analytic(sp.exp(x), x)
+result = fp.analytic(sp.exp(x), x)
 result
 ```
 
@@ -39,7 +39,7 @@ Application: Justify convergent local power-series methods and analytic continua
 
 ## Applications
 
-This property is useful whenever later mathematics depends on a global qualitative fact rather than isolated samples. Typical uses include symbolic preprocessing, theorem-hypothesis verification, optimization, inverse problems, robust numerical method selection, and simplifying downstream case analysis.
+This property is useful whenever later mathematics depends on a global qualitative fact, not isolated samples. Typical uses include symbolic preprocessing, theorem-hypothesis verification, optimization, inverse problems, robust numerical method selection, and simplifying downstream case analysis.
 
 ## How funcprops proves it
 
@@ -49,15 +49,15 @@ Successful conclusions are exact symbolic claims over the stated domain and assu
 
 ## Known limitations
 
-Real analyticity is stricter than smoothness; unresolved branch or singularity structure can conservatively produce UNKNOWN.
+Real analyticity is stricter than smoothness; unresolved branch or singularity structure can produce UNKNOWN.
 
 `UNKNOWN` means that the available proof machinery did not certify the claim. It must not be interpreted as the negation of the property.
 
 ## Related properties
 
-- [`function_smoothness`](smoothness.md)
-- [`function_meromorphic`](meromorphic.md)
-- [`function_singularities`](singularities.md)
+- [`smoothness`](smoothness.md)
+- [`meromorphic`](meromorphic.md)
+- [`singularities`](singularities.md)
 
 ## Source
 

@@ -19,5 +19,5 @@ Property engines reuse ordinary branch analysis on those effective domains and
 then merge only after the required seam conditions are certified. Current merging
 covers sign, boundedness, zeros, range, continuity/discontinuities,
 differentiability/smoothness, monotonicity, and convexity. Unknown branch domains
-or unresolved seam comparisons remain unknown rather than being treated as
+or unresolved seam comparisons remain unknown
 compatible.

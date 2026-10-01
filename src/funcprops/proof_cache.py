@@ -167,9 +167,7 @@ def _zero_geometry_cached(expr, var, derivative_order, domain):
     )
 
 
-def cached_zero_geometry(
-    expr, var, *, derivative_order=0, domain=S.Reals, assumptions=S.true
-):
+def cached_zero_geometry(expr, var, *, derivative_order=0, domain=S.Reals):
     key = proof_key(expr, var, domain=domain)
     order = _derivative_order(derivative_order)
     args = (key.expression, key.variable, order, key.domain)
@@ -181,9 +179,9 @@ def cached_zero_geometry(
 
 @lru_cache(maxsize=512)
 def _singularity_cached(expr, var, domain, assumptions, ignore_unknown):
-    from .singularities import _function_singularity_analysis_impl
+    from .singularities import _singularity_analysis_impl
 
-    return _function_singularity_analysis_impl(
+    return _singularity_analysis_impl(
         expr, var, domain=domain, assumptions=assumptions, ignore_unknown=ignore_unknown
     )
 
@@ -257,7 +255,6 @@ class PropertyProofContext:
             self.variable,
             derivative_order=derivative_order,
             domain=self.domain if domain is None else domain,
-            assumptions=self.assumptions,
         )
 
     def singularities(self, *, domain=S.Complexes, ignore_unknown=False):

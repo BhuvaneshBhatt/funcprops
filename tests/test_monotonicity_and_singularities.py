@@ -3,10 +3,10 @@ import sympy as sp
 from funcprops import (
     Monotonicity,
     SingularityKind,
-    function_monotonicity,
-    function_singularity_analysis,
     monotonic_decomposition,
     monotonic_partition,
+    monotonicity,
+    singularity_analysis,
 )
 
 x = sp.symbols("x", real=True)
@@ -22,14 +22,13 @@ def test_monotonic_decomposition_inverse_trig_composition():
 
 
 def test_sum_closure_monotonicity():
-    assert function_monotonicity(sp.exp(x) + x, x) == Monotonicity.STRICTLY_INCREASING
+    assert monotonicity(sp.exp(x) + x, x) == Monotonicity.STRICTLY_INCREASING
 
 
 def test_positive_product_closure_monotonicity():
     dom = x > 0
     assert (
-        function_monotonicity(x * sp.exp(x), x, domain=dom)
-        == Monotonicity.STRICTLY_INCREASING
+        monotonicity(x * sp.exp(x), x, domain=dom) == Monotonicity.STRICTLY_INCREASING
     )
 
 
@@ -58,7 +57,7 @@ def test_indexed_monotonic_partition_bessel():
 
 
 def test_singularity_analysis_promotes_inner_pole_under_exp():
-    a = function_singularity_analysis(sp.exp(1 / x), x)
+    a = singularity_analysis(sp.exp(1 / x), x)
     assert a.complete
     assert any(
         s.kind == SingularityKind.ESSENTIAL and s.condition == sp.Eq(x, 0)
@@ -69,7 +68,7 @@ def test_singularity_analysis_promotes_inner_pole_under_exp():
 
 def test_piecewise_singularity_guards_propagate():
     f = sp.Piecewise((1 / x, x > 0), (sp.log(-x), True))
-    a = function_singularity_analysis(f, x, domain=sp.S.Reals)
+    a = singularity_analysis(f, x, domain=sp.S.Reals)
     assert a.complete
     poles = [s for s in a.poles if s.condition == sp.Eq(x, 0)]
     assert poles
@@ -81,6 +80,6 @@ def test_piecewise_singularity_guards_propagate():
 
 def test_unknown_head_marks_analysis_incomplete():
     F = sp.Function("F")
-    a = function_singularity_analysis(F(x), x)
+    a = singularity_analysis(F(x), x)
     assert not a.complete
     assert "F" in a.unknown_heads

@@ -66,7 +66,7 @@ def _function_domain_impl(expr, var, *, domain=S.Reals, stratified=False):
     if real_mode and expr.func is sp.Pow:
         if is_semialgebraic_expression(expr, var):
             try:
-                return sp.sympify(_semialg.function_domain(expr, var))
+                return sp.sympify(_semialg.domain(expr, var))
             except SYMBOLIC_QUERY_ERRORS:
                 pass
         # Symbolic exponents have genuinely parameter-dependent real domains
@@ -115,7 +115,7 @@ def _function_domain_impl(expr, var, *, domain=S.Reals, stratified=False):
     # semialg is an exact backend for semialgebraic expressions only.
     if real_mode and is_semialgebraic_expression(expr, var):
         try:
-            constraints.append(sp.sympify(_semialg.function_domain(expr, var)))
+            constraints.append(sp.sympify(_semialg.domain(expr, var)))
         except _semialg.SemialgUnavailable:
             pass
         except SYMBOLIC_QUERY_ERRORS:
@@ -176,7 +176,7 @@ def _function_domain_impl(expr, var, *, domain=S.Reals, stratified=False):
     return result
 
 
-def function_domain(expr, var, *, domain=S.Reals, stratified=False):
+def domain(expr, var, *, domain=S.Reals, stratified=False):
     """Cached public wrapper around the lazy real/complex domain prover."""
     from ..proof_cache import property_proof_context
 
