@@ -10,7 +10,7 @@ When a result cannot be established by the available symbolic, semialgebraic, th
 pip install funcprops
 ```
 
-The runtime requires Python 3.11+, SymPy 1.14+, mpmath 1.3+, semialg 1.3+ and exprtest 0.1.0+.
+The runtime requires Python 3.11+, SymPy 1.14+, mpmath 1.3+, semialg 1.3+ and exprtools 0.1.0+.
 
 ## Quick start
 
