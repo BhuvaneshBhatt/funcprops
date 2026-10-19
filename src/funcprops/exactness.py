@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import sympy as sp
-from exprtest import zerotest
+from exprtools import zerotest
 from sympy import S
 
 
@@ -11,7 +11,7 @@ def certify_zero(expr, assumptions=True) -> bool | None:
     """Return whether ``expr`` is provably zero under ``assumptions``.
 
     ``False`` means nonzero is proved under the supplied assumptions; ``None``
-    preserves unresolved symbolic cases.  Only exprtest's certified mode is used.
+    preserves unresolved symbolic cases.  Only exprtools's certified mode is used.
     """
     expr = sp.sympify(expr)
     result = zerotest(expr, assumptions=assumptions, confidence="certified")
