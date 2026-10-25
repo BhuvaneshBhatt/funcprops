@@ -8,11 +8,20 @@ Boundedness records whether the image is bounded above, below, both, or neither 
 
 ## API and return values
 
-```python
-boundedness(expr, variable, *, domain=True, assumptions=True, return_result=False)
+```text
+boundedness(expr, variable, *, domain=True, work_budget=None, assumptions=True, return_result=False)
 ```
 
 A Boundedness value or a SymPy Piecewise for parameter-dependent classifications; `return_result=True` preserves the full PropertyResult.
+
+| Parameter | Meaning |
+| --- | --- |
+| `expr` | SymPy expression whose global property is queried. |
+| `variable` | Independent scalar coordinate. Real and native complex routes have different assumption requirements; see result contracts. |
+| `domain` | Input domain or logical condition. The default depends on the property family. |
+| `work_budget` | Optional positive wall budget in seconds; exhaustion follows the operation-specific incomplete/unknown contract. |
+| `assumptions` | Symbolic hypotheses used while proving the property. |
+| `return_result` | Return structured metadata, certificates, or diagnostics. |
 
 ## Domains, assumptions, and parameters
 
@@ -30,7 +39,7 @@ import funcprops as fp
 
 x, y = sp.symbols("x y", real=True)
 result = fp.boundedness(sp.sin(x), x)
-result
+assert result is fp.Boundedness.BOUNDED
 ```
 
 Expected: ``Boundedness.BOUNDED``.
@@ -39,7 +48,7 @@ Application: Establish stability envelopes and safe numerical search regions.
 
 ## Applications
 
-This property is useful whenever later mathematics depends on a global qualitative fact, not isolated samples. Typical uses include symbolic preprocessing, theorem-hypothesis verification, optimization, inverse problems, robust numerical method selection, and simplifying downstream case analysis.
+Check whether global bounds can support optimization or a regularity argument on the requested domain.
 
 ## How funcprops proves it
 
@@ -60,4 +69,4 @@ Failure to prove a finite extremum or range enclosure can yield UNKNOWN even whe
 
 ## Source
 
-The implementation is exposed through [`funcprops.api`](https://github.com/BhuvaneshBhatt/funcprops/blob/main/src/funcprops/api.py).
+The callable is exported through funcprops; its implementation module is [`funcprops.real_analysis.boundedness`](https://github.com/BhuvaneshBhatt/funcprops/blob/main/src/funcprops/real_analysis/boundedness.py).

@@ -8,11 +8,20 @@ Oscillation distinguishes persistent oscillation, finite oscillatory behavior, a
 
 ## API and return values
 
-```python
+```text
 oscillation(expr, variable, *, domain=True, partition=None, assumptions=True, return_result=False)
 ```
 
 An Oscillation classification by default; return_result=True exposes supporting partitions and evidence.
+
+| Parameter | Meaning |
+| --- | --- |
+| `expr` | SymPy expression whose global property is queried. |
+| `variable` | Independent scalar coordinate. Real and native complex routes have different assumption requirements; see result contracts. |
+| `domain` | Input domain or logical condition. The default depends on the property family. |
+| `partition` | Optional precomputed monotonic partition for exact reuse. |
+| `assumptions` | Symbolic hypotheses used while proving the property. |
+| `return_result` | Return structured metadata, certificates, or diagnostics. |
 
 ## Domains, assumptions, and parameters
 
@@ -30,7 +39,7 @@ import funcprops as fp
 
 x, y = sp.symbols("x y", real=True)
 result = fp.oscillation(sp.sin(x), x)
-result
+assert result is fp.Oscillation.OSCILLATORY
 ```
 
 Expected: ``Oscillation.OSCILLATORY``.
@@ -39,7 +48,7 @@ Application: Detect repeated sign/turning behavior relevant to asymptotics and r
 
 ## Applications
 
-This property is useful whenever later mathematics depends on a global qualitative fact, not isolated samples. Typical uses include symbolic preprocessing, theorem-hypothesis verification, optimization, inverse problems, robust numerical method selection, and simplifying downstream case analysis.
+Distinguish finite turning behavior from supported infinite oscillation without treating samples as a global theorem.
 
 ## How funcprops proves it
 
@@ -61,4 +70,4 @@ Highly irregular or parameter-dependent oscillation can remain UNKNOWN without a
 
 ## Source
 
-The implementation is exposed through [`funcprops.api`](https://github.com/BhuvaneshBhatt/funcprops/blob/main/src/funcprops/api.py).
+The callable is exported through funcprops; its implementation module is [`funcprops.real_analysis.oscillation`](https://github.com/BhuvaneshBhatt/funcprops/blob/main/src/funcprops/real_analysis/oscillation.py).

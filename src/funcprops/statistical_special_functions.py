@@ -1,6 +1,6 @@
 """Statistical special-function heads missing from the supported SymPy release.
 
-The classes intentionally implement only identities that are exact and useful to
+The classes implement only identities that are exact and useful to
 funcprops.  Property theorems live in :mod:`funcprops.real_analysis.special_functions`.
 """
 
@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import sympy as sp
 from sympy import S
+from sympy.core.function import ArgumentIndexError
 
 
 class OwenT(sp.Function):
@@ -17,6 +18,8 @@ class OwenT(sp.Function):
 
     @classmethod
     def eval(cls, h, a):
+        """Evaluate supported exact special cases; leave other arguments unevaluated."""
+
         h, a = map(sp.sympify, (h, a))
         if a.is_zero:
             return S.Zero
@@ -28,6 +31,8 @@ class OwenT(sp.Function):
             return cls(-h, a)
 
     def fdiff(self, argindex=1):
+        """Return a supported symbolic partial derivative for the requested argument index."""
+
         h, a = self.args
         if argindex == 1:
             return (
@@ -47,6 +52,8 @@ class MittagLefflerE(sp.Function):
 
     @classmethod
     def eval(cls, *args):
+        """Evaluate supported exact special cases; leave other arguments unevaluated."""
+
         if len(args) == 2:
             alpha, z = map(sp.sympify, args)
             beta = S.One
@@ -60,6 +67,8 @@ class MittagLefflerE(sp.Function):
             return (sp.exp(z) - 1) / z
 
     def fdiff(self, argindex=1):
+        """Return a supported symbolic partial derivative for the requested argument index."""
+
         if len(self.args) == 2:
             alpha, z = self.args
             if argindex == 2:
@@ -82,6 +91,8 @@ class RegularizedGammaP(sp.Function):
 
     @classmethod
     def eval(cls, a, x):
+        """Evaluate supported exact special cases; leave other arguments unevaluated."""
+
         a, x = map(sp.sympify, (a, x))
         if x is S.Infinity and a.is_positive is True:
             return S.One
@@ -89,6 +100,8 @@ class RegularizedGammaP(sp.Function):
             return S.Zero
 
     def fdiff(self, argindex=1):
+        """Return a supported symbolic partial derivative for the requested argument index."""
+
         a, x = self.args
         if argindex == 2:
             return x ** (a - 1) * sp.exp(-x) / sp.gamma(a)
@@ -105,6 +118,8 @@ class RegularizedGammaQ(sp.Function):
 
     @classmethod
     def eval(cls, a, x):
+        """Evaluate supported exact special cases; leave other arguments unevaluated."""
+
         a, x = map(sp.sympify, (a, x))
         if x is S.Infinity and a.is_positive is True:
             return S.Zero
@@ -112,6 +127,8 @@ class RegularizedGammaQ(sp.Function):
             return S.One
 
     def fdiff(self, argindex=1):
+        """Return a supported symbolic partial derivative for the requested argument index."""
+
         a, x = self.args
         if argindex == 2:
             return -(x ** (a - 1)) * sp.exp(-x) / sp.gamma(a)
@@ -120,9 +137,6 @@ class RegularizedGammaQ(sp.Function):
     def _eval_rewrite_as_uppergamma(self, a, x, **kwargs):
         return sp.uppergamma(a, x) / sp.gamma(a)
 
-
-# Local import avoids exporting a SymPy-internal name as part of our public API.
-from sympy.core.function import ArgumentIndexError  # noqa: E402
 
 __all__ = [
     "MittagLefflerE",

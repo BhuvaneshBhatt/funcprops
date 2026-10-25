@@ -14,7 +14,7 @@ def _conditions(result):
     return tuple(c.condition for c in result.cases)
 
 
-def test_nonreal_affine_exponential_has_no_real_sign_or_order_certificate():
+def test_nonreal_affine_exponential():
     expr = sp.exp(sp.I * x)
     assert fp.sign(expr, x) is Sign.UNKNOWN
     assert fp.monotonicity(expr, x) is Monotonicity.UNKNOWN
@@ -52,12 +52,28 @@ def test_real_affine_exponential_retains_existing_classifications():
     assert isinstance(c, PropertyResult)
 
 
-def test_constant_parameter_sign_strata_are_guarded_by_realness():
+def test_constant_parameter_sign():
     result = fp.sign(a, x, return_result=True)
     assert isinstance(result, PropertyResult)
-    assert all(
-        cond.has(sp.Q.real(a)) or cond is sp.S.false for cond in _conditions(result)
-    )
+    classified = [case for case in result.cases if case.value is not Sign.UNKNOWN]
+    assert {case.value for case in classified} == {
+        Sign.POSITIVE,
+        Sign.ZERO,
+        Sign.NEGATIVE,
+    }
+    assert all(sp.ask(sp.Q.real(a), case.condition) is True for case in classified)
+    for value, expected in ((-1, Sign.NEGATIVE), (0, Sign.ZERO), (1, Sign.POSITIVE)):
+        active = [
+            case.value
+            for case in result.cases
+            if sp.refine(case.condition.subs(a, value)) is sp.S.true
+        ]
+        assert active == [expected]
+    unresolved = [case for case in result.cases if case.value is Sign.UNKNOWN]
+    for value in (sp.I, 1 + sp.I):
+        assert any(
+            sp.refine(case.condition.subs(a, value)) is sp.S.true for case in unresolved
+        )
 
 
 def test_nonreal_power_is_not_given_a_real_sign():

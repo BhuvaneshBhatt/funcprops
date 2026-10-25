@@ -8,11 +8,20 @@ Symmetry detects even, odd, both, central, neither, or unresolved symmetry relat
 
 ## API and return values
 
-```python
+```text
 symmetry(expr, variable, *, center=0, domain=True, assumptions=True, return_result=False)
 ```
 
 A Symmetry value by default; return_result=True exposes center and evidence.
+
+| Parameter | Meaning |
+| --- | --- |
+| `expr` | SymPy expression whose global property is queried. |
+| `variable` | Independent scalar coordinate. Real and native complex routes have different assumption requirements; see result contracts. |
+| `center` | Reflection or central-symmetry center; supported discovery modes may infer it. |
+| `domain` | Input domain or logical condition. The default depends on the property family. |
+| `assumptions` | Symbolic hypotheses used while proving the property. |
+| `return_result` | Return structured metadata, certificates, or diagnostics. |
 
 ## Domains, assumptions, and parameters
 
@@ -30,7 +39,7 @@ import funcprops as fp
 
 x, y = sp.symbols("x y", real=True)
 result = fp.symmetry(sp.cos(x), x)
-result
+assert result is fp.Symmetry.EVEN
 ```
 
 Expected: ``Symmetry.EVEN``.
@@ -39,7 +48,7 @@ Application: Cut numerical or symbolic work in half on symmetric domains.
 
 ## Applications
 
-This property is useful whenever later mathematics depends on a global qualitative fact, not isolated samples. Typical uses include symbolic preprocessing, theorem-hypothesis verification, optimization, inverse problems, robust numerical method selection, and simplifying downstream case analysis.
+Reduce paired domain calculations while retaining the required reflection or central-symmetry support.
 
 ## How funcprops proves it
 
@@ -60,4 +69,4 @@ Symbolic equivalence that SymPy cannot prove can leave symmetry UNKNOWN even whe
 
 ## Source
 
-The implementation is exposed through [`funcprops.api`](https://github.com/BhuvaneshBhatt/funcprops/blob/main/src/funcprops/api.py).
+The callable is exported through funcprops; its implementation module is [`funcprops.real_analysis.structural_properties`](https://github.com/BhuvaneshBhatt/funcprops/blob/main/src/funcprops/real_analysis/structural_properties.py).

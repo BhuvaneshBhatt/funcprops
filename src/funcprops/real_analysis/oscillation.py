@@ -12,11 +12,17 @@ from ..stratification import evaluate_parameter_strata
 from ..transcendental.periodic import positive_period
 from .common import combine_domain_condition, condition_to_set
 from .domain import domain as _domain
-from .monotonic_certificates import MonotonicPartition, monotonic_partition
+from .monotonic_certificates import (
+    MonotonicPartition,
+    matching_partition,
+    monotonic_partition,
+)
 
 
 @dataclass(frozen=True)
 class OscillationCertificate:
+    """Bind an oscillation classification to domain and zero-family evidence."""
+
     classification: Oscillation
     domain: sp.Set
     partition: MonotonicPartition | None = None
@@ -78,11 +84,9 @@ def _function_oscillation_impl(
             Oscillation.NONOSCILLATORY, ds, None, 0, "constant"
         )
         return out if return_result else out.classification
-    part = (
-        partition
-        if partition is not None and getattr(partition, "domain", None) == ds
-        else monotonic_partition(expr, var, domain=ds, return_result=True)
-    )
+    part = matching_partition(partition, expr, var, ds)
+    if part is None:
+        part = monotonic_partition(expr, var, domain=ds, return_result=True)
     if part.indexed is not None and part.indexed.boundary_geometry:
         try:
             from ..transcendental.zero_geometry import geometry_support_inside_domain
@@ -105,7 +109,13 @@ def _function_oscillation_impl(
             return out if return_result else out.classification
     if part.complete and part.cells:
         turns = part.direction_changes
-        cls = Oscillation.FINITELY_OSCILLATORY if turns else Oscillation.NONOSCILLATORY
+        cls = (
+            Oscillation.UNKNOWN
+            if turns is None
+            else Oscillation.FINITELY_OSCILLATORY
+            if turns
+            else Oscillation.NONOSCILLATORY
+        )
         out = OscillationCertificate(
             cls, ds, part, turns, "finite-monotonic-partition", (part,)
         )

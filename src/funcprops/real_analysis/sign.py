@@ -7,9 +7,9 @@ from sympy import S
 
 from .. import _semialg
 from ..engine import evaluate_property
-from ..exactness import certify_zero
 from ..exceptions import SYMBOLIC_QUERY_ERRORS
 from ..results import ConditionalExpression, PropertyResult, Sign, TruthValue
+from ..source_syntax import normalize_arithmetic
 from ..stratification import (
     evaluate_parameter_strata,
     implication_guard,
@@ -24,6 +24,7 @@ from .common import (
     condition_to_set,
     exact_order_real_points,
 )
+from .domain import _complex_intermediates, _real_projection, _real_value_on_domain
 from .domain import domain as _domain
 from .piecewise import combine_piecewise_sign, piecewise_branches
 from .special_functions import positive_axis_sign_strata
@@ -253,11 +254,11 @@ def _structural_sign(expr, var, domain):
         return Sign.NONNEGATIVE
     if expr.func is sp.Pow:
         base, e = expr.args
-        if e.is_Integer and e.is_even:
+        if e.is_Integer and e.is_even and base.is_real is True:
             if e.is_negative:
                 return Sign.POSITIVE
             return Sign.NONNEGATIVE
-        if e.is_Integer and e.is_odd:
+        if e.is_Integer and e.is_odd and base.is_real is True:
             return _function_sign(base, var, domain)
     if expr.func is sp.Mul:
         vals = [_function_sign(a, var, domain) for a in expr.args]
@@ -266,26 +267,11 @@ def _structural_sign(expr, var, domain):
 
 
 def _sample_sign(value):
-    value = sp.simplify(value)
-    if value.is_positive is True:
-        return 1
-    if value.is_negative is True:
-        return -1
-    if certify_zero(value) is True:
-        return 0
-    if value.is_number:
-        try:
-            n = sp.N(value, 30)
-            if n.is_real:
-                if n > 0:
-                    return 1
-                if n < 0:
-                    return -1
-                if n == 0:
-                    return 0
-        except SYMBOLIC_QUERY_ERRORS:
-            pass
-    return None
+    from ..transcendental.real_sign import robust_real_sign
+
+    # An approximate floating-point value is not a sign certificate. Retain
+    # symbolic proofs and audited interval enclosures, otherwise stay unknown.
+    return robust_real_sign(value)
 
 
 _exact_order_real_points = exact_order_real_points
@@ -352,6 +338,41 @@ def _interval_sign(expr, var, domain):
 def _function_sign(expr, var, domain):
     """Run the shared exact sign-proof ladder on a requested real domain."""
     expr = sp.sympify(expr)
+    finite_domain = condition_to_set(domain, var)
+    if finite_domain is S.EmptySet:
+        return Sign.UNKNOWN
+    if isinstance(finite_domain, sp.FiniteSet):
+        cases = [((), S.true)]
+        for point in finite_domain:
+            value = sp.simplify(expr.subs(var, point))
+            if value.is_finite is False or value.is_real is False:
+                return Sign.UNKNOWN
+            result = _constant_sign(value)
+            if result is Sign.UNKNOWN or (
+                value.free_symbols and result in (Sign.NONNEGATIVE, Sign.NONPOSITIVE)
+            ):
+                result = _constant_sign_strata(value)
+            choices = (
+                result.cases
+                if isinstance(result, PropertyResult)
+                else (ConditionalExpression(result, S.true),)
+            )
+            cases = [
+                ((*values, choice.value), sp.And(guard, choice.condition))
+                for values, guard in cases
+                for choice in choices
+            ]
+            if len(cases) > 256:
+                return Sign.UNKNOWN
+        if all(guard is S.true for _, guard in cases):
+            return combine_piecewise_sign(cases[0][0])
+        return normalize_cases(
+            (
+                ConditionalExpression(combine_piecewise_sign(values), guard)
+                for values, guard in cases
+            ),
+            source="finite-domain-sign",
+        )
     if isinstance(expr, sp.Piecewise):
         branches = piecewise_branches(expr, var, domain)
         if branches:
@@ -381,6 +402,17 @@ def _function_sign(expr, var, domain):
     s = _structural_sign(expr, var, domain)
     if s is not Sign.UNKNOWN:
         return s
+    from .sign_rules import rational_sign, threshold_sign, trig_sign
+
+    s = rational_sign(expr, var, finite_domain)
+    if s is not Sign.UNKNOWN:
+        return s
+    s = threshold_sign(expr, var, finite_domain)
+    if s is not Sign.UNKNOWN:
+        return s
+    s = trig_sign(expr, var, finite_domain)
+    if s is not Sign.UNKNOWN:
+        return s
     s = _registry_sign(expr, var, domain)
     if s is not Sign.UNKNOWN:
         return s
@@ -388,11 +420,9 @@ def _function_sign(expr, var, domain):
     if s is not Sign.UNKNOWN:
         return s
 
-    # Exact transcendental algebraization: e.g. exp(2*x)-3*exp(x)+2 is
-    # a polynomial in u=exp(x), u>0.  The transformed problem can then use
-    # the semialgebraic/interval proof machinery without treating exp as an
-    # opaque numeric function.
-    ar = algebraize(expr, var)
+    # Transform the requested real domain alongside the expression. The
+    # auxiliary constraints include its image and original pole exclusions.
+    ar = algebraize(expr, var, domain=domain)
     if ar.changed and ar.exact and len(ar.substitutions) == 1:
         u, _ = ar.substitutions[0]
         transformed_domain = ar.constraints
@@ -422,7 +452,36 @@ def _function_sign_public_impl(
         var = syms[0]
     var = sp.sympify(var)
     natural = _domain(expr, var)
+    real_on_requested = _real_value_on_domain(expr, var, domain)
+    if isinstance(natural, PropertyResult) and real_on_requested:
+        natural = _domain(expr, var, domain=S.Complexes)
+    if isinstance(natural, PropertyResult) and expr.func is sp.exp:
+        guarded = _structural_sign(expr, var, domain)
+        if isinstance(guarded, PropertyResult):
+            return guarded
+    if isinstance(natural, PropertyResult) and isinstance(
+        condition_to_set(domain, var), sp.FiniteSet
+    ):
+        natural = _domain(expr, var, domain=S.Complexes)
     assumptions = combine_domain_condition(natural, domain, var)
+    if semantic_condition(assumptions) is S.false:
+        return Sign.UNKNOWN
+    if (
+        _complex_intermediates(expr, var)
+        and not real_on_requested
+        and not isinstance(condition_to_set(assumptions, var), sp.FiniteSet)
+    ):
+        # The natural domain already constrains the imaginary part to zero.
+        # Classify the real projection rather than applying real-only closure
+        # and catalogue rules to complex operands.
+        if isinstance(natural, PropertyResult):
+            return Sign.UNKNOWN
+        expr = _real_projection(expr, var)
+        if expr is None:
+            return Sign.UNKNOWN
+    # Definition guards above belong to the raw source. Rebuild the arithmetic
+    # used for sign calculations to avoid assumptions on held zero products.
+    expr = normalize_arithmetic(expr)
     split = evaluate_parameter_strata(
         assumptions,
         var,
@@ -506,15 +565,18 @@ def prove_relation(relation, var=None, *, domain=True):
     """Prove a scalar real relation by reducing it to the shared sign engine.
 
     Equality and order relations are normalized to the sign of ``lhs-rhs``.
-    Conditional parameter results are preserved
-    unknown Boolean.
+    Conditional parameter results retain their guards and evidence.
     """
     relation = sp.sympify(relation)
     if relation in (S.true, S.false):
         return TruthValue.TRUE if relation is S.true else TruthValue.FALSE
     if not isinstance(relation, sp.core.relational.Relational):
         raise TypeError("relation must be a SymPy equality or inequality")
-    expr = sp.simplify(relation.lhs - relation.rhs)
+    # Keep both original operands until the sign context has checked definition.
+    # Simplifying x/x - 1 here would erase the relation's excluded point.
+    expr = sp.Add(
+        relation.lhs, sp.Mul(-1, relation.rhs, evaluate=False), evaluate=False
+    )
     sign_value = sign(expr, var, domain=domain)
 
     def classify(value):
@@ -576,11 +638,16 @@ def prove_relation(relation, var=None, *, domain=True):
             )
         return TruthValue.UNKNOWN
 
-    if isinstance(sign, PropertyResult):
+    if isinstance(sign_value, PropertyResult):
         return normalize_cases(
-            (ConditionalExpression(classify(c.value), c.condition) for c in sign.cases),
-            primary=classify(sign.primary) if sign.primary is not None else None,
+            (
+                ConditionalExpression(classify(c.value), c.condition)
+                for c in sign_value.cases
+            ),
+            primary=classify(sign_value.primary)
+            if sign_value.primary is not None
+            else None,
             source="relation-from-sign",
-            evidence=sign.evidence,
+            evidence=sign_value.evidence,
         )
     return classify(sign_value)

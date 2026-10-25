@@ -96,7 +96,7 @@ def test_property_rule_matching_is_by_function_head_and_slot_arity():
     assert not rule.matches(sp.bessely(0, 1))
 
 
-def test_property_rule_rejects_duplicate_positions_with_distinct_slots():
+def test_duplicate_argument_positions():
     first = FunctionSlot(0, "first")
     second = FunctionSlot(0, "second")
 

@@ -11,6 +11,8 @@ from .exceptions import SYMBOLIC_QUERY_ERRORS
 
 
 class ComparisonStatus(str, Enum):
+    """Distinguish proved equivalence, disagreement and unresolved comparison."""
+
     AGREE = "agree"
     DISAGREE = "disagree"
     SYMPY_UNKNOWN = "sympy_unknown"
@@ -20,6 +22,8 @@ class ComparisonStatus(str, Enum):
 
 @dataclass(frozen=True)
 class Comparison:
+    """Record the relation found between package and reference results."""
+
     status: ComparisonStatus
     registry_value: object
     sympy_value: object = None

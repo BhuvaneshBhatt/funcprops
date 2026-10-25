@@ -8,10 +8,8 @@ from ..results import Boundedness, ConditionalExpression, PropertyResult
 from ..stratification import normalize_cases
 from .common import (
     affine_real_parameter_guard,
-    combine_domain_condition,
     condition_to_set,
 )
-from .domain import domain as _domain
 from .piecewise import (
     combine_piecewise_boundedness,
     piecewise_branches,
@@ -164,6 +162,8 @@ def _structural_boundedness(expr, var, domain):
 
 
 def boundedness(expr, var, *, domain=True):
+    """Classify boundedness on the effective real source domain."""
+
     expr = sp.sympify(expr)
     var = sp.sympify(var)
     try:
@@ -175,11 +175,10 @@ def boundedness(expr, var, *, domain=True):
     structural = _structural_boundedness(expr, var, domain)
     if structural is not Boundedness.UNKNOWN:
         return structural
-    natural = _domain(expr, var)
     # range owns natural-domain intersection.  Passing an already
     # combined mixed parameter/domain formula can obscure a simple user domain
     # (e.g. x>=0) and prevent endpoint-aware special-function rules from firing.
-    constraints = combine_domain_condition(natural, domain, var)
+    constraints = domain
     try:
         cond = range(expr, var, y, constraints=constraints)
     except SYMBOLIC_QUERY_ERRORS:

@@ -5,7 +5,7 @@ from funcprops.singularities.geometry import _multivariate_denominator_records
 from funcprops.singularities.records import _denominator_singularity_records, order_at
 
 
-def test_opaque_numerator_does_not_certify_unconditional_univariate_pole():
+def test_opaque_univariate_numerator():
     x = sp.symbols("x")
     f = sp.Function("f")
     assert order_at(f(x) / x, x, 0) is None
@@ -17,7 +17,7 @@ def test_opaque_numerator_does_not_certify_unconditional_univariate_pole():
     assert poles[0].guard == sp.Ne(f(0), 0)
 
 
-def test_opaque_numerator_does_not_certify_unconditional_multivariate_pole():
+def test_opaque_multivariate_numerator():
     x, y = sp.symbols("x y")
     f = sp.Function("f")
     records = _multivariate_denominator_records(f(x + y) / (x + y), (x, y))
@@ -27,7 +27,7 @@ def test_opaque_numerator_does_not_certify_unconditional_multivariate_pole():
     assert records[0].guard is not sp.S.true
 
 
-def test_local_order_still_certifies_nonzero_leading_coefficients():
+def test_local_order_certifies_nonzero_leading_coefficients():
     x = sp.symbols("x")
     assert order_at(sp.sin(x) / x**3, x, 0) == -2
     assert order_at((1 + x) / x**2, x, 0) == -2

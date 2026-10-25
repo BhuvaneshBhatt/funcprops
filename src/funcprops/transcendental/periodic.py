@@ -59,20 +59,28 @@ class PeriodicSet:
         return sp.Interval.Ropen(self.origin, self.origin + self.period)
 
     def normalize_point(self, value):
+        """Reduce a point to the chosen fundamental period when exact reduction is supported."""
+
         return sp.simplify(
             self.origin + sp.Mod(sp.sympify(value) - self.origin, self.period)
         )
 
     def contains(self, value):
+        """Decide supported point membership in the periodic representation."""
+
         return sp.Contains(self.normalize_point(value), self.base)
 
     def as_condition(self, variable=None):
+        """Express this result as a condition on the requested value coordinate."""
+
         v = sp.sympify(variable or self.variable)
         if v is None:
             raise ValueError("a variable is required")
         return self.contains(v)
 
     def intersect_fundamental(self, condition_or_set, variable=None):
+        """Intersect a restriction with one owned fundamental period."""
+
         if isinstance(condition_or_set, sp.Set):
             s = condition_or_set
         else:
@@ -103,6 +111,8 @@ class PeriodicSet:
         return self.with_period(p), other.with_period(p)
 
     def union(self, other):
+        """Combine compatible periodic sets under a common positive period."""
+
         aligned = self._align(other)
         if aligned is None:
             return sp.Union(self.as_sympy_set(), other.as_sympy_set())
@@ -115,6 +125,8 @@ class PeriodicSet:
         )
 
     def intersection(self, other):
+        """Intersect compatible periodic sets under a common positive period."""
+
         aligned = self._align(other)
         if aligned is None:
             return sp.Intersection(self.as_sympy_set(), other.as_sympy_set())
@@ -127,6 +139,8 @@ class PeriodicSet:
         )
 
     def complement(self):
+        """Complement the represented periodic set within its stated universe."""
+
         return PeriodicSet(
             sp.Complement(self.fundamental_interval, self.base),
             self.period,
@@ -162,15 +176,20 @@ class PeriodicSet:
         return PeriodicSet(base, p, x, S.Zero)
 
     def as_sympy_set(self):
-        sp.Dummy("k", integer=True)
+        """Express the periodic representation as an exact SymPy set."""
+
         return sp.imageset(lambda t, k: t + k * self.period, self.base, S.Integers)
 
 
 @dataclass(frozen=True)
 class PeriodicCondition:
+    """Describe a Boolean condition repeated over an exact period."""
+
     set: PeriodicSet
 
     def as_expr(self, variable=None):
+        """Return the symbolic expression represented by this indexed value."""
+
         return self.set.as_condition(variable)
 
     def __sympy__(self):
@@ -178,6 +197,8 @@ class PeriodicCondition:
 
 
 def positive_period(expr, var):
+    """Return a proved positive representative of a proposed period."""
+
     try:
         from sympy.calculus.util import periodicity
 
@@ -191,6 +212,8 @@ def positive_period(expr, var):
 
 
 def common_period_values(*periods):
+    """Combine exact commensurate periods or leave the comparison unresolved."""
+
     ps = [_canonical_period(p) for p in periods]
     if not ps:
         return None
@@ -213,6 +236,8 @@ def common_period_values(*periods):
 
 
 def common_positive_period(expressions, var):
+    """Find a supported positive common period of periodic components."""
+
     ps = []
     for e in expressions:
         p = positive_period(e, var)

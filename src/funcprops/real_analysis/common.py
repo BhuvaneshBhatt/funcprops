@@ -34,6 +34,8 @@ def is_semialgebraic_expression(expr: sp.Expr, var: sp.Symbol) -> bool:
 
 
 def is_semialgebraic_condition(cond, var):
+    """Test whether a real condition belongs to the supported algebraic grammar."""
+
     cond = sp.sympify(cond)
     if cond in (S.true, S.false):
         return True
@@ -72,16 +74,22 @@ def condition_to_set(condition, var):
     """
     condition = sp.sympify(condition)
     var = sp.sympify(var)
+    if isinstance(condition, sp.Set):
+        return sp.Intersection(condition, S.Reals)
     if condition is S.true:
         return S.Reals
     if condition is S.false:
         return S.EmptySet
+    if not isinstance(condition, sp.Set) and not condition.has(var):
+        # An independent parameter condition is not a set in the query variable.
+        # Relational.as_set() would silently solve for the parameter instead.
+        return None
     if (
         isinstance(condition, sp.Contains)
         and condition.args[0] == var
         and isinstance(condition.args[1], sp.Set)
     ):
-        return condition.args[1]
+        return sp.Intersection(condition.args[1], S.Reals)
     if isinstance(condition, sp.And):
         pieces = [condition_to_set(a, var) for a in condition.args]
         if all(isinstance(q, sp.Set) for q in pieces):
@@ -102,7 +110,9 @@ def condition_to_set(condition, var):
             if isinstance(condition, sp.StrictLessThan):
                 return sp.Interval.open(-sp.oo, rhs)
             if isinstance(condition, sp.Equality):
-                return sp.FiniteSet(rhs)
+                return sp.Intersection(sp.FiniteSet(rhs), S.Reals)
+            if isinstance(condition, sp.Unequality):
+                return sp.Complement(S.Reals, sp.FiniteSet(rhs))
         if rhs == var and not lhs.has(var):
             if isinstance(condition, sp.GreaterThan):
                 return sp.Interval(-sp.oo, lhs)
@@ -113,7 +123,40 @@ def condition_to_set(condition, var):
             if isinstance(condition, sp.StrictLessThan):
                 return sp.Interval.open(lhs, sp.oo)
             if isinstance(condition, sp.Equality):
-                return sp.FiniteSet(lhs)
+                return sp.Intersection(sp.FiniteSet(lhs), S.Reals)
+            if isinstance(condition, sp.Unequality):
+                return sp.Complement(S.Reals, sp.FiniteSet(lhs))
+        if isinstance(condition, (sp.Equality, sp.Unequality)) and (
+            lhs.is_real is not True or rhs.is_real is not True
+        ):
+            # Relational.as_set imposes real-valued operands. Complex equality
+            # and nonzero tests are valid on the real axis too; solving for
+            # their zeros must retain the operands' complex definition domains.
+            from ..results import PropertyResult
+            from .domain import _function_domain_impl
+
+            try:
+                guards = tuple(
+                    _function_domain_impl(part, var, domain=S.Complexes)
+                    for part in (lhs, rhs)
+                )
+                if any(isinstance(guard, PropertyResult) for guard in guards):
+                    return None
+                defined = condition_to_set(sp.And(*guards), var)
+                zeros = sp.solveset(lhs - rhs, var, domain=S.Reals)
+                if (
+                    not isinstance(defined, sp.Set)
+                    or not isinstance(zeros, sp.Set)
+                    or zeros.has(sp.ConditionSet)
+                ):
+                    return None
+                return (
+                    sp.Intersection(defined, zeros)
+                    if isinstance(condition, sp.Equality)
+                    else sp.Complement(defined, zeros)
+                )
+            except (AttributeError, *SYMBOLIC_QUERY_ERRORS):
+                return None
     try:
         if isinstance(
             condition, (sp.logic.boolalg.Boolean, sp.core.relational.Relational)
@@ -150,6 +193,8 @@ def set_to_condition(set_, y):
 
 
 def interval_components(condition, var):
+    """Extract supported interval and finite-point components of an exact set."""
+
     s = condition_to_set(condition, var)
     if s is None:
         return None
@@ -163,6 +208,8 @@ def interval_components(condition, var):
 
 
 def is_full_natural_domain(requested_domain, natural_domain):
+    """Check that a requested restriction covers the certified natural domain."""
+
     if (
         requested_domain is True
         or requested_domain is S.true
@@ -317,3 +364,57 @@ def affine_real_parameter_guard(expr, var):
         else sp.Q.real(offset)
     )
     return slope, offset, sp.And(real_slope, real_offset)
+
+
+def original_definition_guard(expr, variables):
+    """Preserve source poles before a polynomial/affine extraction cancels them.
+
+    None means whole-coordinate definition was not established. Parameter-only
+    restrictions remain guards; unresolved coordinate holes cannot be treated
+    as parameter strata for a full-real theorem.
+    """
+    from ..domain_tracking import coordinate_domain_compatible
+    from ..exactness import certify_zero
+    from ..source_syntax import expand_log_bases, finite_constant_source
+
+    if any(not coordinate_domain_compatible(v, sp.S.Reals) for v in variables):
+        return None
+
+    outputs = (
+        tuple(expr)
+        if isinstance(expr, (tuple, list, sp.Tuple, sp.MatrixBase))
+        else (sp.sympify(expr),)
+    )
+    guards = []
+    entire = (sp.exp, sp.sin, sp.cos, sp.sinh, sp.cosh)
+    for output in outputs:
+        for node in sp.preorder_traversal(expand_log_bases(output)):
+            if not isinstance(node, sp.Expr):
+                continue
+            if isinstance(node, sp.Pow) and node.exp.is_negative is True:
+                if certify_zero(node.base) is not False:
+                    if node.base.has(*variables):
+                        return None
+                    guards.append(sp.Ne(node.base, 0))
+            if node.func is sp.log:
+                arg = node.args[0]
+                if certify_zero(arg) is not False:
+                    if arg.has(*variables):
+                        return None
+                    guards.append(sp.Ne(arg, 0))
+            if not node.has(*variables):
+                if not finite_constant_source(node):
+                    try:
+                        if node.is_finite is True:
+                            return None
+                        guards.append(sp.Q.finite(node))
+                    except (TypeError, ValueError):
+                        return None
+            elif (
+                node.has(*variables)
+                and node.is_finite is not True
+                and (node.is_Function or node.is_Pow)
+                and node.func not in entire
+            ):
+                return None
+    return sp.And(*guards)

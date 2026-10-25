@@ -1,4 +1,4 @@
-"""Conservative unified real transcendental analysis facade.
+"""Supported unified real transcendental analysis facade.
 
 It reuses exact structured zeros, tail signs, singularities, and the public range
 engine.  Completeness is explicit; no sampling is promoted to proof.
@@ -16,6 +16,8 @@ from ..infinite_root_families import structured_zero_geometry
 
 @dataclass(frozen=True)
 class UnifiedRealAnalysis:
+    """Collect compatible domain, zero, sign and image facts for one expression."""
+
     expression: object
     variable: object
     domain: object
@@ -27,6 +29,8 @@ class UnifiedRealAnalysis:
 
 
 def analyze_transcendental_real(expr, var, domain=sp.S.Reals):
+    """Collect supported real domain, zero geometry, sign and image information."""
+
     f = sp.sympify(expr)
     x = sp.sympify(var)
     zg = structured_zero_geometry(f, x)

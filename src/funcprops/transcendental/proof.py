@@ -11,12 +11,16 @@ from ..exceptions import SYMBOLIC_QUERY_ERRORS
 
 
 class PerformanceGoal(str, Enum):
+    """Select the effort preference for a supported proof route."""
+
     SPEED = "speed"
     QUALITY = "quality"
 
 
 @dataclass(frozen=True)
 class ProofPolicy:
+    """Configure exact proof, enclosure and fallback effort for transcendental analysis."""
+
     goal: PerformanceGoal = PerformanceGoal.QUALITY
     allow_numerical_evidence: bool = True
     require_certificate: bool = True
@@ -24,6 +28,8 @@ class ProofPolicy:
 
 
 def extended_real_sign(value):
+    """Decide a supported sign including extended-real endpoints."""
+
     value = sp.sympify(value)
     if value is sp.oo:
         return 1

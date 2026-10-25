@@ -37,16 +37,27 @@ def test_capability_matrix_covers_operations():
 
 
 def test_readme_links_core_guides():
+    import re
+    from urllib.parse import urlsplit
+
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    prefix = "https://github.com/BhuvaneshBhatt/funcprops/blob/main/"
+    assert f"]({prefix}docs/index.md)" in readme
+    reachable = set()
+    for page in (ROOT / "README.md", ROOT / "docs/index.md"):
+        for link in re.findall(r"\[[^\]]+\]\(([^)]+)\)", page.read_text()):
+            url = urlsplit(link)
+            if link.startswith(prefix):
+                reachable.add((ROOT / url.path.split("/blob/main/", 1)[1]).resolve())
+            elif not url.scheme:
+                reachable.add((page.parent / url.path).resolve())
     for name in (
         "certification.md",
-        "mathematical_conventions.md",
-        "complex_analysis.md",
+        "mathematical-conventions.md",
+        "complex-analysis.md",
         "homotopy.md",
         "capabilities.md",
         "examples.md",
     ):
-        assert (
-            f"https://github.com/BhuvaneshBhatt/funcprops/blob/main/docs/{name}"
-            in readme
-        )
+        target = ROOT / "docs" / name
+        assert target in reachable and target.is_file()

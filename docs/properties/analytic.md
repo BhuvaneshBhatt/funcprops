@@ -8,11 +8,20 @@ Analyticity certifies local representation by convergent power series throughout
 
 ## API and return values
 
-```python
-analytic(expr, variable, *, domain=Reals, assumptions=True, return_result=False)
+```text
+analytic(expr, variable, *, domain=Reals, assumptions=True, work_budget=None, return_result=False)
 ```
 
 Analyticity.ANALYTIC, NOT_ANALYTIC, or UNKNOWN. Parameter-stratified results are returned as a SymPy `Piecewise` by default; `return_result=True` preserves the rich result and evidence.
+
+| Parameter | Meaning |
+| --- | --- |
+| `expr` | SymPy expression whose global property is queried. |
+| `variable` | Independent scalar coordinate. Real and native complex routes have different assumption requirements; see result contracts. |
+| `domain` | Input domain or logical condition. The default depends on the property family. |
+| `assumptions` | Symbolic hypotheses used while proving the property. |
+| `work_budget` | Optional positive wall budget in seconds; exhaustion follows the operation-specific incomplete/unknown contract. |
+| `return_result` | Return structured metadata, certificates, or diagnostics. |
 
 ## Domains, assumptions, and parameters
 
@@ -30,7 +39,7 @@ import funcprops as fp
 
 x, y = sp.symbols("x y", real=True)
 result = fp.analytic(sp.exp(x), x)
-result
+assert result is fp.Analyticity.ANALYTIC
 ```
 
 Expected: ``Analyticity.ANALYTIC``.
@@ -39,7 +48,7 @@ Application: Justify convergent local power-series methods and analytic continua
 
 ## Applications
 
-This property is useful whenever later mathematics depends on a global qualitative fact, not isolated samples. Typical uses include symbolic preprocessing, theorem-hypothesis verification, optimization, inverse problems, robust numerical method selection, and simplifying downstream case analysis.
+Check branch and seam hypotheses for local analytic arguments or contour operations.
 
 ## How funcprops proves it
 
@@ -61,4 +70,4 @@ Real analyticity is stricter than smoothness; unresolved branch or singularity s
 
 ## Source
 
-The implementation is exposed through [`funcprops.api`](https://github.com/BhuvaneshBhatt/funcprops/blob/main/src/funcprops/api.py).
+The callable is exported through funcprops; its implementation module is [`funcprops.singularities.analysis`](https://github.com/BhuvaneshBhatt/funcprops/blob/main/src/funcprops/singularities/analysis.py).

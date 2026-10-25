@@ -1,7 +1,7 @@
 """Formula-level DLMF audit metadata for core catalogue families.
 
-References are deliberately tied to exact DLMF equations or narrowly scoped
-sections.  ``derived=True`` means DLMF verifies the underlying standard
+References are tied to DLMF equations or narrowly scoped sections.
+``derived=True`` means DLMF verifies the underlying standard
 identity/property and funcprops derives the SymPy helper/wrapper statement.
 """
 
@@ -30,7 +30,7 @@ FORMULA_AUDIT = {
     "chebyshevu_root": (["18.5.E2"], "root formula derived from U_n(cos theta)", True),
     "dirichlet_eta": (
         ["25.2.E3"],
-        "alternating zeta representation / analytic continuation relation",
+        "alternating zeta representation / analytic continuaition relation",
         True,
     ),
     "erf2": (["7.2.E1"], "difference of entire erf values", True),

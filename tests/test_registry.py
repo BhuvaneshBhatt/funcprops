@@ -14,7 +14,7 @@ def test_catalogue_has_233_families():
 @pytest.mark.parametrize("family", FAMILIES, ids=lambda f: f.id)
 def test_family_has_canonical_identity(family):
     assert family.id
-    assert family.sympy_names or family.mpmath_names or family.catalogue_names
+    assert family.sympy_names or family.mpmath_names
 
 
 CASES = [
@@ -28,7 +28,7 @@ CASES = [
 @pytest.mark.parametrize(
     "family_id,prop,case",
     CASES,
-    ids=lambda x: getattr(x, "source_lhs", None) or str(x)[:80],
+    ids=lambda x: getattr(x, "rule_id", None) or str(x)[:80],
 )
 def test_every_rule_condition_normalizes_to_sympy(family_id, prop, case):
     out = case.condition

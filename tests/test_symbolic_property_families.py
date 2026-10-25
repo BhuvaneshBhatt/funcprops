@@ -56,7 +56,23 @@ def test_budget_is_deterministic_and_bounded():
     x = sp.symbols("x")
     b = ProofBudget(max_cost=3)
     routes, b = route_proofs(x + 1, [("structural", 1), ("semialg", 3)], budget=b)
-    assert routes == ("structural",) and b.skipped == ["semialg"]
+    assert routes == ("structural",)
+    assert b.spent == 2
+    assert b.attempted == ["structural"]
+    assert b.skipped == ["semialg"]
+
+
+def test_budget_counts_operations_before_expansion():
+    x, y = sp.symbols("x y")
+    routes, budget = route_proofs(
+        (x + y + 1) ** 50,
+        [("structural", 1), ("algebraic", 2), ("derivative", 4)],
+        budget=ProofBudget(max_cost=12),
+    )
+    assert routes == ("structural", "algebraic")
+    assert budget.spent == 12
+    assert budget.attempted == ["structural", "algebraic"]
+    assert budget.skipped == ["derivative"]
 
 
 def test_affine_global_bijection_and_rank_failure():
@@ -72,13 +88,13 @@ def test_rouche_polynomial_circle_replays():
     c = rouche_polynomial_circle(
         z**3 + sp.Rational(1, 10) * z + sp.Rational(1, 10), z, radius=1
     )
-    assert c is not None and c.count == 3 and c.verify()
+    assert c.count == 3 and c.verify()
 
 
 def test_derivative_cell_root_count_transcendental():
     x = sp.symbols("x", real=True)
     c = derivative_cell_root_count(sp.exp(x) - 2, x, sp.Interval(-2, 2))
-    assert c is not None and c.complete and c.count == 1
+    assert c.complete and c.count == 1
 
 
 def test_parameter_cell_refinement_preserves_values():
@@ -101,4 +117,4 @@ def test_argument_principle_rectangle_exact_polynomial_count():
     c = argument_principle_rectangle(
         (z - 1) * (z**2 + 1) * (z - 5), z, -2 - 2 * sp.I, 2 + 2 * sp.I
     )
-    assert c is not None and c.count == 3 and c.verify()
+    assert c.count == 3 and c.verify()

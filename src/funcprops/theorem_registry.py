@@ -10,6 +10,8 @@ from .results import Boundedness, Continuity, Convexity, Monotonicity, TruthValu
 
 @dataclass(frozen=True)
 class TheoremRecord:
+    """Describe a sufficient theorem, its hypotheses and adversarial test cases."""
+
     theorem_id: str
     premise_property: str
     premise_value: object
@@ -71,10 +73,14 @@ _BY_PREMISE = {(t.premise_property, t.premise_value): t for t in THEOREMS}
 
 
 def matching_theorem(prop, value):
+    """Find a registry theorem matching the query and its proved premises."""
+
     return _BY_PREMISE.get((prop, value))
 
 
 def validate_registry():
+    """Check theorem identifiers, premise declarations and adversarial case definitions."""
+
     ids = [t.theorem_id for t in THEOREMS]
     return len(ids) == len(set(ids)) and all(
         t.conclusions and t.proof_basis and t.completeness for t in THEOREMS

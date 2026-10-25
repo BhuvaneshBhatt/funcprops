@@ -12,11 +12,15 @@ from .assumption_normalization import normalize_assumptions
 
 @dataclass(frozen=True)
 class AssumptionClosure:
+    """Retain assumptions and the additional facts they entail."""
+
     original: sp.Expr
     facts: frozenset[sp.Expr]
     condition: sp.Expr
 
     def entails(self, predicate):
+        """Decide whether the stored facts entail the requested guarded property."""
+
         from .assumptions import entails
 
         p = sp.sympify(predicate)
@@ -52,6 +56,8 @@ def _consequences(atom):
 
 
 def close_assumptions(assumptions=True, *, max_rounds=3):
+    """Derive supported property implications from normalized assumptions."""
+
     original = normalize_assumptions(assumptions)
     facts = set(sp.And.make_args(original))
     for _ in range(max_rounds):

@@ -1,9 +1,8 @@
 """Expected failures from optional or undecidable symbolic computations.
 
 Fallback code should catch the smallest operation-specific family that can
-legitimately be raised by the SymPy operation being attempted.  The aggregate
-``SYMBOLIC_QUERY_ERRORS`` remains for compatibility at broad orchestration
-boundaries; proof code should prefer the narrower groups below.
+legitimately be raised by the SymPy operation being attempted.  Use ``SYMBOLIC_QUERY_ERRORS`` at orchestration boundaries only; proof steps
+should catch the narrower operation-specific groups below.
 """
 
 from sympy.core.function import PoleError
@@ -17,9 +16,7 @@ SET_OPERATION_ERRORS = (TypeError, ValueError, NotImplementedError)
 LIMIT_ERRORS = (PoleError, ValueError, NotImplementedError)
 BACKEND_QUERY_ERRORS = (ValueError, NotImplementedError, ArithmeticError)
 
-# Compatibility umbrella for high-level fallback boundaries.  Deliberately
-# excludes SyntaxError: malformed source is a programming/input bug, not an
-# expected symbolic-decision failure.
+# Syntax errors indicate malformed source, not an undecided symbolic query.
 SYMBOLIC_QUERY_ERRORS = (
     *SIMPLIFICATION_ERRORS,
     ArithmeticError,

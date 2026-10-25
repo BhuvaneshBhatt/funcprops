@@ -63,7 +63,7 @@ def test_truth_conflicts_are_order_independent_and_explicitly_unknown():
     assert _specialize(first, a, -1) is TruthValue.FALSE
 
 
-def test_convexity_does_not_promote_local_curvature_on_unresolved_domain():
+def test_unresolved_curvature_domain():
     x = sp.symbols("x", real=True)
     assert convexity(x**2, x, domain=sp.sin(x) > 0) is Convexity.UNKNOWN
 

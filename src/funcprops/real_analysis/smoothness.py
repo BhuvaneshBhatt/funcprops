@@ -10,6 +10,7 @@ from sympy import S
 from .. import _semialg
 from ..exactness import certify_identity_equal
 from ..exceptions import SYMBOLIC_QUERY_ERRORS
+from ..regularity_evidence import piecewise_failure_witness, regularity_normal_form
 from ..results import Analyticity, Continuity, TruthValue
 from ..singularities import (
     analytic,
@@ -82,7 +83,7 @@ def _domain_loci(records, domain, var):
 def _structurally_smooth(expr, var):
     """Recognize globally smooth expression trees without derivative probing.
 
-    The rule set intentionally contains only closure operations that cannot
+    The rule set contains only closure operations that cannot
     introduce a real singularity: polynomial arithmetic, nonnegative integer
     powers, and composition with entire elementary functions.
     """
@@ -105,12 +106,6 @@ def _structurally_smooth(expr, var):
 
 
 def _smoothness_value(result):
-    """Return the certified differentiability order.
-
-    ``0`` denotes C^0 regularity, positive integers denote the highest
-    certified finite C^k order, ``oo`` denotes C-infinity, and ``None``
-    means that no C^k regularity classification was certified.
-    """
     return result.differentiability_order
 
 
@@ -192,15 +187,7 @@ def _piecewise_smoothness(expr, var, requested_domain, max_order):
     # derivatives never proves C-infinity.  The one safe nontrivial exception is
     # when adjacent branch formulas are symbolically identical, in which case
     # the Piecewise syntax is artificial and the common expression can be used.
-    mismatch = any(
-        seam.continuous is False
-        or (
-            seam.continuous is True
-            and seam.differentiability_order is not None
-            and seam.differentiability_order < max_order
-        )
-        for seam in seams
-    )
+    mismatch = any(piecewise_failure_witness(seam) for seam in seams)
     same_formula = all(
         certify_identity_equal(branch.expression, decomp.branches[0].expression) is True
         for branch in decomp.branches[1:]
@@ -215,7 +202,7 @@ def _piecewise_smoothness(expr, var, requested_domain, max_order):
             _domain_ready=True,
         )
     analytic = (
-        Analyticity.NOT_ANALYTIC
+        (Analyticity.NOT_ANALYTIC if mismatch else Analyticity.UNKNOWN)
         if seams
         else (
             Analyticity.ANALYTIC
@@ -279,6 +266,16 @@ def _function_smoothness_impl(
         )
         if split is not None:
             return split
+    normalized = regularity_normal_form(expr, var, requested_domain)
+    if normalized != expr:
+        return _function_smoothness_impl(
+            normalized,
+            var,
+            domain=requested_domain,
+            max_order=max_order,
+            return_result=return_result,
+            _domain_ready=True,
+        )
     if isinstance(expr, sp.Piecewise):
         piecewise = _piecewise_smoothness(expr, var, requested_domain, max_order)
         if piecewise is not None:
@@ -386,8 +383,14 @@ def _function_smoothness_impl(
         except (TypeError, ValueError, NotImplementedError):
             break
 
+        records = discontinuities(derivative, var, return_result=True)
         loci = _domain_loci(
-            discontinuities(derivative, var, return_result=True),
+            tuple(r for r in records if r.source != "unresolved-whole-discontinuity"),
+            requested_domain,
+            var,
+        )
+        unresolved = _domain_loci(
+            tuple(r for r in records if r.source == "unresolved-whole-discontinuity"),
             requested_domain,
             var,
         )
@@ -396,6 +399,8 @@ def _function_smoothness_impl(
                 exceptions.append(locus)
         if loci:
             failure_proved = True
+            break
+        if unresolved:
             break
 
         try:

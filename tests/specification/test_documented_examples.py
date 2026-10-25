@@ -1,26 +1,16 @@
-import re
-from pathlib import Path
+"""All Python documentation fences are executable ordered page sessions."""
 
 import pytest
 
-ROOT = Path(__file__).parents[2]
-DOCS = [
-    ROOT / "docs" / "complex_analysis.md",
-    ROOT / "docs" / "homotopy.md",
-    ROOT / "docs" / "examples.md",
-]
-
-
-def python_blocks(path):
-    text = path.read_text(encoding="utf-8")
-    return re.findall(r"```python\n(.*?)```", text, flags=re.DOTALL)
+from tools.check_docs import documents, execute_document, link_errors, python_blocks
 
 
 @pytest.mark.parametrize(
-    "path,source",
-    [(path, source) for path in DOCS for source in python_blocks(path)],
-    ids=lambda value: value.name if isinstance(value, Path) else None,
+    "path", [p for p in documents() if list(python_blocks(p))], ids=lambda p: p.stem
 )
-def test_examples_execute(path, source):
-    namespace = {"__name__": "__documentation_example__"}
-    exec(compile(source, str(path), "exec"), namespace)
+def test_examples_execute(path):
+    assert execute_document(path) > 0
+
+
+def test_local_documentation_links_and_anchors():
+    assert link_errors() == []

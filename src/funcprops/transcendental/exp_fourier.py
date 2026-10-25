@@ -7,11 +7,14 @@ import sympy as sp
 from sympy import S
 
 from ..exceptions import SYMBOLIC_QUERY_ERRORS
+from ..source_syntax import differentiate
 from .real_sign import robust_real_sign
 
 
 @dataclass(frozen=True)
 class ExponentialFourierCount:
+    """Count roots through a supported exponential-Fourier representation."""
+
     expression: sp.Basic
     variable: sp.Symbol
     domain: sp.Interval
@@ -55,7 +58,7 @@ def exponential_polynomial_terms(expr, var):
     """Parse a restricted real exponential polynomial.
 
     Supported inputs are finite sums of ``c*exp(a*x+b)`` and constants, with exact
-    real coefficients/rates. Equal rates are combined.  This intentionally excludes
+    real coefficients/rates. Equal rates are combined.  This excludes
     polynomial prefactors and nested exponentials.
     """
     expr = sp.expand(sp.sympify(expr))
@@ -88,7 +91,7 @@ def _normalized_derivative(expr, var):
         return None
     a0 = terms[0][0]
     normalized = sp.expand(sp.exp(-a0 * var) * expr)
-    derivative = sp.simplify(sp.diff(normalized, var))
+    derivative = sp.simplify(differentiate(normalized, var))
     return normalized, derivative
 
 

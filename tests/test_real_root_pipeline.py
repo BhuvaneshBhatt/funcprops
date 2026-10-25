@@ -11,7 +11,7 @@ from funcprops.transcendental.real_interval import certified_real_interval_evalu
 x = sp.symbols("x", real=True)
 
 
-def test_domain_cells_split_piecewise_exception_and_keep_zero_interval():
+def test_piecewise_zero_interval_ownership():
     expr = sp.Piecewise((0, x < 0), (x - 1, True))
     result = zeros(expr, x, domain=sp.Interval(-2, 2), return_result=True)
     assert result.complete
@@ -34,7 +34,6 @@ def test_domain_cells_do_not_cross_log_or_pole_boundaries():
 def test_interval_arithmetic_can_prove_root_free_cell():
     expr = sp.exp(x) + x**2 + 10
     enclosure = certified_real_interval_evaluate(expr, x, sp.Interval(-1, 1))
-    assert enclosure is not None
     assert enclosure.excludes_zero
     assert enclosure.strict_sign == 1
 
@@ -71,7 +70,6 @@ def test_robust_exp_log_sign_avoids_overflow():
 def test_exponential_fourier_derivative_sequence_counts_roots():
     expr = sp.exp(2 * x) - 3 * sp.exp(x) + 2
     count = exponential_fourier_count(expr, x, sp.Interval(-10, 10))
-    assert count is not None
     assert count.complete
     assert count.root_count == 2
     assert len(count.sequence) == 3
@@ -80,6 +78,5 @@ def test_exponential_fourier_derivative_sequence_counts_roots():
 def test_exponential_fourier_respects_open_endpoint_roots():
     expr = sp.exp(2 * x) - 3 * sp.exp(x) + 2
     count = exponential_fourier_count(expr, x, sp.Interval.open(0, sp.log(2)))
-    assert count is not None
     assert count.complete
     assert count.root_count == 0

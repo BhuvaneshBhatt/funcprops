@@ -23,7 +23,8 @@ def test_laurent_residue():
 
 
 def test_winding_argument_principle_orientation():
-    t, z = sp.symbols("t z", real=True)
+    t = sp.Symbol("t", real=True)
+    z = sp.Symbol("z")
     c = circle(t)
     cr = c.reversed()
     assert fp.winding_number(c, 0) == 1
@@ -97,7 +98,7 @@ def test_user_punctures_cannot_hide_integrand_poles():
     assert fp.deform_contour(1 / (z - 1), z, outer, inner, punctures=(3,)) is False
 
 
-def test_certificate_replay_rejects_tampered_status_and_integral_fields():
+def test_integral_field_binding():
     x = sp.symbols("x")
     c = fp.solve(x - 1, x, return_certificate=True)
     bad = type(c)(c.expression, c.variable, c.domain, c.solutions, False)
@@ -114,10 +115,10 @@ def test_multipuncture_homotopy_orientation_and_deformation():
     c1 = fp.ParametricContour(3 * sp.exp(sp.I * t), (t, 0, 2 * sp.pi))
     c2 = fp.ParametricContour(3 * (sp.cos(t) + sp.I * sp.sin(t)), (t, 0, 2 * sp.pi))
     cert = fp.homotopic(c1, c2, punctures=(-1, 1), return_certificate=True)
-    assert cert is not None and cert.verify()
+    assert cert.verify()
     assert cert.reduced_word in ((1, 2), (2, 1))
     assert fp.homotopic(c1, c1.reversed(), punctures=(-1, 1)) is False
     deformation = fp.deform_contour(
         1 / ((z - 1) * (z + 1)), z, c1, c2, return_certificate=True
     )
-    assert deformation is not None and deformation.verify()
+    assert deformation.verify()

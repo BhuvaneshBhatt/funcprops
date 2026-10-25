@@ -19,10 +19,21 @@ from .common import (
     combine_domain_condition,
     condition_to_set,
     is_full_natural_domain,
+    original_definition_guard,
     set_to_condition,
 )
-from .domain import domain
-from .monotonic_certificates import monotonic_partition, range_from_monotonic_partition
+from .domain import (
+    _complex_intermediates,
+    _real_projection,
+    _real_value_on_domain,
+    domain,
+)
+from .image_rules import _quadratic_image, attainment_preserving_range, exact_image
+from .monotonic_certificates import (
+    matching_partition,
+    monotonic_partition,
+    range_from_monotonic_partition,
+)
 from .special_functions import (
     parameter_guard,
     positive_axis_range_strata,
@@ -31,7 +42,6 @@ from .special_functions import (
 
 
 def _lambda_condition(value, y):
-    """Instantiate a one-argument catalogue condition at ``y``."""
     if isinstance(value, sp.Lambda) and len(value.variables) == 1:
         return sp.sympify(value.expr).xreplace({value.variables[0]: y})
     return None
@@ -101,14 +111,33 @@ def _registry_range(expr, var, y):
 
 
 def _monotone_image_interval(outer, X, inner_set):
+    """Assemble a monotone interval image from owned endpoint values and one-sided limits."""
+
     from ..results import Monotonicity
     from .monotonicity import monotonicity
 
     dom = set_to_condition(inner_set, X)
     m = monotonicity(outer, X, domain=dom)
     inc = m in (Monotonicity.STRICTLY_INCREASING, Monotonicity.NONDECREASING)
-    dec = m in (Monotonicity.STRICTLY_DECREASING, Monotonicity.NONINCREASING)
-    if not (inc or dec):
+    if m not in (Monotonicity.STRICTLY_INCREASING, Monotonicity.STRICTLY_DECREASING):
+        return None
+    try:
+        continuous = (
+            sp.calculus.util.continuous_domain(outer, X, inner_set) == inner_set
+        )
+    except SYMBOLIC_QUERY_ERRORS:
+        continuous = False
+    # Audited entire real error functions and real-order modified Bessel
+    # functions on the positive axis have no jumps or missing interior values.
+    if outer.func in (sp.erf, sp.erfc, sp.erfi) and outer.args == (X,):
+        continuous = True
+    if (
+        outer.func in (sp.besseli, sp.besselk)
+        and outer.args[1] == X
+        and outer.args[0].is_real is True
+    ):
+        continuous = inner_set.is_subset(sp.Interval.open(0, sp.oo)) is True
+    if not continuous:
         return None
 
     def image_endpoint(v, is_left, is_open):
@@ -123,8 +152,11 @@ def _monotone_image_interval(outer, X, inner_set):
                 pass
         return sp.simplify(outer.subs(X, v))
 
-    a = image_endpoint(inner_set.start, True, inner_set.left_open)
-    b = image_endpoint(inner_set.end, False, inner_set.right_open)
+    try:
+        a = image_endpoint(inner_set.start, True, inner_set.left_open)
+        b = image_endpoint(inner_set.end, False, inner_set.right_open)
+    except SYMBOLIC_QUERY_ERRORS:
+        return None
     if inc:
         lo, hi = a, b
         lo_open = inner_set.left_open or inner_set.start in (
@@ -152,28 +184,55 @@ def _monotone_image_interval(outer, X, inner_set):
     return sp.Interval(lo, hi, left_open=lo_open, right_open=hi_open)
 
 
-def _composition_range(expr, var, y, domain_condition):
+def _composition_range(expr, var, y, domain_condition, *, source_constraints=None):
     varying = [(i, a) for i, a in enumerate(getattr(expr, "args", ())) if a.has(var)]
-    if len(varying) != 1 or expr.func in (sp.Add, sp.Mul, sp.Pow, sp.Piecewise):
+    if len(varying) != 1 or expr.func in (sp.Add, sp.Mul, sp.Piecewise):
         return None
     i, inner = varying[0]
-    # A primitive f(x) is not a nontrivial composition.  Recursing through
-    # range(x, ...) and then asking monotonicity of the same primitive
-    # can manufacture bogus empty/False images for oscillatory functions.
-    if inner == var:
+    inner_domain = domain(inner, var)
+    if isinstance(inner_domain, PropertyResult):
         return None
-    u = sp.Dummy("u", real=True)
-    rc = range(inner, var, u, constraints=domain_condition)
-    if isinstance(rc, PropertyResult):
-        return None
-    inner_set = condition_to_set(rc, u)
-    if not isinstance(inner_set, sp.Interval):
+    if inner_domain is not S.true:
+        from ..stratification import implication_guard
+
+        if implication_guard(domain_condition, inner_domain, var) is not S.true:
+            return None
+    if inner == var or (expr.func is sp.Pow and (i != 0 or not expr.exp.is_Rational)):
         return None
     X = sp.Dummy("X", real=True)
     args = list(expr.args)
     args[i] = X
     outer = expr.func(*args)
-    out = _monotone_image_interval(outer, X, inner_set)
+    audited = outer.func in (
+        sp.exp,
+        sp.log,
+        sp.sin,
+        sp.cos,
+        sp.sinh,
+        sp.cosh,
+        sp.tanh,
+        sp.atan,
+        sp.floor,
+        sp.ceiling,
+        sp.Pow,
+    )
+    # Audited images impose the outer domain in the image coordinate. The inner
+    # query retains every user constraint and derives its own natural domain.
+    inner_constraints = (
+        source_constraints
+        if audited and source_constraints is not None
+        else domain_condition
+    )
+    u = sp.Dummy("u", real=True)
+    rc = range(inner, var, u, constraints=inner_constraints)
+    if isinstance(rc, PropertyResult):
+        return None
+    inner_set = condition_to_set(rc, u)
+    if not isinstance(inner_set, sp.Set):
+        return None
+    out = exact_image(outer, X, inner_set)
+    if out is None and isinstance(inner_set, sp.Interval):
+        out = _monotone_image_interval(outer, X, inner_set)
     return set_to_condition(out, y) if out is not None else None
 
 
@@ -261,17 +320,7 @@ def _affine_transform(expr, var, y, domain):
 def _parameterized_elementary_range(expr, var, y, domain_condition):
     """High-value exact parameter strata not handled by generic calculus."""
     ds = condition_to_set(domain_condition, var)
-    try:
-        positive_axis = (
-            isinstance(ds, sp.Interval)
-            and ds.start == 0
-            and ds.left_open
-            and ds.end is S.Infinity
-        ) or sp.simplify_logic(
-            sp.Implies(semantic_condition(domain_condition), var > 0)
-        ) is S.true
-    except SYMBOLIC_QUERY_ERRORS:
-        positive_axis = False
+    positive_axis = ds == sp.Interval.open(0, sp.oo)
     # x**a on x>0: every nonzero real exponent maps onto (0,oo), while
     # a=0 is the singleton 1.  This must precede global catalogue ranges.
     if positive_axis and expr.func is sp.Pow and expr.base == var:
@@ -312,7 +361,7 @@ def _sympy_range(expr, var, y, domain_condition):
     if ds is None:
         return None
     try:
-        rs = sp.calculus.util.function_range(expr, var, ds)
+        rs = attainment_preserving_range(expr, var, ds)
     except SYMBOLIC_QUERY_ERRORS:
         return None
     if isinstance(rs, sp.Set) and not rs.has(var):
@@ -335,17 +384,9 @@ def _early_range_stage(expr, var, y, domain_condition, constraints):
         )
         return out.primary if out.primary is not None else out
     ds0 = condition_to_set(domain_condition, var)
-    try:
-        positive_axis = (
-            isinstance(ds0, sp.Interval)
-            and ds0.start == 0
-            and ds0.left_open
-            and ds0.end is S.Infinity
-        ) or sp.simplify_logic(
-            sp.Implies(semantic_condition(domain_condition), var > 0)
-        ) is S.true
-    except SYMBOLIC_QUERY_ERRORS:
-        positive_axis = False
+    positive_axis = ds0 == sp.Interval.open(0, sp.oo) or condition_to_set(
+        constraints, var
+    ) == sp.Interval.open(0, sp.oo)
     if positive_axis:
         facts = positive_axis_range_strata(expr, var, y)
         if facts:
@@ -406,6 +447,90 @@ def _piecewise_range(expr, var, y, domain_condition, method, kwargs):
     return combine_piecewise_conditions(images, y)
 
 
+def _algebraic_image(expr, var, domain):
+    """Evaluate exact images componentwise to preserve endpoint attainment.
+
+    SymPy's union-domain range aggregation can open a shared endpoint even
+    when each component attains it. Building the set union after evaluating
+    individual intervals avoids losing those inclusion guarantees.
+    """
+    if domain is S.EmptySet:
+        return S.EmptySet
+    if isinstance(domain, sp.FiniteSet):
+        values = tuple(expr.subs(var, value) for value in domain)
+        if any(value.is_finite is False or value.is_real is False for value in values):
+            return None
+        return sp.FiniteSet(*values)
+    if isinstance(domain, sp.Union):
+        parts = [_algebraic_image(expr, var, part) for part in domain.args]
+        if any(part is None for part in parts):
+            return None
+        # SymPy may simplify symbolic overlapping intervals to an open hull.
+        # Keep the disjunction unevaluated unless exact endpoint order is known.
+        return sp.Union(*parts, evaluate=False)
+    if not isinstance(domain, sp.Interval):
+        return None
+    try:
+        image = attainment_preserving_range(expr, var, domain)
+    except SYMBOLIC_QUERY_ERRORS:
+        return None
+    if isinstance(image, (sp.Interval, sp.FiniteSet, sp.Union)) and not image.has(var):
+        return image
+    return None
+
+
+def _nonempty_real_domain(source):
+    """Return an exact nonemptiness guard, or None if existence is unresolved."""
+    if source is S.EmptySet:
+        return S.false
+    if isinstance(source, sp.FiniteSet):
+        return sp.Or(*(sp.Contains(point, S.Reals) for point in source))
+    if isinstance(source, sp.Interval):
+        real = [
+            sp.Contains(endpoint, S.Reals)
+            for endpoint in (source.start, source.end)
+            if endpoint not in (S.Infinity, S.NegativeInfinity)
+        ]
+        ordered = (
+            source.start < source.end
+            if source.left_open or source.right_open
+            else source.start <= source.end
+        )
+        return sp.And(*real, ordered)
+    if isinstance(source, sp.Union):
+        guards = [_nonempty_real_domain(piece) for piece in source.args]
+        if S.true in guards:
+            return S.true
+        return sp.Or(*guards) if all(guard is not None for guard in guards) else None
+    if isinstance(source, sp.Intersection):
+        finite = next(
+            (part for part in source.args if isinstance(part, sp.FiniteSet)), None
+        )
+        if finite is not None:
+            return sp.Or(
+                *(
+                    sp.And(sp.Contains(point, S.Reals), source.contains(point))
+                    for point in finite
+                )
+            )
+        if all(isinstance(part, sp.Interval) for part in source.args):
+            lower = sp.Max(*(part.start for part in source.args))
+            upper = sp.Min(*(part.end for part in source.args))
+            return sp.Or(
+                lower < upper,
+                sp.And(
+                    sp.Eq(lower, upper), *(part.contains(lower) for part in source.args)
+                ),
+            )
+    if (
+        isinstance(source, sp.Set)
+        and source.is_subset(S.Reals) is True
+        and source.is_empty is False
+    ):
+        return S.true
+    return None
+
+
 def _function_range_impl(
     expr,
     var,
@@ -415,6 +540,7 @@ def _function_range_impl(
     method="auto",
     partition=None,
     _domain_ready=False,
+    _source_constraints=None,
     **kwargs,
 ):
     """Return the real range as a Boolean condition in ``y``.
@@ -425,12 +551,79 @@ def _function_range_impl(
     expr = sp.sympify(expr)
     var = sp.sympify(var)
     y = sp.sympify(y)
+    if _source_constraints is None:
+        _source_constraints = constraints
     natural = domain(expr, var)
+    if natural is S.false:
+        return S.false
+    requested_points = condition_to_set(_source_constraints, var)
+    real_on_requested = _real_value_on_domain(expr, var, _source_constraints)
+    if isinstance(natural, PropertyResult) and real_on_requested:
+        natural = domain(expr, var, domain=S.Complexes)
+    if isinstance(natural, PropertyResult) and expr.func is sp.exp:
+        theorem = _parameterized_elementary_range(expr, var, y, constraints)
+        source_guard = original_definition_guard(expr, (var,))
+        if isinstance(theorem, PropertyResult) and source_guard is not None:
+            return normalize_cases(
+                (
+                    ConditionalExpression(
+                        case.value, sp.And(case.condition, source_guard)
+                    )
+                    for case in theorem.cases
+                ),
+                source=theorem.source,
+            )
+    if isinstance(requested_points, sp.FiniteSet) and isinstance(
+        natural, PropertyResult
+    ):
+        # Exact point values decide output reality. Definition guards must be
+        # derived from the unmodified source before those substitutions.
+        natural = domain(expr, var, domain=S.Complexes)
     domain_condition = (
         sp.sympify(constraints)
         if _domain_ready
         else combine_domain_condition(natural, constraints, var)
     )
+    if isinstance(requested_points, sp.FiniteSet) and not isinstance(
+        natural, PropertyResult
+    ):
+        terms = []
+        for point in requested_points:
+            guard = sp.simplify(
+                sp.And(sp.Contains(point, S.Reals), domain_condition.subs(var, point))
+            )
+            if guard is S.false:
+                continue
+            value = sp.simplify(expr.subs(var, point))
+            if value.is_real is False or value.is_finite is False:
+                continue
+            if value.is_real is not True or value.is_finite is not True:
+                return sp.Function("UnknownRange")(expr, var, y)
+            terms.append(sp.And(guard, sp.Eq(y, value)))
+        return sp.Or(*terms)
+    if (
+        _complex_intermediates(expr, var)
+        and expr.is_real is not True
+        and not real_on_requested
+    ):
+        if isinstance(natural, PropertyResult):
+            return sp.Function("UnknownRange")(expr, var, y)
+        real_part = _real_projection(expr, var)
+        if real_part is None or real_part == expr:
+            return sp.Function("UnknownRange")(expr, var, y)
+        result = _function_range_impl(
+            real_part,
+            var,
+            y,
+            constraints=domain_condition,
+            method=method,
+            _domain_ready=True,
+            _source_constraints=domain_condition,
+            **kwargs,
+        )
+        if getattr(result, "func", None) == sp.Function("UnknownRange"):
+            return sp.Function("UnknownRange")(expr, var, y)
+        return result
     if not _domain_ready:
         split = evaluate_parameter_strata(
             domain_condition,
@@ -443,21 +636,50 @@ def _function_range_impl(
                 method=method,
                 partition=None,
                 _domain_ready=True,
+                _source_constraints=_source_constraints,
                 **kwargs,
             ),
             source="range-parameter-stratification",
         )
         if split is not None:
             return split
+    if condition_to_set(domain_condition, var) is S.EmptySet:
+        return S.false
     if not expr.has(var):
-        return sp.Eq(y, expr)
+        if expr.is_real is False or expr.is_finite is False:
+            return S.false
+        guard = _nonempty_real_domain(condition_to_set(domain_condition, var))
+        if guard is None:
+            return sp.Function("UnknownRange")(expr, var, y)
+        return sp.And(guard, sp.Eq(y, expr))
 
     if isinstance(expr, sp.Piecewise):
         merged = _piecewise_range(expr, var, y, domain_condition, method, kwargs)
         if merged is not None:
             return merged
 
-    early = _early_range_stage(expr, var, y, domain_condition, constraints)
+    if expr.func in (sp.floor, sp.ceiling) and expr.args == (var,):
+        image = exact_image(expr, var, condition_to_set(domain_condition, var))
+        if image is not None:
+            return set_to_condition(image, y)
+
+    finite_domain = condition_to_set(domain_condition, var)
+    if isinstance(finite_domain, sp.FiniteSet):
+        if any(point.is_real is not True for point in finite_domain):
+            return sp.Function("UnknownRange")(expr, var, y)
+        values = [sp.simplify(expr.subs(var, point)) for point in finite_domain]
+        if any(
+            value.is_real is not True or value.is_finite is not True for value in values
+        ):
+            return sp.Function("UnknownRange")(expr, var, y)
+        return set_to_condition(sp.FiniteSet(*values), y)
+
+    if method == "auto" and not kwargs:
+        image = _quadratic_image(expr, var, finite_domain)
+        if image is not None:
+            return set_to_condition(image, y)
+
+    early = _early_range_stage(expr, var, y, domain_condition, _source_constraints)
     if early is not None:
         return early
 
@@ -471,20 +693,16 @@ def _function_range_impl(
     # Exact transcendental algebraization can turn the range problem into a
     # semialgebraic one without changing the output variable. For example,
     # exp(2*x)-3*exp(x)+2 becomes u**2-3*u+2 on u>0.
-    ar = algebraize(expr, var)
+    ar = algebraize(expr, var, domain=domain_condition)
     if ar.changed and ar.exact and len(ar.substitutions) == 1:
         u, _ = ar.substitutions[0]
         # Preserve openness of the auxiliary image (notably u=exp(x)>0).
         # SymPy's univariate calculus is tried first because it represents
         # endpoint attainment explicitly; semialg remains the exact fallback.
-        try:
-            us = condition_to_set(ar.constraints, u)
-            if us is not None:
-                rs = sp.calculus.util.function_range(ar.expression, u, us)
-                if isinstance(rs, sp.Set):
-                    return set_to_condition(rs, y)
-        except SYMBOLIC_QUERY_ERRORS:
-            pass
+        us = condition_to_set(ar.constraints, u)
+        rs = _algebraic_image(ar.expression, u, us)
+        if rs is not None:
+            return set_to_condition(rs, y)
         try:
             raw = _semialg.range(
                 ar.expression,
@@ -520,7 +738,13 @@ def _function_range_impl(
 
     # Monotone composition can turn a known inner interval into the exact
     # outer range (e.g. exp(sin(x)) -> [exp(-1), exp(1)]).
-    r = _composition_range(expr, var, y, domain_condition)
+    r = _composition_range(
+        expr,
+        var,
+        y,
+        domain_condition,
+        source_constraints=constraints if not _domain_ready else None,
+    )
     if r is not None:
         return r if isinstance(r, PropertyResult) else sp.simplify(r)
 
@@ -531,11 +755,7 @@ def _function_range_impl(
             return r if isinstance(r, PropertyResult) else sp.simplify(r)
 
     ds = condition_to_set(domain_condition, var)
-    part = (
-        partition
-        if partition is not None and getattr(partition, "domain", None) == ds
-        else None
-    )
+    part = matching_partition(partition, expr, var, ds)
     # Indexed special-function geometry is cheap to recognize and expensive to
     # rediscover through generic calculus, so build the shared partition first
     # for those families.  For generic expressions keep SymPy's successful fast
@@ -549,9 +769,20 @@ def _function_range_impl(
         except SYMBOLIC_QUERY_ERRORS:
             pass
     if part is not None:
-        prange = range_from_monotonic_partition(expr, var, part)
+        prange = range_from_monotonic_partition(expr, var, part, domain=ds)
         if prange.complete and isinstance(prange.image, sp.Set):
             return set_to_condition(prange.image, y)
+
+    if isinstance(ds, sp.Interval) and expr.func in (
+        sp.erf,
+        sp.erfc,
+        sp.erfi,
+        sp.besseli,
+        sp.besselk,
+    ):
+        mapped = _monotone_image_interval(expr, var, ds)
+        if mapped is not None:
+            return set_to_condition(mapped, y)
 
     r = _sympy_range(expr, var, y, domain_condition)
     if r is not None:
@@ -559,7 +790,7 @@ def _function_range_impl(
 
     if part is None and isinstance(ds, sp.Interval):
         part = monotonic_partition(expr, var, domain=ds, return_result=True)
-        prange = range_from_monotonic_partition(expr, var, part)
+        prange = range_from_monotonic_partition(expr, var, part, domain=ds)
         if prange.complete and isinstance(prange.image, sp.Set):
             return set_to_condition(prange.image, y)
 
@@ -579,11 +810,32 @@ def _function_range_impl(
             return cond if cond is not None else er
     except SYMBOLIC_QUERY_ERRORS:
         pass
+    if _semialg._algebraic_encoding(expr, var, domain_condition) is not None:
+        try:
+            return _semialg.range(expr, var, y, constraints=domain_condition)
+        except (_semialg.SemialgUnavailable, *SYMBOLIC_QUERY_ERRORS):
+            pass
     return sp.Function("UnknownRange")(expr, var, y)
 
 
-def range(expr, var, y, *, constraints=True, method="auto", partition=None, **kwargs):
-    """Return the real range as a Boolean condition in ``y``."""
+def range(
+    expr,
+    var,
+    y,
+    *,
+    constraints=True,
+    domain=None,
+    method="auto",
+    partition=None,
+    **kwargs,
+):
+    """Return the real range on the intersection of constraints and domain."""
+    if domain is not None:
+        from .common import normalize_domain_condition
+
+        constraints = combine_domain_condition(
+            normalize_domain_condition(constraints, var), domain, var
+        )
     return _function_range_impl(
         expr,
         var,

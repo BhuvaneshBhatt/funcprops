@@ -8,10 +8,13 @@ from sympy import S
 from ..engine import truth_bool
 from ..exactness import certify_zero
 from ..exceptions import SYMBOLIC_QUERY_ERRORS
+from ..source_syntax import finite_constant_source, logarithm_quotient
 
 
 @dataclass(frozen=True)
 class AnalyticNeighborhoodCertificate:
+    """Prove holomorphy on a neighborhood with explicit branch premises."""
+
     holomorphic: bool | None
     region: object
     method: str = "unknown"
@@ -157,7 +160,7 @@ def _nonzero_on_rectangle(g, var, rect):
 
 
 def holomorphic_on_rectangle(expr, var, rectangle):
-    """Conservatively certify principal-branch holomorphy on a closed rectangle.
+    """Certify supported principal-branch holomorphy on a closed rectangle.
 
     Returns ``holomorphic=None`` when the current symbolic tests cannot certify
     either outcome.  No floating sampling is used for a positive certificate.
@@ -169,17 +172,23 @@ def holomorphic_on_rectangle(expr, var, rectangle):
     ev = []
 
     def rec(e):
-        if not e.has(var) or e == var:
+        if e == var:
             return True
+        if e.func is sp.log and len(e.args) == 2:
+            return rec(logarithm_quotient(e))
+        if not e.has(var):
+            return True if finite_constant_source(e) else None
         if e.func in _ENTIRE:
-            return _all3(rec(a) for a in e.args)
+            # An outer entire function can remove an inner branch jump.
+            return True if all(rec(a) is True for a in e.args) else None
         if e.func in (sp.Add, sp.Mul):
-            return _all3(rec(a) for a in e.args)
+            # Child obstructions need not survive cancellation in the parent.
+            return True if all(rec(a) is True for a in e.args) else None
         if e.func is sp.Pow:
             b, p = e.args
             sub = _all3((rec(b), rec(p)))
             if sub is False:
-                return False
+                sub = None
             if p.is_Integer:
                 if p.is_nonnegative:
                     return sub
@@ -198,7 +207,7 @@ def holomorphic_on_rectangle(expr, var, rectangle):
         if e.func is sp.log:
             sub = rec(e.args[0])
             if sub is False:
-                return False
+                sub = None
             av = _avoids_negative_real_axis(e.args[0], var, rect)
             ev.append(("log_cut", e.args[0], av))
             if av is False:
@@ -208,7 +217,7 @@ def holomorphic_on_rectangle(expr, var, rectangle):
         if e.func in (sp.tan,):
             sub = rec(e.args[0])
             if sub is False:
-                return False
+                sub = None
             nz = _nonzero_on_rectangle(sp.cos(e.args[0]), var, rect)
             ev.append(("tan_poles", nz))
             if nz is False:
@@ -218,7 +227,7 @@ def holomorphic_on_rectangle(expr, var, rectangle):
         if e.func in (sp.gamma,):
             sub = rec(e.args[0])
             if sub is False:
-                return False
+                return None
             # finite exact preimages of nonpositive integers need a dedicated
             # pole-set proof; do not turn uncertainty into non-holomorphy.
             return None

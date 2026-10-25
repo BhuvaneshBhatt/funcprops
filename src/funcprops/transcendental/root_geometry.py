@@ -7,11 +7,14 @@ from dataclasses import dataclass
 
 import sympy as sp
 
+from ..source_syntax import differentiate
 from .real_sign import robust_real_sign
 
 
 @dataclass(frozen=True)
 class MonotoneRootCount:
+    """Count roots using monotone cells, limits and endpoint ownership."""
+
     expression: sp.Expr
     variable: sp.Symbol
     domain: sp.Interval
@@ -34,11 +37,13 @@ def _sign_at(expr, var, p, side):
 
 
 def derivative_cell_root_count(expr, var, domain):
+    """Count roots from a supported derivative-cell partition and owned endpoints."""
+
     expr = sp.sympify(expr)
     var = sp.sympify(var)
     if not isinstance(domain, sp.Interval):
         return None
-    d = sp.diff(expr, var)
+    d = differentiate(expr, var)
     try:
         roots = sp.solveset(sp.Eq(d, 0), var, domain=domain)
     except (TypeError, ValueError, NotImplementedError):

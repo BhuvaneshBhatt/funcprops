@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import argparse
 import json
 from pathlib import Path
 
@@ -37,6 +38,16 @@ GROUPS = [
             "differentiability",
             "smoothness",
             "analytic",
+        },
+    ),
+    (
+        "Metric regularity, variation and integrability",
+        {
+            "lipschitz",
+            "uniformly_continuous",
+            "holder_regularity",
+            "variation",
+            "integrability",
         },
     ),
     (
@@ -101,6 +112,9 @@ def code(text: str) -> dict:
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--check", action="store_true")
+    args = parser.parse_args()
     cells = [
         md(
             "# A tour of function properties\n\nThis notebook is a guided introduction to `funcprops`. Every property example below is drawn from the same executable example corpus used by the specification tests, so the tutorial and reference documentation cannot silently drift apart.\n\nThe package answers symbolic global questions over explicit domains and assumptions. `UNKNOWN` means that no available proof route certified a conclusion; it does not mean the property is false."
@@ -122,17 +136,17 @@ def main() -> None:
                 page = name.removeprefix("")
                 cells.append(
                     md(
-                        f"### `{name}` — {case.title}\n\n<!-- example-id: {case.example_id} -->\n\n"
+                        f"### `{name}`: {case.title}\n\n<!-- example-id: {case.example_id} -->\n\n"
                         f"**Application.** {case.application}\n\n"
                         f"Expected result: {case.expected}. See [`{page}.md`](../properties/{page}.md) for the full mathematical definition, options, proof strategies, and limitations."
                     )
                 )
-                cells.append(code(case.code + "\nresult"))
+                cells.append(code(case.code + f"\nassert {case.check}\nresult"))
     cells.append(md("## Statistical special functions"))
     cells.append(
         md(
             "These examples exercise the theorem-backed statistical function layer. "
-            "See [Statistical special functions](../statistical_special_functions.md) "
+            "See [Statistical special functions](../statistical-special-functions.md) "
             "for supported families, parameter guards, and provenance."
         )
     )
@@ -144,7 +158,7 @@ def main() -> None:
                 f"Expected result: {case.expected}."
             )
         )
-        cells.append(code(case.code + "\nresult"))
+        cells.append(code(case.code + f"\nassert {case.check}\nresult"))
     cells.append(
         md(
             "## Where to go next\n\nUse the [property reference](../properties/index.md) for comprehensive documentation. For parameterized functions, try the same query both without assumptions and after imposing a parameter guard; for piecewise functions, inspect how branch properties and interface conditions combine. Detailed result modes are especially useful when a downstream proof needs replayable evidence."
@@ -163,8 +177,15 @@ def main() -> None:
         "nbformat": 4,
         "nbformat_minor": 5,
     }
-    OUT.parent.mkdir(parents=True, exist_ok=True)
-    OUT.write_text(json.dumps(notebook, indent=1) + "\n", encoding="utf-8")
+    text = json.dumps(notebook, indent=1) + "\n"
+    if args.check:
+        if not OUT.exists() or OUT.read_text() != text:
+            raise SystemExit(
+                "stale tutorial notebook; run tools/build_tutorial_notebook.py"
+            )
+    else:
+        OUT.parent.mkdir(parents=True, exist_ok=True)
+        OUT.write_text(text, encoding="utf-8")
 
 
 if __name__ == "__main__":

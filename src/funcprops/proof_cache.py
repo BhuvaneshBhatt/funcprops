@@ -17,10 +17,13 @@ from sympy import S
 from sympy.core.function import PoleError
 
 from .assumption_normalization import normalize_assumptions, normalize_domain
+from .source_syntax import differentiate
 
 
 @dataclass(frozen=True)
 class PropertyProofKey:
+    """Key shared proof work by syntax, coordinate assumptions and query premises."""
+
     expression: sp.Basic
     variable: sp.Basic
     domain: object = S.true
@@ -28,6 +31,8 @@ class PropertyProofKey:
 
 
 def proof_key(expr, var, *, domain=S.true, assumptions=S.true):
+    """Build a premise-sensitive key for shared property computations."""
+
     return PropertyProofKey(
         sp.sympify(expr),
         sp.sympify(var),
@@ -38,7 +43,7 @@ def proof_key(expr, var, *, domain=S.true, assumptions=S.true):
 
 @lru_cache(maxsize=2048)
 def _derivative_cached(expr, var, order):
-    return sp.diff(expr, var, order)
+    return differentiate(expr, var, order)
 
 
 @lru_cache(maxsize=1024)
@@ -60,7 +65,6 @@ def _derivative_order(order):
 
 
 def _uncached_after_key_error(cache_fn, args):
-    """Retry an LRU-backed call only when its arguments are unhashable."""
     try:
         hash(args)
     except TypeError:
@@ -69,6 +73,8 @@ def _uncached_after_key_error(cache_fn, args):
 
 
 def cached_derivative(expr, var, *, order=1, factored=False):
+    """Reuse differentiation only for matching source syntax and assumptions."""
+
     expr = sp.sympify(expr)
     var = sp.sympify(var)
     order = _derivative_order(order)
@@ -95,6 +101,8 @@ def _domain_cached(expr, var, domain_kind, stratified):
 
 
 def cached_domain(expr, var, *, domain=S.Reals, stratified=False):
+    """Reuse domain analysis only for matching source and query premises."""
+
     if domain in (S.Reals, "real", "reals", "R", "RR"):
         kind = "real"
     elif domain in (S.Complexes, "complex", "complexes", "C", "CC"):
@@ -102,6 +110,22 @@ def cached_domain(expr, var, *, domain=S.Reals, stratified=False):
     else:
         raise ValueError("domain must be Reals or Complexes")
     return _domain_cached(sp.sympify(expr), sp.sympify(var), kind, bool(stratified))
+
+
+@lru_cache(maxsize=512, typed=True)
+def _tracked_domain_cached(expr, var, domain):
+    from .domain_tracking import track_domain
+
+    return track_domain(expr, var, domain)
+
+
+def cached_domain_record(expr, var, domain=S.Reals):
+    """Share source-bound real domain sets for the same expression and restriction."""
+    args = (sp.sympify(expr), sp.sympify(var), domain)
+    try:
+        return _tracked_domain_cached(*args)
+    except TypeError:
+        return _uncached_after_key_error(_tracked_domain_cached, args)
 
 
 @lru_cache(maxsize=1024)
@@ -114,6 +138,8 @@ def _sign_cached(expr, var, domain, strict_inequalities):
 
 
 def cached_sign(expr, var, *, domain=S.true, strict_inequalities=True):
+    """Reuse sign analysis on the same effective domain and assumptions."""
+
     key = proof_key(expr, var, domain=domain)
     args = (key.expression, key.variable, key.domain, bool(strict_inequalities))
     try:
@@ -148,6 +174,8 @@ def _endpoint_limit_cached(expr, var, point, direction, attained):
 
 
 def cached_endpoint_limit(expr, var, point, *, direction="+", attained=False):
+    """Reuse a one-sided endpoint limit with its source and direction bound."""
+
     expression = sp.sympify(expr)
     variable = sp.sympify(var)
     point = sp.sympify(point)
@@ -168,6 +196,8 @@ def _zero_geometry_cached(expr, var, derivative_order, domain):
 
 
 def cached_zero_geometry(expr, var, *, derivative_order=0, domain=S.Reals):
+    """Reuse zero-family geometry under matching source and domain premises."""
+
     key = proof_key(expr, var, domain=domain)
     order = _derivative_order(derivative_order)
     args = (key.expression, key.variable, order, key.domain)
@@ -189,6 +219,8 @@ def _singularity_cached(expr, var, domain, assumptions, ignore_unknown):
 def cached_singularity_analysis(
     expr, var, *, domain=S.Complexes, assumptions=S.true, ignore_unknown=False
 ):
+    """Reuse singularity analysis under the same coordinate and source premises."""
+
     key = proof_key(expr, var, domain=domain, assumptions=assumptions)
     args = (
         key.expression,
@@ -222,6 +254,20 @@ class PropertyProofContext:
             self.expression, self.variable, order=order, factored=factored
         )
 
+    def domain_record(self):
+        """Retain source-bound requested/natural/effective real domains."""
+        from .real_analysis.common import (
+            combine_domain_condition,
+            normalize_domain_condition,
+        )
+
+        restriction = combine_domain_condition(
+            normalize_domain_condition(self.domain, self.variable),
+            self.assumptions,
+            var=self.variable,
+        )
+        return cached_domain_record(self.expression, self.variable, restriction)
+
     def natural_domain(self, *, complex_domain=False, stratified=False):
         """Return the cached natural real or complex domain."""
         target = S.Complexes if complex_domain else S.Reals
@@ -241,6 +287,8 @@ class PropertyProofContext:
         )
 
     def endpoint_limit(self, point, *, direction="+", attained=False):
+        """Compute or reuse a source-bound one-sided endpoint limit."""
+
         return cached_endpoint_limit(
             self.expression,
             self.variable,
@@ -250,6 +298,8 @@ class PropertyProofContext:
         )
 
     def zero_geometry(self, *, derivative_order=0, domain=None):
+        """Compute or reuse zero-family geometry under this context."""
+
         return cached_zero_geometry(
             self.expression,
             self.variable,
@@ -258,6 +308,8 @@ class PropertyProofContext:
         )
 
     def singularities(self, *, domain=S.Complexes, ignore_unknown=False):
+        """Compute or reuse source-bound singularity analysis."""
+
         return cached_singularity_analysis(
             self.expression,
             self.variable,
@@ -267,6 +319,8 @@ class PropertyProofContext:
         )
 
     def monotonic_partition(self, *, domain=None):
+        """Compute or reuse the monotonic partition under this context."""
+
         from .real_analysis.monotonic_certificates import monotonic_partition
 
         return monotonic_partition(
@@ -278,6 +332,8 @@ class PropertyProofContext:
 
 
 def property_proof_context(expr, var, *, domain=S.true, assumptions=S.true):
+    """Get a lazy shared context for compatible property queries."""
+
     key = proof_key(expr, var, domain=domain, assumptions=assumptions)
     args = (key.expression, key.variable, key.domain, key.assumptions)
     try:
@@ -291,9 +347,12 @@ def property_proof_context(expr, var, *, domain=S.true, assumptions=S.true):
 
 
 def clear_property_proof_cache():
+    """Clear shared property contexts and their cached calculations."""
+
     _derivative_cached.cache_clear()
     _factored_derivative_cached.cache_clear()
     _domain_cached.cache_clear()
+    _tracked_domain_cached.cache_clear()
     _sign_cached.cache_clear()
     _endpoint_limit_cached.cache_clear()
     _zero_geometry_cached.cache_clear()
@@ -305,10 +364,13 @@ def clear_property_proof_cache():
 
 
 def property_proof_cache_info():
+    """Report shared property-cache sizes and hit statistics."""
+
     return {
         "derivative": _derivative_cached.cache_info(),
         "factored_derivative": _factored_derivative_cached.cache_info(),
         "domain": _domain_cached.cache_info(),
+        "domain_record": _tracked_domain_cached.cache_info(),
         "sign": _sign_cached.cache_info(),
         "endpoint_limit": _endpoint_limit_cached.cache_info(),
         "zero_geometry": _zero_geometry_cached.cache_info(),

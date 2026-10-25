@@ -8,15 +8,23 @@ Complex-zero isolation finds and certifies zeros inside a finite complex rectang
 
 ## API and return values
 
-```python
+```text
 complex_zeros(expr, *args, assumptions=True, return_result=False, **kwargs)
 ```
 
-An exact finite set when available, or a ComplexRootIsolationResult containing certified rectangles, counts, completeness, and diagnostic evidence.
+An exact finite set when available, or a ComplexRootIsolationResult containing certified rectangles, counts, and route-specific evidence. Native entire/quotient routes use complete = coverage_complete and isolation_complete and accuracy_complete. Algebraic/exact routes have their own contracts; consult [result contracts](../reference/result-contracts.md). Counts distinguish source zeros, extension zeros and poles. Request rectangle=(lower_left, upper_right), an EnclosurePolicy, and positive max_box_width/max_box_diameter targets when needed; see the [isolation tutorial](../tutorials/complex-isolation.md).
+
+| Parameter | Meaning |
+| --- | --- |
+| `expr` | SymPy expression whose global property is queried. |
+| `args` | Positional coordinate and rectangle forms accepted by this wrapper; prefer the explicit tutorial call. |
+| `assumptions` | Symbolic hypotheses used while proving the property. |
+| `return_result` | Return structured metadata, certificates, or diagnostics. |
+| `kwargs` | Operation-specific options, including supported budgets and native isolation policy/accuracy targets; see the linked guide. |
 
 ## Domains, assumptions, and parameters
 
-The query is interpreted on the supplied domain, not from the expression in isolation. When symbolic parameters change the property, funcprops preserves those cases as guarded parameter strata. Assumptions are proof hypotheses: they can simplify a stratum or branch condition, but they do not justify numerical guessing.
+Native entire/quotient isolation requires an unconstrained Symbol, rational rectangle corners, no free parameters and zero-free outer boundaries for the required source components. Boundary zeros remain unresolved there. The algebraic adapter can own exact boundary roots and retains raw source holes, principal-power branches, supported exact set domains and algebraic Eq/Ne guards. Unsupported planar guards, free parameters, branch or membership uncertainty prevent an unconditional completion claim. See [result contracts](../reference/result-contracts.md).
 
 ## Executable examples
 
@@ -29,8 +37,11 @@ import sympy as sp
 import funcprops as fp
 
 x, y = sp.symbols("x y", real=True)
-z = sp.symbols('z'); result = fp.complex_zeros(sp.exp(z) - 1, z, rectangle=(-1-sp.I, 1+sp.I), return_result=True)
-result
+z = sp.symbols("z")
+result = fp.complex_zeros(
+    sp.exp(z) - 1, z, rectangle=(-1 - sp.I, 1 + sp.I), return_result=True
+)
+assert result.complete is True and result.total_count == 1 and len(result.rectangles) == 1
 ```
 
 Expected: one certified zero in the rectangle.
@@ -39,11 +50,11 @@ Application: Certify contour root counts before complex continuation, inversion,
 
 ## Applications
 
-This property is useful whenever later mathematics depends on a global qualitative fact, not isolated samples. Typical uses include symbolic preprocessing, theorem-hypothesis verification, optimization, inverse problems, robust numerical method selection, and simplifying downstream case analysis.
+Use the executable complex zeros examples to check the corresponding source, domain and branch premises before consuming the result in a larger analysis.
 
 ## How funcprops proves it
 
-Exact complex solving first, then structural holomorphy checks, validated argument-principle contour counting, complex-interval boundary exclusion, and count-preserving rational subdivision.
+Algebraic inputs use the algroots adapter when supported. Native entire and certified-quotient inputs use replayable contour counts, exact rectangle covers, shared-zero/order witnesses and optional Newton refinement. Original source restrictions survive cancellation.
 
 Successful conclusions are exact symbolic claims over the stated domain and assumptions. Detailed modes expose evidence or certificates where the property API supports them.
 
@@ -60,4 +71,4 @@ General holomorphy and boundary nonvanishing may remain uncertified; numerical w
 
 ## Source
 
-The implementation is exposed through [`funcprops.api`](https://github.com/BhuvaneshBhatt/funcprops/blob/main/src/funcprops/api.py).
+The callable is exported through funcprops; its implementation module is [`funcprops.api`](https://github.com/BhuvaneshBhatt/funcprops/blob/main/src/funcprops/api.py).

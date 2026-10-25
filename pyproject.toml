@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "funcprops"
-version = "0.3.0"
+version = "0.4.0"
 description = "Symbolic analysis of real, complex, and multivariate function properties for SymPy"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -13,7 +13,7 @@ authors = [{name = "Bhuvanesh Bhatt", email = "bhuvaneshbhatt@gmail.com"}]
 dependencies = [
   "sympy>=1.14",
   "mpmath>=1.3",
-  "semialg>=1.3.0",
+  "semialg>=1.3.2",
   "exprtest>=0.1.0",
 ]
 keywords = [

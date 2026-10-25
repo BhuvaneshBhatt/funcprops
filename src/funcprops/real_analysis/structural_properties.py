@@ -1,30 +1,44 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 import sympy as sp
 from sympy import S
 from sympy.polys.polyerrors import PolynomialError
 
 from ..engine import simplify_condition
-from ..exactness import certify_identity_equal, certify_identity_zero
-from ..results import Homogeneity, Periodicity, Symmetry
+from ..exactness import certify_identity_equal, certify_identity_zero, certify_zero
+from ..results import ConditionalExpression, Homogeneity, Periodicity, Symmetry
+from ..source_syntax import differentiate
+from ..stratification import normalize_cases
 from ..transcendental.periodic import common_period_values, positive_period
-from .common import normalize_variables
+from .common import normalize_variables, original_definition_guard
 
 
 @dataclass(frozen=True)
 class PeriodicityResult:
+    """Retain a periodicity classification, period and supporting guarded cases."""
+
     classification: Periodicity
     period: sp.Expr | None = None
     domain: object = S.Reals
     evidence: tuple = ()
     fundamental: bool | None = None
     conditions: sp.Expr = S.true
+    cases: tuple = ()
+    assumptions: sp.Expr = S.true
+    complete: bool | None = None
+    certified: bool | None = None
+
+    @property
+    def certificate(self):
+        return self
 
 
 @dataclass(frozen=True)
 class SymmetryResult:
+    """Retain a symmetry classification, center and identity evidence."""
+
     classification: Symmetry
     center: sp.Expr = S.Zero
     domain: object = S.Reals
@@ -33,10 +47,21 @@ class SymmetryResult:
     center_period: sp.Expr | None = None
     central_value: sp.Expr | None = None
     center_families: tuple = ()
+    cases: tuple = ()
+    assumptions: sp.Expr = S.true
+    complete: bool | None = None
+    certified: bool | None = None
+    query_center: object = S.Zero
+
+    @property
+    def certificate(self):
+        return self
 
 
 @dataclass(frozen=True)
 class HomogeneityCase:
+    """Pair a homogeneity degree or obstruction with its parameter condition."""
+
     degree: sp.Expr | None
     condition: sp.Expr
     weights: tuple
@@ -44,6 +69,8 @@ class HomogeneityCase:
 
 @dataclass(frozen=True)
 class HomogeneityResult:
+    """Retain scaling classification, inferred/requested degree and guarded cases."""
+
     classification: Homogeneity
     degree: sp.Expr | None = None
     variables: tuple = ()
@@ -52,6 +79,7 @@ class HomogeneityResult:
     conditions: sp.Expr = S.true
     cases: tuple[HomogeneityCase, ...] = ()
     assumptions: sp.Expr = S.true
+    requested_degree: sp.Expr | None = None
 
 
 def _zero(expr):
@@ -61,10 +89,10 @@ def _zero(expr):
 def _period_from_frequency(arg, var):
     """Return exact positive period for sin/cos-like affine arguments."""
     try:
-        a = sp.simplify(sp.diff(arg, var))
+        a = sp.simplify(differentiate(arg, var))
         if a.has(var) or a == 0:
             return None
-        if certify_identity_zero(sp.diff(arg, var, 2)) is False:
+        if certify_identity_zero(differentiate(arg, var, 2)) is False:
             return None
         p = sp.simplify(2 * sp.pi / sp.Abs(a))
         return p if p.is_positive is True else None
@@ -104,20 +132,61 @@ def _period_of(expr, var):
 
 
 def _visible_incommensurate_periods(expr, var):
-    if not (expr.is_Add or expr.is_Mul):
+    # Two genuine nonzero real harmonic terms with a proved irrational
+    # frequency ratio cannot have a common nonzero real period.
+    if not expr.is_Add:
         return False
-    ps = []
-    for a in expr.args:
-        if not a.has(var):
+    frequencies = []
+    for term in expr.args:
+        if not term.has(var):
             continue
-        p = _period_of(a, var)
-        if p is None:
+        coefficient, head = term.as_independent(var, as_Add=False)
+        if head.func not in (sp.sin, sp.cos) or certify_zero(coefficient) is not False:
             return False
-        ps.append(p)
-    return len(ps) > 1 and common_period_values(*ps) is None
+        arg = head.args[0]
+        frequency = sp.simplify(differentiate(arg, var))
+        phase = sp.simplify(arg - frequency * var)
+        if (
+            frequency.has(var)
+            or phase.has(var)
+            or frequency.is_real is not True
+            or phase.is_real is not True
+            or certify_zero(frequency) is not False
+        ):
+            return False
+        frequencies.append(frequency)
+    return (
+        len(frequencies) == 2 and (frequencies[0] / frequencies[1]).is_rational is False
+    )
 
 
-def periodicity(expr, var, *, domain=True, assumptions=True, return_result=False):
+def _polynomial_periodicity(expr, var, assumptions=S.true):
+    if not expr.is_polynomial(var):
+        return None
+    polynomial = sp.Poly(expr, var)
+    coefficients = [c for (power,), c in polynomial.terms() if power > 0]
+    statuses = [certify_zero(c, assumptions=assumptions) for c in coefficients]
+    if any(status is False for status in statuses):
+        return Periodicity.APERIODIC
+    if all(status is True for status in statuses):
+        return Periodicity.CONSTANT
+    return Periodicity.UNKNOWN
+
+
+def _identity_on_axis(expr, var):
+    status = _zero(expr)
+    if status is not False:
+        return status
+    if expr.is_polynomial(var):
+        return (
+            False
+            if any(certify_zero(c) is False for c in sp.Poly(expr, var).all_coeffs())
+            else None
+        )
+    return False if not (expr.free_symbols - {var}) else None
+
+
+def _periodicity_impl(expr, var, *, domain=True, assumptions=True, return_result=False):
     """Classify exact real periodicity and return a certified period in detail mode.
 
     A period propagated through composition/sums/products is certified but is
@@ -142,11 +211,11 @@ def periodicity(expr, var, *, domain=True, assumptions=True, return_result=False
     ):
         arg = expr.args[0]
         try:
-            a = sp.simplify(sp.diff(arg, var))
+            a = sp.simplify(differentiate(arg, var))
             b = sp.simplify(arg - a * var)
             affine = (
                 not a.has(var)
-                and certify_identity_zero(sp.diff(arg, var, 2)) is True
+                and certify_identity_zero(differentiate(arg, var, 2)) is True
                 and not b.has(var)
             )
         except (TypeError, ValueError, NotImplementedError):
@@ -169,6 +238,7 @@ def periodicity(expr, var, *, domain=True, assumptions=True, return_result=False
                     domain,
                     ("zero-affine-frequency",),
                     False,
+                    sp.sympify(assumptions),
                 )
                 return r if return_result else r.classification
             base = sp.pi if expr.func in (sp.tan, sp.cot) else 2 * sp.pi
@@ -187,7 +257,11 @@ def periodicity(expr, var, *, domain=True, assumptions=True, return_result=False
                 r = PeriodicityResult(
                     Periodicity.PERIODIC, cp, domain, evidence, None, cond
                 )
-                return r if return_result else r.classification
+                return (
+                    r
+                    if return_result
+                    else (r.classification if cond is S.true else Periodicity.UNKNOWN)
+                )
     if p is not None:
         # Replay the shift identity before accepting structural propagation.
         z = _zero(expr.subs(var, var + p) - expr)
@@ -214,13 +288,15 @@ def periodicity(expr, var, *, domain=True, assumptions=True, return_result=False
             )
             return r if return_result else r.classification
     try:
-        if expr.is_polynomial(var) and sp.Poly(expr, var).degree() > 0:
+        status = _polynomial_periodicity(expr, var, assumptions)
+        if status is not None:
             result = PeriodicityResult(
-                Periodicity.APERIODIC,
+                status,
                 None,
                 domain,
-                ("nonconstant-polynomial",),
+                ("polynomial-coefficient-proof",),
                 None,
+                sp.sympify(assumptions),
             )
             return result if return_result else result.classification
     except PolynomialError:
@@ -239,11 +315,15 @@ def periodicity(expr, var, *, domain=True, assumptions=True, return_result=False
 
 
 def _classify_about(expr, var, c, *, allow_central=False):
+    if c.is_real is not True or c.is_finite is not True:
+        return Symmetry.UNKNOWN, expr, None
     reflected = sp.simplify(expr.subs(var, 2 * c - var))
-    even = _zero(reflected - expr)
-    odd = _zero(reflected + expr)
+    even = _identity_on_axis(reflected - expr, var)
+    odd = _identity_on_axis(reflected + expr, var)
     k = sp.simplify(expr.subs(var, c))
-    central = _zero(reflected + expr - 2 * k) if k is not None else None
+    central = (
+        _identity_on_axis(reflected + expr - 2 * k, var) if k is not None else None
+    )
     if even is True and odd is True:
         cls = Symmetry.BOTH
     elif even is True:
@@ -305,9 +385,14 @@ def _trig_center_family(expr, var):
         return None
     arg = expr.args[0]
     try:
-        a = sp.simplify(sp.diff(arg, var))
+        a = sp.simplify(differentiate(arg, var))
         b = sp.simplify(arg - a * var)
-        if a.has(var) or a == 0:
+        if (
+            a.has(var)
+            or a.is_real is not True
+            or b.is_real is not True
+            or certify_zero(a) is not False
+        ):
             return None
         step = sp.simplify(sp.pi / sp.Abs(a))
         c0 = sp.simplify(-b / a)
@@ -329,7 +414,7 @@ def _trig_center_family(expr, var):
         return None
 
 
-def symmetry(expr, var, *, center=0, domain=True, return_result=False):
+def _symmetry_impl(expr, var, *, center=0, domain=True, return_result=False):
     """Classify reflection symmetry about ``center``.
 
     Passing ``center=None`` requests exact center discovery. Detail mode also
@@ -459,19 +544,64 @@ def _infer_homogeneous_degree(expr, vars_, weights):
         return False, cases
     if expr == 0:
         return None, (HomogeneityCase(None, S.true, weights),)
+    if expr.func is sp.Abs:
+        degree, inner_cases = _infer_homogeneous_degree(expr.args[0], vars_, weights)
+        if (
+            degree is not None
+            and degree is not False
+            and sp.sympify(degree).is_real is True
+        ):
+            return degree, inner_cases
+        if degree is None and expr.args[0] == 0:
+            return None, (HomogeneityCase(None, S.true, weights),)
+    # Replace homogeneous Abs atoms only when they share a proved real degree.
+    replacements = {}
+    for atom in expr.atoms(sp.Abs):
+        degree, _ = _infer_homogeneous_degree(atom.args[0], vars_, weights)
+        if (
+            degree is not None
+            and degree is not False
+            and sp.sympify(degree).is_real is True
+        ):
+            replacements[atom] = degree
+    if replacements:
+        scale = sp.Dummy("positive_scale", positive=True)
+        scaled = expr.xreplace(
+            {v: scale**w * v for v, w in zip(vars_, weights, strict=True)}
+        )
+        for atom, degree in replacements.items():
+            scaled_atom = atom.xreplace(
+                {v: scale**w * v for v, w in zip(vars_, weights, strict=True)}
+            )
+            scaled = scaled.xreplace({scaled_atom: scale**degree * atom})
+        candidates = set(replacements.values())
+        for degree in candidates:
+            if _zero(sp.simplify(scaled - scale**degree * expr)) is True:
+                return degree, (HomogeneityCase(degree, S.true, weights),)
     euler = sp.simplify(
-        sum(w * v * sp.diff(expr, v) for v, w in zip(vars_, weights, strict=False))
+        sum(
+            w * v * differentiate(expr, v) for v, w in zip(vars_, weights, strict=False)
+        )
     )
     ratio = sp.cancel(euler / expr)
     if not any(ratio.has(v) for v in vars_) and ratio.is_real is not False:
-        if _zero(euler - ratio * expr) is True:
+        scale = sp.Dummy("homogeneity_scale", positive=True)
+        scaled = expr.xreplace(
+            {v: scale**w * v for v, w in zip(vars_, weights, strict=True)}
+        )
+        scaling_defect = sp.simplify(scaled - scale**ratio * expr)
+        if (
+            _zero(euler - ratio * expr) is True
+            and not scaling_defect.has(sp.Piecewise)
+            and _zero(scaling_defect) is True
+        ):
             return sp.simplify(ratio), (
                 HomogeneityCase(sp.simplify(ratio), S.true, weights),
             )
     return None, ()
 
 
-def homogeneity(
+def _homogeneity_impl(
     expr, vars, *, degree=None, weights=None, assumptions=True, return_result=False
 ):
     """Classify positive weighted homogeneity in one or more variables.
@@ -499,7 +629,33 @@ def homogeneity(
         return r if return_result else cls
     if degree is not None:
         d = sp.sympify(degree)
-        if inferred not in (None, False):
+        polynomial_source = (
+            expr.args[0]
+            if expr.func is sp.Abs and all(w.is_real is True for w in ww)
+            else expr
+        )
+        if polynomial_source.is_polynomial(*vv):
+            poly = sp.Poly(polynomial_source, *vv)
+            guard = sp.And(
+                *(
+                    sp.Or(
+                        sp.Eq(sum(m * w for m, w in zip(monom, ww, strict=True)), d),
+                        sp.Eq(coeff, 0),
+                    )
+                    for monom, coeff in poly.terms()
+                )
+            )
+            yes = sp.simplify(sp.Implies(assumptions, guard))
+            no = sp.simplify(sp.Implies(assumptions, sp.Not(guard)))
+            cls = (
+                Homogeneity.HOMOGENEOUS
+                if yes is S.true
+                else Homogeneity.NOT_HOMOGENEOUS
+                if no is S.true
+                else Homogeneity.UNKNOWN
+            )
+            cases = (HomogeneityCase(d, guard, ww),)
+        elif inferred not in (None, False):
             z = _zero(inferred - d)
             cls = (
                 Homogeneity.HOMOGENEOUS
@@ -519,6 +675,21 @@ def homogeneity(
                 if z is False
                 else Homogeneity.UNKNOWN
             )
+        if (
+            cls is Homogeneity.NOT_HOMOGENEOUS
+            and not polynomial_source.is_polynomial(*vv)
+            and (expr.free_symbols - set(vv))
+        ):
+            factor, inner = expr.as_independent(*vv, as_Add=False)
+            if not (inner.free_symbols - set(vv)):
+                zero_factor = certify_zero(factor, assumptions=assumptions)
+                if zero_factor is True:
+                    cls = Homogeneity.HOMOGENEOUS
+                    cases = (HomogeneityCase(d, sp.Eq(factor, 0), ww),)
+                elif zero_factor is not False:
+                    cls = Homogeneity.UNKNOWN
+            else:
+                cls = Homogeneity.UNKNOWN
         rd = d if cls is Homogeneity.HOMOGENEOUS else None
     else:
         if inferred is False:
@@ -555,7 +726,11 @@ def homogeneity(
             rd = sp.sympify(inferred)
     cond = S.true
     if cases and cls is Homogeneity.NOT_HOMOGENEOUS:
-        cond = sp.Not(sp.Or(*(c.condition for c in cases)))
+        cond = (
+            sp.Not(sp.Or(*(c.condition for c in cases)))
+            if degree is None
+            else assumptions
+        )
     r = HomogeneityResult(
         cls,
         rd,
@@ -567,3 +742,164 @@ def homogeneity(
         assumptions,
     )
     return r if return_result else cls
+
+
+def homogeneity(
+    expr, vars, *, degree=None, weights=None, assumptions=True, return_result=False
+):
+    """Classify positive weighted homogeneity, retaining the requested degree."""
+    result = _homogeneity_impl(
+        expr,
+        vars,
+        degree=degree,
+        weights=weights,
+        assumptions=assumptions,
+        return_result=True,
+    )
+    result = replace(
+        result, requested_degree=None if degree is None else sp.sympify(degree)
+    )
+    return result if return_result else result.classification
+
+
+def _coefficient_guard(coefficients):
+    return sp.And(
+        *(
+            sp.And(sp.Ne(sp.denom(c), 0), sp.Q.finite(c))
+            for c in coefficients
+            if c.is_finite is not True
+        )
+    )
+
+
+def _resolved_case_classification(cases, assumptions, unknown):
+    for case in cases:
+        if simplify_condition(case.condition, assumptions=assumptions) is S.true:
+            return case.value
+    return unknown
+
+
+def periodicity(expr, var, *, domain=True, assumptions=True, return_result=False):
+    """Classify periodicity, retaining guarded polynomial coefficient cases."""
+    expr, var, assumptions = sp.sympify(expr), sp.sympify(var), sp.sympify(assumptions)
+    result = _periodicity_impl(
+        expr, var, domain=domain, assumptions=assumptions, return_result=True
+    )
+    if expr.is_polynomial(var):
+        coeffs = [c for (power,), c in sp.Poly(expr, var).terms() if power > 0]
+        definition = original_definition_guard(expr, (var,))
+        finite = sp.And(
+            S.false if definition is None else definition,
+            _coefficient_guard(sp.Poly(expr, var).all_coeffs()),
+        )
+        zero = sp.And(*(sp.Eq(c, 0) for c in coeffs))
+        raw = (
+            ConditionalExpression(Periodicity.CONSTANT, sp.And(finite, zero)),
+            ConditionalExpression(Periodicity.APERIODIC, sp.And(finite, sp.Not(zero))),
+            ConditionalExpression(Periodicity.UNKNOWN, sp.Not(finite)),
+        )
+        cases = normalize_cases(raw).cases
+        classification = _resolved_case_classification(
+            cases, assumptions, Periodicity.UNKNOWN
+        )
+        result = replace(
+            result,
+            classification=classification,
+            cases=cases,
+            assumptions=assumptions,
+            certified=any(
+                c.value is not Periodicity.UNKNOWN
+                and simplify_condition(sp.And(assumptions, c.condition)) is not S.false
+                for c in cases
+            ),
+            complete=simplify_condition(finite, assumptions=assumptions) is S.true,
+        )
+    else:
+        cases = ()
+        if result.conditions is not S.true:
+            cases = normalize_cases(
+                (
+                    ConditionalExpression(result.classification, result.conditions),
+                    ConditionalExpression(
+                        Periodicity.UNKNOWN, sp.Not(result.conditions)
+                    ),
+                )
+            ).cases
+        result = replace(
+            result,
+            cases=cases,
+            assumptions=assumptions,
+            certified=result.classification is not Periodicity.UNKNOWN,
+            complete=result.classification is not Periodicity.UNKNOWN
+            and simplify_condition(result.conditions, assumptions=assumptions)
+            is S.true,
+        )
+    if return_result:
+        return result
+    return (
+        _resolved_case_classification(result.cases, assumptions, Periodicity.UNKNOWN)
+        if result.cases
+        else result.classification
+    )
+
+
+def symmetry(
+    expr, var, *, center=0, domain=True, assumptions=True, return_result=False
+):
+    """Classify reflection identities with guarded polynomial parity cases."""
+    expr, var, assumptions = sp.sympify(expr), sp.sympify(var), sp.sympify(assumptions)
+    result = _symmetry_impl(expr, var, center=center, domain=domain, return_result=True)
+    if (
+        center is not None
+        and expr.is_polynomial(var)
+        and result.center.is_real is True
+        and result.center.is_finite is True
+    ):
+        reflected = sp.expand(expr.subs(var, 2 * result.center - var))
+        even_coeffs = sp.Poly(reflected - expr, var).all_coeffs()
+        odd_coeffs = sp.Poly(reflected + expr, var).all_coeffs()
+        definition = original_definition_guard(expr, (var,))
+        finite = sp.And(
+            S.false if definition is None else definition,
+            _coefficient_guard(sp.Poly(expr, var).all_coeffs()),
+        )
+        even = sp.And(*(sp.Eq(c, 0) for c in even_coeffs))
+        odd = sp.And(*(sp.Eq(c, 0) for c in odd_coeffs))
+        raw = tuple(
+            ConditionalExpression(value, sp.And(finite, e, o))
+            for value, e, o in (
+                (Symmetry.BOTH, even, odd),
+                (Symmetry.EVEN, even, sp.Not(odd)),
+                (Symmetry.ODD, sp.Not(even), odd),
+                (Symmetry.NEITHER, sp.Not(even), sp.Not(odd)),
+            )
+        )
+        cases = normalize_cases(
+            (*raw, ConditionalExpression(Symmetry.UNKNOWN, sp.Not(finite)))
+        ).cases
+        classification = _resolved_case_classification(
+            cases, assumptions, Symmetry.UNKNOWN
+        )
+        result = replace(
+            result,
+            classification=classification,
+            cases=cases,
+            assumptions=assumptions,
+            certified=any(
+                c.value is not Symmetry.UNKNOWN
+                and simplify_condition(sp.And(assumptions, c.condition)) is not S.false
+                for c in cases
+            ),
+            complete=simplify_condition(finite, assumptions=assumptions) is S.true,
+        )
+    else:
+        result = replace(
+            result,
+            assumptions=assumptions,
+            certified=result.classification is not Symmetry.UNKNOWN,
+            complete=result.classification is not Symmetry.UNKNOWN,
+        )
+    result = replace(
+        result, query_center=None if center is None else sp.sympify(center)
+    )
+    return result if return_result else result.classification

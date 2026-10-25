@@ -59,7 +59,7 @@ def test_parameter_assumption_certifies_linear_scaling():
     assert cert.verify()
 
 
-def test_change_of_variables_records_absolute_determinant_and_orientation():
+def test_substitution_orientation():
     x, y = sp.symbols("x y", real=True)
     cert = change_of_variables((2 * x + y, x - y), (x, y))
     assert cert.classification is TruthValue.TRUE
@@ -78,7 +78,7 @@ def test_nonsquare_map_stays_unknown_for_inverse_function_theorem():
     assert cov.classification is TruthValue.UNKNOWN
 
 
-def test_transformation_geometry_combines_all_transformation_contracts():
+def test_transformation_geometry():
     x, y = sp.symbols("x y", real=True)
     result = transformation_geometry((x + y, x - y), (x, y))
     assert result.jacobian.verify()

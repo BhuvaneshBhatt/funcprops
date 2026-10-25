@@ -1,249 +1,58 @@
-# Architecture
+# Architecture and proof boundaries
 
-`funcprops` separates declarative property facts, symbolic proof machinery, and
-public query routing so exact reasoning can be reused without forcing every API
-through the same expensive path.
+Funcprops combines structural registry facts, symbolic transformations, exact algebraic backends and native witnesses. A successful route must retain the original source, requested domain, assumptions and branch context through its consumers. See [result contracts](reference/result-contracts.md) before treating any result as exhaustive.
 
-## Main modules
-
-- `api.py` defines the public `function_*` surface and routes property queries.
-- `engine.py` evaluates conditional catalogue rules, overload precedence, and
-  assumptions.
-- `registry.py` and `data/catalogue.json` store conditional function-family
-  metadata and source-pattern information.
-- `conditions.py` parses deterministic SymPy-constructor catalogue expressions
-  and preserves custom semantic predicates explicitly.
-- `singularities.py` handles poles, removable and essential singularities,
-  branch/definition loci, analyticity, meromorphicity, and continuity.
-- `stratification.py` normalizes guarded alternatives and splits mixed
-  variable/parameter domains for all property engines.
-- `_semialg.py` is the narrow adapter to semialg 1.0.0+ public root exports for
-  exact semialgebraic domain, range, sign, monotonicity, convexity, smoothness, and mapping operations.
-- `real_analysis/` contains domain, sign/inequality, monotonicity, range, mapping,
-  convexity, boundedness, smoothness, and structural-property reasoning.
-- `real_analysis/piecewise.py` supplies effective branch domains and shared
-  interface data for property-specific piecewise combination.
-- `transcendental/` contains certified root isolation, algebraization,
-  periodic reduction, zero geometry, extrema, and supporting proof objects.
-- `branchcuts/` contains structural cut pullback and boundary-value/jump
-  machinery.
-- `proof_cache.py` coordinates reusable lazy proof primitives.
-- `verification.py` replays certificate invariants.
-
-## Conditional results
-
-Property queries preserve unresolved parameter conditions. A singularity record,
-for example, keeps its variable-dependent locus separate from the parameter-only
-guard under which that locus applies. This distinction is necessary for families
-whose branch or pole structure changes with an order or shape parameter.
-
-`PropertyResult` is the shared representation for guarded alternatives. Mixed
-variable/parameter conditions are stratified before a property engine runs, and
-nested guarded results are flattened back into the same representation. Internal
-transformations preserve cases
-classification.
-
-Three-valued logic is a correctness requirement. An undecidable set relation,
-branch-locus intersection, singularity search, or domain conversion must remain
-unknown.
-
-## Real-property proof flow
-
-The real-analysis layer uses inexpensive exact information before invoking heavier
-machinery:
-
-```text
-property query
-  -> parameter-domain stratification
-  -> primitive and structural closure facts
-  -> shared sign/inequality proof when applicable
-  -> effective Piecewise branch analysis when applicable
-  -> direct symbolic simplification
-  -> transcendental algebraization when applicable
-  -> semialgebraic solver for the algebraized problem
-  -> periodic fundamental-domain reduction
-  -> certified root or zero geometry
-  -> monotonic/convex interval decomposition
+```mermaid
+flowchart TD
+    A[Public property and certified-operation APIs] --> B[Source, domain, parameter and branch context]
+    B --> C[Registry and structural theorem rules]
+    B --> D[Candidate search and subdivision]
+    B --> E[Algebraic backend adapter]
+    C --> F[Bound evidence and result assembly]
+    D --> G[Independent native witness checkers]
+    E --> H[Declared exact backend replay]
+    G --> F
+    H --> F
+    F --> I[Property consumers and compact or detailed results]
+    G --> J[Trusted symbolic and outward arithmetic]
+    H --> J
 ```
 
-Not every query traverses this entire pipeline. Fast paths return immediately when
-they already prove the requested property.
+## Module responsibilities
 
-Completeness is explicit. An incomplete root search can be useful evidence but is
-never consumed as an exhaustive zero set.
+| Layer | Modules / responsibilities |
+| --- | --- |
+| Public queries | api.py normalizes property arguments, assumptions and return_result projection; __init__.py exports helpers and records |
+| Facts and theorem routing | registry.py, immutable argument signatures, data resources, theorem routing and real_analysis modules provide guarded sufficient facts |
+| Source/domain tracking | domain_tracking.py, algebraization.py and branch/Piecewise helpers retain raw holes, effective domains and first-match seam ownership |
+| Finite property proof replay | metric_proofs.py checks finite secants and finite monotone motion/jump assemblies without their proposers |
+| Polynomial parameter geometry | parameter_geometry.py checks degree strata, trace signatures, exact sign-prefix coverage and assumption-preserving specialization |
+| Branch recipes | branch_gluing.py checks given holomorphic solutions and every overlap for a shared entire implicit relation |
+| Exact algebraic support | algebraic_coefficients.py encodes bounded real fields by a uniquely isolated generator; semialg handles supported real constraints; algebraic_complex.py adapts algroots enumeration/certificates and filters against original principal-source restrictions |
+| Native real kernel | coverage_contract.py and coverage_checker.py bind and check witnesses; enclosures.py supplies outward bounds |
+| Real search and extensions | coverage_search.py, adaptive_roots.py, infinite/parameter/property modules propose compact partitions, tails, families, guarded boxes and consumer proofs |
+| Complex contour kernel | complex_interval.py and analytic_contours.py check outward image boxes, zero-free boundaries and exact winding counts |
+| Complex isolation | complex_isolation.py assembles exact rectangle covers; complex_cofinal.py schedules bounded attempts and conditional guarantees |
+| Multiplicity and acceleration | complex_multiplicity.py and complex_newton.py supply checked location/order and Krawczyk witnesses, including all complement regions |
+| Quotient ledger | quotient_isolation.py tracks numerator, denominator and original guards; shared_zeros.py proves shared orders; quotient_refinement.py and quotient_cofinal.py preserve that ledger |
+| Factory-based operations | certified_operations.py, integration.py and real/transcendental helper families retain their declared replay contracts |
+| Replay and inspection | verification.py selects registered concrete types; diagnostics.py reports replay status; proof_inventory.py exposes scoped release metadata |
+| Resource control | work_budget.py implements supported isolated wall budgets; _source_transport.py retains held operands and coefficient domains across inputs, results and checkpoints |
 
-## Shared inequality and piecewise reasoning
+## Search versus checking
 
-The sign engine is the common exact inequality oracle. Relations such as `f >= g`
-are reduced to the sign of `f - g`; derivative-based consumers therefore reuse the
-same proof ladder.
+Search may guess a root location, subdivision, identity or precision. A native checker must reconstruct its mathematical obligations from bound evidence without calling that search. Root exclusion and positive counts require witnesses; coverage requires exact geometry and clear shared boundaries. Failed proposals leave unresolved regions. Newton acceleration must preserve every complement and count. A conditional cofinal theorem never substitutes for a finite checked cover.
 
-Finite `Piecewise` expressions are first converted to a `PiecewiseDecomposition`
-of effective, non-overlapping connected branch cells. Every finite seam records
-left/right approach branches separately from the branch that owns the point.
-`PiecewiseBoundaryCertificate` computes one-sided values and derivatives on the
-selected branch expressions themselves, avoiding whole-Piecewise limit heuristics.
-Sign and boundedness combine branch classifications directly; zeros and ranges
-merge branch-local sets/images. Continuity, differentiability, smoothness,
-monotonicity, and convexity additionally require the appropriate certified seam
-conditions. Unknown interface facts remain unknown
-from compatible branch labels alone. See [`docs/piecewise.md`](piecewise.md).
+The algebraic adapter replays declared backend obligations. Some factory-based verifiers recompute through their original theorem factories. The inventory labels these differences; successful factory-based replay does not make it a native independent kernel. Static reachability in the inventory is approximate and is not an exhaustive capability or test-coverage claim.
 
-## Singularity loci and restricted domains
+## Transformation and consumer invariants
 
-Singularity analysis uses Boolean loci
-isolated points. In several variables, rational denominators and elementary
-branch structures therefore remain as exact hypersurface or preimage conditions,
-such as `Eq(x + y, 0)` or the preimage of the principal logarithm cut. Complex
-ambient results expose these conditions explicitly through `re(...)` and
-`im(...)`.
+Transformations carry restrictions exactly or decline the route. Real/complex intermediate branches, denominator holes and assumptions must not disappear through cancellation. Consumers such as range/sign/monotonicity only assemble conclusions on certified effective cells, with endpoint and seam ownership. Unknown comparisons, missing parameter cases and unresolved tails stay visible. Source-preserving equivalence and meromorphic-extension equivalence are different relations; tests must choose the one their theorem uses.
 
-`ConditionalExpression` supplies a function-specific restriction independently of
-the ambient real/complex mode. The aggregate singularity query intersects the
-known locus with that restriction, using semialgebraic feasibility when available
-to certify empty intersections. Detailed singularity results retain the
-unrestricted locus and classify it against the restriction's ambient interior,
-boundary, and exterior. Thus an excluded support boundary remains available as
-geometry/evidence without being reported as a singularity of the restricted
-function itself.
+## Trust and package boundaries
 
-## Zero geometry and interval decomposition
+SymPy arithmetic, differentiation and declared identity oracles, outward interval primitives, semialg and algroots are trusted where used. This is not a formal proof-assistant development. Funcprops owns source/branch/domain policy and consumer assembly; algroots owns supported exact algebraic enumeration; semialg owns supported semialgebraic reasoning. Native nonalgebraic search/checkpoint contracts are currently inside funcprops; extraction into another package remains a design option, not a dependency already introduced here.
 
-The root layer separates root representation from geometric proof. Closed-form and
-isolated roots coexist with `IndexedZero` families. Certificates describe support,
-parameter guards, counts, simplicity, ordering, and interlacing.
+## Documentation and validation
 
-First-derivative zero geometry feeds monotonic decomposition; second-derivative
-geometry feeds convexity decomposition. Finite exact roots create concrete cells.
-Complete infinite families create symbolic indexed cells
-numerical truncation.
-
-Indexed-tail inversion adds exact inverse-index objects for semi-infinite domains:
-
-```text
-IndexedZero family
-  -> IndexedTailIndex / inversion certificate
-  -> first admissible extremum indices
-  -> extremum ordering theorem
-  -> finite exact candidate set
-  -> function range
-```
-
-A general parameter cutoff can remain symbolic. When same-family ordering or
-interlacing identifies the first admissible index exactly, the selector is reduced
-to an integer.
-
-## Shared proof context
-
-`PropertyProofContext(expr, var, domain, assumptions)` is a lazy container for
-cross-property proof primitives. It does not compute a domain, derivative, sign,
-or singularity analysis when constructed.
-
-Bounded LRU caches independently retain:
-
-- raw derivatives;
-- factored derivatives;
-- natural domains;
-- sign classifications;
-- one-sided endpoint limits;
-- zero geometry;
-- singularity analyses; and
-- monotonic partitions.
-
-Raw and factored derivatives are separate because factorization can dominate the
-cost of an otherwise cheap derivative query. Recursive traversal can bypass the
-global cache boundary when transient subexpressions are unlikely to be reused.
-
-Cache-key normalization is deliberately syntactic: Boolean conjunctions and
-disjunctions are flattened, duplicates removed, operands sorted canonically, and
-simple relations oriented deterministically. Quantifier elimination and expensive
-logical simplification are never performed merely to build a cache key.
-
-## Certificate replay
-
-Verification lives above the proof context. Convexity classifications use one
-`ConvexityCertificate` representation; strong classifications add a certified
-modulus while ordinary classifications retain their method and proof payload in
-the same shape. A verifier reconstructs the invariant claimed by a certificate
-from its payload and current exact primitives. Failed or undecidable checks return
-failure; replay does not treat inability to disprove a claim as proof of that
-claim.
-
-## Error handling
-
-Symbolic fallbacks catch only documented computational failures through
-`SYMBOLIC_QUERY_ERRORS`. Programming errors such as `NameError`, `KeyError`, and
-unexpected `AttributeError` are allowed to surface. Individual interoperability
-boundaries may catch a more specific exception when an external SymPy protocol is
-known to use it, such as `Boolean.as_set()` on custom Boolean predicates.
-
-## Executable documentation and invariant tests
-
-The property reference, tutorial notebook, and specification tests share one canonical example corpus in `examples/property_examples.py`. Every public `function_*` query has a page under `docs/properties/` with a common structure: mathematical definition, public API and parameters, domain/assumption semantics, executable examples, applications, proof strategy, limitations, and related properties. The tutorial notebook is built from those same examples.
-
-Tests are separated by purpose. `tests/specification/` checks documented behavior and executes the tutorial, while `tests/invariants/` checks mathematical laws that must hold across proof routes: implication chains, parameter specialization, piecewise interface compatibility, expression-rewrite invariance, certificate replay, and cross-property consistency. Regression tests remain focused on particular algorithms and previously discovered edge cases. This separation makes a failure identify whether the public contract, a mathematical invariant, or an implementation-specific regression was violated.
-
-
-## Detailed-result protocol
-
-Compact property APIs return their direct mathematical value when unconditional.
-A parameter-stratified `PropertyResult` is projected to a SymPy `Piecewise` at the
-root public boundary; `return_result=True` preserves the rich result. Downstream
-code that already has a compact value can call `funcprops.as_detailed_result(value)`.
-The resulting `DetailedPropertyResult` exposes `primary`, `cases`, `domain`,
-`complete`, `source`, `evidence`, `certificate`, `exceptions`, and
-`all_properties` without forcing every property family into one public scalar
-type.  This keeps simple calls lightweight while giving orchestration and
-certificate tooling a stable structural contract.
-
-## Native registry theorem layers
-
-The native registry uses `FunctionSlot` placeholders, which are local positional
-arguments. `PropertyRule` stores direct property
-facts. `IdentityRule` stores exact rewrites and `DerivativeRule` stores an exact
-partial derivative with respect to one function slot.
-
-First-derivative transport is replayable through `ChainRuleCertificate`. For a
-call `F(g1(x), ..., gn(x))`, `registry_derivative` requires a derivative theorem
-for every varying argument and constructs
-
-`sum_i (partial F / partial slot_i)(g1(x), ..., gn(x)) * diff(gi(x), x)`.
-
-Rule conditions are instantiated and retained on the certificate. A consumer
-must prove those conditions on its analysis domain before treating the
-certificate as applicable. The shared derivative cache consumes unconditional
-complete certificates; monotonicity can additionally consume a conditional
-certificate when its current assumptions imply the certificate condition.
-
-Registry coverage is tracked in `.github/registry/coverage-matrix.md`. The
-checked baseline is monotone: CI permits registry growth but rejects silent
-loss of an existing category/property coverage cell.
-
-## Native registry composition
-
-The native registry separates theorem localization from transport into a user
-query. `FunctionSlot` binds theorem-local argument positions without creating
-global-symbol dependencies. `SubjectMap` records how one or more theorem subjects
-map to the expressions in a concrete call.
-
-For a scalar composition
-
-\[
-x \longmapsto F(g_1(x),\ldots,g_n(x)),
-\]
-
-`registry_derivative` certifies the derivative as the registered outer gradient
-dotted with the path tangent `(g_1'(x), ..., g_n'(x))`. Missing or ambiguous
-partial-derivative rules leave the certificate incomplete; they are never guessed.
-Pointwise, regularity, finite joint-zero, and monotonicity-via-gradient transports
-use the same subject-map abstraction.
-
-For multiple independent analysis variables, the subject map stores the full
-Jacobian. First-order transport uses `JacobianCertificate`; second-order transport
-uses `HessianCertificate` and the multivariate chain rule. Convexity is certified
-from the composite Hessian.
-
-The same separation is used by `ConditionalExpression` and Piecewise analysis:
-conditions restrict the effective analysis domain, branch expressions are analyzed
-through the ordinary property engines, and boundary certificates determine whether
-branch-local conclusions merge into a global result.
+Property metadata and executable examples generate the property reference and tour. Standalone workflow examples generate tutorials and the workflow notebook. Helper signatures and replay test inventories are generated and checked for drift. Every Python Markdown fence is executed as part of an ordered page session; notebook cells run in order. See [testing](guides/testing.md), [proof design](design/index.md) and [source semantics](source-semantics.md).

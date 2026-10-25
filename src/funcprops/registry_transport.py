@@ -24,6 +24,7 @@ from .results import (
     Sign,
     TruthValue,
 )
+from .source_syntax import differentiate
 
 
 @dataclass(frozen=True)
@@ -59,6 +60,8 @@ class SubjectMap:
 
     @classmethod
     def from_instantiated(cls, instantiated: InstantiatedPropertyRule, variables):
+        """Construct a transported rule from concrete registry subjects and their maps."""
+
         if isinstance(variables, (tuple, list, sp.Tuple)):
             vv = tuple(sp.sympify(v) for v in variables)
         else:
@@ -69,7 +72,7 @@ class SubjectMap:
             raise ValueError("analysis variables cannot contain duplicates")
         expressions = tuple(sp.sympify(value) for value in instantiated.subject)
         jacobian = sp.ImmutableMatrix(
-            [[sp.diff(value, var) for var in vv] for value in expressions]
+            [[differentiate(value, var) for var in vv] for value in expressions]
         )
         return cls(tuple(instantiated.rule.subject), expressions, vv, jacobian)
 
@@ -412,7 +415,7 @@ def _multivariate_inner_regularity(prop, expressions, variables):
             evidence.append((inner, "variable-denominator"))
             return False, tuple(evidence)
         try:
-            derivatives = [sp.diff(inner, v) for v in variables]
+            derivatives = [differentiate(inner, v) for v in variables]
         except (TypeError, ValueError, NotImplementedError):
             return False, tuple(evidence)
         bad = any(d.has(sp.Derivative) for d in derivatives)
@@ -427,6 +430,8 @@ def _multivariate_inner_regularity(prop, expressions, variables):
 
 
 def _transport_multivar_rule(instantiated, variables, *, domain=True, registry=None):
+    """Transport a multiargument registry rule through all active argument paths and their guards."""
+
     variables = tuple(sp.sympify(v) for v in variables)
     subject_map = SubjectMap.from_instantiated(instantiated, variables)
     prop = instantiated.rule.property.lower()

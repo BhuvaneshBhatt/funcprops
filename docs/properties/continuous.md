@@ -8,11 +8,20 @@ Continuity certifies that the function has no value/limit mismatch at points of 
 
 ## API and return values
 
-```python
-continuous(expr, variable, *, domain=Reals, assumptions=True, return_result=False)
+```text
+continuous(expr, variable, *, domain=Reals, assumptions=True, work_budget=None, return_result=False)
 ```
 
 Continuity.CONTINUOUS, DISCONTINUOUS, or UNKNOWN. Parameter-stratified results are returned as a SymPy `Piecewise` by default; `return_result=True` preserves the rich result and evidence.
+
+| Parameter | Meaning |
+| --- | --- |
+| `expr` | SymPy expression whose global property is queried. |
+| `variable` | Independent scalar coordinate. Real and native complex routes have different assumption requirements; see result contracts. |
+| `domain` | Input domain or logical condition. The default depends on the property family. |
+| `assumptions` | Symbolic hypotheses used while proving the property. |
+| `work_budget` | Optional positive wall budget in seconds; exhaustion follows the operation-specific incomplete/unknown contract. |
+| `return_result` | Return structured metadata, certificates, or diagnostics. |
 
 ## Domains, assumptions, and parameters
 
@@ -30,7 +39,7 @@ import funcprops as fp
 
 x, y = sp.symbols("x y", real=True)
 result = fp.continuous(sp.Abs(x), x)
-result
+assert result is fp.Continuity.CONTINUOUS
 ```
 
 Expected: ``Continuity.CONTINUOUS``.
@@ -39,7 +48,7 @@ Application: Verify hypotheses of existence theorems and interval methods.
 
 ## Applications
 
-This property is useful whenever later mathematics depends on a global qualitative fact, not isolated samples. Typical uses include symbolic preprocessing, theorem-hypothesis verification, optimization, inverse problems, robust numerical method selection, and simplifying downstream case analysis.
+Check source holes, branch cuts and Piecewise seams before using interval theorems.
 
 ## How funcprops proves it
 
@@ -60,4 +69,4 @@ Complicated limit problems can remain UNKNOWN.
 
 ## Source
 
-The implementation is exposed through [`funcprops.api`](https://github.com/BhuvaneshBhatt/funcprops/blob/main/src/funcprops/api.py).
+The callable is exported through funcprops; its implementation module is [`funcprops.singularities.analysis`](https://github.com/BhuvaneshBhatt/funcprops/blob/main/src/funcprops/singularities/analysis.py).

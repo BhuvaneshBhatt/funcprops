@@ -2,276 +2,41 @@
 
 from __future__ import annotations
 
+import argparse
 import inspect
+import json
 from pathlib import Path
 
-import funcprops.api as api
-from examples.property_examples import examples_for
+import funcprops as api
+from examples.property_examples import (
+    STATISTICAL_SPECIAL_FUNCTION_EXAMPLES,
+    examples_for,
+)
+from tools.markdown import normalize_markdown
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "docs" / "properties"
+PUBLIC_QUERIES = tuple(name for name, *_ in api.properties())
 REPO = "https://github.com/BhuvaneshBhatt/funcprops/blob/main"
 
-# Page-specific mathematical content.  The surrounding sections are deliberately
+# Page-specific mathematical content.  The surrounding sections are consistently
 # uniform so every public query answers the same user-facing questions.
+METADATA = json.loads((ROOT / "tools/property_reference.json").read_text())
 INFO = {
-    "domain": (
-        "Domain",
-        "The domain is the set of input values for which the expression is defined under the selected real-domain convention.",
-        "A SymPy logical condition, or a stratified result when parameter cases must be separated.",
-        "Expression-domain rules, algebraic constraints, radical/logarithm restrictions, denominator exclusions, and exact semialgebraic reduction.",
-        "Complicated transcendental preimages and unresolved parameter relations can prevent a fully simplified condition.",
-    ),
-    "range": (
-        "Range",
-        "The range is the set of output values attained by the expression on the requested input constraints.",
-        "A SymPy condition in the output symbol, possibly wrapped in a conditional PropertyResult for parameter strata.",
-        "Semialgebraic elimination, monotone partitions, endpoint limits, extrema, structural special-function facts, and exact set reasoning.",
-        "General transcendental range computation is undecidable in closed form; unsupported cases remain conservative.",
-    ),
-    "sign": (
-        "Sign",
-        "Sign classification determines whether an expression is positive, nonnegative, zero, nonpositive, negative, or sign-changing throughout a domain.",
-        "A Sign value or PropertyResult containing guarded parameter cases and implied weaker sign classes.",
-        "Structural sign rules, exact inequality proving, semialgebraic certification, zero geometry, special-function facts, and parameter stratification.",
-        "A result of UNKNOWN means the available proof engines could not certify a uniform sign; it does not mean the sign is arbitrary.",
-    ),
-    "zeros": (
-        "Zeros",
-        "The zero set contains the domain points at which the expression is exactly zero.",
-        "Usually a SymPy Set; return_result=True exposes structured/conditional information.",
-        "Exact algebraic solving, semialgebraic reduction, monotone partitions, structural special-function rules, and guarded parameter cases.",
-        "Infinite or transcendental zero sets may require structured representations, and numerical roots are opt-in.",
-    ),
-    "boundedness": (
-        "Boundedness",
-        "Boundedness records whether the image is bounded above, below, both, or neither on the requested domain.",
-        "A Boundedness value or conditional PropertyResult.",
-        "Cheap structural closure rules first, followed by range/extremum reasoning, limits, periodic structure, and parameter stratification.",
-        "Failure to prove a finite extremum or range enclosure can yield UNKNOWN even when the function is mathematically bounded.",
-    ),
-    "monotonicity": (
-        "Monotonicity",
-        "Monotonicity classifies a function as strictly increasing/decreasing, weakly monotone, constant, non-monotone, or unknown on a domain.",
-        "A Monotonicity value, PropertyResult, or interval decomposition when requested.",
-        "Derivative-sign certification, shared monotone partitions, structural composition rules, theorem-backed special functions, piecewise interface checks, and parameter strata.",
-        "Disconnected domains and functions with many turning points may require interval output.",
-    ),
-    "convexity": (
-        "Convexity",
-        "Convexity classifies ordinary, strict, strong, affine, concave, log-, quasi-, and pseudo-convex/concave behavior when certifiable.",
-        "A Convexity value or PropertyResult; detailed results carry a normalized ConvexityCertificate.",
-        "Second-derivative/Hessian inequalities, semialgebraic certification, composition rules, strong-modulus bounds, piecewise slope-interface checks, and theorem-backed facts.",
-        "Secondary notions are often certified by sufficient implications.",
-    ),
-    "differentiability": (
-        "Differentiability",
-        "Differentiability asks whether derivatives exist throughout a domain, optionally through a requested finite order.",
-        "A Differentiability value or PropertyResult with regularity evidence.",
-        "The smoothness engine, domain-aware exceptional-locus analysis, analytic closure rules, and certified finite-order derivative checks.",
-        "The bounded max_order search is a certification limit, not a claim that higher derivatives fail to exist.",
-    ),
-    "smoothness": (
-        "Smoothness",
-        "Smoothness records continuity, the certified differentiability order, C-infinity status, analyticity, and exceptional loci.",
-        "A SmoothnessResult with regularity fields and evidence.",
-        "Analytic-implies-smooth closure, structural regularity rules, branch/interface checks, and bounded derivative-order certification.",
-        "Finite-order search can understate differentiability when no structural C-infinity proof is available.",
-    ),
-    "injective": (
-        "Injectivity",
-        "A function is injective when distinct domain points cannot have the same output.",
-        "TruthValue.TRUE, FALSE, or UNKNOWN, possibly stratified by parameters.",
-        "Strict monotonicity, symmetry/periodicity obstructions, affine/structural rules, shared partitions, and exact collision reasoning where available.",
-        "General multivariate and transcendental injectivity are difficult; UNKNOWN is preferred to a heuristic collision claim.",
-    ),
-    "surjective": (
-        "Surjectivity",
-        "A function is surjective onto a codomain when every codomain value is attained by some domain point.",
-        "TruthValue.TRUE, FALSE, or UNKNOWN, possibly stratified by parameters.",
-        "Exact range comparison, structural mappings, monotone/range closure, and parameter stratification.",
-        "The answer depends on both domain and codomain; an omitted or unsuitable codomain can change the mathematical question.",
-    ),
-    "bijective": (
-        "Bijectivity",
-        "A function is bijective when it is both injective on its domain and surjective onto its codomain.",
-        "TruthValue.TRUE, FALSE, or UNKNOWN, possibly stratified by parameters.",
-        "Composition of certified injectivity and surjectivity with shared structural shortcuts.",
-        "UNKNOWN from either component generally propagates unless an independent bijection theorem applies.",
-    ),
-    "oscillation": (
-        "Oscillation",
-        "Oscillation distinguishes persistent oscillation, finite oscillatory behavior, and nonoscillatory behavior on the selected domain.",
-        "An Oscillation classification by default; return_result=True exposes supporting partitions and evidence.",
-        "Zeros, extrema, monotone partitions, periodic structure, asymptotic behavior, and special-function knowledge.",
-        "Highly irregular or parameter-dependent oscillation can remain UNKNOWN without a certifiable infinite pattern.",
-    ),
-    "periodicity": (
-        "Periodicity",
-        "Periodicity detects constants, periodic functions and certified aperiodic cases; return_result=True can include a certified period.",
-        "A Periodicity value by default; return_result=True returns the period and evidence when available.",
-        "Structural periodic identities, affine pullbacks, compatible-period combination, parameter assumptions, and exact simplification.",
-        "Failure to find a period is not by itself proof of aperiodicity; UNKNOWN is used when no aperiodicity theorem applies.",
-    ),
-    "symmetry": (
-        "Symmetry",
-        "Symmetry detects even, odd, both, central, neither, or unresolved symmetry relative to a chosen center.",
-        "A Symmetry value by default; return_result=True exposes center and evidence.",
-        "Exact substitutions around the center, structural identities, domain compatibility, and simplification.",
-        "Symbolic equivalence that SymPy cannot prove can leave symmetry UNKNOWN even when the identity is mathematically true.",
-    ),
-    "homogeneity": (
-        "Homogeneity",
-        "A function is homogeneous when a common scaling of its variables produces a fixed power of the scale; weighted homogeneity allows variable-specific weights.",
-        "A Homogeneity value by default; return_result=True exposes degree, weights, and parameter conditions.",
-        "Polynomial weighted-degree grouping, exact scaling identities, parameter strata, and structural closure.",
-        "General nonpolynomial quasi-homogeneous identities may require simplification or assumptions beyond the current proof rules.",
-    ),
-    "analytic": (
-        "Analyticity",
-        "Analyticity certifies local representation by convergent power series throughout the requested domain.",
-        "Analyticity.ANALYTIC, NOT_ANALYTIC, or UNKNOWN; return_result=True exposes evidence and exceptional loci.",
-        "Singularity/branch analysis, analytic closure rules, piecewise interface checks, domain restrictions, and theorem-backed function facts.",
-        "Real analyticity is stricter than smoothness; unresolved branch or singularity structure can conservatively produce UNKNOWN.",
-    ),
-    "continuous": (
-        "Continuity",
-        "Continuity certifies that the function has no value/limit mismatch at points of the requested domain.",
-        "Continuity.CONTINUOUS, DISCONTINUOUS, or UNKNOWN; return_result=True provides evidence.",
-        "Structural closure, one-sided interface limits for Piecewise expressions, singularity analysis, and domain restriction.",
-        "Complicated limit problems can remain UNKNOWN.",
-    ),
-    "discontinuities": (
-        "Discontinuities",
-        "Discontinuity analysis locates points or guarded loci where continuity fails.",
-        "A Boolean discontinuity locus by default; return_result=True returns the supporting Singularity records.",
-        "Piecewise interface limits, denominator/domain failures, branch behavior, and structural singularity traversal.",
-        "A false locus means no discontinuity was certified by the analysis, not necessarily a completeness theorem unless detailed singularity analysis is complete.",
-    ),
-    "meromorphic": (
-        "Meromorphicity",
-        "A meromorphic function is analytic except for isolated poles on the domain under consideration.",
-        "Meromorphicity.MEROMORPHIC, NOT_MEROMORPHIC, or UNKNOWN.",
-        "Structural singularity traversal, branch-point/cut exclusion, pole classification, and known meromorphic closure rules.",
-        "Natural boundaries, unresolved singularity heads, or branch structure may prevent a complete classification.",
-    ),
-    "poles": (
-        "Poles",
-        "Pole analysis identifies isolated singularities with finite negative local order and records multiplicity when known.",
-        "A list of (pole, multiplicity) pairs by default; return_result=True returns the supporting Singularity records.",
-        "Local order, rational denominator structure, special-function singularity facts, and guarded parameter analysis.",
-        "Multiplicity can be unknown when local cancellation or parameter dependence cannot be resolved exactly.",
-    ),
-    "singularities": (
-        "Singularities",
-        "This query returns the Boolean locus where a function is singular: the disjunction of poles, removable and essential singularities, branch points and cuts, definition cuts, and discontinuities.",
-        "A SymPy Boolean condition by default; return_result=True returns a SingularityResult with classified Boolean loci and supporting records.",
-        "Shared structural singularity traversal and branch analysis, followed by guard-aware locus union and ConditionalExpression restriction.",
-        "Use singularity_analysis when completeness and unknown function heads matter to a proof.",
-    ),
-    "singularity_analysis": (
-        "Singularity analysis",
-        "Detailed singularity analysis reports analytic obstructions together with completeness and unresolved-head information.",
-        "A SingularityAnalysis object containing singularity groups, domain exterior, completeness, unknown heads, and provenance.",
-        "Structural traversal, local singularity classification, branch analysis, discontinuity analysis, and domain comparison.",
-        "complete=False is an explicit warning that the returned inventory is not exhaustive.",
-    ),
-    "branch_points": (
-        "Branch points",
-        "Branch-point analysis identifies points around which analytic continuation can change the value of a multivalued function.",
-        "A Boolean branch-point locus by default; return_result=True returns the supporting Singularity records.",
-        "Known principal-branch structure, compositional preimages, algebraic/logarithmic branch rules, and assumptions.",
-        "General nested transcendental preimages can be difficult to reduce to a simple exact locus.",
-    ),
-    "branch_cuts": (
-        "Branch cuts",
-        "Branch-cut analysis returns the cuts used to make the selected principal branches single-valued.",
-        "By default a tuple of logical cut conditions; alternate modes expose other supported representations.",
-        "Principal-branch registry facts, compositional preimages, algebraic transformation, simplification under assumptions, and cut normalization.",
-        "Branch cuts are representation/convention dependent; they are not intrinsic singularities of the underlying multivalued analytic object.",
-    ),
-    "complex_zeros": (
-        "Complex zeros",
-        "Complex-zero isolation finds and certifies zeros inside a finite complex rectangle.",
-        "An exact finite set when available, or a ComplexRootIsolationResult containing certified rectangles, counts, completeness, and diagnostic evidence.",
-        "Exact complex solving first, then structural holomorphy checks, validated argument-principle contour counting, complex-interval boundary exclusion, and count-preserving rational subdivision.",
-        "General holomorphy and boundary nonvanishing may remain uncertified; numerical winding estimates never upgrade an incomplete result to a proof.",
-    ),
-    "complete_monotonicity": (
-        "Complete monotonicity",
-        "A function is completely monotone when all derivatives exist and (-1)^n f^(n)(x) is nonnegative for every nonnegative integer n on the requested domain.",
-        "TruthValue.TRUE, FALSE, or UNKNOWN; return_result=True exposes a CompleteMonotonicityCertificate when a theorem-backed proof is available.",
-        "Theorem-backed families, structural exponential kernels, parameter guards, and exact domain implication.",
-        "The implementation certifies supported sufficient theorem families; absence of a matching theorem yields UNKNOWN.",
-    ),
-    "boundary_behavior": (
-        "Boundary behavior",
-        "Boundary behavior records certified limits at unbounded real-domain escape directions relevant to global geometry.",
-        "A BoundaryBehavior summary containing the analyzed domain, certified BoundaryLimit records, completeness, and provenance.",
-        "Exact symbolic one-sided limits at real escape boundaries, with conservative handling of unsupported multivariate radial escape geometry.",
-        "General multivariate escape directions are not exhaustively classified; an incomplete result explicitly preserves that limitation.",
-    ),
-    "level_boundedness": (
-        "Level boundedness",
-        "A function is level-bounded when every sublevel set is bounded; on Euclidean spaces this is the coercivity notion used by the attainment machinery.",
-        "TruthValue.TRUE, FALSE, or UNKNOWN by default; return_result=True returns the level-boundedness certificate and evidence.",
-        "Bounded-domain closure, positive-infinity escape limits, strong convexity, and separable coercivity implications.",
-        "The proof engine uses sufficient structural implications and does not claim a complete decision procedure for general multivariate coercivity.",
-    ),
-    "mode_existence": (
-        "Mode existence",
-        "Mode-existence analysis certifies structural attainment of a global minimum or maximum on the requested domain.",
-        "TruthValue.TRUE, FALSE, or UNKNOWN by default; return_result=True returns the attainment certificate and evidence.",
-        "A Weierstrass-style implication combines continuity, closedness, and level-boundedness; maxima are reduced to level-boundedness of the negated objective.",
-        "Failure to prove the structural hypotheses is reported as unresolved.",
-    ),
-    "geometry": (
-        "Function geometry",
-        "Function geometry combines regularity, analyticity, convexity, singularities, boundary escape, level-boundedness, and attainment information in one structural summary.",
-        "A FunctionGeometry object containing the component property results and certificates.",
-        "Delegation to the regularity, singularity, convexity, boundary-behavior, level-boundedness, and mode-existence engines with shared assumptions and domains.",
-        "The summary is only as complete as its component proof engines; unresolved component properties remain explicitly unresolved.",
-    ),
-    "jacobian": (
-        "Jacobian",
-        "The Jacobian is the matrix of first partial derivatives of an explicit coordinate map with respect to its analysis variables.",
-        "The exact SymPy Jacobian matrix by default; return_result=True returns a replayable JacobianCertificate with derivative evidence.",
-        "Exact symbolic differentiation, including registered derivative rules where available, with structural replay of the derivative matrix.",
-        "The Jacobian matrix alone does not establish injectivity, global invertibility, or domain-wide nonvanishing of its determinant.",
-    ),
-    "determinant_nonvanishing": (
-        "Determinant nonvanishing",
-        "For a square coordinate map, determinant nonvanishing asks whether det J is nonzero everywhere on the requested domain.",
-        "TruthValue.TRUE, FALSE, or UNKNOWN by default; return_result=True returns the determinant-nonvanishing certificate and evidence.",
-        "Exact determinant simplification, assumptions, sign/nonzero reasoning, and semialgebraic zero-set certification where applicable.",
-        "Nonsquare maps and determinant zero sets outside the supported symbolic/semialgebraic proof routes remain UNKNOWN unless a witness or theorem is available.",
-    ),
-    "local_invertibility": (
-        "Local invertibility",
-        "A square differentiable map is locally invertible where its Jacobian determinant is nonzero, as certified by the inverse function theorem.",
-        "TruthValue.TRUE, FALSE, or UNKNOWN by default; return_result=True returns the local-invertibility certificate and determinant evidence.",
-        "The exact Jacobian and determinant-nonvanishing certificate are combined through the inverse-function-theorem implication.",
-        "Local invertibility is not global injectivity; nonsquare maps and unresolved determinant geometry remain UNKNOWN.",
-    ),
-    "change_of_variables": (
-        "Change of variables",
-        "Change-of-variables geometry records the local measure factor Abs(det J) for a square locally invertible coordinate transformation.",
-        "A ChangeOfVariablesCertificate containing the Jacobian, determinant, absolute determinant, orientation, local-invertibility certificate, and classification.",
-        "Exact Jacobian/determinant computation plus local-invertibility certification and symbolic verification of the absolute determinant factor.",
-        "The certificate is local and does not by itself prove a globally one-to-one parametrization or account for multiplicity across a noninjective map.",
-    ),
-    "transformation_geometry": (
-        "Transformation geometry",
-        "Transformation geometry collects the derivative, determinant, local-invertibility, orientation, and change-of-variables facts for an explicit coordinate map.",
-        "A TransformationGeometry summary containing the exact Jacobian and the associated transformation certificates.",
-        "Delegation to the Jacobian, determinant-nonvanishing, inverse-function-theorem, and local measure-factor proof engines.",
-        "Global bijectivity is outside this local summary and must be established separately when an application requires it.",
-    ),
+    name: tuple(
+        data[key] for key in ("title", "definition", "returns", "proof", "limits")
+    )
+    for name, data in METADATA.items()
 }
 
 
 PARAMETER_TEXT = {
+    "work_budget": "Optional positive wall budget in seconds; exhaustion follows the operation-specific incomplete/unknown contract.",
     "expr": "SymPy expression whose global property is queried.",
+    "variable": "Independent scalar coordinate. Real and native complex routes have different assumption requirements; see result contracts.",
+    "args": "Positional coordinate and rectangle forms accepted by this wrapper; prefer the explicit tutorial call.",
+    "kwargs": "Operation-specific options, including supported budgets and native isolation policy/accuracy targets; see the linked guide.",
+    "stratified": "Preserve supported guarded parameter-domain cases.",
     "var": "Independent symbol, or supported variable collection for multivariate queries.",
     "vars": "Variable sequence used by the multivariate structural query.",
     "variables": "Independent symbol or ordered variable sequence for multivariate geometry.",
@@ -318,6 +83,11 @@ def parameter_table(func):
 
 
 RELATED = {
+    "lipschitz": ["uniformly_continuous", "holder_regularity", "variation"],
+    "uniformly_continuous": ["lipschitz", "continuous"],
+    "holder_regularity": ["lipschitz", "uniformly_continuous"],
+    "variation": ["monotonicity", "integrability"],
+    "integrability": ["variation", "continuous"],
     "domain": ["continuous", "singularities"],
     "range": ["boundedness", "surjective"],
     "sign": ["zeros", "monotonicity", "convexity"],
@@ -433,17 +203,17 @@ def page_for(name: str) -> str:
         "",
         "## API and return values",
         "",
-        "```python",
+        "```text",
         f"{name}{public_signature(func)}",
         "```",
         "",
         returns,
         "",
+        *parameter_table(func),
+        "",
         "## Domains, assumptions, and parameters",
         "",
-        "The query is interpreted on the supplied domain. "
-        "When symbolic parameters change the property, funcprops preserves those cases as guarded parameter strata. "
-        "Assumptions are proof hypotheses: they can simplify a stratum or branch condition, but they do not justify numerical guessing.",
+        METADATA[name]["domain"],
         "",
         "## Executable examples",
         "",
@@ -460,7 +230,7 @@ def page_for(name: str) -> str:
             "",
             'x, y = sp.symbols("x y", real=True)',
             case.code,
-            "result",
+            f"assert {case.check}",
             "```",
             "",
             f"Expected: {case.expected}.",
@@ -471,8 +241,7 @@ def page_for(name: str) -> str:
     lines += [
         "## Applications",
         "",
-        "This property is useful whenever later mathematics depends on a global qualitative fact. "
-        "Typical uses include symbolic preprocessing, theorem-hypothesis verification, optimization, inverse problems, robust numerical method selection, and simplifying downstream case analysis.",
+        METADATA[name]["applications"],
         "",
         "## How funcprops proves it",
         "",
@@ -487,31 +256,56 @@ def page_for(name: str) -> str:
         "",
         "`UNKNOWN` means that the available proof machinery did not certify the claim. It must not be interpreted as the negation of the property.",
         "",
-        "## Related properties",
-        "",
     ]
+    if RELATED.get(name):
+        lines += ["## Related properties", ""]
     for rel in RELATED.get(name, []):
         lines.append(f"- [`{rel}`]({rel.removeprefix('')}.md)")
     lines += [
         "",
         "## Source",
         "",
-        f"The implementation is exposed through [`funcprops.api`]({REPO}/src/funcprops/api.py).",
+        f"The callable is exported through funcprops; its implementation module is [`{inspect.unwrap(func).__module__}`]({REPO}/src/{inspect.unwrap(func).__module__.replace(chr(46), chr(47))}.py).",
         "",
     ]
     return "\n".join(lines)
 
 
+def statistical_page():
+    metadata = json.loads((ROOT / "tools/statistical_reference.json").read_text())
+    lines = [metadata["introduction"], "", "## Executable examples", ""]
+    for case in STATISTICAL_SPECIAL_FUNCTION_EXAMPLES:
+        lines += [
+            f"### {case.title}",
+            "",
+            f"<!-- example-id: {case.example_id} -->",
+            "",
+            f"Application: {case.application}",
+            "",
+            "```python",
+            "import sympy as sp",
+            "import funcprops as fp",
+            'x = sp.Symbol("x", real=True)',
+            case.code,
+            f"assert {case.check}",
+            "```",
+            "",
+            f"Expected: {case.expected}.",
+            "",
+        ]
+    lines += [metadata["provenance"], ""]
+    return "\n".join(lines)
+
+
 def main() -> None:
-    OUT.mkdir(parents=True, exist_ok=True)
-    names = list(api.__all__)
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--check", action="store_true")
+    args = parser.parse_args()
+    names = list(PUBLIC_QUERIES)
     missing = sorted(set(names) - INFO.keys())
     if missing:
         raise RuntimeError(f"missing property documentation metadata: {missing}")
-    for name in names:
-        (OUT / f"{name.removeprefix('')}.md").write_text(
-            page_for(name), encoding="utf-8"
-        )
+    expected = {f"{name}.md": page_for(name) for name in names}
     index = [
         "# Function property reference",
         "",
@@ -520,13 +314,28 @@ def main() -> None:
     ]
     for name in names:
         title = INFO[name][0]
-        index.append(f"- [{title}]({name.removeprefix('')}.md) — `{name}`")
+        index.append(f"- [{title}]({name.removeprefix('')}.md): `{name}`")
     index += [
         "",
         "See also [domains and assumptions](../architecture.md) for the shared proof architecture.",
         "",
     ]
-    (OUT / "index.md").write_text("\n".join(index), encoding="utf-8")
+    expected["index.md"] = "\n".join(index)
+    expected["../statistical-special-functions.md"] = statistical_page()
+    expected = {name: normalize_markdown(text) for name, text in expected.items()}
+    if args.check:
+        stale = sorted(
+            name
+            for name, text in expected.items()
+            if not (OUT / name).exists() or (OUT / name).read_text() != text
+        )
+        extra = sorted(p.name for p in OUT.glob("*.md") if p.name not in expected)
+        if stale or extra:
+            raise SystemExit(f"stale property docs: {stale}; extra pages: {extra}")
+    else:
+        OUT.mkdir(parents=True, exist_ok=True)
+        for name, text in expected.items():
+            (OUT / name).write_text(text, encoding="utf-8")
 
 
 if __name__ == "__main__":

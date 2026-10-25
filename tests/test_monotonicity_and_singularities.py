@@ -14,7 +14,6 @@ x = sp.symbols("x", real=True)
 
 def test_monotonic_decomposition_inverse_trig_composition():
     d = monotonic_decomposition(sp.acos(sp.exp(x)), x, return_result=True)
-    assert d is not None
     assert d.direction == -1
     assert d.inner == sp.exp(x)
     assert sp.simplify(d.reconstruct() - sp.acos(sp.exp(x))) == 0
@@ -52,7 +51,6 @@ def test_indexed_monotonic_partition_bessel():
         sp.besselj(0, x), x, domain=sp.Interval.open(0, sp.oo), return_result=True
     )
     assert p.complete
-    assert p.indexed is not None
     assert p.indexed.boundary_geometry[0].family == "BesselJ"
 
 

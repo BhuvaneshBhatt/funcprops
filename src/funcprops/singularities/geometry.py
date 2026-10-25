@@ -316,7 +316,7 @@ def _multivar_structural_singularities(
 ):
     """Return classified exact singularity loci for multivariate expressions.
 
-    The multivariate path deliberately mirrors all supported singularity classes.  It uses
+    The multivariate path mirrors all supported singularity classes.  It uses
     exact denominator hypersurfaces, univariate pullbacks for function heads,
     and structural composition rules where singular behavior comes from an
     argument.

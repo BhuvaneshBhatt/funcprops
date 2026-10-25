@@ -8,12 +8,39 @@ from typing import Any
 import sympy as sp
 from sympy import S
 
-from .exactness import certify_identity_equal
 from .registry import FunctionSlot, _replace_slots
+from .source_syntax import differentiate, same_data
+
+
+def _replay_derivation(record, factory, *args, **kwargs):
+    """Bind a derivation to the source, guards and explicitly trusted registry."""
+    if record.complete is not True:
+        return False
+    try:
+        expected = factory(*args, **kwargs)
+        return expected.complete is True and same_data(record, expected)
+    except (
+        AttributeError,
+        TypeError,
+        ValueError,
+        NotImplementedError,
+        ArithmeticError,
+    ):
+        return False
+
+
+def _constant_source_condition(expression, variable):
+    """Retain the definition of a constant source before assigning derivative zero."""
+    from .proof_cache import cached_domain
+
+    condition = cached_domain(expression, variable, domain=S.Complexes)
+    return condition if isinstance(condition, sp.logic.boolalg.Boolean) else S.false
 
 
 @dataclass(frozen=True)
 class InstantiatedIdentityRule:
+    """Bind a registry identity to concrete subjects and parameter conditions."""
+
     rule: "IdentityRule"
     expression: sp.Basic
     replacement: Any
@@ -49,6 +76,8 @@ class IdentityRule:
         return tuple(sorted(used, key=lambda s: s.position))
 
     def matches(self, expr) -> bool:
+        """Match the function head, arity and positional slots of an expression."""
+
         expr = sp.sympify(expr)
         return (
             getattr(expr, "func", None) == self.head
@@ -57,6 +86,8 @@ class IdentityRule:
         )
 
     def instantiate(self, expr) -> InstantiatedIdentityRule:
+        """Substitute concrete subjects into the rule while retaining its parameter guards."""
+
         expr = sp.sympify(expr)
         if not self.matches(expr):
             raise ValueError(f"Identity rule for {self.head} does not match {expr}")
@@ -72,6 +103,8 @@ class IdentityRule:
 
 @dataclass(frozen=True)
 class InstantiatedDerivativeRule:
+    """Bind a registry derivative formula to concrete subjects and guards."""
+
     rule: "DerivativeRule"
     expression: sp.Basic
     argument: Any
@@ -114,6 +147,8 @@ class DerivativeRule:
         return tuple(sorted(used, key=lambda s: s.position))
 
     def matches(self, expr) -> bool:
+        """Match the function head, arity and differentiated argument slot."""
+
         expr = sp.sympify(expr)
         return (
             getattr(expr, "func", None) == self.head
@@ -122,6 +157,8 @@ class DerivativeRule:
         )
 
     def instantiate(self, expr) -> InstantiatedDerivativeRule:
+        """Substitute concrete subjects into the rule while retaining its parameter guards."""
+
         expr = sp.sympify(expr)
         if not self.matches(expr):
             raise ValueError(f"Derivative rule for {self.head} does not match {expr}")
@@ -138,6 +175,8 @@ class DerivativeRule:
 
 @dataclass(frozen=True)
 class GradientComponent:
+    """Record one partial derivative and its rule evidence."""
+
     argument_position: int
     argument: Any
     partial_derivative: Any
@@ -158,14 +197,25 @@ class GradientCertificate:
     missing_positions: tuple[int, ...] = ()
     source: str = "native-registry-gradient"
 
-    def verify(self) -> bool:
-        if not self.complete or self.gradient is None:
-            return False
-        return tuple(c.partial_derivative for c in self.components) == self.gradient
+    def verify(self, *, registry=None) -> bool:
+        """Replay every partial against the default or supplied trusted registry.
+
+        Custom derivative declarations require that registry as an explicit
+        replay premise. The check validates their transport, not their axioms.
+        """
+        return _replay_derivation(
+            self,
+            registry_gradient,
+            self.expression,
+            registry=registry,
+            positions=self.positions,
+        )
 
 
 @dataclass(frozen=True)
 class ChainRuleTerm:
+    """Record one product contributing to a transported derivative."""
+
     argument_position: int
     argument: Any
     partial_derivative: Any
@@ -177,7 +227,11 @@ class ChainRuleTerm:
 
 @dataclass(frozen=True)
 class ChainRuleCertificate:
-    """Replayable first-derivative chain-rule construction."""
+    """Formal first-derivative transport under the recorded registry guards.
+
+    Source definition and differentiability on a consuming domain remain
+    separate premises. Replay uses the default or explicitly supplied registry.
+    """
 
     expression: sp.Basic
     variable: sp.Symbol
@@ -188,11 +242,15 @@ class ChainRuleCertificate:
     source: str = "native-registry-chain-rule"
     gradient_certificate: GradientCertificate | None = None
 
-    def verify(self) -> bool:
-        if not self.complete:
-            return False
-        rebuilt = sp.Add(*(term.product for term in self.terms))
-        return certify_identity_equal(rebuilt, self.derivative) is True
+    def verify(self, *, registry=None) -> bool:
+        """Replay the outer partials, inner derivatives, guards and final sum."""
+        return _replay_derivation(
+            self,
+            registry_derivative,
+            self.expression,
+            self.variable,
+            registry=registry,
+        )
 
 
 def registry_gradient(expr, *, registry=None, positions=None) -> GradientCertificate:
@@ -275,7 +333,15 @@ def registry_derivative(expr, var, *, registry=None) -> ChainRuleCertificate:
     varying = tuple(i for i, arg in enumerate(expr.args) if arg.has(var))
     if not varying:
         if not expr.has(var):
-            return ChainRuleCertificate(expr, var, (), S.Zero, S.true, True)
+            condition = _constant_source_condition(expr, var)
+            return ChainRuleCertificate(
+                expr,
+                var,
+                (),
+                S.Zero if condition is not S.false else None,
+                condition,
+                condition is not S.false,
+            )
         # An atomic occurrence such as expr == var is not a function application
         # and therefore has no registered outer gradient.  Mark it incomplete so
         # cached_derivative falls back to SymPy's exact differentiation instead
@@ -298,7 +364,7 @@ def registry_derivative(expr, var, *, registry=None) -> ChainRuleCertificate:
     by_position = {c.argument_position: c for c in gradient.components}
     for position in varying:
         component = by_position[position]
-        inner = sp.diff(expr.args[position], var)
+        inner = differentiate(expr.args[position], var)
         product = sp.simplify(component.partial_derivative * inner)
         terms.append(
             ChainRuleTerm(
@@ -346,11 +412,16 @@ class JacobianCertificate:
     source: str = "symbolic-inner-jacobian"
 
     def verify(self) -> bool:
+        """Return whether the record satisfies its declared replay obligations."""
+
         expected = sp.ImmutableMatrix(
+            len(self.expressions),
+            len(self.variables),
             [
-                [sp.diff(expr, var) for var in self.variables]
+                differentiate(expr, var)
                 for expr in self.expressions
-            ]
+                for var in self.variables
+            ],
         )
         return self.complete and expected == self.jacobian
 
@@ -366,17 +437,24 @@ class HessianCertificate:
     complete: bool
     source: str = "native-registry-hessian"
 
-    def verify(self) -> bool:
-        return (
-            self.complete
-            and self.hessian is not None
-            and self.hessian == self.hessian.T
+    def verify(self, *, registry=None) -> bool:
+        """Replay the registered first partials and every second partial."""
+        return _replay_derivation(
+            self,
+            registry_hessian,
+            self.expression,
+            registry=registry,
+            positions=self.positions,
         )
 
 
 @dataclass(frozen=True)
 class MultivariateChainRuleCertificate:
-    """Replayable first/second-order chain rule for F(g(x_1,...,x_m))."""
+    """Formal gradient/Hessian transport with recorded order and registry guards.
+
+    A consuming domain theorem must also prove source definition and the required
+    regularity of the inner map. Shape alone is not a transport proof.
+    """
 
     expression: sp.Basic
     variables: tuple[sp.Symbol, ...]
@@ -388,12 +466,17 @@ class MultivariateChainRuleCertificate:
     gradient_certificate: GradientCertificate | None = None
     hessian_certificate: HessianCertificate | None = None
     source: str = "native-registry-multivariate-chain-rule"
+    second_order: bool = False
 
-    def verify(self) -> bool:
-        if not self.complete or self.gradient is None or self.jacobian is None:
-            return False
-        return self.gradient.rows == len(self.variables) and self.jacobian.cols == len(
-            self.variables
+    def verify(self, *, registry=None) -> bool:
+        """Replay source-bound gradient and Hessian transport, including guards."""
+        return _replay_derivation(
+            self,
+            registry_chain_rule,
+            self.expression,
+            self.variables,
+            registry=registry,
+            second_order=self.second_order,
         )
 
 
@@ -406,7 +489,9 @@ def registry_jacobian(expressions, variables) -> JacobianCertificate:
     if len(set(variables)) != len(variables):
         raise ValueError("variables cannot contain duplicates")
     jac = sp.ImmutableMatrix(
-        [[sp.diff(expr, var) for var in variables] for expr in expressions]
+        len(expressions),
+        len(variables),
+        [differentiate(expr, var) for expr in expressions for var in variables],
     )
     return JacobianCertificate(expressions, variables, jac)
 
@@ -414,7 +499,7 @@ def registry_jacobian(expressions, variables) -> JacobianCertificate:
 def registry_hessian(expr, *, registry=None, positions=None) -> HessianCertificate:
     """Derive an outer Hessian from exact registered first-partial formulas.
 
-    This is intentionally stricter than numerical differentiation: every requested
+    This is stricter than numerical differentiation: every requested
     first partial must come from one unambiguous DerivativeRule, and its formula is
     differentiated with respect to the rule-local FunctionSlots before concrete
     arguments are substituted.
@@ -447,7 +532,7 @@ def registry_hessian(expr, *, registry=None, positions=None) -> HessianCertifica
                 # The derivative formula is independent of an unmentioned slot.
                 value = S.Zero
             else:
-                value = _replace_slots(sp.diff(rule.result, slot), repl)
+                value = _replace_slots(differentiate(rule.result, slot), repl)
             row.append(sp.simplify(value))
         rows.append(row)
     matrix = sp.ImmutableMatrix(rows)
@@ -461,14 +546,45 @@ def registry_hessian(expr, *, registry=None, positions=None) -> HessianCertifica
 def registry_chain_rule(
     expr, variables, *, registry=None, second_order=False
 ) -> MultivariateChainRuleCertificate:
-    """Transport registered derivatives through a multivariate inner map."""
+    """Transport registered derivatives through a multivariate inner map.
+
+    The result records formal identities and registered outer-rule conditions.
+    Use source-domain and regularity proofs before applying them on a query set.
+    Custom declarations require ``proof.verify(registry=trusted_registry)``.
+    """
     expr = sp.sympify(expr)
     variables = tuple(sp.sympify(v) for v in variables)
+    if type(second_order) is not bool:
+        raise TypeError("second_order must be a bool")
     if not variables or not all(isinstance(v, sp.Symbol) for v in variables):
         raise TypeError("variables must be a nonempty tuple of Symbols")
+    if len(set(variables)) != len(variables):
+        raise ValueError("variables cannot contain duplicates")
     varying = tuple(
         i for i, arg in enumerate(expr.args) if any(arg.has(v) for v in variables)
     )
+    if not varying:
+        condition = (
+            S.true
+            if expr in variables
+            else _constant_source_condition(expr, variables[0])
+        )
+        complete = condition is not S.false
+        return MultivariateChainRuleCertificate(
+            expr,
+            variables,
+            sp.ImmutableMatrix([differentiate(expr, v) for v in variables])
+            if complete
+            else None,
+            sp.ImmutableMatrix.zeros(0, len(variables)),
+            sp.ImmutableMatrix.zeros(len(variables), len(variables))
+            if second_order and complete
+            else None,
+            condition,
+            complete,
+            source="atomic-chain-rule",
+            second_order=second_order,
+        )
     inner = tuple(expr.args[i] for i in varying)
     jac_cert = registry_jacobian(inner, variables)
     grad_cert = registry_gradient(expr, registry=registry, positions=varying)
@@ -482,6 +598,7 @@ def registry_chain_rule(
             grad_cert.conditions,
             False,
             gradient_certificate=grad_cert,
+            second_order=second_order,
         )
     outer_grad = sp.ImmutableMatrix([grad_cert.gradient])  # 1 x n
     transported_grad = sp.ImmutableMatrix(outer_grad * jac_cert.jacobian).T
@@ -495,6 +612,7 @@ def registry_chain_rule(
             grad_cert.conditions,
             True,
             gradient_certificate=grad_cert,
+            second_order=second_order,
         )
 
     hess_cert = registry_hessian(expr, registry=registry, positions=varying)
@@ -509,11 +627,17 @@ def registry_chain_rule(
             False,
             gradient_certificate=grad_cert,
             hessian_certificate=hess_cert,
+            second_order=second_order,
         )
     J = jac_cert.jacobian
     composite_hessian = J.T * hess_cert.hessian * J
     for k, position in enumerate(varying):
-        inner_hessian = sp.hessian(expr.args[position], variables)
+        inner_hessian = sp.ImmutableMatrix(
+            [
+                [differentiate(expr.args[position], u, v) for v in variables]
+                for u in variables
+            ]
+        )
         composite_hessian += grad_cert.gradient[k] * inner_hessian
     composite_hessian = sp.ImmutableMatrix(composite_hessian.applyfunc(sp.simplify))
     return MultivariateChainRuleCertificate(
@@ -526,4 +650,5 @@ def registry_chain_rule(
         True,
         gradient_certificate=grad_cert,
         hessian_certificate=hess_cert,
+        second_order=second_order,
     )

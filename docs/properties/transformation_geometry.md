@@ -8,11 +8,20 @@ Transformation geometry collects the derivative, determinant, local-invertibilit
 
 ## API and return values
 
-```python
-transformation_geometry(expressions, variables, *, domain=Reals, assumptions=True, return_result=False)
+```text
+transformation_geometry(expressions, variables, *, domain=Reals, assumptions=True, return_result=False, work_budget=None)
 ```
 
 A TransformationGeometry summary containing the exact Jacobian and the associated transformation certificates.
+
+| Parameter | Meaning |
+| --- | --- |
+| `expressions` | Ordered expression sequence defining a coordinate transformation. |
+| `variables` | Independent symbol or ordered variable sequence for multivariate geometry. |
+| `domain` | Input domain or logical condition. The default depends on the property family. |
+| `assumptions` | Symbolic hypotheses used while proving the property. |
+| `return_result` | Return structured metadata, certificates, or diagnostics. |
+| `work_budget` | Optional positive wall budget in seconds; exhaustion follows the operation-specific incomplete/unknown contract. |
 
 ## Domains, assumptions, and parameters
 
@@ -30,7 +39,7 @@ import funcprops as fp
 
 x, y = sp.symbols("x y", real=True)
 result = fp.transformation_geometry((x + y, x - y), (x, y))
-result
+assert result.determinant == -2 and result.local_invertibility.classification is fp.TruthValue.TRUE
 ```
 
 Expected: a combined Jacobian, determinant, local-invertibility, and change-of-variables summary.
@@ -39,7 +48,7 @@ Application: Inspect all transformation certificates with one query.
 
 ## Applications
 
-This property is useful whenever later mathematics depends on a global qualitative fact, not isolated samples. Typical uses include symbolic preprocessing, theorem-hypothesis verification, optimization, inverse problems, robust numerical method selection, and simplifying downstream case analysis.
+Use the executable transformation geometry examples to check the corresponding source, domain and branch premises before consuming the result in a larger analysis.
 
 ## How funcprops proves it
 
@@ -60,4 +69,4 @@ Global bijectivity is outside this local summary and must be established separat
 
 ## Source
 
-The implementation is exposed through [`funcprops.api`](https://github.com/BhuvaneshBhatt/funcprops/blob/main/src/funcprops/api.py).
+The callable is exported through funcprops; its implementation module is [`funcprops.api`](https://github.com/BhuvaneshBhatt/funcprops/blob/main/src/funcprops/api.py).

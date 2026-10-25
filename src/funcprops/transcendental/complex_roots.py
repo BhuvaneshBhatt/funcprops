@@ -48,6 +48,8 @@ class ComplexRectangle:
 
 @dataclass(frozen=True)
 class ArgumentPrincipleCertificate:
+    """Store a contour count with its route-specific boundary premises."""
+
     rectangle: ComplexRectangle
     winding_number: int | None
     zero_count: int | None
@@ -62,24 +64,334 @@ class ArgumentPrincipleCertificate:
 
 @dataclass(frozen=True)
 class CertifiedComplexRootRectangle:
+    """Store a complex root region with count and accuracy evidence."""
+
     rectangle: ComplexRectangle
     root_count: int
-    certificate: ArgumentPrincipleCertificate
+    certificate: object
+
+    @property
+    def multiplicity_count(self):
+        return self.root_count
+
+    @property
+    def distinct_root_count(self):
+        return getattr(
+            self.certificate, "known_distinct", 1 if self.root_count == 1 else None
+        )
 
 
 @dataclass(frozen=True)
 class ComplexRootIsolationResult:
+    """Expose route-specific complex root regions, counts and replayable proof data."""
+
     roots: tuple[sp.Expr, ...] = ()
     rectangles: tuple[CertifiedComplexRootRectangle, ...] = ()
     complete: bool = False
     total_count: int | None = None
     method: str = "unknown"
     evidence: tuple[object, ...] = ()
-    certificates: tuple[ArgumentPrincipleCertificate, ...] = ()
+    certificates: tuple[object, ...] = ()
+    distinct_root_count: int | None = None
+    isolation_complete: bool = False
+    algebraic_certificate: object = None
+    isolation_state: object = None
+
+    @property
+    def state(self):
+        return self.isolation_state
+
+    @property
+    def isolation_certificate(self):
+        return getattr(self.isolation_state, "proof", None)
+
+    @property
+    def proof(self):
+        return self.isolation_certificate or self.algebraic_certificate
+
+    @property
+    def expression(self):
+        return getattr(self.proof, "expression", None)
+
+    @property
+    def variable(self):
+        return getattr(self.proof, "variable", None)
+
+    @property
+    def scope(self):
+        return getattr(self.proof, "scope", "factory-complex-root-isolation")
+
+    @property
+    def schema_version(self):
+        return getattr(self.proof, "schema_version", None)
+
+    def check(self):
+        """Replay the bound evidence and return the detailed check outcome."""
+
+        from ..algebraic_complex import AlgebraicComplexRootProof
+        from ..complex_isolation import ComplexIsolationState
+        from ..coverage_contract import CheckOutcome, CheckResult
+        from ..quotient_isolation import QuotientIsolationState
+
+        if self.isolation_state is not None:
+            state = self.isolation_state
+            if type(state) not in (ComplexIsolationState, QuotientIsolationState):
+                return CheckResult(
+                    CheckOutcome.REJECTED, False, False, "invalid-isolation-state"
+                )
+            checked = state.check()
+            if checked.certified is not True:
+                return checked
+            expected = (
+                _quotient_result(state)
+                if type(state) is QuotientIsolationState
+                else _native_result(state)
+            )
+            if self != expected or self.algebraic_certificate is not None:
+                return CheckResult(
+                    CheckOutcome.REJECTED, False, False, "false-native-isolation-result"
+                )
+            # Dataclass equality alone accepts bools as integers and subclasses.
+            if (
+                any(
+                    type(q) is not CertifiedComplexRootRectangle
+                    or type(q.rectangle) is not ComplexRectangle
+                    or type(q.root_count) is not int
+                    for q in self.rectangles
+                )
+                or any(
+                    type(q) is not bool
+                    for q in (self.complete, self.isolation_complete)
+                )
+                or any(
+                    q is not None and type(q) is not int
+                    for q in (self.total_count, self.distinct_root_count)
+                )
+            ):
+                return CheckResult(
+                    CheckOutcome.REJECTED, False, False, "false-native-isolation-types"
+                )
+            return checked
+        p = self.algebraic_certificate
+        if type(p) is not AlgebraicComplexRootProof:
+            return CheckResult(
+                CheckOutcome.UNSUPPORTED,
+                None,
+                False,
+                "unsupported-factory-isolation-replay",
+            )
+        if (
+            self.roots != p.roots
+            or self.complete is not p.complete
+            or self.total_count != p.total_count
+            or self.distinct_root_count != p.distinct_root_count
+            or self.isolation_complete is not p.isolation_complete
+            or self.rectangles
+            or self.certificates
+            or self.evidence != (p,)
+            or self.method != "algroots_algebraic_complex_roots"
+            or (self.total_count is not None and type(self.total_count) is not int)
+            or (
+                self.distinct_root_count is not None
+                and type(self.distinct_root_count) is not int
+            )
+        ):
+            return CheckResult(
+                CheckOutcome.REJECTED, False, False, "false-adapted-isolation-result"
+            )
+        return p.check()
+
+    def verify(self):
+        """Return whether the record satisfies its declared replay obligations."""
+
+        return self.check().certified is True
+
+    @property
+    def multiplicity_count(self):
+        """The total count, consistently including multiplicity on every route."""
+        return self.total_count
+
+    @property
+    def root_count(self):
+        return self.distinct_root_count
+
+    @property
+    def coverage_complete(self):
+        return (
+            self.isolation_certificate.coverage_complete
+            if self.isolation_state is not None
+            else self.complete
+        )
+
+    @property
+    def accuracy_complete(self):
+        return (
+            self.isolation_certificate.accuracy_complete
+            if self.isolation_state is not None
+            else self.isolation_complete
+        )
+
+    @property
+    def clusters(self):
+        return getattr(self.isolation_certificate, "clusters", ())
+
+    @property
+    def unresolved(self):
+        return getattr(self.isolation_certificate, "unresolved", ())
+
+    @property
+    def refinements(self):
+        return getattr(self.isolation_certificate, "refinements", ())
+
+    @property
+    def individual_multiplicities(self):
+        return getattr(self.proof, "individual_multiplicities", None)
+
+    @property
+    def pole_multiplicity_count(self):
+        return getattr(self.proof, "pole_multiplicity_count", None)
+
+    @property
+    def distinct_pole_count(self):
+        return getattr(self.proof, "distinct_pole_count", None)
+
+    @property
+    def pole_regions(self):
+        return getattr(self.proof, "pole_regions", ())
+
+    @property
+    def winding_count(self):
+        return getattr(self.proof, "winding_count", None)
 
     @property
     def certified(self):
-        return self.complete
+        return self.verify() if self.proof is not None else self.complete
+
+
+def _native_result(state):
+    p = state.proof
+    rectangles = tuple(
+        CertifiedComplexRootRectangle(
+            ComplexRectangle(
+                c.rectangle.bounds()[0],
+                c.rectangle.bounds()[2],
+                c.rectangle.bounds()[1],
+                c.rectangle.bounds()[3],
+            ),
+            c.zero_count,
+            c,
+        )
+        for c in (*p.root_regions, *p.clusters)
+    )
+    return ComplexRootIsolationResult(
+        rectangles=rectangles,
+        complete=p.complete,
+        total_count=p.total_count,
+        method="native_entire_complex_isolation",
+        evidence=(p,),
+        certificates=p.regions,
+        distinct_root_count=p.distinct_root_count,
+        isolation_complete=p.isolation_complete,
+        isolation_state=state,
+    )
+
+
+def _quotient_result(state):
+    from ..quotient_isolation import QuotientRegionProof, _cell_data
+
+    p = state.proof
+    regions = tuple(
+        QuotientRegionProof(p.source, c)
+        for c in p.cells
+        if (d := _cell_data(p.source, c)) is not None and d[0]
+    )
+    rectangles = tuple(
+        CertifiedComplexRootRectangle(
+            ComplexRectangle(
+                c.rectangle.bounds()[0],
+                c.rectangle.bounds()[2],
+                c.rectangle.bounds()[1],
+                c.rectangle.bounds()[3],
+            ),
+            c.zero_count,
+            c,
+        )
+        for c in regions
+    )
+    return ComplexRootIsolationResult(
+        rectangles=rectangles,
+        complete=p.complete,
+        total_count=p.total_count,
+        method="native_quotient_complex_isolation",
+        evidence=(p,),
+        certificates=regions,
+        distinct_root_count=p.distinct_root_count,
+        isolation_complete=p.isolation_complete,
+        isolation_state=state,
+    )
+
+
+def _timeout_isolation(expr, var, rectangle, kwargs, state=None):
+    from ..complex_interval import entire_source
+    from ..complex_isolation import _seed, _wall_state
+    from ..quotient_isolation import (
+        QuotientIsolationState,
+        quotient_source_supported,
+    )
+    from ..quotient_isolation import (
+        _seed as quotient_seed,
+    )
+    from ..quotient_isolation import (
+        _wall_state as quotient_wall,
+    )
+
+    if type(state) is QuotientIsolationState:
+        return _quotient_result(quotient_wall(state))
+    rect = _normalize_rectangle(rectangle)
+    if (
+        state is None
+        and rect is not None
+        and quotient_source_supported(expr, var)
+        and kwargs.get("domain", S.Complexes) == S.Complexes
+        and kwargs.get("condition", S.true) is S.true
+    ):
+        return _quotient_result(
+            quotient_wall(
+                quotient_seed(
+                    expr,
+                    var,
+                    *rect.as_pair(),
+                    max_box_width=kwargs.get("max_box_width"),
+                    max_box_diameter=kwargs.get("max_box_diameter"),
+                    cancel=False,
+                )
+            )
+        )
+
+    if state is not None:
+        return _native_result(_wall_state(state))
+    rect = _normalize_rectangle(rectangle)
+    f, z = map(sp.sympify, (expr, var))
+    if (
+        rect is not None
+        and entire_source(f, z)
+        and kwargs.get("domain", S.Complexes) == S.Complexes
+        and sp.sympify(kwargs.get("condition", S.true)) is S.true
+    ):
+        return _native_result(
+            _wall_state(
+                _seed(
+                    f,
+                    z,
+                    *rect.as_pair(),
+                    kwargs.get("max_box_width"),
+                    kwargs.get("max_box_diameter"),
+                )
+            )
+        )
+    return ComplexRootIsolationResult(
+        method="work-budget-exhausted", evidence=(("query", f, z, rectangle, kwargs),)
+    )
 
 
 def _normalize_rectangle(rectangle):
@@ -123,9 +435,13 @@ def _contains(rect: ComplexRectangle, root):
 
 
 def _exact_roots(expr, var, rect):
+    from ..certified_operations import _equation_solution_data
+
     with contextlib.suppress(*SYMBOLIC_QUERY_ERRORS):
-        solved = sp.solveset(sp.Eq(expr, 0), var, domain=S.Complexes)
-        if isinstance(solved, sp.FiniteSet):
+        # Shared equation solving tracks the raw source domain before rebuilding
+        # held arithmetic, and does not specialize unresolved parameter strata.
+        solved, complete, _ = _equation_solution_data(expr, var, S.Complexes)
+        if complete and (isinstance(solved, sp.FiniteSet) or solved is S.EmptySet):
             roots = []
             for root in solved:
                 inside = _contains(rect, root)
@@ -137,123 +453,31 @@ def _exact_roots(expr, var, rect):
     return None
 
 
-def _iv_modules():
-    names = (
-        "sin",
-        "cos",
-        "tan",
-        "asin",
-        "acos",
-        "atan",
-        "sinh",
-        "cosh",
-        "tanh",
-        "asinh",
-        "acosh",
-        "atanh",
-        "exp",
-        "log",
-        "sqrt",
-        "erf",
-        "erfc",
-    )
-    return {name: getattr(mp.iv, name) for name in names if hasattr(mp.iv, name)}
+def _exact_multiplicity_count(expr, var, roots):
+    """Polynomial/rational orders at already source-defined exact roots."""
+    from ..exactness import certify_zero
 
-
-def _interval_function(expr, var):
-    try:
-        return sp.lambdify(var, expr, modules=[_iv_modules(), "mpmath"])
-    except (TypeError, ValueError, NameError):
-        return None
-
-
-def _mp_number(value, dps):
-    return mp.mpf(str(sp.N(value, dps + 10)))
-
-
-def _segment_box(z0, z1, dps):
-    r0, r1 = sorted((_mp_number(sp.re(z0), dps), _mp_number(sp.re(z1), dps)))
-    i0, i1 = sorted((_mp_number(sp.im(z0), dps), _mp_number(sp.im(z1), dps)))
-    return mp.iv.mpc([r0, r1], [i0, i1])
-
-
-def _image_excludes_zero(value):
-    try:
-        return not (0 in value.real and 0 in value.imag)
-    except (TypeError, ValueError, AttributeError):
-        return False
-
-
-def _point_value(function, z, dps):
-    box = _segment_box(z, z, dps)
-    value = function(box)
-    if not hasattr(value, "real"):
-        value = mp.iv.mpc(value)
-    # The midpoint of an interval point evaluation is a valid representative of
-    # its convex enclosure.  It is used only after the containing boundary image
-    # has been certified zero-free.
-    re = (mp.mpf(value.real.a) + mp.mpf(value.real.b)) / 2
-    im = (mp.mpf(value.imag.a) + mp.mpf(value.imag.b)) / 2
-    return mp.mpc(re, im)
-
-
-def _certify_segment(function, z0, z1, *, dps, depth, max_depth, vertices):
-    try:
-        image = function(_segment_box(z0, z1, dps))
-        if not hasattr(image, "real"):
-            image = mp.iv.mpc(image)
-    except (ArithmeticError, TypeError, ValueError, ZeroDivisionError):
-        return False
-    if _image_excludes_zero(image):
-        vertices.append(z1)
-        return True
-    if depth >= max_depth:
-        return False
-    mid = sp.simplify((z0 + z1) / 2)
-    return _certify_segment(
-        function,
-        z0,
-        mid,
-        dps=dps,
-        depth=depth + 1,
-        max_depth=max_depth,
-        vertices=vertices,
-    ) and _certify_segment(
-        function,
-        mid,
-        z1,
-        dps=dps,
-        depth=depth + 1,
-        max_depth=max_depth,
-        vertices=vertices,
-    )
-
-
-def _boundary_vertices(rect, function, *, dps, max_depth):
-    a = rect.re_min
-    b = rect.re_max
-    c = rect.im_min
-    d = rect.im_max
-    corners = (
-        a + sp.I * c,
-        b + sp.I * c,
-        b + sp.I * d,
-        a + sp.I * d,
-        a + sp.I * c,
-    )
-    vertices = [corners[0]]
-    for z0, z1 in itertools.pairwise(corners):
-        if not _certify_segment(
-            function,
-            z0,
-            z1,
-            dps=dps,
-            depth=0,
-            max_depth=max_depth,
-            vertices=vertices,
-        ):
-            return None
-    return tuple(vertices)
+    if not roots:
+        return 0
+    with contextlib.suppress(*SYMBOLIC_QUERY_ERRORS):
+        numerator, _ = sp.fraction(sp.cancel(expr))
+        p = sp.Poly(numerator, var)
+        if not p.is_zero:
+            total = 0
+            for root in roots:
+                derivative = p
+                for order in range(p.degree() + 1):
+                    zero = certify_zero(derivative.eval(root))
+                    if zero is False:
+                        total += order
+                        break
+                    if zero is not True:
+                        return None
+                    derivative = derivative.diff()
+                else:
+                    return None
+            return total
+    return None
 
 
 def _polygon_winding(values):
@@ -311,10 +535,9 @@ def argument_principle_count(
 ):
     """Count zeros in a rectangle by a validated argument-principle contour.
 
-    A positive certificate requires a symbolic proof of holomorphy on the closed
-    rectangle and interval-arithmetic enclosures of every boundary segment that
-    exclude zero.  If validation fails, a numerical winding estimate may be
-    returned as evidence but ``certified`` remains false.
+    Positive counts use the native exact boundary-homotopy checker. Rounded
+    point evaluations and floating argument sums are diagnostic evidence only.
+    Unsupported grammar or geometry remains uncertified.
     """
     expr = sp.sympify(expr)
     var = sp.sympify(var)
@@ -328,43 +551,33 @@ def argument_principle_count(
             method="invalid_rectangle",
         )
     analytic = holomorphic_on_rectangle(expr, var, rect.as_pair())
-    function = _interval_function(expr, var)
-    if analytic.holomorphic is True and function is not None:
-        old_iv_dps = mp.iv.dps
-        old_mp_dps = mp.mp.dps
-        mp.iv.dps = int(precision)
-        mp.mp.dps = int(precision)
-        try:
-            vertices = _boundary_vertices(
-                rect,
-                function,
-                dps=int(precision),
-                max_depth=max_boundary_depth,
-            )
-            if vertices is not None:
-                try:
-                    values = tuple(
-                        _point_value(function, z, int(precision)) for z in vertices
-                    )
-                    winding = _polygon_winding(values)
-                except (ArithmeticError, TypeError, ValueError, ZeroDivisionError):
-                    winding = None
-                if winding is not None and winding >= 0:
-                    return ArgumentPrincipleCertificate(
-                        rect,
-                        winding,
-                        winding,
-                        0,
-                        True,
-                        "validated_interval_argument_principle",
-                        len(vertices) - 1,
-                        int(precision),
-                        analytic,
-                        (("boundary_zero_free", True),),
-                    )
-        finally:
-            mp.iv.dps = old_iv_dps
-            mp.mp.dps = old_mp_dps
+    from ..analytic_contours import certify_analytic_contour
+    from ..enclosure_policy import EnclosurePolicy
+
+    native = certify_analytic_contour(
+        expr,
+        var,
+        *rect.as_pair(),
+        policy=EnclosurePolicy(
+            precision=int(precision),
+            max_precision=int(precision),
+            max_refinements=0,
+            max_depth=max_boundary_depth,
+        ),
+    )
+    if native.complete and native.verify():
+        return ArgumentPrincipleCertificate(
+            rect,
+            native.zero_count,
+            native.zero_count,
+            0,
+            True,
+            "validated_interval_argument_principle",
+            len(native.images),
+            int(precision),
+            analytic,
+            (("boundary_zero_free", True), ("native_contour", native)),
+        )
     estimate = _numerical_winding(expr, var, rect, dps=int(precision))
     return ArgumentPrincipleCertificate(
         rect,
@@ -399,28 +612,157 @@ def isolate_complex_roots(
     precision=60,
     max_boundary_depth=14,
     max_isolation_depth=10,
+    domain=S.Complexes,
+    condition=S.true,
+    policy=None,
+    max_box_width=None,
+    max_box_diameter=None,
+    use_newton=True,
+    use_multiple=True,
 ):
     """Return certified complex root rectangles inside ``rectangle``.
 
     Rectangles with count one isolate a unique simple zero.  A terminal rectangle
     with count greater than one is a certified cluster counted with multiplicity.
-    Completeness means that the certified rectangle counts add to the certified
-    argument-principle count of the original rectangle.
+    Native ``complete`` requires coverage, individual isolation and requested
+    accuracy; ``coverage_complete`` also permits counted clusters. ``total_count``
+    includes multiplicity on both exact and contour routes; exact locations have
+    a separate ``distinct_root_count``. An unavailable multiplicity stays None.
     """
     expr = sp.sympify(expr)
     var = sp.sympify(var)
+    if max_box_width is not None:
+        max_box_width = sp.sympify(max_box_width)
+        if not isinstance(max_box_width, sp.Rational) or max_box_width <= 0:
+            raise ValueError("max_box_width must be a positive exact rational")
+    if max_box_diameter is not None:
+        max_box_diameter = sp.sympify(max_box_diameter)
+        if not isinstance(max_box_diameter, sp.Rational) or max_box_diameter <= 0:
+            raise ValueError("max_box_diameter must be a positive exact rational")
+    if type(use_newton) is not bool:
+        raise ValueError("use_newton must be a bool")
+    if type(use_multiple) is not bool:
+        raise ValueError("use_multiple must be a bool")
+    if policy is not None and policy.seconds is not None:
+        from dataclasses import replace
+
+        from ..work_budget import bounded_query
+
+        return bounded_query(
+            "isolate_complex_roots",
+            expr,
+            (var, rectangle),
+            {
+                "precision": precision,
+                "max_boundary_depth": max_boundary_depth,
+                "max_isolation_depth": max_isolation_depth,
+                "domain": domain,
+                "condition": condition,
+                "policy": replace(policy, seconds=None),
+                "max_box_width": max_box_width,
+                "max_box_diameter": max_box_diameter,
+                "use_newton": use_newton,
+                "use_multiple": use_multiple,
+            },
+            policy.seconds,
+        )
     rect = _normalize_rectangle(rectangle)
     if rect is None:
         return ComplexRootIsolationResult(method="invalid_rectangle")
+
+    from ..algebraic_complex import (
+        algebraic_complex_supported,
+        certify_algebraic_complex_roots,
+    )
+    from ..complex_coverage import CoverageRectangle
+
+    domain, condition = map(sp.sympify, (domain, condition))
+    if algebraic_complex_supported(
+        expr, var, CoverageRectangle(*rect.as_pair()), domain, condition
+    ):
+        p = certify_algebraic_complex_roots(
+            expr, var, rect, domain=domain, condition=condition
+        )
+        return ComplexRootIsolationResult(
+            roots=p.roots,
+            complete=p.complete,
+            total_count=p.total_count,
+            method="algroots_algebraic_complex_roots",
+            evidence=(p,),
+            distinct_root_count=p.distinct_root_count,
+            isolation_complete=p.isolation_complete,
+            algebraic_certificate=p,
+        )
+    if domain != S.Complexes or condition is not S.true:
+        return ComplexRootIsolationResult(
+            method="unsupported-restricted-complex-isolation"
+        )
+
+    from ..complex_interval import entire_source
+    from ..complex_isolation import certify_complex_isolation
+    from ..enclosure_policy import EnclosurePolicy
+    from ..quotient_isolation import (
+        certify_quotient_isolation,
+        quotient_source_supported,
+    )
+
+    if (
+        quotient_source_supported(expr, var)
+        and CoverageRectangle(*rect.as_pair()).valid()
+    ):
+        return _quotient_result(
+            certify_quotient_isolation(
+                expr,
+                var,
+                *rect.as_pair(),
+                max_box_width=max_box_width,
+                max_box_diameter=max_box_diameter,
+                use_multiple=use_multiple,
+                policy=policy
+                if policy is not None
+                else EnclosurePolicy(
+                    precision=precision,
+                    max_precision=max(precision, 240),
+                    max_depth=max_isolation_depth,
+                ),
+                max_boundary_depth=max_boundary_depth,
+            )
+        )
+
+    if entire_source(expr, var) and CoverageRectangle(*rect.as_pair()).valid():
+        native_policy = (
+            policy
+            if policy is not None
+            else EnclosurePolicy(
+                precision=precision,
+                max_precision=max(precision, 240),
+                max_depth=max_isolation_depth,
+            )
+        )
+        return _native_result(
+            certify_complex_isolation(
+                expr,
+                var,
+                *rect.as_pair(),
+                max_box_width=max_box_width,
+                max_box_diameter=max_box_diameter,
+                use_newton=use_newton,
+                use_multiple=use_multiple,
+                policy=native_policy,
+                max_boundary_depth=max_boundary_depth,
+            )
+        )
 
     exact = _exact_roots(expr, var, rect)
     if exact is not None:
         return ComplexRootIsolationResult(
             exact,
             complete=True,
-            total_count=len(exact),
+            total_count=_exact_multiplicity_count(expr, var, exact),
             method="exact_complex_roots",
             evidence=(("rectangle", rect),),
+            distinct_root_count=len(exact),
+            isolation_complete=True,
         )
 
     cache = {}
@@ -453,6 +795,8 @@ def isolate_complex_roots(
             method="validated_argument_principle",
             evidence=(parent,),
             certificates=(parent,),
+            distinct_root_count=0,
+            isolation_complete=True,
         )
 
     leaves = []
@@ -498,6 +842,10 @@ def isolate_complex_roots(
         method="validated_complex_rectangle_isolation",
         evidence=(parent,),
         certificates=tuple(certs),
+        distinct_root_count=len(leaves)
+        if all(q.root_count == 1 for q in leaves)
+        else None,
+        isolation_complete=complete and all(q.root_count == 1 for q in leaves),
     )
 
 
@@ -510,6 +858,13 @@ def complex_zeros(
     precision=60,
     max_boundary_depth=14,
     max_isolation_depth=10,
+    domain=S.Complexes,
+    condition=S.true,
+    policy=None,
+    max_box_width=None,
+    max_box_diameter=None,
+    use_newton=True,
+    use_multiple=True,
 ):
     """Return zeros in a closed complex rectangle, with certification when needed."""
     result = isolate_complex_roots(
@@ -519,6 +874,13 @@ def complex_zeros(
         precision=precision,
         max_boundary_depth=max_boundary_depth,
         max_isolation_depth=max_isolation_depth,
+        domain=domain,
+        condition=condition,
+        policy=policy,
+        max_box_width=max_box_width,
+        max_box_diameter=max_box_diameter,
+        use_newton=use_newton,
+        use_multiple=use_multiple,
     )
     if return_result:
         return result

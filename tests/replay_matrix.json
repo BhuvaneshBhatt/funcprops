@@ -1,0 +1,781 @@
+{
+  "version": 1,
+  "families": [
+    {
+      "family": "native-real",
+      "modules": [
+        "funcprops.coverage_contract",
+        "funcprops.enclosures",
+        "funcprops.adaptive_roots"
+      ],
+      "suites": [
+        "tests/test_coverage_kernel.py",
+        "tests/test_real_enclosures.py",
+        "tests/test_adaptive_root_coverage.py",
+        "tests/certificates/test_replay_type_fixtures.py"
+      ],
+      "independent_native_replay": true,
+      "obligations": [
+        "valid-evidence",
+        "violated-premise-or-decline",
+        "source-domain-binding",
+        "theorem-field-mutation",
+        "proposer-disabled-replay"
+      ],
+      "shared_contract_suites": [
+        "tests/specification/test_result_contracts.py",
+        "tests/test_quotient_soundness_audit.py",
+        "tests/test_robustness_contracts.py"
+      ]
+    },
+    {
+      "family": "infinite-real",
+      "modules": [
+        "funcprops.infinite_contract"
+      ],
+      "suites": [
+        "tests/test_periodic_root_coverage.py",
+        "tests/test_tail_root_coverage.py"
+      ],
+      "independent_native_replay": true,
+      "obligations": [
+        "valid-evidence",
+        "violated-premise-or-decline",
+        "source-domain-binding",
+        "theorem-field-mutation",
+        "proposer-disabled-replay"
+      ],
+      "shared_contract_suites": [
+        "tests/specification/test_result_contracts.py",
+        "tests/test_quotient_soundness_audit.py"
+      ]
+    },
+    {
+      "family": "parameters",
+      "modules": [
+        "funcprops.parameter_contract"
+      ],
+      "suites": [
+        "tests/test_parameter_root_coverage.py",
+        "tests/test_uniform_parameter_coverage.py",
+        "tests/certificates/test_replay_type_fixtures.py"
+      ],
+      "independent_native_replay": true,
+      "obligations": [
+        "valid-evidence",
+        "violated-premise-or-decline",
+        "source-domain-binding",
+        "theorem-field-mutation",
+        "proposer-disabled-replay"
+      ],
+      "shared_contract_suites": [
+        "tests/specification/test_result_contracts.py",
+        "tests/test_quotient_soundness_audit.py"
+      ]
+    },
+    {
+      "family": "property-assembly",
+      "modules": [
+        "funcprops.property_contract"
+      ],
+      "suites": [
+        "tests/test_property_coverage.py"
+      ],
+      "independent_native_replay": true,
+      "obligations": [
+        "valid-evidence",
+        "violated-premise-or-decline",
+        "source-domain-binding",
+        "theorem-field-mutation",
+        "proposer-disabled-replay"
+      ],
+      "shared_contract_suites": [
+        "tests/specification/test_result_contracts.py",
+        "tests/test_quotient_soundness_audit.py",
+        "tests/test_proof_payload_integrity.py"
+      ]
+    },
+    {
+      "family": "entire-contours",
+      "modules": [
+        "funcprops.analytic_contours",
+        "funcprops.complex_clusters"
+      ],
+      "suites": [
+        "tests/test_complex_clusters.py",
+        "tests/test_analytic_contours.py",
+        "tests/certificates/test_replay_type_fixtures.py"
+      ],
+      "independent_native_replay": true,
+      "obligations": [
+        "valid-evidence",
+        "violated-premise-or-decline",
+        "source-domain-binding",
+        "theorem-field-mutation",
+        "proposer-disabled-replay"
+      ],
+      "shared_contract_suites": [
+        "tests/specification/test_result_contracts.py",
+        "tests/test_quotient_soundness_audit.py"
+      ]
+    },
+    {
+      "family": "complex-isolation",
+      "modules": [
+        "funcprops.complex_isolation"
+      ],
+      "suites": [
+        "tests/test_complex_isolation_soundness.py",
+        "tests/test_complex_cover_assembly.py"
+      ],
+      "independent_native_replay": true,
+      "obligations": [
+        "valid-evidence",
+        "violated-premise-or-decline",
+        "source-domain-binding",
+        "theorem-field-mutation",
+        "proposer-disabled-replay"
+      ],
+      "shared_contract_suites": [
+        "tests/specification/test_result_contracts.py",
+        "tests/test_quotient_soundness_audit.py"
+      ]
+    },
+    {
+      "family": "complex-multiplicity",
+      "modules": [
+        "funcprops.complex_multiplicity"
+      ],
+      "suites": [
+        "tests/test_complex_completion.py",
+        "tests/certificates/test_replay_type_fixtures.py"
+      ],
+      "independent_native_replay": true,
+      "obligations": [
+        "valid-evidence",
+        "violated-premise-or-decline",
+        "source-domain-binding",
+        "theorem-field-mutation",
+        "proposer-disabled-replay"
+      ],
+      "shared_contract_suites": [
+        "tests/specification/test_result_contracts.py",
+        "tests/test_quotient_soundness_audit.py",
+        "tests/test_proof_payload_integrity.py"
+      ]
+    },
+    {
+      "family": "complex-newton",
+      "modules": [
+        "funcprops.complex_newton"
+      ],
+      "suites": [
+        "tests/test_complex_newton.py"
+      ],
+      "independent_native_replay": true,
+      "obligations": [
+        "valid-evidence",
+        "violated-premise-or-decline",
+        "source-domain-binding",
+        "theorem-field-mutation",
+        "proposer-disabled-replay"
+      ],
+      "shared_contract_suites": [
+        "tests/specification/test_result_contracts.py",
+        "tests/test_quotient_soundness_audit.py"
+      ]
+    },
+    {
+      "family": "complex-cofinal",
+      "modules": [
+        "funcprops.complex_cofinal"
+      ],
+      "suites": [
+        "tests/test_complex_completion.py"
+      ],
+      "independent_native_replay": true,
+      "obligations": [
+        "valid-evidence",
+        "violated-premise-or-decline",
+        "source-domain-binding",
+        "theorem-field-mutation",
+        "proposer-disabled-replay"
+      ],
+      "shared_contract_suites": [
+        "tests/specification/test_result_contracts.py",
+        "tests/test_quotient_soundness_audit.py"
+      ]
+    },
+    {
+      "family": "quotient-ledger",
+      "modules": [
+        "funcprops.quotient_isolation"
+      ],
+      "suites": [
+        "tests/test_quotient_isolation.py",
+        "tests/test_quotient_soundness_audit.py"
+      ],
+      "independent_native_replay": true,
+      "obligations": [
+        "valid-evidence",
+        "violated-premise-or-decline",
+        "source-domain-binding",
+        "theorem-field-mutation",
+        "proposer-disabled-replay"
+      ],
+      "shared_contract_suites": [
+        "tests/specification/test_result_contracts.py",
+        "tests/test_quotient_soundness_audit.py"
+      ]
+    },
+    {
+      "family": "quotient-shared-orders",
+      "modules": [
+        "funcprops.shared_zeros",
+        "funcprops.quotient_refinement",
+        "funcprops.quotient_cofinal"
+      ],
+      "suites": [
+        "tests/test_quotient_shared_orders.py",
+        "tests/test_quotient_soundness_audit.py"
+      ],
+      "independent_native_replay": true,
+      "obligations": [
+        "valid-evidence",
+        "violated-premise-or-decline",
+        "source-domain-binding",
+        "theorem-field-mutation",
+        "proposer-disabled-replay"
+      ],
+      "shared_contract_suites": [
+        "tests/specification/test_result_contracts.py",
+        "tests/test_quotient_soundness_audit.py"
+      ]
+    },
+    {
+      "family": "complex-public",
+      "modules": [
+        "funcprops.transcendental.complex_roots"
+      ],
+      "suites": [
+        "tests/test_algroots_complex_adapter.py",
+        "tests/test_complex_cover_assembly.py",
+        "tests/test_quotient_isolation.py"
+      ],
+      "independent_native_replay": false,
+      "obligations": [
+        "valid-evidence",
+        "violated-premise-or-decline",
+        "source-domain-binding",
+        "theorem-field-mutation",
+        "declared-replay-route"
+      ],
+      "shared_contract_suites": [
+        "tests/specification/test_result_contracts.py",
+        "tests/test_quotient_soundness_audit.py"
+      ]
+    },
+    {
+      "family": "algebraic-adapter",
+      "modules": [
+        "funcprops.algebraic_complex"
+      ],
+      "suites": [
+        "tests/test_algroots_complex_adapter.py",
+        "tests/test_quotient_soundness_audit.py"
+      ],
+      "independent_native_replay": false,
+      "obligations": [
+        "valid-evidence",
+        "violated-premise-or-decline",
+        "source-domain-binding",
+        "theorem-field-mutation",
+        "declared-replay-route"
+      ],
+      "shared_contract_suites": [
+        "tests/specification/test_result_contracts.py",
+        "tests/test_quotient_soundness_audit.py"
+      ]
+    },
+    {
+      "family": "root-coverage",
+      "modules": [
+        "funcprops.root_coverage",
+        "funcprops.complex_coverage"
+      ],
+      "suites": [
+        "tests/test_regularity_proof_soundness.py",
+        "tests/test_root_coverage_checker.py"
+      ],
+      "independent_native_replay": false,
+      "obligations": [
+        "valid-evidence",
+        "violated-premise-or-decline",
+        "source-domain-binding",
+        "theorem-field-mutation",
+        "declared-replay-route"
+      ],
+      "shared_contract_suites": [
+        "tests/specification/test_result_contracts.py",
+        "tests/test_quotient_soundness_audit.py",
+        "tests/test_robustness_contracts.py"
+      ]
+    },
+    {
+      "family": "local-counts",
+      "modules": [
+        "funcprops.complex_certification",
+        "funcprops.meromorphic_contours"
+      ],
+      "suites": [
+        "tests/test_complex_operations_soundness.py",
+        "tests/test_equation_and_contour_contracts.py"
+      ],
+      "independent_native_replay": false,
+      "obligations": [
+        "valid-evidence",
+        "violated-premise-or-decline",
+        "source-domain-binding",
+        "theorem-field-mutation",
+        "declared-replay-route"
+      ],
+      "shared_contract_suites": [
+        "tests/specification/test_result_contracts.py",
+        "tests/test_quotient_soundness_audit.py"
+      ]
+    },
+    {
+      "family": "guarded-affine",
+      "modules": [
+        "funcprops.guarded_affine"
+      ],
+      "suites": [
+        "tests/test_equation_and_contour_contracts.py"
+      ],
+      "independent_native_replay": false,
+      "obligations": [
+        "valid-evidence",
+        "violated-premise-or-decline",
+        "source-domain-binding",
+        "theorem-field-mutation",
+        "declared-replay-route"
+      ],
+      "shared_contract_suites": [
+        "tests/specification/test_result_contracts.py",
+        "tests/test_quotient_soundness_audit.py"
+      ]
+    },
+    {
+      "family": "inequality-and-piecewise",
+      "modules": [
+        "funcprops.asymptotic_tails",
+        "funcprops.certified_balls",
+        "funcprops.piecewise_proofs",
+        "funcprops.certified_inequalities",
+        "funcprops.derivative_inequalities",
+        "funcprops.global_analysis"
+      ],
+      "suites": [
+        "tests/test_compositional_proof_soundness.py",
+        "tests/test_consistent_helper_proofs.py",
+        "tests/test_equation_and_contour_contracts.py"
+      ],
+      "independent_native_replay": false,
+      "obligations": [
+        "valid-evidence",
+        "violated-premise-or-decline",
+        "source-domain-binding",
+        "theorem-field-mutation",
+        "declared-replay-route"
+      ],
+      "shared_contract_suites": [
+        "tests/specification/test_result_contracts.py",
+        "tests/test_quotient_soundness_audit.py"
+      ]
+    },
+    {
+      "family": "global-maps",
+      "modules": [
+        "funcprops.global_multivariate"
+      ],
+      "suites": [
+        "tests/test_consistent_helper_proofs.py",
+        "tests/test_multivariate_certification.py"
+      ],
+      "independent_native_replay": false,
+      "obligations": [
+        "valid-evidence",
+        "violated-premise-or-decline",
+        "source-domain-binding",
+        "theorem-field-mutation",
+        "declared-replay-route"
+      ],
+      "shared_contract_suites": [
+        "tests/specification/test_result_contracts.py",
+        "tests/test_quotient_soundness_audit.py"
+      ]
+    },
+    {
+      "family": "certified_operations",
+      "modules": [
+        "funcprops.integration",
+        "funcprops.certified_operations"
+      ],
+      "suites": [
+        "tests/test_certified_operations.py",
+        "tests/test_complex_operations_soundness.py",
+        "tests/test_compositional_proof_soundness.py",
+        "tests/test_integration_parametric_contours.py",
+        "tests/certificates/test_replay_type_fixtures.py"
+      ],
+      "independent_native_replay": false,
+      "obligations": [
+        "valid-evidence",
+        "violated-premise-or-decline",
+        "source-domain-binding",
+        "theorem-field-mutation",
+        "declared-replay-route"
+      ],
+      "shared_contract_suites": [
+        "tests/specification/test_result_contracts.py",
+        "tests/test_quotient_soundness_audit.py",
+        "tests/test_proof_payload_integrity.py",
+        "tests/test_robustness_contracts.py"
+      ]
+    },
+    {
+      "family": "transformations",
+      "modules": [
+        "funcprops.transformation"
+      ],
+      "suites": [
+        "tests/test_multivariate_certification.py",
+        "tests/test_transformation_geometry.py",
+        "tests/certificates/test_replay_type_fixtures.py",
+        "tests/test_differential_soundness.py",
+        "tests/test_sign_routes.py"
+      ],
+      "independent_native_replay": false,
+      "obligations": [
+        "valid-evidence",
+        "violated-premise-or-decline",
+        "source-domain-binding",
+        "theorem-field-mutation",
+        "declared-replay-route"
+      ],
+      "shared_contract_suites": [
+        "tests/specification/test_result_contracts.py",
+        "tests/test_quotient_soundness_audit.py",
+        "tests/test_robustness_contracts.py"
+      ]
+    },
+    {
+      "family": "domain-and-optimization",
+      "modules": [
+        "funcprops.domain_tracking",
+        "funcprops.component_optimization",
+        "funcprops.certified_optimization"
+      ],
+      "suites": [
+        "tests/test_domain_components_and_replay.py",
+        "tests/test_domain_components_and_replay.py"
+      ],
+      "independent_native_replay": false,
+      "obligations": [
+        "valid-evidence",
+        "violated-premise-or-decline",
+        "source-domain-binding",
+        "theorem-field-mutation",
+        "declared-replay-route"
+      ],
+      "shared_contract_suites": [
+        "tests/specification/test_result_contracts.py",
+        "tests/test_quotient_soundness_audit.py"
+      ]
+    },
+    {
+      "family": "real-root-certificates",
+      "modules": [
+        "funcprops.transcendental.roots",
+        "funcprops.verified_roots",
+        "funcprops.taylor_models"
+      ],
+      "suites": [
+        "tests/test_certified_numerical_analysis.py",
+        "tests/test_transcendental_certification.py"
+      ],
+      "independent_native_replay": false,
+      "obligations": [
+        "valid-evidence",
+        "violated-premise-or-decline",
+        "source-domain-binding",
+        "theorem-field-mutation",
+        "declared-replay-route"
+      ],
+      "shared_contract_suites": [
+        "tests/specification/test_result_contracts.py",
+        "tests/test_quotient_soundness_audit.py"
+      ]
+    },
+    {
+      "family": "geometry",
+      "modules": [
+        "funcprops.geometry"
+      ],
+      "suites": [
+        "tests/test_boundary_and_attainment_geometry.py",
+        "tests/test_structural_properties.py"
+      ],
+      "independent_native_replay": false,
+      "obligations": [
+        "valid-evidence",
+        "violated-premise-or-decline",
+        "source-domain-binding",
+        "theorem-field-mutation",
+        "declared-replay-route"
+      ],
+      "shared_contract_suites": [
+        "tests/specification/test_result_contracts.py",
+        "tests/test_quotient_soundness_audit.py"
+      ]
+    },
+    {
+      "family": "real-property-certificates",
+      "modules": [
+        "funcprops.real_analysis.complete_monotonicity",
+        "funcprops.real_analysis.monotonic_certificates",
+        "funcprops.real_analysis.advanced_convexity",
+        "funcprops.real_analysis.structural_properties"
+      ],
+      "suites": [
+        "tests/test_exported_helpers_and_replay.py",
+        "tests/test_guarded_proofs_and_status.py",
+        "tests/test_structural_properties.py",
+        "tests/certificates/test_replay_type_fixtures.py",
+        "tests/test_consumer_soundness.py",
+        "tests/property/test_property_models.py",
+        "tests/test_proof_obligations.py",
+        "tests/test_sign_routes.py"
+      ],
+      "independent_native_replay": false,
+      "obligations": [
+        "valid-evidence",
+        "violated-premise-or-decline",
+        "source-domain-binding",
+        "theorem-field-mutation",
+        "declared-replay-route"
+      ],
+      "shared_contract_suites": [
+        "tests/specification/test_result_contracts.py",
+        "tests/test_quotient_soundness_audit.py"
+      ]
+    },
+    {
+      "family": "indexed-extrema",
+      "modules": [
+        "funcprops.transcendental.zero_geometry",
+        "funcprops.transcendental.extrema"
+      ],
+      "suites": [
+        "tests/test_complex_operations_soundness.py",
+        "tests/test_exported_helpers_and_replay.py",
+        "tests/test_transcendental_real_analysis.py"
+      ],
+      "independent_native_replay": false,
+      "obligations": [
+        "valid-evidence",
+        "violated-premise-or-decline",
+        "source-domain-binding",
+        "theorem-field-mutation",
+        "declared-replay-route"
+      ],
+      "shared_contract_suites": [
+        "tests/specification/test_result_contracts.py",
+        "tests/test_quotient_soundness_audit.py"
+      ]
+    },
+    {
+      "family": "extrema-bounds",
+      "modules": [
+        "funcprops.extrema_bounds"
+      ],
+      "suites": [
+        "tests/test_extrema_bounds.py"
+      ],
+      "independent_native_replay": true,
+      "obligations": [
+        "valid-evidence",
+        "violated-premise-or-decline",
+        "source-domain-binding",
+        "theorem-field-mutation",
+        "proposer-disabled-replay"
+      ],
+      "shared_contract_suites": [
+        "tests/specification/test_result_contracts.py",
+        "tests/test_quotient_soundness_audit.py",
+        "tests/test_proof_payload_integrity.py"
+      ]
+    },
+    {
+      "family": "branch_atlas",
+      "modules": [
+        "funcprops.branch_atlas"
+      ],
+      "suites": [
+        "tests/test_branch_atlas.py"
+      ],
+      "independent_native_replay": true,
+      "obligations": [
+        "valid-evidence",
+        "violated-premise-or-decline",
+        "source-domain-binding",
+        "theorem-field-mutation",
+        "proposer-disabled-replay"
+      ],
+      "shared_contract_suites": [
+        "tests/specification/test_result_contracts.py",
+        "tests/test_quotient_soundness_audit.py"
+      ]
+    },
+    {
+      "family": "implicit_orders",
+      "modules": [
+        "funcprops.implicit_orders"
+      ],
+      "suites": [
+        "tests/test_implicit_orders.py"
+      ],
+      "independent_native_replay": true,
+      "obligations": [
+        "valid-evidence",
+        "violated-premise-or-decline",
+        "source-domain-binding",
+        "theorem-field-mutation",
+        "proposer-disabled-replay"
+      ],
+      "shared_contract_suites": [
+        "tests/specification/test_result_contracts.py",
+        "tests/test_quotient_soundness_audit.py",
+        "tests/test_proof_payload_integrity.py"
+      ]
+    },
+    {
+      "family": "finite-metric-replay",
+      "modules": [
+        "funcprops.metric_proofs",
+        "funcprops.real_analysis.regularity_extensions",
+        "funcprops.real_analysis.variation"
+      ],
+      "suites": [
+        "tests/test_metric_replay.py",
+        "tests/property/test_property_models.py",
+        "tests/test_proof_obligations.py",
+        "tests/property/test_source_transport_models.py"
+      ],
+      "independent_native_replay": true,
+      "obligations": [
+        "valid-evidence",
+        "violated-premise-or-decline",
+        "source-domain-binding",
+        "theorem-field-mutation",
+        "proposer-disabled-replay"
+      ],
+      "shared_contract_suites": [
+        "tests/specification/test_result_contracts.py",
+        "tests/test_quotient_soundness_audit.py",
+        "tests/test_robustness_contracts.py"
+      ]
+    },
+    {
+      "family": "exact-coefficient-fields",
+      "modules": [
+        "funcprops.algebraic_coefficients"
+      ],
+      "suites": [
+        "tests/test_algebraic_coefficient_support.py",
+        "tests/property/test_property_models.py",
+        "tests/test_proof_obligations.py"
+      ],
+      "independent_native_replay": true,
+      "obligations": [
+        "valid-evidence",
+        "violated-premise-or-decline",
+        "source-domain-binding",
+        "theorem-field-mutation",
+        "proposer-disabled-replay"
+      ],
+      "shared_contract_suites": [
+        "tests/specification/test_result_contracts.py",
+        "tests/test_quotient_soundness_audit.py"
+      ]
+    },
+    {
+      "family": "polynomial-parameter-geometry",
+      "modules": [
+        "funcprops.parameter_geometry"
+      ],
+      "suites": [
+        "tests/test_parameter_geometry.py",
+        "tests/property/test_property_models.py",
+        "tests/test_proof_obligations.py"
+      ],
+      "independent_native_replay": true,
+      "obligations": [
+        "valid-evidence",
+        "violated-premise-or-decline",
+        "source-domain-binding",
+        "theorem-field-mutation",
+        "proposer-disabled-replay"
+      ],
+      "shared_contract_suites": [
+        "tests/specification/test_result_contracts.py",
+        "tests/test_quotient_soundness_audit.py",
+        "tests/test_robustness_contracts.py"
+      ]
+    },
+    {
+      "family": "holomorphic-branch-gluing",
+      "modules": [
+        "funcprops.branch_gluing"
+      ],
+      "suites": [
+        "tests/test_branch_gluing.py",
+        "tests/test_proof_obligations.py"
+      ],
+      "independent_native_replay": true,
+      "obligations": [
+        "valid-evidence",
+        "violated-premise-or-decline",
+        "source-domain-binding",
+        "theorem-field-mutation",
+        "proposer-disabled-replay"
+      ],
+      "shared_contract_suites": [
+        "tests/specification/test_result_contracts.py",
+        "tests/test_quotient_soundness_audit.py"
+      ]
+    },
+    {
+      "family": "bounded-regularity",
+      "modules": [
+        "funcprops.seam_regularity",
+        "funcprops.entire_cancellation"
+      ],
+      "suites": [
+        "tests/test_practical_proofs.py"
+      ],
+      "independent_native_replay": true,
+      "obligations": [
+        "valid-evidence",
+        "violated-premise-or-decline",
+        "source-domain-binding",
+        "theorem-field-mutation",
+        "proposer-disabled-replay"
+      ],
+      "shared_contract_suites": [
+        "tests/specification/test_result_contracts.py",
+        "tests/test_quotient_soundness_audit.py"
+      ]
+    }
+  ]
+}

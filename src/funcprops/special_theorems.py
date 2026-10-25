@@ -11,6 +11,8 @@ from .results import Convexity, Monotonicity, Sign
 
 @dataclass(frozen=True)
 class GuardedTheorem:
+    """Describe an executable sufficient theorem and its parameter guard."""
+
     expression: object
     variable: object
     property: str
@@ -33,6 +35,8 @@ class GuardedTheorem:
 
 
 def executable_special_theorems(expr, var):
+    """List supported special-function theorems and their parameter guards."""
+
     f = sp.sympify(expr)
     x = sp.sympify(var)
     out = []

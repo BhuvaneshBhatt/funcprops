@@ -42,7 +42,7 @@ from .post_simplify import (
 def branch_cut_conditions(expr, variable, *, assumptions=True):
     """Return unique symbolic principal-cut conditions for ``expr``.
 
-    This property query is intentionally cheaper than full jump propagation.
+    This property query is cheaper than full jump propagation.
     It pulls primitive cut rules back through arguments and recursively includes
     inner cuts, but does not form plus/minus boundary-value products.
     """
@@ -63,8 +63,12 @@ def branch_cut_conditions(expr, variable, *, assumptions=True):
             seen.add(key)
             out.append(cond)
 
+    from ..entire_cancellation import entire_cancellation_proof
+
     def visit(e):
         e = sympify(e)
+        if entire_cancellation_proof(e, variable) is not None:
+            return
         if not e.has(variable):
             return
         # Exact primitive rule first.

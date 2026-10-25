@@ -4,8 +4,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import funcprops.api as api
+import funcprops as api
 from examples.property_examples import examples_for
+
+PUBLIC_QUERIES = {name for name, *_ in api.properties()}
 
 ROOT = Path(__file__).resolve().parents[2]
 DOCS = ROOT / "docs" / "properties"
@@ -22,13 +24,13 @@ REQUIRED = (
 
 
 def test_every_public_property_has_one_canonical_page():
-    expected = {f"{name.removeprefix('function_')}.md" for name in api.__all__}
+    expected = {f"{name.removeprefix('function_')}.md" for name in PUBLIC_QUERIES}
     actual = {path.name for path in DOCS.glob("*.md") if path.name != "index.md"}
     assert actual == expected
 
 
 def test_property_pages_follow_the_common_reference_template():
-    for name in api.__all__:
+    for name in PUBLIC_QUERIES:
         text = (DOCS / f"{name.removeprefix('function_')}.md").read_text()
         for heading in REQUIRED:
             assert heading in text, (name, heading)
@@ -41,6 +43,6 @@ def test_property_pages_follow_the_common_reference_template():
 
 def test_property_index_links_every_public_query():
     text = (DOCS / "index.md").read_text()
-    for name in api.__all__:
+    for name in PUBLIC_QUERIES:
         assert f"`{name}`" in text
         assert f"({name.removeprefix('function_')}.md)" in text

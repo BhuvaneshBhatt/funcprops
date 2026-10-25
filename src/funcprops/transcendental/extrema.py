@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 import sympy as sp
 from sympy import S
@@ -60,7 +60,7 @@ class IndexedExtremumValue(sp.Expr):
 class ExtremumEnvelope(sp.Expr):
     """Exact infimum/supremum over an indexed extremum family.
 
-    ``direction`` is ``'inf'`` or ``'sup'``.  The object intentionally stays
+    ``direction`` is ``'inf'`` or ``'sup'``.  The object stays
     symbolic when no theorem proves which indexed member realizes the bound.
     """
 
@@ -96,6 +96,8 @@ class ExtremumEnvelope(sp.Expr):
 
 @dataclass(frozen=True)
 class ExtremumFamilyCertificate:
+    """Bind indexed extremum values to a supported derivative-root family."""
+
     family: str
     domain: object
     critical_geometry: tuple[ZeroGeometryCertificate, ...]
@@ -105,6 +107,8 @@ class ExtremumFamilyCertificate:
     complete: bool = False
     source: str = ""
     notes: tuple[object, ...] = ()
+    expression: sp.Expr | None = None
+    variable: sp.Symbol | None = None
 
 
 @dataclass(frozen=True)
@@ -127,6 +131,7 @@ class ExtremumOrderingTheorem:
     proof: object = None
     source: str = ""
     notes: tuple[object, ...] = ()
+    parameter: sp.Expr | None = None
 
 
 @dataclass(frozen=True)
@@ -142,8 +147,12 @@ class ExtremumRange:
     candidates: tuple[object, ...] = ()
     evidence: tuple[object, ...] = ()
     source: str = ""
+    expression: sp.Expr | None = None
+    variable: sp.Symbol | None = None
 
     def as_condition(self, y):
+        """Express this result as a condition on the requested value coordinate."""
+
         y = sp.sympify(y)
         if not self.complete:
             return None
@@ -186,10 +195,19 @@ def _endpoint_candidate(expr, var, endpoint, side, attained):
     return (sp.simplify(val), bool(attained))
 
 
-def extremum_geometry(expr, var, *, domain=S.Reals, partition=None):
+def _extremum_geometry_impl(expr, var, *, domain=S.Reals, partition=None):
     """Return exact indexed critical-point/extremum families for ``expr``."""
     expr = sp.sympify(expr)
+    if (
+        expr.args
+        and expr.args[-1] == var
+        and any(arg.has(var) for arg in expr.args[:-1])
+    ):
+        return ()
     var = sp.sympify(var)
+    from ..real_analysis.monotonic_certificates import matching_partition
+
+    partition = matching_partition(partition, expr, var, domain)
     if partition is None:
         try:
             from ..real_analysis.monotonic_certificates import monotonic_partition
@@ -269,6 +287,12 @@ def extremum_ordering_theorems(expr, var):
     critical points), yielding decreasing successive extremum magnitudes.
     """
     expr = sp.sympify(expr)
+    if (
+        expr.args
+        and expr.args[-1] == var
+        and any(arg.has(var) for arg in expr.args[:-1])
+    ):
+        return ()
     var = sp.sympify(var)
     if (
         expr.func in (sp.airyai, sp.airybi)
@@ -311,13 +335,16 @@ def extremum_ordering_theorems(expr, var):
                 "decreasing",
                 sp.And(sp.Contains(nu, S.Reals), nu >= 0),
                 k >= 1,
-                sp.Piecewise((3, sp.Eq(nu, 0)), (1, True)),
+                sp.Piecewise((3, sp.Eq(nu, 0)), (1, True))
+                if fam == "BesselJ"
+                else sp.Integer(1),
                 sp.Piecewise((2, sp.Eq(nu, 0)), (2, True)),
                 "Bessel energy: E=x^2*y'^2+(x^2-nu^2)*y^2; (E/(x^2-nu^2))'=-2*x^3*y'^2/(x^2-nu^2)^2<0 for x>nu",
                 "derived from Bessel ODE + DLMF 10.21.E1,E3; J bound additionally uses DLMF 10.14.E1",
                 (
                     "for nu=0, j'_{0,1}=0 is an endpoint critical point, not a positive interior extremum",
                 ),
+                parameter=nu,
             ),
         )
     return ()
@@ -445,7 +472,7 @@ def _simplify_indexed_tail(expr, var, domain, certs, end_candidates):
         hi = sp.Max(vmax, *(v for v, _ in vals)) if vals else vmax
         # If the finite endpoint belongs to the interval, every candidate in
         # the Min/Max is attained.  For an open cutoff, whether its limiting
-        # value dominates is intentionally left unresolved.
+        # value dominates is left unresolved.
         if domain.right_open:
             la = ua = None
         else:
@@ -631,8 +658,6 @@ def simplify_extremum_range(expr, var, result):
     certs = tuple(
         e for e in result.evidence if isinstance(e, ExtremumFamilyCertificate)
     )
-    # Existing result evidence generally stores certificates directly, while
-    # Accept the compact tuple form returned by extremum_geometry.
     if not certs:
         certs = extremum_geometry(expr, var, domain=result.domain)
     ends = tuple(
@@ -686,7 +711,7 @@ def _indexed_envelopes(domain, certs):
     )
 
 
-def symbolic_extremum_range(expr, var, domain=S.Reals, *, partition=None):
+def _symbolic_extremum_range_impl(expr, var, domain=S.Reals, *, partition=None):
     """Compute an exact range envelope from critical-point geometry.
 
     Closed bounded intervals with finitely many exact critical points reduce to
@@ -698,6 +723,14 @@ def symbolic_extremum_range(expr, var, domain=S.Reals, *, partition=None):
     ds = _domain_interval(domain, var)
     if not isinstance(ds, sp.Interval):
         return None
+    from ..real_analysis.common import condition_to_set
+    from ..real_analysis.domain import domain as real_domain
+    from ..real_analysis.monotonic_certificates import matching_partition
+
+    natural = condition_to_set(real_domain(expr, var), var)
+    if natural is None or ds.is_subset(natural) is not True or expr.has(sp.Piecewise):
+        return None
+    partition = matching_partition(partition, expr, var, ds)
     if partition is None:
         try:
             from ..real_analysis.monotonic_certificates import monotonic_partition
@@ -706,7 +739,7 @@ def symbolic_extremum_range(expr, var, domain=S.Reals, *, partition=None):
         except SYMBOLIC_QUERY_ERRORS:
             partition = None
 
-    # Critical points are owned by the shared monotonic partition.  Sign-cell
+    # Critical points are owned by the shared monotonic partition. Sign-cell
     # completeness is not required for extrema: the separate flag certifies
     # that the derivative-root set itself is exhaustive.
     pts = None
@@ -721,6 +754,12 @@ def symbolic_extremum_range(expr, var, domain=S.Reals, *, partition=None):
         and ds.start not in (-sp.oo, sp.oo)
         and ds.end not in (-sp.oo, sp.oo)
     ):
+        from ..real_analysis.smoothness import smoothness
+
+        interior = sp.Interval.open(ds.start, ds.end)
+        regularity = smoothness(expr, var, domain=interior, max_order=1)
+        if regularity is None or sp.Ge(regularity, 1) is not S.true:
+            return None
         candidates = []
         values = []
         lc = _endpoint_candidate(expr, var, ds.start, "+", not ds.left_open)
@@ -740,7 +779,7 @@ def symbolic_extremum_range(expr, var, domain=S.Reals, *, partition=None):
         hi = sp.Max(*(v for v, _ in values))
 
         def attainment(bound, want_min):
-            # First try to prove that an attained candidate realizes the bound.
+            # First try to prove that an attained candidate realises the bound.
             for v, att in values:
                 if not att:
                     continue
@@ -821,3 +860,19 @@ def symbolic_extremum_range(expr, var, domain=S.Reals, *, partition=None):
         "indexed derivative-zero extremum envelope",
     )
     return simplify_extremum_range(expr, var, raw)
+
+
+def extremum_geometry(expr, var, *, domain=S.Reals, partition=None):
+    """Build indexed extremum evidence bound to its source expression."""
+    expr, var = sp.sympify(expr), sp.sympify(var)
+    return tuple(
+        replace(c, expression=expr, variable=var)
+        for c in _extremum_geometry_impl(expr, var, domain=domain, partition=partition)
+    )
+
+
+def symbolic_extremum_range(expr, var, domain=S.Reals, *, partition=None):
+    """Compute a symbolic image with replayable source information."""
+    expr, var = sp.sympify(expr), sp.sympify(var)
+    result = _symbolic_extremum_range_impl(expr, var, domain, partition=partition)
+    return None if result is None else replace(result, expression=expr, variable=var)

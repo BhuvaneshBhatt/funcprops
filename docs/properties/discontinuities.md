@@ -8,15 +8,22 @@ Discontinuity analysis locates points or guarded loci where continuity fails.
 
 ## API and return values
 
-```python
+```text
 discontinuities(expr, variable, *, assumptions=True, return_result=False)
 ```
 
 A Boolean discontinuity locus by default; return_result=True returns the supporting Singularity records.
 
+| Parameter | Meaning |
+| --- | --- |
+| `expr` | SymPy expression whose global property is queried. |
+| `variable` | Independent scalar coordinate. Real and native complex routes have different assumption requirements; see result contracts. |
+| `assumptions` | Symbolic hypotheses used while proving the property. |
+| `return_result` | Return structured metadata, certificates, or diagnostics. |
+
 ## Domains, assumptions, and parameters
 
-The query is interpreted on the supplied domain, not from the expression in isolation. When symbolic parameters change the property, funcprops preserves those cases as guarded parameter strata. Assumptions are proof hypotheses: they can simplify a stratum or branch condition, but they do not justify numerical guessing.
+The query uses the natural source domain and the supplied assumptions. This API has no domain keyword. Parameter-dependent singularity or branch conditions remain explicit in the detailed result.
 
 ## Executable examples
 
@@ -29,8 +36,9 @@ import sympy as sp
 import funcprops as fp
 
 x, y = sp.symbols("x y", real=True)
-f = sp.Piecewise((0, x < 0), (1, True)); result = fp.discontinuities(f, x)
-result
+f = sp.Piecewise((0, x < 0), (1, True))
+result = fp.discontinuities(f, x)
+assert result == sp.Eq(x, 0)
 ```
 
 Expected: a discontinuity at ``x = 0``.
@@ -39,7 +47,7 @@ Application: Split quadrature, plotting, and approximation domains at genuine di
 
 ## Applications
 
-This property is useful whenever later mathematics depends on a global qualitative fact, not isolated samples. Typical uses include symbolic preprocessing, theorem-hypothesis verification, optimization, inverse problems, robust numerical method selection, and simplifying downstream case analysis.
+Use the executable discontinuities examples to check the corresponding source, domain and branch premises before consuming the result in a larger analysis.
 
 ## How funcprops proves it
 
@@ -60,4 +68,4 @@ A false locus means no discontinuity was certified by the analysis, not necessar
 
 ## Source
 
-The implementation is exposed through [`funcprops.api`](https://github.com/BhuvaneshBhatt/funcprops/blob/main/src/funcprops/api.py).
+The callable is exported through funcprops; its implementation module is [`funcprops.singularities.records`](https://github.com/BhuvaneshBhatt/funcprops/blob/main/src/funcprops/singularities/records.py).

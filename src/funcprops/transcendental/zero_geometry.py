@@ -13,7 +13,7 @@ from ..exceptions import SYMBOLIC_QUERY_ERRORS
 class IndexedZero(sp.Expr):
     """Exact symbolic indexed zero of a named special-function family.
 
-    The object is intentionally unevaluated: it carries exact identity/order
+    The object is unevaluated: it carries exact identity/order
     information without pretending the zero has an elementary closed form.
     """
 
@@ -63,6 +63,8 @@ class IndexedZero(sp.Expr):
 
 @dataclass(frozen=True)
 class ZeroOrdering:
+    """Record proved order relations within a supported zero family."""
+
     left: object
     right: object
     relation: str = "<"
@@ -72,6 +74,8 @@ class ZeroOrdering:
 
 @dataclass(frozen=True)
 class ZeroInterlacing:
+    """Record proved interlacing between supported zero families."""
+
     first_family: str
     second_family: str
     pattern: tuple[ZeroOrdering, ...]
@@ -82,6 +86,8 @@ class ZeroInterlacing:
 
 @dataclass(frozen=True)
 class ZeroGeometryCertificate:
+    """Bind ordered zero-family data to source and parameter premises."""
+
     family: str
     support: sp.Set
     count: object
@@ -99,6 +105,8 @@ class ZeroGeometryCertificate:
 
 @dataclass(frozen=True)
 class IntervalPropertyCell:
+    """Record a property on an interval between distinguished source points."""
+
     interval: object
     value: object
     guard: sp.Expr = S.true
@@ -107,6 +115,8 @@ class IntervalPropertyCell:
 
 @dataclass(frozen=True)
 class PropertyIntervalDecomposition:
+    """Partition a source domain into interval property cells and boundary loci."""
+
     derivative_order: int
     domain: object
     cells: tuple[IntervalPropertyCell, ...] = ()
@@ -140,6 +150,8 @@ def _bessel_geometry(expr, var, derivative_order=0):
         guard = sp.And(sp.Contains(nu, S.Reals), nu >= -sp.Rational(1, 2))
         simple = True
     k = sp.Symbol("k", integer=True, positive=True)
+    if expr.has(k):
+        k = sp.Dummy("k", integer=True, positive=True)
     z = IndexedZero(fam, k, nu, derivative_order, "positive")
     orders = []
     inter = []
@@ -182,6 +194,8 @@ def _bessel_geometry(expr, var, derivative_order=0):
 
 
 def _airy_geometry(expr, var, derivative_order=0):
+    """Construct supported Airy zero families, ordering and domain restrictions."""
+
     mapping = {
         sp.airyai: ("AiryAi", 0),
         sp.airyaiprime: ("AiryAi", 1),
@@ -196,6 +210,8 @@ def _airy_geometry(expr, var, derivative_order=0):
         return None
     support = sp.Interval.open(-sp.oo, 0)
     k = sp.Symbol("k", integer=True, positive=True)
+    if expr.has(k):
+        k = sp.Dummy("k", integer=True, positive=True)
     z = IndexedZero(fam, k, S.NaN, d, "negative")
     if fam == "AiryAi":
         # a'_{k+1} < a_k < a'_k
@@ -298,6 +314,8 @@ def _orthogonal_geometry(expr, var):
     else:
         return None
     k = sp.Symbol("k", integer=True, positive=True)
+    if expr.has(k):
+        k = sp.Dummy("k", integer=True, positive=True)
     z = IndexedZero(fam, k, n, 0, "support")
     return ZeroGeometryCertificate(
         fam,
@@ -388,6 +406,12 @@ def _zero_geometry_impl(expr, var, *, derivative_order=0, domain=S.Reals):
     counts, simplicity, support, and interlacing/order relations.
     """
     expr = sp.sympify(expr)
+    if (
+        getattr(expr, "args", ())
+        and expr.args[-1] == var
+        and any(arg.has(var) for arg in expr.args[:-1])
+    ):
+        return ()
     var = sp.sympify(var)
     # Strip nonzero variable-independent scalar factors.
     if expr.func is sp.Mul:
@@ -855,12 +879,18 @@ class CertifiedIntegerBracket:
     guard: sp.Expr = S.true
     source: str = ""
     proof: tuple[object, ...] = ()
+    zero_template: object = None
+    cutoff: object = None
+    direction: str = "right"
+    inclusive: bool = True
 
     @property
     def exact(self):
         return certify_identity_equal(self.lower, self.upper) is True
 
     def as_interval(self):
+        """Return a SymPy interval with the stored endpoint ownership."""
+
         return sp.Interval(sp.sympify(self.lower), sp.sympify(self.upper))
 
 
@@ -962,6 +992,10 @@ def indexed_tail_integer_bracket(
         guard,
         "rigorous Bessel-J zero bounds derived from DLMF 10.21",
         proof,
+        zero_template,
+        A,
+        direction,
+        inclusive,
     )
 
 
@@ -1044,6 +1078,8 @@ class IndexedTailIndex(sp.Expr):
 
 @dataclass(frozen=True)
 class IndexedTailInversionCertificate:
+    """Bind a tail cutoff to an exact index comparison in a zero family."""
+
     family: str
     cutoff: object
     direction: str
@@ -1091,6 +1127,8 @@ def indexed_tail_inversion(zero_template, cutoff, *, direction="right", inclusiv
     fam = zero_template.family
     d = zero_template.derivative_order
     ordv = zero_template.args[2]
+    if isinstance(zero_template.index, sp.Symbol) and ordv.has(zero_template.index):
+        raise ValueError("zero-family order must be independent of its index")
     branch = zero_template.branch
     if direction not in ("right", "left"):
         raise ValueError("direction must be 'right' or 'left'")

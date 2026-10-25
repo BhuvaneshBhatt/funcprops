@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import itertools
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from functools import lru_cache
 
 import sympy as sp
@@ -10,11 +10,14 @@ from sympy import S
 from ..exactness import certify_equal, certify_zero
 from ..exceptions import SYMBOLIC_QUERY_ERRORS
 from ..results import Monotonicity, TruthValue
+from ..source_syntax import same_data
 from .common import condition_to_set, exact_order_real_points
 
 
 @dataclass(frozen=True)
 class MonotonicDecomposition:
+    """Retain monotone intervals, critical points and source-domain evidence."""
+
     expression: sp.Basic
     variable: sp.Symbol
     inner: sp.Basic
@@ -27,11 +30,15 @@ class MonotonicDecomposition:
     source: str = "structural-monotonic-decomposition"
 
     def reconstruct(self):
+        """Reconstruct the expression from the stored transformation and auxilliary data."""
+
         return sp.simplify(self.outer(self.inner))
 
 
 @dataclass(frozen=True)
 class MonotonicInterval:
+    """Record one owned interval's direction and derivative evidence."""
+
     interval: sp.Set
     direction: Monotonicity
     left_limit: sp.Basic | None = None
@@ -59,10 +66,12 @@ class MonotonicInterval:
 
 @dataclass(frozen=True)
 class IndexedMonotonicPartition:
+    """Describe an indexed monotonic pattern between a certified root family."""
+
     domain: sp.Set
     boundary_geometry: tuple
-    # Empty means the geometry proves alternation but not its phase.  This is
-    # deliberately different from assuming that the leftmost cell increases.
+    # Empty means the geometry proves alternation but not its phase; different
+    # from assuming that the leftmost cell increases.
     direction_pattern: tuple[Monotonicity, ...] = ()
     complete: bool = False
     first_direction: Monotonicity | None = None
@@ -71,6 +80,8 @@ class IndexedMonotonicPartition:
 
 @dataclass(frozen=True)
 class MonotonicPartition:
+    """Assemble monotonic cells with endpoint and boundary geometry."""
+
     domain: sp.Set
     cells: tuple[MonotonicInterval, ...] = ()
     indexed: IndexedMonotonicPartition | None = None
@@ -80,6 +91,11 @@ class MonotonicPartition:
     critical_points: tuple = ()
     property_decomposition: object = None
     critical_points_complete: bool = False
+    expression: sp.Basic | None = None
+    variable: sp.Symbol | None = None
+    points: tuple = ()
+    seams: tuple = ()
+    branch_partitions: tuple = ()
 
     @property
     def finite(self):
@@ -87,12 +103,68 @@ class MonotonicPartition:
 
     @property
     def direction_changes(self):
-        vals = [c.direction for c in self.cells]
-        n = 0
-        for a, b in itertools.pairwise(vals):
-            if a != b:
-                n += 1
-        return n
+        """Count certified direction reversals, including owned Piecewise jumps."""
+        if not self.seams:
+            vals = [c.direction for c in self.cells]
+            return sum(a != b for a, b in itertools.pairwise(vals))
+        signs = []
+        paths = self.order_paths()
+        for i, path in enumerate(paths):
+            for left, right in itertools.pairwise(path):
+                delta = sp.simplify(right[1] - left[1])
+                if delta.is_positive is True:
+                    signs.append(1)
+                elif delta.is_negative is True:
+                    signs.append(-1)
+                elif certify_equal(delta, 0) is not True:
+                    return None
+            if i < len(self.cells):
+                cell = self.cells[i]
+                if cell.increasing:
+                    signs.append(1)
+                elif cell.decreasing:
+                    signs.append(-1)
+        return sum(a != b for a, b in itertools.pairwise(signs))
+
+    def bridge(self, left, right):
+        """Return the owned values between two ordered interval cells."""
+        return (
+            (left.interval.end, left.right_limit, left.right_attained),
+            *(
+                (p, v, True)
+                for p, v in self.points
+                if sp.Le(left.interval.end, p) is S.true
+                and sp.Le(p, right.interval.start) is S.true
+            ),
+            (right.interval.start, right.left_limit, right.left_attained),
+        )
+
+    def order_paths(self):
+        """Include isolated query endpoints as well as every interior bridge."""
+        if not self.cells:
+            return ()
+        first, last = self.cells[0], self.cells[-1]
+        leading = (
+            *(
+                (p, v, True)
+                for p, v in self.points
+                if sp.Le(p, first.interval.start) is S.true
+            ),
+            (first.interval.start, first.left_limit, first.left_attained),
+        )
+        trailing = (
+            (last.interval.end, last.right_limit, last.right_attained),
+            *(
+                (p, v, True)
+                for p, v in self.points
+                if sp.Ge(p, last.interval.end) is S.true
+            ),
+        )
+        return (
+            leading,
+            *(self.bridge(a, b) for a, b in itertools.pairwise(self.cells)),
+            trailing,
+        )
 
     @property
     def has_indexed_oscillation(self):
@@ -103,18 +175,68 @@ class MonotonicPartition:
         )
 
     def same_strict_direction(self):
-        if not self.complete or not self.cells:
+        """Return a shared strict cell direction, or None when it is unproved."""
+
+        if not self.complete or not self.cells or not all(c.strict for c in self.cells):
             return None
         dirs = {c.direction for c in self.cells}
         if dirs == {Monotonicity.STRICTLY_INCREASING}:
-            return Monotonicity.STRICTLY_INCREASING
-        if dirs == {Monotonicity.STRICTLY_DECREASING}:
-            return Monotonicity.STRICTLY_DECREASING
-        return None
+            direction = Monotonicity.STRICTLY_INCREASING
+        elif dirs == {Monotonicity.STRICTLY_DECREASING}:
+            direction = Monotonicity.STRICTLY_DECREASING
+        else:
+            return None
+        # Equal local directions alone do not prove global order or injectivity.
+        # Check the one-sided values at every seam, including domain gaps.
+        for left, right in itertools.pairwise(self.cells):
+            if not isinstance(left.interval, sp.Interval) or not isinstance(
+                right.interval, sp.Interval
+            ):
+                return None
+            if sp.Le(left.interval.end, right.interval.start) is not S.true:
+                return None
+        for path in self.order_paths():
+            for (p, a, owned_a), (q, b, owned_b) in itertools.pairwise(path):
+                if a is None or b is None:
+                    return None
+                try:
+                    ordered = (
+                        sp.Le(a, b)
+                        if direction is Monotonicity.STRICTLY_INCREASING
+                        else sp.Ge(a, b)
+                    )
+                    if ordered is not S.true:
+                        return None
+                    if (
+                        owned_a is True
+                        and owned_b is True
+                        and sp.Lt(p, q) is S.true
+                        and certify_equal(a, b) is True
+                    ):
+                        return None
+                except SYMBOLIC_QUERY_ERRORS:
+                    return None
+        return direction
+
+
+class CompactMonotonicPartition(tuple):
+    """Tuple-compatible view that retains the proof needed by consumers."""
+
+    def __new__(cls, certificate):
+        result = super().__new__(
+            cls, ((c.interval, c.direction) for c in certificate.cells)
+        )
+        result.certificate = certificate
+        return result
+
+    def __reduce__(self):
+        return type(self), (self.certificate,)
 
 
 @dataclass(frozen=True)
 class NonMonotonicityWitness:
+    """Exhibit source points whose values violate the claimed global order."""
+
     points: tuple
     values: tuple
     exact: bool
@@ -123,6 +245,8 @@ class NonMonotonicityWitness:
 
 @dataclass(frozen=True)
 class InverseSolutionCertificate:
+    """Bind inverse solutions to an owned monotonic partition."""
+
     equation: sp.Basic
     domain: sp.Set
     solutions: sp.Set
@@ -135,6 +259,8 @@ class InverseSolutionCertificate:
 
 @dataclass(frozen=True)
 class PartitionRange:
+    """Assemble component images with exact endpoint attainment data."""
+
     image: sp.Set | None
     complete: bool
     partition: MonotonicPartition
@@ -424,6 +550,97 @@ def _phase_for_indexed(expr, var, ds, pd, derivative=None):
     return None
 
 
+def _piecewise_partition(expr, var, support):
+    """Assemble finite branch partitions, seam certificates and owned point values."""
+    from .domain import domain
+    from .piecewise import certify_piecewise_boundaries, piecewise_decomposition
+
+    incomplete = MonotonicPartition(
+        support, source="unproved-piecewise-seams", expression=expr, variable=var
+    )
+    natural = condition_to_set(domain(expr, var), var)
+    if natural is None or support.is_subset(natural) is not True:
+        return incomplete
+    folded = sp.piecewise_fold(expr)
+    if not isinstance(folded, sp.Piecewise):
+        inner = _monotonic_partition_result(folded, var, domain=support)
+        return replace(inner, expression=expr)
+    decomposition = piecewise_decomposition(folded, var, support)
+    if (
+        not decomposition.complete
+        or sp.Union(*(b.domain for b in decomposition.branches)) != support
+    ):
+        return incomplete
+    cells, children, candidates = [], [], set()
+    for branch in decomposition.branches:
+        region, value = branch.domain, branch.expression
+        if isinstance(region, sp.FiniteSet):
+            candidates.update(region)
+            continue
+        if not isinstance(region, sp.Interval):
+            return incomplete
+        candidates.update(p for p in (region.start, region.end) if p.is_finite is True)
+        if not value.has(var):
+            if value.is_real is not True or value.is_finite is not True:
+                return incomplete
+            cells.append(
+                MonotonicInterval(
+                    region,
+                    Monotonicity.CONSTANT,
+                    value,
+                    value,
+                    False,
+                    True,
+                    not region.left_open,
+                    not region.right_open,
+                    (branch,),
+                )
+            )
+        else:
+            part = _monotonic_partition_result(value, var, domain=region)
+            if not part.complete or part.indexed is not None:
+                return incomplete
+            children.append(part)
+            cells.extend(part.cells)
+            candidates.update(part.critical_points)
+    starts = exact_order_real_points({c.interval.start for c in cells})
+    if starts is None:
+        return incomplete
+    cells = tuple(c for start in starts for c in cells if c.interval.start == start)
+    ordered = exact_order_real_points(candidates)
+    if ordered is None:
+        return incomplete
+    points = tuple(
+        (p, sp.simplify(expr.subs(var, p)))
+        for p in ordered
+        if support.contains(p) is S.true
+    )
+    if any(v.is_real is not True or v.is_finite is not True for _, v in points):
+        return incomplete
+    seams = certify_piecewise_boundaries(decomposition, max_order=1)
+    # A partition records jumps too: equality of one-sided values is not a
+    # completeness premise, but ownership and both existing side limits are.
+    if any(
+        c.value is None
+        or (c.boundary.left_branch is not None and c.left_limit is None)
+        or (c.boundary.right_branch is not None and c.right_limit is None)
+        for c in seams
+    ):
+        return incomplete
+    return MonotonicPartition(
+        support,
+        cells,
+        complete=True,
+        source="piecewise-branch-seam-assembly",
+        expression=expr,
+        variable=var,
+        points=points,
+        seams=seams,
+        branch_partitions=tuple(children),
+        property_decomposition=decomposition,
+    )
+
+
 @lru_cache(maxsize=512)
 def _monotonic_partition_on_set(expr, var, domain_set):
     """Build an exact monotonic partition on an already-normalized real set.
@@ -436,7 +653,11 @@ def _monotonic_partition_on_set(expr, var, domain_set):
     expr = sp.sympify(expr)
     var = sp.sympify(var)
     if not isinstance(ds, sp.Set):
-        return MonotonicPartition(S.Reals, complete=False, source="unknown-domain")
+        return MonotonicPartition(
+            S.Reals, source="unknown-domain", expression=expr, variable=var
+        )
+    if expr.has(sp.Piecewise):
+        return _piecewise_partition(expr, var, ds)
     derivative = None
     try:
         from ..proof_cache import property_proof_context
@@ -523,6 +744,8 @@ def _monotonic_partition_on_set(expr, var, domain_set):
             critical_points=crit,
             property_decomposition=pd,
             critical_points_complete=crit_complete,
+            expression=expr,
+            variable=var,
         )
     if pd.boundary_geometry and pd.alternating:
         phase = _phase_for_indexed(expr, var, ds, pd, derivative)
@@ -547,6 +770,8 @@ def _monotonic_partition_on_set(expr, var, domain_set):
             derivative=derivative,
             property_decomposition=pd,
             critical_points_complete=False,
+            expression=expr,
+            variable=var,
         )
     return MonotonicPartition(
         ds,
@@ -554,6 +779,8 @@ def _monotonic_partition_on_set(expr, var, domain_set):
         derivative=derivative,
         property_decomposition=pd,
         critical_points_complete=False,
+        expression=expr,
+        variable=var,
     )
 
 
@@ -572,7 +799,9 @@ def _monotonic_partition_result(expr, var, *, domain=True):
             cond = sp.sympify(domain)
         ds = condition_to_set(cond, var)
     if not isinstance(ds, sp.Set):
-        return MonotonicPartition(S.Reals, complete=False, source="unknown-domain")
+        return MonotonicPartition(
+            S.Reals, source="unknown-domain", expression=expr, variable=var
+        )
     try:
         return _monotonic_partition_on_set(expr, var, ds)
     except TypeError:
@@ -592,14 +821,38 @@ def monotonic_partition(expr, var, *, domain=True, return_result=False):
     if return_result:
         return result
     if result.complete and result.indexed is None:
-        return tuple((cell.interval, cell.direction) for cell in result.cells)
+        return CompactMonotonicPartition(result)
     return result
+
+
+def matching_partition(partition, expr, var, domain):
+    """Accept reusable partition data only for the same checked source query.
+
+    Source and domain matching prevents cross-function reuse. Comparing with the
+    cached construction also rejects altered derivative, cell and endpoint data.
+    An unchanged cached object needs no recursive comparison.
+    """
+    if isinstance(partition, CompactMonotonicPartition):
+        partition = partition.certificate
+    if (
+        type(partition) is not MonotonicPartition
+        or partition.expression != sp.sympify(expr)
+        or partition.variable != sp.sympify(var)
+    ):
+        return None
+    scope = partition.domain if domain is True else domain
+    expected = _monotonic_partition_result(expr, var, domain=scope)
+    if partition is expected or same_data(partition, expected):
+        return partition
+    return None
 
 
 def clear_monotonic_partition_cache():
     # Preserve the public spelling while clearing all proof primitives that can
     # feed a partition; otherwise a "cleared" partition cache can immediately
     # repopulate from stale lower-level proofs.
+    """Clear shared derivative and monotonic-partition computations."""
+
     from ..proof_cache import clear_property_proof_cache
 
     clear_property_proof_cache()
@@ -609,6 +862,12 @@ def _cell_image(cell: MonotonicInterval):
     if not isinstance(cell.interval, sp.Interval):
         return None
     a, b = cell.left_limit, cell.right_limit
+    if (
+        cell.direction is Monotonicity.CONSTANT
+        and a is not None
+        and certify_equal(a, b) is True
+    ):
+        return sp.FiniteSet(a)
     if a is None or b is None:
         return None
     if cell.increasing:
@@ -633,12 +892,12 @@ def _cell_image(cell: MonotonicInterval):
 
 def range_from_monotonic_partition(expr, var, partition=None, *, domain=True):
     """Exact image set when a finite monotonic partition is complete."""
-    part = partition
-    if not isinstance(part, MonotonicPartition):
+    part = matching_partition(partition, expr, var, domain)
+    if part is None:
         part = monotonic_partition(expr, var, domain=domain, return_result=True)
-    if not part.complete or part.indexed is not None or not part.cells:
+    if not part.complete or part.indexed is not None or not (part.cells or part.points):
         return PartitionRange(None, False, part)
-    images = []
+    images = [sp.FiniteSet(v) for _, v in part.points]
     for c in part.cells:
         im = _cell_image(c)
         if im is None:
@@ -653,15 +912,22 @@ def range_from_monotonic_partition(expr, var, partition=None, *, domain=True):
 
 def injectivity_from_partition(partition):
     """Three-valued injectivity conclusion from a compact or rich partition."""
+    if isinstance(partition, CompactMonotonicPartition):
+        partition = partition.certificate
     if isinstance(partition, tuple):
         directions = [
             item[1] for item in partition if isinstance(item, tuple) and len(item) == 2
         ]
         if len(directions) != len(partition) or not directions:
             return TruthValue.UNKNOWN
-        if set(directions) in (
-            {Monotonicity.STRICTLY_INCREASING},
-            {Monotonicity.STRICTLY_DECREASING},
+        if (
+            len(directions) == 1
+            and isinstance(partition[0][0], sp.Interval)
+            and set(directions)
+            in (
+                {Monotonicity.STRICTLY_INCREASING},
+                {Monotonicity.STRICTLY_DECREASING},
+            )
         ):
             return TruthValue.TRUE
         return TruthValue.UNKNOWN
@@ -671,11 +937,19 @@ def injectivity_from_partition(partition):
         # Infinite simple alternating extrema force collisions on an interval.
         return (
             TruthValue.FALSE
-            if partition.indexed.boundary_geometry
+            if isinstance(partition.domain, sp.Interval)
+            and partition.indexed.boundary_geometry
             else TruthValue.UNKNOWN
         )
+    if any(c.direction is Monotonicity.CONSTANT for c in partition.cells):
+        return TruthValue.FALSE
     if not partition.cells:
-        return TruthValue.UNKNOWN
+        if len(partition.points) <= 1:
+            return TruthValue.TRUE
+        values = tuple(v for _, v in partition.points)
+        return (
+            TruthValue.FALSE if len(set(values)) < len(values) else TruthValue.UNKNOWN
+        )
     same = partition.same_strict_direction()
     if same is not None:
         return TruthValue.TRUE
@@ -684,6 +958,12 @@ def injectivity_from_partition(partition):
     for a, b in zip(partition.cells, partition.cells[1:], strict=False):
         if (
             a.direction != b.direction
+            and isinstance(a.interval, sp.Interval)
+            and isinstance(b.interval, sp.Interval)
+            and a.interval.end == b.interval.start
+            and a.right_limit is not None
+            and b.left_limit is not None
+            and certify_equal(a.right_limit, b.left_limit) is True
             and a.continuous
             and b.continuous
             and a.right_attained
@@ -778,8 +1058,8 @@ def certified_monotonic_inverse(expr, var, value, *, domain=True, partition=None
     expr = sp.sympify(expr)
     var = sp.sympify(var)
     value = sp.sympify(value)
-    part = partition
-    if not isinstance(part, MonotonicPartition):
+    part = matching_partition(partition, expr, var, domain)
+    if part is None:
         part = monotonic_partition(expr, var, domain=domain, return_result=True)
     eq = sp.Eq(expr, value)
     if not part.complete:
@@ -852,8 +1132,7 @@ def certified_monotonic_inverse(expr, var, value, *, domain=True, partition=None
                 complete = complete and cell_complete
         else:
             sols.append(s)
-    # Include attained shared/end boundaries exactly once; solveset on open
-    # cells intentionally excludes them.
+    # Include attained shared/end boundaries exactly once; solveset on open cells excludes them.
     boundaries = []
     if isinstance(part.domain, sp.Interval):
         if not part.domain.left_open:
@@ -861,6 +1140,7 @@ def certified_monotonic_inverse(expr, var, value, *, domain=True, partition=None
         if not part.domain.right_open:
             boundaries.append(part.domain.end)
     boundaries.extend(part.critical_points)
+    boundaries.extend(p for p, _ in part.points)
     for q in boundaries:
         try:
             if certify_equal(expr.subs(var, q), value) is True:
@@ -882,22 +1162,29 @@ def certified_monotonic_inverse(expr, var, value, *, domain=True, partition=None
 def quick_nonmonotonicity_witness(expr, var, domain):
     """Try exact rational points and return only an exactly verified violation."""
     ds = domain if isinstance(domain, sp.Set) else condition_to_set(domain, var)
-    if (
-        not isinstance(ds, sp.Interval)
-        or ds.start in (S.NegativeInfinity, S.Infinity)
-        or ds.end in (S.NegativeInfinity, S.Infinity)
-    ):
-        return None
-    a, b = ds.start, ds.end
-    pts = tuple(
-        sp.simplify(a + (b - a) * q)
-        for q in (
-            sp.Rational(1, 5),
-            sp.Rational(2, 5),
-            sp.Rational(3, 5),
-            sp.Rational(4, 5),
-        )
+    components = ds.args if isinstance(ds, sp.Union) else (ds,)
+    points = []
+    fractions = (
+        sp.Rational(1, 5),
+        sp.Rational(2, 5),
+        sp.Rational(3, 5),
+        sp.Rational(4, 5),
     )
+    for component in components:
+        if not isinstance(component, sp.Interval):
+            return None
+        a, b = component.start, component.end
+        if a is S.NegativeInfinity and b is S.Infinity:
+            points.extend(map(sp.Integer, (-2, -1, 0, 1, 2)))
+        elif a is S.NegativeInfinity:
+            points.extend(b - k for k in (4, 3, 2, 1))
+        elif b is S.Infinity:
+            points.extend(a + k for k in (1, 2, 3, 4))
+        else:
+            points.extend(sp.simplify(a + (b - a) * q) for q in fractions)
+    pts = exact_order_real_points(points)
+    if pts is None or not all(ds.contains(p) is S.true for p in pts):
+        return None
     vals = tuple(sp.simplify(expr.subs(var, p)) for p in pts)
     signs = []
     for u, v in itertools.pairwise(vals):

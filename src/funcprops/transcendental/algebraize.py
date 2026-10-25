@@ -4,13 +4,20 @@ from dataclasses import dataclass
 
 import sympy as sp
 from sympy import S
+from sympy.polys.polyerrors import PolynomialError
 
 from ..exceptions import SYMBOLIC_QUERY_ERRORS
-from ..real_analysis.common import is_semialgebraic_expression
+from ..real_analysis.common import (
+    condition_to_set,
+    is_semialgebraic_expression,
+    set_to_condition,
+)
 
 
 @dataclass(frozen=True)
 class AlgebraizationResult:
+    """Preserve source restrictions in an auxiliary algebraic representation."""
+
     expression: sp.Expr
     substitutions: tuple[tuple[sp.Symbol, sp.Expr], ...]
     constraints: sp.Basic = S.true
@@ -30,8 +37,8 @@ def _linear_coeff(expr, var):
         p = sp.Poly(sp.expand(expr), var)
         if p.degree() <= 1:
             return p.nth(1), p.nth(0)
-    except SYMBOLIC_QUERY_ERRORS:
-        pass
+    except PolynomialError:
+        return None
     return None
 
 
@@ -62,7 +69,111 @@ def _exp_generator(expr, var):
     return coeffs, slope if slope else None
 
 
-def algebraize_exponentials(expr, var):
+def _exp_domain_image(domain, var, slope):
+    """Map a certified real domain through the increasing exp(slope*x).
+
+    The slope selected by the common-generator analysis is positive rational.
+    Only sets with an exact interval/finite-point representation are accepted;
+    an unresolved domain must not be replaced by the unrestricted image.
+    """
+    if domain is None:
+        return sp.Interval.open(0, sp.oo)
+    source = domain if isinstance(domain, sp.Set) else condition_to_set(domain, var)
+
+    def endpoint(value):
+        if value is S.NegativeInfinity:
+            return S.Zero
+        if value is S.Infinity:
+            return S.Infinity
+        return sp.exp(slope * value)
+
+    def image(part):
+        if part is S.EmptySet:
+            return S.EmptySet
+        if part is S.Reals:
+            return sp.Interval.open(0, sp.oo)
+        if isinstance(part, sp.Interval):
+            return sp.Interval(
+                endpoint(part.start),
+                endpoint(part.end),
+                left_open=part.left_open or part.start is S.NegativeInfinity,
+                right_open=part.right_open or part.end is S.Infinity,
+            )
+        if isinstance(part, sp.FiniteSet):
+            return sp.FiniteSet(*(endpoint(value) for value in part))
+        if isinstance(part, sp.Union):
+            pieces = [image(piece) for piece in part.args]
+            if any(piece is None for piece in pieces):
+                return None
+            return sp.Union(*pieces)
+        return None
+
+    if source is None or not isinstance(source, sp.Set):
+        return None
+    try:
+        return image(sp.Intersection(source, S.Reals))
+    except SYMBOLIC_QUERY_ERRORS:
+        return None
+
+
+def _real_power_domain(expr):
+    """Domain guards for exact real rational powers in an auxiliary expression.
+
+    SymPy noninteger powers use the principal branch, including odd roots;
+    negative real bases therefore cannot enter this real auxiliary chart.
+
+    This is structural: it does not try to determine the sign of a radicand.
+    Branch-dependent guards require piecewise case analysis, so unsupported
+    piecewise radicals are left to the original real-analysis machinery.
+    """
+    conditions = []
+    for node in sp.preorder_traversal(expr):
+        if isinstance(node, sp.Pow) and node.exp.is_Rational:
+            exponent = node.exp
+            if exponent.q != 1:
+                if node.base.is_real is False:
+                    return None
+                conditions.append(
+                    node.base > 0 if exponent.is_negative else node.base >= 0
+                )
+            elif exponent.is_negative:
+                conditions.append(sp.Ne(node.base, 0))
+    guard = sp.And(*conditions)
+    if expr.has(sp.Piecewise) and guard is not S.true:
+        return None
+    return guard
+
+
+def _power_nodes(expr):
+    return tuple(
+        node for node in sp.preorder_traversal(expr) if isinstance(node, sp.Pow)
+    )
+
+
+def _mapped_power_guards(powers, replacements, var, *, hyperbolic=False):
+    """Transfer denominator and real-root guards into an auxiliary chart."""
+    conditions = []
+    for node in powers:
+        # Unsupported powers must not disappear through cancellation and leave
+        # an apparently algebraic expression with uncertified branch conditions.
+        if node.exp.is_Rational is not True:
+            return None
+        base = node.base.rewrite(sp.exp) if hyperbolic else node.base
+        mapped = base.xreplace(replacements)
+        if mapped.has(var):
+            return None
+        if node.exp.q != 1:
+            if mapped.is_real is False:
+                return None
+            conditions.append(mapped > 0 if node.exp.is_negative else mapped >= 0)
+        elif node.exp.is_negative:
+            conditions.append(sp.Ne(mapped, 0))
+    return sp.And(*conditions)
+
+
+def algebraize_exponentials(expr, var, *, source_domain=None, original_powers=()):
+    """Replace commensurate real exponentials by an auxiliary positive coordinate."""
+
     expr = sp.sympify(expr)
     data = _exp_generator(expr, var)
     if data is None:
@@ -75,22 +186,35 @@ def algebraize_exponentials(expr, var):
         if power.is_Integer is not True:
             return AlgebraizationResult(expr, ())
         repl[e] = sp.exp(b) * u**power
+    power_guard = _mapped_power_guards(
+        (*_power_nodes(expr), *original_powers), repl, var, hyperbolic=True
+    )
+    if power_guard is None:
+        return AlgebraizationResult(expr, ())
     new = sp.cancel(expr.xreplace(repl))
-    if not is_semialgebraic_expression(new, u):
+    if new.has(var) or not is_semialgebraic_expression(new, u):
+        return AlgebraizationResult(expr, ())
+    real_guard = _real_power_domain(new)
+    if real_guard is None:
+        return AlgebraizationResult(expr, ())
+    auxiliary_domain = _exp_domain_image(source_domain, var, slope)
+    if auxiliary_domain is None:
         return AlgebraizationResult(expr, ())
     return AlgebraizationResult(
         new,
         ((u, sp.exp(slope * var)),),
-        u > 0,
+        sp.And(set_to_condition(auxiliary_domain, u), power_guard, real_guard),
         True,
         "exponential_substitution",
-        S.Reals,
+        S.Reals if source_domain is None else source_domain,
         (),
         ((var, sp.log(u) / slope),),
     )
 
 
 def rewrite_hyperbolic_to_exp(expr):
+    """Rewrite supported hyperbolic heads using exponential identities."""
+
     expr = sp.sympify(expr)
     if expr.has(sp.sinh, sp.cosh, sp.tanh, sp.coth, sp.sech, sp.csch):
         try:
@@ -100,48 +224,98 @@ def rewrite_hyperbolic_to_exp(expr):
     return expr
 
 
-def algebraize_trigonometric(expr, var, *, source_domain=None):
-    """Tangent-half-angle algebraization on a single branch.
+def _half_angle_domain(domain, var):
+    """Map a subset of (-pi, pi) exactly through tan(x/2)."""
+    branch = sp.Interval.open(-sp.pi, sp.pi)
+    source = (
+        branch
+        if domain is None
+        else (domain if isinstance(domain, sp.Set) else condition_to_set(domain, var))
+    )
+    if not isinstance(source, sp.Set) or source.is_subset(branch) is not True:
+        return None
 
-    Exact on ``(-pi, pi)`` (or a supplied subset thereof):
-    ``u=tan(x/2)``, ``sin(x)=2u/(1+u^2)``, ``cos(x)=(1-u^2)/(1+u^2)``.
+    def endpoint(value):
+        if value == -sp.pi:
+            return S.NegativeInfinity
+        if value == sp.pi:
+            return S.Infinity
+        return sp.tan(value / 2)
+
+    def image(part):
+        if part is S.EmptySet:
+            return S.EmptySet
+        if isinstance(part, sp.Interval):
+            return sp.Interval(
+                endpoint(part.start),
+                endpoint(part.end),
+                left_open=part.left_open,
+                right_open=part.right_open,
+            )
+        if isinstance(part, sp.FiniteSet):
+            return sp.FiniteSet(*(endpoint(value) for value in part))
+        if isinstance(part, sp.Union):
+            pieces = [image(piece) for piece in part.args]
+            if any(piece is None for piece in pieces):
+                return None
+            return sp.Union(*pieces)
+        return None
+
+    try:
+        mapped = image(source)
+    except SYMBOLIC_QUERY_ERRORS:
+        return None
+    return (source, mapped) if mapped is not None else None
+
+
+def algebraize_trigonometric(expr, var, *, source_domain=None):
+    """Use the tangent-half-angle chart on a proven subset of (-pi, pi).
+
+    The chart is bijective there. Domains extending outside the chart are
+    rejected instead of truncated; all finite interval endpoints
+    and excluded points must survive the change of variables.
     """
     expr = sp.sympify(expr)
     var = sp.sympify(var)
     if not expr.has(sp.sin(var), sp.cos(var)):
         return AlgebraizationResult(expr, ())
-    # Only direct sin(x), cos(x); affine phases are handled by periodic reduction first.
-    bad = [a for a in expr.atoms(sp.sin, sp.cos) if a.args[0] != var]
-    if bad:
+    if any(a.args[0] != var for a in expr.atoms(sp.sin, sp.cos)):
         return AlgebraizationResult(expr, ())
     u = sp.Dummy("t", real=True)
-    new = expr.xreplace(
-        {sp.sin(var): 2 * u / (1 + u**2), sp.cos(var): (1 - u**2) / (1 + u**2)}
-    )
-    new = sp.cancel(new)
-    # rational in u is semialgebraic away from its denominator; 1+u^2 is positive.
-    dom = (
-        sp.Interval.open(-sp.pi, sp.pi)
-        if source_domain is None
-        else sp.Intersection(sp.sympify(source_domain), sp.Interval.open(-sp.pi, sp.pi))
-    )
+    mapped = _half_angle_domain(source_domain, var)
+    if mapped is None:
+        return AlgebraizationResult(expr, ())
+    source, auxiliary = mapped
+    repl = {
+        sp.sin(var): 2 * u / (1 + u**2),
+        sp.cos(var): (1 - u**2) / (1 + u**2),
+    }
+    power_guard = _mapped_power_guards(_power_nodes(expr), repl, var)
+    if power_guard is None:
+        return AlgebraizationResult(expr, ())
+    new = sp.cancel(expr.xreplace(repl))
+    if new.has(var) or not is_semialgebraic_expression(new, u):
+        return AlgebraizationResult(expr, ())
+    real_guard = _real_power_domain(new)
+    if real_guard is None:
+        return AlgebraizationResult(expr, ())
     return AlgebraizationResult(
         new,
         ((u, sp.tan(var / 2)),),
-        S.true,
+        sp.And(set_to_condition(auxiliary, u), power_guard, real_guard),
         True,
         "tangent_half_angle",
-        dom,
+        source,
         (),
         ((var, 2 * sp.atan(u)),),
     )
 
 
 def algebraize_trig_circle(expr, var):
-    """Algebraize direct sin/cos dependence over a full phase using s^2+c^2=1.
+    """Replace direct sine/cosine terms on a complete phase circle.
 
-    This transform is exact for existential range/sign questions over a full
-    period, but callers must respect the returned relation.
+    The circle equation describes exactly the reachable pairs over a full
+    period. It does not eliminate independent occurrences of the phase.
     """
     expr = sp.sympify(expr)
     var = sp.sympify(var)
@@ -151,19 +325,37 @@ def algebraize_trig_circle(expr, var):
         return AlgebraizationResult(expr, ())
     s = sp.Dummy("s", real=True)
     c = sp.Dummy("c", real=True)
-    new = expr.xreplace({sp.sin(var): s, sp.cos(var): c})
+    repl = {sp.sin(var): s, sp.cos(var): c}
+    power_guard = _mapped_power_guards(_power_nodes(expr), repl, var)
+    if power_guard is None:
+        return AlgebraizationResult(expr, ())
+    new = expr.xreplace(repl)
+    if (
+        new.has(var)
+        or not is_semialgebraic_expression(new, s)
+        or not is_semialgebraic_expression(new, c)
+    ):
+        return AlgebraizationResult(expr, ())
+    real_guard = _real_power_domain(new)
+    if real_guard is None:
+        return AlgebraizationResult(expr, ())
+    circle = sp.Eq(s**2 + c**2, 1)
+    denominator = sp.denom(sp.cancel(new))
+    constraints = sp.And(circle, power_guard, real_guard, sp.Ne(denominator, 0))
     return AlgebraizationResult(
         new,
         ((s, sp.sin(var)), (c, sp.cos(var))),
-        sp.Eq(s**2 + c**2, 1),
+        constraints,
         True,
         "trig_circle",
         sp.Interval.Ropen(0, 2 * sp.pi),
-        (sp.Eq(s**2 + c**2, 1),),
+        (circle,),
     )
 
 
 def algebraize_common_subexprs(expr, var):
+    """Introduce auxiliary variables for supported repeated algebraic subexpressions."""
+
     expr = sp.sympify(expr)
     counts = {}
     for node in sp.preorder_traversal(expr):
@@ -186,12 +378,16 @@ def algebraize_common_subexprs(expr, var):
 
 
 def algebraize(expr, var, *, domain=None, allow_trig=False):
+    """Transform supported transcendental expressions while retaining exact domain constraints."""
+
     expr = sp.sympify(expr)
     var = sp.sympify(var)
     if is_semialgebraic_expression(expr, var):
         return AlgebraizationResult(expr, ())
     rewritten = rewrite_hyperbolic_to_exp(expr)
-    r = algebraize_exponentials(rewritten, var)
+    r = algebraize_exponentials(
+        rewritten, var, source_domain=domain, original_powers=_power_nodes(expr)
+    )
     if r.changed:
         return r
     if allow_trig:

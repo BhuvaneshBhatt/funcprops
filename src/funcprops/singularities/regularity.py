@@ -10,6 +10,16 @@ from sympy.logic.boolalg import And, Boolean, Or
 
 from ..engine import evaluate_property, simplify_condition
 from ..exceptions import SYMBOLIC_QUERY_ERRORS
+from ..regularity_evidence import (
+    NONSMOOTH,
+    entire_inner,
+    meromorphic_composition_premises,
+    piecewise_failure_witness,
+    primitive_subject,
+    real_affine_argument,
+    regularity_normal_form,
+    whole_nonmeromorphic_witness,
+)
 from ..results import (
     Analyticity,
     ConditionalExpression,
@@ -17,9 +27,9 @@ from ..results import (
     Meromorphicity,
     PropertyResult,
     Singularity,
-    SingularityKind,
     SingularityResult,
 )
+from ..source_syntax import normalize_arithmetic
 from ..stratification import evaluate_parameter_strata
 from .geometry import (
     _collect_singularity_records,
@@ -32,7 +42,6 @@ from .records import (
     _function_branchpoint_records,
     _function_discontinuity_records,
     _merge_zero_boundary_relations,
-    _piecewise_boundaries,
     _restrict_boolean_locus,
     _singularity_record_locus,
     _singularity_records_locus,
@@ -231,8 +240,18 @@ def _condition_intersects_domain(cond, domain_cond, assumptions=S.true):
     syms = tuple(c.free_symbols)
     if len(syms) == 1:
         try:
-            red = sp.reduce_inequalities(c, syms[0])
-            return red is not S.false
+            from ..real_analysis.common import condition_to_set
+
+            support = condition_to_set(c, syms[0])
+            if isinstance(support, sp.Set):
+                if support.is_empty is True:
+                    return False
+                if support.is_empty is False:
+                    return True
+            relations = And.make_args(c)
+            if all(isinstance(relation, Relational) for relation in relations):
+                red = sp.reduce_inequalities(list(relations), syms[0])
+                return red is not S.false
         except SYMBOLIC_QUERY_ERRORS:
             pass
     return None
@@ -266,22 +285,34 @@ def _multivariate_structural_analytic(expr, variables, *, complex_mode=False):
     vv = tuple(variables)
     expr = sp.sympify(expr)
     if not any(expr.has(v) for v in vv):
-        return Analyticity.ANALYTIC
-    if expr.func in (sp.Abs, sp.sign, sp.floor, sp.ceiling) or isinstance(
-        expr, sp.Piecewise
-    ):
-        return Analyticity.NOT_ANALYTIC
+        return Analyticity.ANALYTIC if expr.is_finite is True else Analyticity.UNKNOWN
+    if expr.func in NONSMOOTH:
+        return (
+            Analyticity.NOT_ANALYTIC
+            if real_affine_argument(expr.args[0], vv)
+            else Analyticity.UNKNOWN
+        )
+    if isinstance(expr, sp.Piecewise):
+        return Analyticity.UNKNOWN
     try:
         if expr.is_polynomial(*vv) or expr.is_rational_function(*vv):
             return Analyticity.ANALYTIC
     except SYMBOLIC_QUERY_ERRORS:
         pass
-    if expr.is_Add or expr.is_Mul or (isinstance(expr, sp.Pow) and expr.exp.is_integer):
+    if (
+        expr.is_Add
+        or expr.is_Mul
+        or (isinstance(expr, sp.Pow) and not expr.exp.has(*vv) and expr.exp.is_integer)
+    ):
         vals = [
             _multivariate_structural_analytic(a, vv, complex_mode=complex_mode)
             for a in expr.args
         ]
-        if any(v is Analyticity.NOT_ANALYTIC for v in vals):
+        if (
+            expr.is_Add
+            and vals.count(Analyticity.NOT_ANALYTIC) == 1
+            and all(v in (Analyticity.ANALYTIC, Analyticity.NOT_ANALYTIC) for v in vals)
+        ):
             return Analyticity.NOT_ANALYTIC
         if all(v is Analyticity.ANALYTIC for v in vals):
             return Analyticity.ANALYTIC
@@ -304,8 +335,6 @@ def _multivariate_structural_analytic(expr, variables, *, complex_mode=False):
         ]
         if all(v is Analyticity.ANALYTIC for v in vals):
             return Analyticity.ANALYTIC
-        if any(v is Analyticity.NOT_ANALYTIC for v in vals):
-            return Analyticity.NOT_ANALYTIC
     return Analyticity.UNKNOWN
 
 
@@ -314,9 +343,13 @@ def _multivariate_structural_continuity(expr, variables):
     vv = tuple(variables)
     expr = sp.sympify(expr)
     if not any(expr.has(v) for v in vv):
-        return Continuity.CONTINUOUS
+        return Continuity.CONTINUOUS if expr.is_finite is True else Continuity.UNKNOWN
     if expr.func in (sp.floor, sp.ceiling, sp.sign):
-        return Continuity.DISCONTINUOUS
+        return (
+            Continuity.DISCONTINUOUS
+            if real_affine_argument(expr.args[0], vv)
+            else Continuity.UNKNOWN
+        )
     try:
         if expr.is_polynomial(*vv) or expr.is_rational_function(*vv):
             return Continuity.CONTINUOUS
@@ -335,9 +368,25 @@ def _multivariate_structural_continuity(expr, variables):
             for a in expr.args
             if any(a.has(v) for v in vv)
         ]
-        if any(v is Continuity.DISCONTINUOUS for v in vals):
+        if (
+            expr.is_Add
+            and vals.count(Continuity.DISCONTINUOUS) == 1
+            and all(
+                v in (Continuity.CONTINUOUS, Continuity.DISCONTINUOUS) for v in vals
+            )
+        ):
             return Continuity.DISCONTINUOUS
         if all(v is Continuity.CONTINUOUS for v in vals):
+            if expr.is_Pow and not (
+                (expr.exp.is_integer is True and not expr.exp.has(*vv))
+                or (
+                    not expr.exp.has(*vv)
+                    and expr.exp.is_real is True
+                    and expr.base.is_real is True
+                )
+                or expr.base.is_positive is True
+            ):
+                return Continuity.UNKNOWN
             return Continuity.CONTINUOUS
         return Continuity.UNKNOWN
     continuous_heads = (
@@ -374,10 +423,38 @@ def _multivariate_structural_continuity(expr, variables):
 def _complex_analyticity_stage(expr, var, *, assumptions, return_result):
     # "Analytic" means holomorphic on the function's natural complex
     # domain, matching the source LocallyAnalytic property.
-    if expr.func in (sp.Abs, sp.sign, sp.floor, sp.ceiling) or isinstance(
-        expr, sp.Piecewise
-    ):
-        result = PropertyResult(Analyticity.NOT_ANALYTIC, source="nonholomorphic-head")
+    """Apply complex holomorphy rules while retaining source and branch obstructions."""
+
+    from ..entire_cancellation import entire_cancellation_proof
+
+    proof = entire_cancellation_proof(expr, var)
+    if proof is not None:
+        result = PropertyResult(
+            Analyticity.ANALYTIC, source="entire-even-series", evidence=(proof,)
+        )
+        return result if return_result else result.primary
+    if expr.func in (*NONSMOOTH, sp.conjugate, sp.re, sp.im):
+        try:
+            p = sp.Poly(expr.args[0], var)
+            nonconstant = (
+                p.degree() == 1
+                and p.nth(1).is_zero is False
+                and all(c.is_finite is True for c in p.all_coeffs())
+            )
+        except SYMBOLIC_QUERY_ERRORS:
+            nonconstant = False
+        val = Analyticity.NOT_ANALYTIC if nonconstant else Analyticity.UNKNOWN
+        result = PropertyResult(
+            val,
+            source="whole-nonholomorphic-affine-head"
+            if nonconstant
+            else "unproved-nonholomorphic-head",
+        )
+        return result if return_result else val
+    if isinstance(expr, sp.Piecewise):
+        result = PropertyResult(
+            Analyticity.UNKNOWN, source="unproved-piecewise-holomorphy"
+        )
         return result if return_result else result.primary
     # Generalized hypergeometric functions: DLMF 16.2 states that p<=q
     # is entire in z, while p=q+1 has a principal analytic branch off its
@@ -405,15 +482,32 @@ def _complex_analyticity_stage(expr, var, *, assumptions, return_result):
             )
             result = PropertyResult(Analyticity.ANALYTIC, source=src)
             return result if return_result else result.primary
+    if expr.is_Function and sum(1 for a in expr.args if a.has(var)) > 1:
+        result = PropertyResult(
+            Analyticity.UNKNOWN, source="unproved-joint-argument-analyticity"
+        )
+        return result if return_result else result.primary
+    inner_values = [
+        _function_analytic_impl(a, var, domain=S.Complexes, assumptions=assumptions)
+        for a in expr.args
+        if a.has(var) and a != var
+    ]
+    if expr.is_Function and any(v is not Analyticity.ANALYTIC for v in inner_values):
+        result = PropertyResult(
+            Analyticity.UNKNOWN, source="unproved-complex-composition-premises"
+        )
+        return result if return_result else result.primary
     local = evaluate_property(
         expr, "LocallyAnalytic", mode="complex", var=var, assumptions=assumptions
     )
     local_status = _conditional_boolean_status(local)
     if local_status is False:
         return (
-            PropertyResult(Analyticity.NOT_ANALYTIC, source="registry")
+            PropertyResult(
+                Analyticity.UNKNOWN, source="unproved-whole-registry-negative"
+            )
             if return_result
-            else Analyticity.NOT_ANALYTIC
+            else Analyticity.UNKNOWN
         )
     if local_status is True:
         return (
@@ -432,7 +526,11 @@ def _complex_analyticity_stage(expr, var, *, assumptions, return_result):
         )
     # Arithmetic closure is valid without needing a primitive function
     # theorem.  Do not apply generic composition closure to an unknown head.
-    if expr.is_Add or expr.is_Mul or (isinstance(expr, sp.Pow) and expr.exp.is_integer):
+    if (
+        expr.is_Add
+        or expr.is_Mul
+        or (isinstance(expr, sp.Pow) and not expr.exp.has(var) and expr.exp.is_integer)
+    ):
         vals = [
             _function_analytic_impl(a, var, domain=S.Complexes, assumptions=assumptions)
             for a in expr.args
@@ -444,9 +542,15 @@ def _complex_analyticity_stage(expr, var, *, assumptions, return_result):
                 if return_result
                 else Analyticity.ANALYTIC
             )
-        if any(v == Analyticity.NOT_ANALYTIC for v in vals):
+        if (
+            expr.is_Add
+            and vals.count(Analyticity.NOT_ANALYTIC) == 1
+            and all(v in (Analyticity.ANALYTIC, Analyticity.NOT_ANALYTIC) for v in vals)
+        ):
             return (
-                PropertyResult(Analyticity.NOT_ANALYTIC, source="holomorphic-closure")
+                PropertyResult(
+                    Analyticity.NOT_ANALYTIC, source="additive-nonanalytic-witness"
+                )
                 if return_result
                 else Analyticity.NOT_ANALYTIC
             )
@@ -460,6 +564,8 @@ def _complex_analyticity_stage(expr, var, *, assumptions, return_result):
 def _real_analyticity_stage(
     expr, var, *, domain, assumptions, return_result, domain_ready
 ):
+    """Apply real analyticity rules to the whole source, including active branch seams."""
+
     domain_cond = (
         sp.sympify(domain)
         if domain_ready
@@ -483,7 +589,7 @@ def _real_analyticity_stage(
                 domain=branch_domain,
                 assumptions=assumptions,
                 return_result=return_result,
-                domain_ready=True,
+                _domain_ready=True,
             ),
             source="analyticity-parameter-stratification",
         )
@@ -503,7 +609,11 @@ def _real_analyticity_stage(
                 unknown_cut = True
         if bad:
             result = PropertyResult(
-                Analyticity.NOT_ANALYTIC, exceptions=tuple(bad), source="nonsmooth-head"
+                Analyticity.NOT_ANALYTIC
+                if real_affine_argument(expr.args[0], (var,))
+                else Analyticity.UNKNOWN,
+                exceptions=tuple(bad),
+                source="nonsmooth-head",
             )
             return result if return_result else result.primary
         if unknown_cut:
@@ -516,35 +626,66 @@ def _real_analyticity_stage(
         # Abs/sign/floor/ceiling are locally analytic on every real component
         # that excludes their kink/jump lattice.  This matters for restricted
         # domains such as Abs(x) on x>0.
-        result = PropertyResult(Analyticity.ANALYTIC, source="nonsmooth-head-off-cuts")
+        inner = _function_analytic_impl(
+            expr.args[0],
+            var,
+            domain=domain_cond,
+            assumptions=assumptions,
+            _domain_ready=True,
+        )
+        val = (
+            Analyticity.ANALYTIC
+            if inner is Analyticity.ANALYTIC
+            else Analyticity.UNKNOWN
+        )
+        result = PropertyResult(
+            val,
+            source="nonsmooth-head-off-cuts"
+            if val is Analyticity.ANALYTIC
+            else "unproved-inner-analyticity",
+        )
         return result if return_result else result.primary
     if isinstance(expr, sp.Piecewise):
-        boundaries = _piecewise_boundaries(expr)
-        bad = []
-        unknown_boundary = False
-        for b in boundaries:
-            hit = _condition_intersects_domain(b, domain_cond, assumptions)
-            if hit is True:
-                bad.append(b)
-            elif hit is None:
-                unknown_boundary = True
-        if bad:
-            exc = tuple(
-                Singularity(
-                    SingularityKind.DEFINITION_CUT, b, S.true, source="piecewise"
-                )
-                for b in bad
-            )
+        from ..real_analysis.piecewise import (
+            certify_piecewise_boundaries,
+            piecewise_decomposition,
+        )
+
+        decomposition = piecewise_decomposition(expr, var, domain_cond)
+        seams = (
+            certify_piecewise_boundaries(decomposition, max_order=3)
+            if decomposition.complete
+            else ()
+        )
+        mismatch = any(piecewise_failure_witness(c) for c in seams)
+        if mismatch:
             result = PropertyResult(
-                Analyticity.NOT_ANALYTIC, exceptions=exc, source="piecewise"
+                Analyticity.NOT_ANALYTIC,
+                exceptions=seams,
+                source="piecewise-jet-mismatch",
             )
-            return result if return_result else result.primary
-        if unknown_boundary:
-            return (
-                PropertyResult(Analyticity.UNKNOWN, source="piecewise-boundary-unknown")
-                if return_result
+        elif seams or not decomposition.complete:
+            result = PropertyResult(
+                Analyticity.UNKNOWN, source="unresolved-piecewise-analytic-gluing"
+            )
+        else:
+            vals = [
+                _function_analytic_impl(
+                    b.expression,
+                    var,
+                    domain=b.condition,
+                    assumptions=assumptions,
+                    _domain_ready=True,
+                )
+                for b in decomposition.branches
+            ]
+            val = (
+                Analyticity.ANALYTIC
+                if vals and all(v is Analyticity.ANALYTIC for v in vals)
                 else Analyticity.UNKNOWN
             )
+            result = PropertyResult(val, source="piecewise-open-components")
+        return result if return_result else result.primary
     cuts = definition_cuts(expr, var, mode="real", assumptions=assumptions)
     bad = []
     unknown = False
@@ -555,34 +696,40 @@ def _real_analyticity_stage(
             bad.append(cut)
         elif intersects is None:
             unknown = True
-    if bad:
+    # A simple zero of an affine base with nonintegral constant exponent,
+    # or an affine inverse-sine/cosine endpoint, is a whole-function branch
+    # obstruction. Other inner cuts remain candidates, not negative proofs.
+    branch_obstruction = (
+        expr.is_Pow
+        and not expr.exp.has(var)
+        and expr.exp.is_real is True
+        and expr.exp.is_finite is True
+        and expr.exp.is_integer is False
+        and real_affine_argument(expr.base, (var,))
+    ) or (
+        expr.func in (sp.asin, sp.acos) and real_affine_argument(expr.args[0], (var,))
+    )
+    if bad and branch_obstruction:
         result = PropertyResult(
-            Analyticity.NOT_ANALYTIC, exceptions=tuple(bad), source="definition-cuts"
+            Analyticity.NOT_ANALYTIC,
+            exceptions=tuple(bad),
+            source="whole-affine-branch-obstruction",
         )
         return result if return_result else result.primary
-    if unknown:
-        return (
-            PropertyResult(
-                Analyticity.UNKNOWN,
-                exceptions=cuts,
-                source="conditional-definition-cuts",
-            )
-            if return_result
-            else Analyticity.UNKNOWN
-        )
+    unknown = unknown or bool(bad)
 
     # Composition theorem: analytic primitives composed with analytic arguments.
     for arg in getattr(expr, "args", ()):
         if arg.has(var) and arg != var:
             a = _function_analytic_impl(
-                arg, var, domain=S.Reals, assumptions=assumptions
+                arg,
+                var,
+                domain=domain_cond,
+                assumptions=assumptions,
+                _domain_ready=True,
             )
             if a == Analyticity.NOT_ANALYTIC:
-                return (
-                    PropertyResult(Analyticity.NOT_ANALYTIC, source="composition")
-                    if return_result
-                    else Analyticity.NOT_ANALYTIC
-                )
+                unknown = True
             if a == Analyticity.UNKNOWN:
                 unknown = True
     entire = evaluate_property(
@@ -602,9 +749,15 @@ def _real_analyticity_stage(
             if return_result
             else Analyticity.ANALYTIC
         )
-    if expr.is_Add or expr.is_Mul or (isinstance(expr, sp.Pow) and expr.exp.is_integer):
+    if (
+        expr.is_Add
+        or expr.is_Mul
+        or (isinstance(expr, sp.Pow) and not expr.exp.has(var) and expr.exp.is_integer)
+    ):
         vals = [
-            _function_analytic_impl(a, var, domain=S.Reals, assumptions=assumptions)
+            _function_analytic_impl(
+                a, var, domain=domain_cond, assumptions=assumptions, _domain_ready=True
+            )
             for a in expr.args
             if a.has(var)
         ]
@@ -614,9 +767,15 @@ def _real_analyticity_stage(
                 if return_result
                 else Analyticity.ANALYTIC
             )
-        if any(v == Analyticity.NOT_ANALYTIC for v in vals):
+        if (
+            expr.is_Add
+            and vals.count(Analyticity.NOT_ANALYTIC) == 1
+            and all(v in (Analyticity.ANALYTIC, Analyticity.NOT_ANALYTIC) for v in vals)
+        ):
             return (
-                PropertyResult(Analyticity.NOT_ANALYTIC, source="analytic-closure")
+                PropertyResult(
+                    Analyticity.NOT_ANALYTIC, source="additive-nonanalytic-witness"
+                )
                 if return_result
                 else Analyticity.NOT_ANALYTIC
             )
@@ -639,9 +798,50 @@ def _function_analytic_impl(
     """Classify real analyticity by default, holomorphy for Complexes."""
     expr = sp.sympify(expr)
     vv = _variable_tuple(var)
+    calculated = normalize_arithmetic(expr)
+    if (not calculated.has(*vv) and calculated.is_finite is not True) or expr.has(
+        sp.oo, -sp.oo, sp.zoo, sp.nan
+    ):
+        result = PropertyResult(
+            Analyticity.UNKNOWN, source="unresolved-nonfinite-source"
+        )
+        return result if return_result else result.primary
+    if not any(expr.has(v) for v in vv):
+        val = Analyticity.ANALYTIC if expr.is_finite is True else Analyticity.UNKNOWN
+        result = PropertyResult(
+            val,
+            source="finite-constant"
+            if expr.is_finite is True
+            else "unresolved-constant-definition",
+        )
+        return result if return_result else val
     is_complex = domain in (S.Complexes, "complex", "complexes", "C", "CC")
+    if len(vv) == 1:
+        normalized = regularity_normal_form(
+            expr,
+            vv[0],
+            domain if domain not in ("real", "reals", "R", "RR") else S.Reals,
+            is_complex,
+        )
+        if normalized != expr:
+            return _function_analytic_impl(
+                normalized,
+                var,
+                domain=domain,
+                assumptions=assumptions,
+                return_result=return_result,
+                _domain_ready=_domain_ready,
+            )
     if len(vv) > 1:
         val = _multivariate_structural_analytic(expr, vv, complex_mode=is_complex)
+        if val is Analyticity.NOT_ANALYTIC and domain not in (
+            S.Reals,
+            S.Complexes,
+            True,
+            S.true,
+            None,
+        ):
+            val = Analyticity.UNKNOWN
         result = PropertyResult(val, source="multivariate-structural-analyticity")
         return result if return_result else val
     var = vv[0]
@@ -675,12 +875,46 @@ def meromorphic(expr, var, *, assumptions=S.true, return_result=False):
     """Classify meromorphicity on the complex plane/natural complex domain."""
     expr = sp.sympify(expr)
     var = sp.sympify(var)
+    calculated = normalize_arithmetic(expr)
+    if (not calculated.has(var) and calculated.is_finite is not True) or expr.has(
+        sp.oo, -sp.oo, sp.zoo, sp.nan
+    ):
+        result = PropertyResult(
+            Meromorphicity.UNKNOWN, source="unresolved-nonfinite-source"
+        )
+        return result if return_result else result.primary
+    if not expr.has(var):
+        val = (
+            Meromorphicity.MEROMORPHIC
+            if expr.is_finite is True
+            else Meromorphicity.UNKNOWN
+        )
+        result = PropertyResult(
+            val,
+            source="finite-constant"
+            if expr.is_finite is True
+            else "unresolved-constant-definition",
+        )
+        return result if return_result else val
+    normalized = regularity_normal_form(expr, var, S.Complexes, True)
+    if normalized != expr:
+        return meromorphic(
+            normalized, var, assumptions=assumptions, return_result=return_result
+        )
     if expr.is_rational_function(var):
         return (
             PropertyResult(Meromorphicity.MEROMORPHIC, source="rational")
             if return_result
             else Meromorphicity.MEROMORPHIC
         )
+    from ..entire_cancellation import entire_cancellation_proof
+
+    proof = entire_cancellation_proof(expr, var)
+    if proof is not None:
+        result = PropertyResult(
+            Meromorphicity.MEROMORPHIC, source="entire-even-series", evidence=(proof,)
+        )
+        return result if return_result else result.primary
     branch = _function_branchpoint_records(expr, var, assumptions=assumptions)
     cuts = branchcuts(expr, var, assumptions=assumptions, mode="records")
     essential = essential_singularities(expr, var, assumptions=assumptions)
@@ -693,14 +927,14 @@ def meromorphic(expr, var, *, assumptions=S.true, return_result=False):
             definite.append(item)
         elif g is not S.false:
             conditional.append(item)
-    if definite:
+    if definite and whole_nonmeromorphic_witness(expr, var, definite):
         result = PropertyResult(
             Meromorphicity.NOT_MEROMORPHIC,
             exceptions=tuple(definite + conditional),
             source="singularity-analysis",
         )
         return result if return_result else result.primary
-    if conditional:
+    if conditional and primitive_subject(expr, var):
         bad_guard = simplify_condition(
             Or(*[item.guard for item in conditional]), assumptions=assumptions
         )
@@ -715,41 +949,40 @@ def meromorphic(expr, var, *, assumptions=S.true, return_result=False):
             source="conditional-singularity-analysis",
         )
         return result
+    if definite or conditional:
+        result = PropertyResult(
+            Meromorphicity.UNKNOWN,
+            exceptions=tuple(definite + conditional),
+            source="unproved-whole-singularity-obstruction",
+        )
+        return result if return_result else result.primary
+    composition_ok = meromorphic_composition_premises(expr, var, assumptions)
     reg = evaluate_property(
         expr, "Meromorphic", mode="complex", assumptions=assumptions
     )
-    if reg.primary is S.true:
+    if reg.primary is S.true and composition_ok:
         return (
             PropertyResult(Meromorphicity.MEROMORPHIC, source="registry")
             if return_result
             else Meromorphicity.MEROMORPHIC
         )
-    if reg.primary is S.false:
+    if reg.primary is S.false and primitive_subject(expr, var):
         return (
             PropertyResult(Meromorphicity.NOT_MEROMORPHIC, source="registry")
             if return_result
             else Meromorphicity.NOT_MEROMORPHIC
         )
-    entire = evaluate_property(expr, "Entire", mode="complex", assumptions=assumptions)
-    if entire.primary is S.true:
-        return (
-            PropertyResult(Meromorphicity.MEROMORPHIC, source="entire")
-            if return_result
-            else Meromorphicity.MEROMORPHIC
+    if entire_inner(expr, var, assumptions):
+        result = PropertyResult(
+            Meromorphicity.MEROMORPHIC, source="global-entire-source"
         )
-    if (
-        _function_analytic_impl(expr, var, domain=S.Complexes, assumptions=assumptions)
-        == Analyticity.ANALYTIC
-    ):
-        # Holomorphic on its natural domain and with no branch/essential
-        # obstruction above: any remaining isolated singularities are poles.
-        return (
-            PropertyResult(Meromorphicity.MEROMORPHIC, source="analytic-with-poles")
-            if return_result
-            else Meromorphicity.MEROMORPHIC
-        )
+        return result if return_result else result.primary
     # Closure of meromorphic functions under arithmetic.
-    if expr.is_Add or expr.is_Mul or (isinstance(expr, sp.Pow) and expr.exp.is_integer):
+    if (
+        expr.is_Add
+        or expr.is_Mul
+        or (isinstance(expr, sp.Pow) and not expr.exp.has(var) and expr.exp.is_integer)
+    ):
         vals = []
         for arg in expr.args:
             if arg.has(var):
@@ -760,7 +993,14 @@ def meromorphic(expr, var, *, assumptions=S.true, return_result=False):
                 if return_result
                 else Meromorphicity.MEROMORPHIC
             )
-        if any(v == Meromorphicity.NOT_MEROMORPHIC for v in vals):
+        if (
+            expr.is_Add
+            and vals.count(Meromorphicity.NOT_MEROMORPHIC) == 1
+            and all(
+                v in (Meromorphicity.MEROMORPHIC, Meromorphicity.NOT_MEROMORPHIC)
+                for v in vals
+            )
+        ):
             return (
                 PropertyResult(Meromorphicity.NOT_MEROMORPHIC, source="closure")
                 if return_result
@@ -800,10 +1040,89 @@ def _function_continuous_impl(
     _domain_ready=False,
 ):
     """Test continuity on the function's natural real domain by default."""
+    if domain is S.Complexes:
+        raise ValueError(
+            "continuity requires a real domain; complex domains are unsupported"
+        )
     expr = sp.sympify(expr)
     vv = _variable_tuple(var)
+    calculated = normalize_arithmetic(expr)
+    if (not calculated.has(*vv) and calculated.is_finite is not True) or expr.has(
+        sp.oo, -sp.oo, sp.zoo, sp.nan
+    ):
+        result = PropertyResult(
+            Continuity.UNKNOWN, source="unresolved-nonfinite-source"
+        )
+        return result if return_result else result.primary
+    if not any(expr.has(v) for v in vv):
+        val = Continuity.CONTINUOUS if expr.is_finite is True else Continuity.UNKNOWN
+        result = PropertyResult(
+            val,
+            source="finite-constant"
+            if expr.is_finite is True
+            else "unresolved-constant-definition",
+        )
+        return result if return_result else val
+    if len(vv) == 1 and any(len(log.args) == 2 for log in expr.atoms(sp.log)):
+        from ..proof_cache import cached_domain_record
+        from ..real_analysis.common import condition_to_set, set_to_condition
+
+        variable = vv[0]
+        record = cached_domain_record(expr, variable, domain)
+        requested = condition_to_set(domain, variable)
+        natural_query = domain in (S.Reals, "real", "reals", "R", "RR")
+        if (
+            record.complete
+            and record.effective is not S.EmptySet
+            and (natural_query or record.effective == requested)
+            and calculated != expr
+        ):
+            result = _function_continuous_impl(
+                calculated,
+                variable,
+                domain=set_to_condition(record.effective, variable),
+                assumptions=assumptions,
+                return_result=return_result,
+                _domain_ready=True,
+            )
+            if return_result and isinstance(result, PropertyResult):
+                from dataclasses import replace
+
+                return replace(
+                    result, domain_record=record, evidence=(*result.evidence, record)
+                )
+            return result
+    if len(vv) == 1 and assumptions is S.true:
+        from ..seam_regularity import seam_regularity_proof
+
+        proof = seam_regularity_proof(expr, vv[0], domain, "continuous")
+        if proof is not None:
+            result = PropertyResult(
+                Continuity.CONTINUOUS,
+                source="real-seam-assembly",
+                evidence=(proof,),
+            )
+            return result if return_result else result.primary
+    if len(vv) == 1:
+        normalized = regularity_normal_form(expr, vv[0], domain)
+        if normalized != expr:
+            return _function_continuous_impl(
+                normalized,
+                var,
+                domain=domain,
+                assumptions=assumptions,
+                return_result=return_result,
+                _domain_ready=_domain_ready,
+            )
     if len(vv) > 1:
         val = _multivariate_structural_continuity(expr, vv)
+        if val is Continuity.DISCONTINUOUS and domain not in (
+            S.Reals,
+            True,
+            S.true,
+            None,
+        ):
+            val = Continuity.UNKNOWN
         result = PropertyResult(val, source="multivariate-structural-continuity")
         return result if return_result else val
     var = vv[0]
@@ -842,6 +1161,9 @@ def _function_continuous_impl(
     actual = []
     uncertain = []
     for d in discontinuities:
+        if d.source == "unresolved-whole-discontinuity":
+            uncertain.append(d)
+            continue
         hit = _condition_intersects_domain(
             And(d.condition, d.guard), domain_cond, assumptions
         )
@@ -913,10 +1235,27 @@ def _function_continuous_impl(
             else Continuity.CONTINUOUS
         )
     if expr.func is sp.Abs:
+        inner = _function_continuous_impl(
+            expr.args[0],
+            var,
+            domain=domain_cond,
+            assumptions=assumptions,
+            _domain_ready=True,
+        )
+        val = (
+            Continuity.CONTINUOUS
+            if inner is Continuity.CONTINUOUS
+            else Continuity.UNKNOWN
+        )
         return (
-            PropertyResult(Continuity.CONTINUOUS, source="Abs")
+            PropertyResult(
+                val,
+                source="continuous-absolute-value-composition"
+                if val is Continuity.CONTINUOUS
+                else "unproved-inner-continuity",
+            )
             if return_result
-            else Continuity.CONTINUOUS
+            else val
         )
     return (
         PropertyResult(Continuity.UNKNOWN, source="insufficient-evidence")

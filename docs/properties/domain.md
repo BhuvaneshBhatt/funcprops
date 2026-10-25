@@ -8,11 +8,21 @@ The domain is the set of input values for which the expression is defined under 
 
 ## API and return values
 
-```python
-domain(expr, variable, *, domain=Reals, stratified=False, assumptions=True, return_result=False)
+```text
+domain(expr, variable, *, domain=Reals, stratified=False, work_budget=None, assumptions=True, return_result=False)
 ```
 
 A SymPy logical condition, or a stratified result when parameter cases must be separated.
+
+| Parameter | Meaning |
+| --- | --- |
+| `expr` | SymPy expression whose global property is queried. |
+| `variable` | Independent scalar coordinate. Real and native complex routes have different assumption requirements; see result contracts. |
+| `domain` | Input domain or logical condition. The default depends on the property family. |
+| `stratified` | Preserve supported guarded parameter-domain cases. |
+| `work_budget` | Optional positive wall budget in seconds; exhaustion follows the operation-specific incomplete/unknown contract. |
+| `assumptions` | Symbolic hypotheses used while proving the property. |
+| `return_result` | Return structured metadata, certificates, or diagnostics. |
 
 ## Domains, assumptions, and parameters
 
@@ -30,7 +40,7 @@ import funcprops as fp
 
 x, y = sp.symbols("x y", real=True)
 result = fp.domain(sp.sqrt(x - 1) / (x - 2), x)
-result
+assert sp.simplify(result ^ ((x >= 1) & sp.Ne(x, 2))) is sp.false
 ```
 
 Expected: ``(x >= 1) & Ne(x, 2)``.
@@ -39,7 +49,7 @@ Application: Validate the admissible input region before symbolic optimization o
 
 ## Applications
 
-This property is useful whenever later mathematics depends on a global qualitative fact, not isolated samples. Typical uses include symbolic preprocessing, theorem-hypothesis verification, optimization, inverse problems, robust numerical method selection, and simplifying downstream case analysis.
+Check where a later optimization, integration or inverse query is defined before simplifying its source.
 
 ## How funcprops proves it
 
@@ -60,4 +70,4 @@ Complicated transcendental preimages and unresolved parameter relations can prev
 
 ## Source
 
-The implementation is exposed through [`funcprops.api`](https://github.com/BhuvaneshBhatt/funcprops/blob/main/src/funcprops/api.py).
+The callable is exported through funcprops; its implementation module is [`funcprops.real_analysis.domain`](https://github.com/BhuvaneshBhatt/funcprops/blob/main/src/funcprops/real_analysis/domain.py).

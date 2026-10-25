@@ -72,5 +72,4 @@ def test_unresolved_branch_geometry_is_not_certified():
     )
     assert not cert.certified
     assert cert.zero_count is None
-    assert cert.analytic_certificate is not None
     assert cert.analytic_certificate.holomorphic is not True

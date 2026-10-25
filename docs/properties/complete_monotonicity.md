@@ -8,11 +8,19 @@ A function is completely monotone when all derivatives exist and (-1)^n f^(n)(x)
 
 ## API and return values
 
-```python
+```text
 complete_monotonicity(expr, variable, *, domain=Reals, assumptions=True, return_result=False)
 ```
 
 TruthValue.TRUE, FALSE, or UNKNOWN; return_result=True exposes a CompleteMonotonicityCertificate when a theorem-backed proof is available.
+
+| Parameter | Meaning |
+| --- | --- |
+| `expr` | SymPy expression whose global property is queried. |
+| `variable` | Independent scalar coordinate. Real and native complex routes have different assumption requirements; see result contracts. |
+| `domain` | Input domain or logical condition. The default depends on the property family. |
+| `assumptions` | Symbolic hypotheses used while proving the property. |
+| `return_result` | Return structured metadata, certificates, or diagnostics. |
 
 ## Domains, assumptions, and parameters
 
@@ -29,8 +37,12 @@ import sympy as sp
 import funcprops as fp
 
 x, y = sp.symbols("x y", real=True)
-alpha = sp.symbols('alpha', positive=True); t = sp.symbols('t', nonnegative=True); result = fp.complete_monotonicity(fp.MittagLefflerE(alpha, -t), t, domain=t >= 0, assumptions=alpha <= 1)
-result
+alpha = sp.symbols("alpha", positive=True)
+t = sp.symbols("t", nonnegative=True)
+result = fp.complete_monotonicity(
+    fp.MittagLefflerE(alpha, -t), t, domain=t >= 0, assumptions=alpha <= 1
+)
+assert result is fp.TruthValue.TRUE
 ```
 
 Expected: ``TruthValue.TRUE`` for ``0 < alpha <= 1``.
@@ -39,7 +51,7 @@ Application: Certify Laplace-transform and survival-kernel structure in fraction
 
 ## Applications
 
-This property is useful whenever later mathematics depends on a global qualitative fact, not isolated samples. Typical uses include symbolic preprocessing, theorem-hypothesis verification, optimization, inverse problems, robust numerical method selection, and simplifying downstream case analysis.
+Recognize supported derivative-sign patterns used in Laplace-transform and positivity arguments.
 
 ## How funcprops proves it
 
@@ -61,4 +73,4 @@ The implementation certifies supported sufficient theorem families; absence of a
 
 ## Source
 
-The implementation is exposed through [`funcprops.api`](https://github.com/BhuvaneshBhatt/funcprops/blob/main/src/funcprops/api.py).
+The callable is exported through funcprops; its implementation module is [`funcprops.real_analysis.complete_monotonicity`](https://github.com/BhuvaneshBhatt/funcprops/blob/main/src/funcprops/real_analysis/complete_monotonicity.py).

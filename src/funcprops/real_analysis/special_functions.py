@@ -1,6 +1,6 @@
 """DLMF-audited real-property facts for parameterized special functions.
 
-The rules here are intentionally conservative.  Each fact has provenance:
+The rules here are limited to sufficient conditions.  Each fact has provenance:
 ``direct`` means DLMF states the property under essentially the same
 hypotheses; ``derived`` means funcprops combines DLMF identities, endpoint
 limits, or elementary differentiation without weakening the hypotheses.
@@ -20,6 +20,8 @@ from ..stratification import semantic_condition
 
 @dataclass(frozen=True)
 class DLMFFact:
+    """Record a sourced special-function theorem and its executable parameter guard."""
+
     family: str
     property: str
     section: str
@@ -298,6 +300,8 @@ def _positive_axis(domain, var):
 
 
 def parameter_guard(expr, var, prop):
+    """Build a special-function theorem's parameter and source-domain condition."""
+
     expr = sp.sympify(expr)
     var = sp.sympify(var)
     if expr.func is sp.besselk and len(expr.args) == 2 and expr.args[1] == var:
@@ -364,9 +368,20 @@ def positive_axis_domain_strata(expr, var):
     return ()
 
 
+def _dependent_shape_parameters(expr, var):
+    return any(
+        node.args
+        and node.args[-1] == var
+        and any(arg.has(var) for arg in node.args[:-1])
+        for node in sp.sympify(expr).atoms(sp.Function)
+    )
+
+
 def positive_axis_range_strata(expr, var, y):
     """Exact ranges on x>0, including parameter-dependent endpoints."""
     expr = sp.sympify(expr)
+    if _dependent_shape_parameters(expr, var):
+        return ()
     var = sp.sympify(var)
     y = sp.sympify(y)
     nu_ratio = _besseli_successive_ratio_order(expr, var)
@@ -426,6 +441,8 @@ def special_function_range_strata(expr, var, y, domain):
     from .common import condition_to_set
 
     expr = sp.sympify(expr)
+    if _dependent_shape_parameters(expr, var):
+        return ()
     var = sp.sympify(var)
     y = sp.sympify(y)
     ds = condition_to_set(domain, var)
@@ -533,10 +550,14 @@ def special_function_range_strata(expr, var, y, domain):
 
 
 def positive_axis_monotonicity_strata(expr, var, domain=None):
+    """Derive guarded special-function monotonicity cases on the positive axis."""
+
     from ..results import Monotonicity
     from ..statistical_special_functions import MittagLefflerE, OwenT
 
     expr = sp.sympify(expr)
+    if _dependent_shape_parameters(expr, var):
+        return ()
     var = sp.sympify(var)
     nu_ratio = _besseli_successive_ratio_order(expr, var)
     if nu_ratio is not None:
@@ -678,9 +699,13 @@ def positive_axis_monotonicity_strata(expr, var, domain=None):
 
 
 def positive_axis_sign_strata(expr, var):
+    """Derive guarded special-function sign cases on the positive axis."""
+
     from ..results import Sign
 
     expr = sp.sympify(expr)
+    if _dependent_shape_parameters(expr, var):
+        return ()
     var = sp.sympify(var)
     from ..statistical_special_functions import (
         MittagLefflerE,
@@ -758,9 +783,13 @@ def positive_axis_sign_strata(expr, var):
 
 
 def positive_axis_convexity_strata(expr, var):
+    """Derive guarded special-function curvature cases on the positive axis."""
+
     from ..results import Convexity
 
     expr = sp.sympify(expr)
+    if _dependent_shape_parameters(expr, var):
+        return ()
     var = sp.sympify(var)
     from ..statistical_special_functions import MittagLefflerE
 

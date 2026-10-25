@@ -7,15 +7,20 @@ proof-conservative: unsupported geometry is reported as ``TruthValue.UNKNOWN``.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any
 
 import sympy as sp
 from sympy import S
 
 from .exceptions import SYMBOLIC_QUERY_ERRORS
-from .real_analysis.common import normalize_domain_set, normalize_variables
+from .real_analysis.common import (
+    condition_to_set,
+    normalize_domain_set,
+    normalize_variables,
+)
 from .real_analysis.convexity import convexity as _convexity
+from .real_analysis.domain import domain as real_domain
 from .real_analysis.smoothness import smoothness as _smoothness
 from .results import Analyticity, Continuity, Convexity, SingularityResult, TruthValue
 from .singularities import (
@@ -31,6 +36,20 @@ from .singularities import (
 
 def _real_set(domain, variable):
     return normalize_domain_set(domain, variable)
+
+
+def _defined_everywhere(expr, variables, domain):
+    var_arg = variables[0] if len(variables) == 1 else variables
+    natural = real_domain(expr, var_arg)
+    if len(variables) != 1:
+        return natural is S.true
+    support = condition_to_set(natural, variables[0])
+    requested = _real_set(domain, variables[0])
+    return (
+        support is not None
+        and requested is not None
+        and requested.is_subset(support) is True
+    )
 
 
 def _is_bounded_real_set(domain):
@@ -64,6 +83,8 @@ def _set_closed(domain):
 
 @dataclass(frozen=True)
 class BoundaryLimit:
+    """Record a one-sided endpoint limit and its owned source boundary."""
+
     endpoint: Any
     value: Any
     direction: str
@@ -73,6 +94,8 @@ class BoundaryLimit:
 
 @dataclass(frozen=True)
 class BoundaryBehavior:
+    """Describe limits at the boundary of an effective source domain."""
+
     domain: Any
     limits: tuple[BoundaryLimit, ...]
     complete: bool
@@ -91,13 +114,29 @@ class BoundaryBehavior:
             return TruthValue.TRUE
         if all(item.certified and item.value is S.Infinity for item in escape):
             return TruthValue.TRUE
-        if any(item.certified and item.value is not S.Infinity for item in escape):
+        if any(
+            item.certified
+            and (
+                item.value is S.NegativeInfinity
+                or (
+                    getattr(item.value, "is_finite", None) is True
+                    and getattr(item.value, "is_real", None) is True
+                )
+                or (
+                    isinstance(item.value, sp.AccumBounds)
+                    and item.value.max.is_finite is True
+                )
+            )
+            for item in escape
+        ):
             return TruthValue.FALSE
         return TruthValue.UNKNOWN
 
 
 @dataclass(frozen=True)
 class LevelBoundednessCertificate:
+    """Record sufficient level-boundedness premises on a source domain."""
+
     classification: TruthValue
     domain: Any
     boundary_behavior: BoundaryBehavior | None
@@ -108,47 +147,26 @@ class LevelBoundednessCertificate:
     def primary(self):
         return self.classification
 
+    expression: Any = None
+    variables: tuple = ()
+
     def verify(self):
-        if self.classification is TruthValue.TRUE:
-            if self.source == "bounded-domain":
-                return (
-                    isinstance(self.domain, sp.Set)
-                    and self.domain is not S.Reals
-                    and _is_bounded_real_set(self.domain)
-                )
-            if self.source == "boundary-plus-infinity":
-                return (
-                    self.boundary_behavior is not None
-                    and self.boundary_behavior.positive_infinity_on_escape
-                    is TruthValue.TRUE
-                )
-            if self.source == "strong-convexity":
-                return any(item is Convexity.STRONGLY_CONVEX for item in self.evidence)
-            if self.source == "separable-coercivity":
-                return bool(self.evidence) and all(
-                    isinstance(item, LevelBoundednessCertificate)
-                    and item.classification is TruthValue.TRUE
-                    and item.verify()
-                    for item in self.evidence
-                )
+        """Return whether the record satisfies its declared replay obligations."""
+
+        if self.expression is None or not self.variables:
             return False
-        if self.classification is TruthValue.FALSE:
-            if (
-                self.source != "escaping-nonpositive-infinity"
-                or self.boundary_behavior is None
-            ):
-                return False
-            return any(
-                item.certified
-                and item.endpoint in (S.NegativeInfinity, S.Infinity)
-                and item.value is not S.Infinity
-                for item in self.boundary_behavior.limits
+        try:
+            return self == _level_boundedness_certificate(
+                self.expression, self.variables, domain=self.domain
             )
-        return self.source in {"insufficient-structure", "multivariate-unresolved"}
+        except SYMBOLIC_QUERY_ERRORS:
+            return False
 
 
 @dataclass(frozen=True)
 class ModeExistenceCertificate:
+    """Bind existence of a maximum to boundedness and boundary behavior."""
+
     sense: str
     exists: bool | None
     domain: Any
@@ -170,22 +188,26 @@ class ModeExistenceCertificate:
     def primary(self):
         return self.classification
 
+    expression: Any = None
+    variables: tuple = ()
+
     def verify(self):
-        if self.exists is True:
-            return (
-                self.source == "continuous-level-bounded-weierstrass"
-                and self.continuity is Continuity.CONTINUOUS
-                and self.domain_closed is TruthValue.TRUE
-                and self.level_boundedness.classification is TruthValue.TRUE
-                and self.level_boundedness.verify()
+        """Return whether the record satisfies its declared replay obligations."""
+
+        if self.expression is None or not self.variables:
+            return False
+        try:
+            return self == _mode_existence_certificate(
+                self.expression, self.variables, domain=self.domain, sense=self.sense
             )
-        if self.exists is None:
-            return self.source == "insufficient-structure"
-        return False
+        except SYMBOLIC_QUERY_ERRORS:
+            return False
 
 
 @dataclass(frozen=True)
 class FunctionGeometry:
+    """Combine boundary, level-boundedness and mode-existence conclusions."""
+
     expression: Any
     variables: tuple[Any, ...]
     domain: Any
@@ -269,7 +291,7 @@ def _separable_terms(expr, variables):
     return tuple(sp.Add(*buckets[v]) for v in variables)
 
 
-def _univariate_level_boundedness(expr, variable, domain, behavior=None):
+def _univariate_level_boundedness_impl(expr, variable, domain, behavior=None):
     real_domain = _real_set(domain, variable)
     if behavior is None:
         behavior = boundary_behavior(expr, variable, domain=domain)
@@ -313,10 +335,19 @@ def _resolved_domain_and_closed(domain, variables):
 
 
 def _mode_existence_from_facts(
-    sense, continuity, level_boundedness, resolved_domain, domain_closed
+    sense,
+    continuity,
+    level_boundedness,
+    resolved_domain,
+    domain_closed,
+    *,
+    expression=None,
+    variables=(),
 ):
     if (
-        continuity is Continuity.CONTINUOUS
+        expression is not None
+        and _defined_everywhere(expression, variables, resolved_domain)
+        and continuity is Continuity.CONTINUOUS
         and level_boundedness.classification is TruthValue.TRUE
         and domain_closed is TruthValue.TRUE
     ):
@@ -329,6 +360,8 @@ def _mode_existence_from_facts(
             domain_closed,
             "continuous-level-bounded-weierstrass",
             (level_boundedness,),
+            expression,
+            variables,
         )
     return ModeExistenceCertificate(
         sense,
@@ -338,10 +371,12 @@ def _mode_existence_from_facts(
         level_boundedness,
         domain_closed,
         "insufficient-structure",
+        expression=expression,
+        variables=variables,
     )
 
 
-def _level_boundedness_certificate(expr, variables, *, domain=S.Reals):
+def _level_boundedness_certificate_impl(expr, variables, *, domain=S.Reals):
     """Return whether all sublevel sets are bounded."""
     expr = sp.sympify(expr)
     vv = normalize_variables(variables)
@@ -362,7 +397,13 @@ def _level_boundedness_certificate(expr, variables, *, domain=S.Reals):
                 _level_boundedness_certificate(term, var)
                 for term, var in zip(separable, vv, strict=True)
             )
-            if all(cert.classification is TruthValue.TRUE for cert in component_certs):
+            if all(
+                cert.classification is TruthValue.TRUE for cert in component_certs
+            ) and all(
+                _defined_everywhere(term, (var,), S.Reals)
+                and continuous(term, var, domain=S.Reals) is Continuity.CONTINUOUS
+                for term, var in zip(separable, vv, strict=True)
+            ):
                 return LevelBoundednessCertificate(
                     TruthValue.TRUE,
                     S.Reals,
@@ -395,7 +436,13 @@ def _mode_existence_certificate(expr, variables, *, domain=S.Reals, sense="max")
     continuity = continuous(expr, vv if len(vv) > 1 else vv[0], domain=domain)
     resolved_domain, domain_closed = _resolved_domain_and_closed(domain, vv)
     return _mode_existence_from_facts(
-        sense, continuity, level_boundedness, resolved_domain, domain_closed
+        sense,
+        continuity,
+        level_boundedness,
+        resolved_domain,
+        domain_closed,
+        expression=expr,
+        variables=vv,
     )
 
 
@@ -448,11 +495,23 @@ def geometry(expr, variables, *, domain=S.Reals, assumptions=S.true):
         level = _level_boundedness_certificate(expr, vv, domain=domain)
     resolved_domain, domain_closed = _resolved_domain_and_closed(domain, vv)
     minimum = _mode_existence_from_facts(
-        "min", continuity, level, resolved_domain, domain_closed
+        "min",
+        continuity,
+        level,
+        resolved_domain,
+        domain_closed,
+        expression=expr,
+        variables=vv,
     )
     maximum_level = _level_boundedness_certificate(-expr, vv, domain=domain)
     maximum = _mode_existence_from_facts(
-        "max", continuity, maximum_level, resolved_domain, domain_closed
+        "max",
+        continuity,
+        maximum_level,
+        resolved_domain,
+        domain_closed,
+        expression=expr,
+        variables=vv,
     )
     return FunctionGeometry(
         expr,
@@ -469,4 +528,20 @@ def geometry(expr, variables, *, domain=S.Reals, assumptions=S.true):
         minimum,
         maximum,
         (singularities, level),
+    )
+
+
+def _univariate_level_boundedness(expr, variable, domain, behavior=None):
+    return replace(
+        _univariate_level_boundedness_impl(expr, variable, domain, behavior),
+        expression=sp.sympify(expr),
+        variables=(variable,),
+    )
+
+
+def _level_boundedness_certificate(expr, variables, *, domain=S.Reals):
+    return replace(
+        _level_boundedness_certificate_impl(expr, variables, domain=domain),
+        expression=sp.sympify(expr),
+        variables=normalize_variables(variables),
     )

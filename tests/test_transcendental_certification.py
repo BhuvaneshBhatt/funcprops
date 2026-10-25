@@ -1,16 +1,20 @@
 import sympy as sp
 from sympy import S
 
-from funcprops.transcendental import (
-    CertifiedRootInterval,
-    PeriodicSet,
-    RootCertificate,
+from funcprops.real_analysis.common import condition_to_set
+from funcprops.transcendental.algebraize import (
     algebraize,
     algebraize_trig_circle,
     algebraize_trigonometric,
+)
+from funcprops.transcendental.analytic import (
     analytic_neighborhood,
-    common_period_values,
     holomorphic_on_rectangle,
+)
+from funcprops.transcendental.periodic import PeriodicSet, common_period_values
+from funcprops.transcendental.roots import (
+    CertifiedRootInterval,
+    RootCertificate,
     transcendental_roots,
 )
 
@@ -101,7 +105,7 @@ def test_rationally_commensurate_exponential_algebraization():
     assert a.changed and a.exact and a.method == "exponential_substitution"
     u, _ = a.substitutions[0]
     assert sp.simplify(a.expression - (u + u**3 + 1 / u)) == 0
-    assert a.constraints == (u > 0)
+    assert condition_to_set(a.constraints, u) == sp.Interval.open(0, sp.oo)
 
 
 def test_tangent_half_angle_algebraization():

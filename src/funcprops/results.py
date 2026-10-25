@@ -8,24 +8,32 @@ from sympy import Basic, Piecewise, S, Symbol, sympify
 
 
 class TruthValue(str, Enum):
+    """Distinguish a proved truth, a proved falsehood and an undecided query."""
+
     TRUE = "true"
     FALSE = "false"
     UNKNOWN = "unknown"
 
 
 class Analyticity(str, Enum):
+    """Classify holomorphy on the requested domain, including undecided cases."""
+
     ANALYTIC = "analytic"
     NOT_ANALYTIC = "not_analytic"
     UNKNOWN = "unknown"
 
 
 class Meromorphicity(str, Enum):
+    """Classify meromorphicity on the requested domain, including undecided cases."""
+
     MEROMORPHIC = "meromorphic"
     NOT_MEROMORPHIC = "not_meromorphic"
     UNKNOWN = "unknown"
 
 
 class Monotonicity(str, Enum):
+    """Classify order behavior on the requested ordered domain."""
+
     STRICTLY_INCREASING = "strictly_increasing"
     NONDECREASING = "nondecreasing"
     CONSTANT = "constant"
@@ -36,6 +44,8 @@ class Monotonicity(str, Enum):
 
 
 class Convexity(str, Enum):
+    """Classify supported convexity, concavity and related curvature properties."""
+
     STRONGLY_CONVEX = "strongly_convex"
     STRICTLY_CONVEX = "strictly_convex"
     CONVEX = "convex"
@@ -54,6 +64,8 @@ class Convexity(str, Enum):
 
 
 class Sign(str, Enum):
+    """Classify a real expression's sign over the requested domain."""
+
     POSITIVE = "positive"
     NONNEGATIVE = "nonnegative"
     ZERO = "zero"
@@ -64,6 +76,8 @@ class Sign(str, Enum):
 
 
 class Boundedness(str, Enum):
+    """Classify upper and lower boundedness on the requested domain."""
+
     BOUNDED = "bounded"
     BOUNDED_ABOVE = "bounded_above"
     BOUNDED_BELOW = "bounded_below"
@@ -72,6 +86,8 @@ class Boundedness(str, Enum):
 
 
 class Oscillation(str, Enum):
+    """Distinguish absent, finite and infinite oscillation from undecided behavior."""
+
     NONOSCILLATORY = "nonoscillatory"
     FINITELY_OSCILLATORY = "finitely_oscillatory"
     OSCILLATORY = "oscillatory"
@@ -79,6 +95,8 @@ class Oscillation(str, Enum):
 
 
 class Periodicity(str, Enum):
+    """Classify constant, periodic, aperiodic and undecided behavior."""
+
     CONSTANT = "constant"
     PERIODIC = "periodic"
     APERIODIC = "aperiodic"
@@ -86,6 +104,8 @@ class Periodicity(str, Enum):
 
 
 class Symmetry(str, Enum):
+    """Classify reflection and parity symmetry about the requested center."""
+
     EVEN = "even"
     ODD = "odd"
     BOTH = "both"
@@ -95,18 +115,24 @@ class Symmetry(str, Enum):
 
 
 class Homogeneity(str, Enum):
+    """Classify whether a common scaling degree is proved."""
+
     HOMOGENEOUS = "homogeneous"
     NOT_HOMOGENEOUS = "not_homogeneous"
     UNKNOWN = "unknown"
 
 
 class Continuity(str, Enum):
+    """Classify continuity on the requested domain."""
+
     CONTINUOUS = "continuous"
     DISCONTINUOUS = "discontinuous"
     UNKNOWN = "unknown"
 
 
 class Differentiability(str, Enum):
+    """Classify differentiability and supported stronger regularity."""
+
     SMOOTH = "smooth"
     CK = "Ck"
     DIFFERENTIABLE = "differentiable"
@@ -115,6 +141,8 @@ class Differentiability(str, Enum):
 
 
 class SingularityKind(str, Enum):
+    """Identify the geometric or local analytic kind of a singular locus."""
+
     POLE = "pole"
     ESSENTIAL = "essential"
     BRANCH_POINT = "branch_point"
@@ -126,6 +154,8 @@ class SingularityKind(str, Enum):
 
 @dataclass(frozen=True)
 class ConditionalExpression:
+    """Pair a mathematical value with the condition under which it applies."""
+
     value: Any
     condition: Basic = S.true
 
@@ -135,6 +165,8 @@ class ConditionalExpression:
 
 @dataclass(frozen=True)
 class Singularity:
+    """Describe a singular locus, its kind and supporting local data."""
+
     kind: SingularityKind
     condition: Basic
     guard: Basic = S.true
@@ -193,12 +225,17 @@ class SingularityResult:
 
 @dataclass(frozen=True)
 class PropertyResult:
+    """Retain a property value, guarded cases, domain provenance and evidence."""
+
     primary: Any
     cases: tuple[ConditionalExpression, ...] = ()
     all_properties: tuple[Any, ...] = ()
     source: str | None = None
     exceptions: tuple[Any, ...] = ()
     evidence: tuple[Any, ...] = ()
+    complete: bool | None = None
+    certified: bool | None = None
+    domain_record: Any = None
 
     @property
     def resolved(self):
@@ -238,7 +275,7 @@ class PropertyResult:
 
         Conditional classifications become a SymPy ``Piecewise``.  An explicit
         ``unknown`` fallback is appended so an uncovered parameter region is
-        never silently interpreted as false (or left to Piecewise's implicit
+        never interpreted as false (or left to Piecewise's implicit
         ``nan`` fallback).  Exhaustive complementary cases are simplified by
         SymPy in the usual way.
         """
@@ -279,6 +316,12 @@ class DetailedPropertyResult:
     certificate: Any = None
     exceptions: tuple[Any, ...] = ()
     all_properties: tuple[Any, ...] = ()
+    certified: bool | None = None
+    domain_record: Any = None
+
+    @property
+    def has_certificate(self):
+        return self.certificate is not None
 
     @property
     def resolved(self):
@@ -302,7 +345,7 @@ class DetailedPropertyResult:
         if self.source:
             fields.append(("Proof route", self.source.replace("-", " ")))
         fields.append(
-            ("Certified", "yes" if self.certificate is not None else "not recorded")
+            ("Certificate", "recorded" if self.has_certificate else "not recorded")
         )
         rows = "".join(f"<tr><th>{k}</th><td>{v}</td></tr>" for k, v in fields)
         return f"<table><tbody>{rows}</tbody></table>"
@@ -312,14 +355,20 @@ class DetailedPropertyResult:
 class SupportsDetailedPropertyResult(Protocol):
     """Structural protocol implemented by objects exposing detailed results."""
 
-    def as_detailed_result(self) -> DetailedPropertyResult: ...
+    def as_detailed_result(self) -> DetailedPropertyResult:
+        """Expose the mathematical value together with scope, cases and evidence."""
+        ...
 
 
-def as_detailed_result(value, *, domain=None, source=None, complete=None):
+def as_detailed_result(
+    value, *, domain=None, source=None, complete=None, domain_record=None
+):
     """Return a uniform detailed view without changing compact public APIs."""
     if isinstance(value, DetailedPropertyResult):
         return value
     if isinstance(value, PropertyResult):
+        if complete is None:
+            complete = getattr(value, "complete", None)
         certificate = next(
             (
                 item
@@ -338,8 +387,14 @@ def as_detailed_result(value, *, domain=None, source=None, complete=None):
             certificate=certificate,
             exceptions=value.exceptions,
             all_properties=value.all_properties,
+            certified=getattr(value, "certified", None),
+            domain_record=domain_record
+            if domain_record is not None
+            else getattr(value, "domain_record", None),
         )
-    primary = getattr(value, "classification", value)
+    if complete is None:
+        complete = getattr(value, "complete", None)
+    primary = getattr(value, "primary", getattr(value, "classification", value))
     evidence = tuple(getattr(value, "evidence", ()))
     exceptions = tuple(getattr(value, "exceptional_loci", ()))
     result_domain = domain if domain is not None else getattr(value, "domain", None)
@@ -352,10 +407,20 @@ def as_detailed_result(value, *, domain=None, source=None, complete=None):
         evidence=evidence,
         certificate=(
             getattr(value, "certificate", None)
+            or getattr(value, "certificates", ())
+            or tuple(
+                item.certificate
+                for item in getattr(value, "isolated_intervals", ())
+                if hasattr(item, "certificate")
+            )
             or (value if callable(getattr(value, "verify", None)) else None)
         ),
         exceptions=exceptions,
         all_properties=tuple(getattr(value, "all_properties", ())),
+        certified=getattr(value, "certified", None),
+        domain_record=domain_record
+        if domain_record is not None
+        else getattr(value, "domain_record", None),
     )
 
 

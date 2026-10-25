@@ -159,6 +159,8 @@ def order_at(expr, var, point):
     expr = sp.sympify(expr)
     var = sp.sympify(var)
     point = sp.sympify(point)
+    if expr.has(sp.Float) or point.has(sp.Float):
+        return None
     t = sp.Dummy("funcprops_local")
     try:
         shifted = expr.subs(var, point + t)
@@ -299,7 +301,6 @@ def _denominator_singularity_records(expr, var):
 
 
 def _explicit_denominator_poles(expr, var):
-    """Extract exact or conditional poles from an explicit denominator."""
     return _denominator_singularity_records(expr, var)[0]
 
 
@@ -392,6 +393,10 @@ def _function_pole_records(expr, var, *, assumptions=S.true, denominator_poles=N
 def _function_branchpoint_records(expr, var, *, assumptions=S.true):
     expr = sp.sympify(expr)
     var = sp.sympify(var)
+    from ..entire_cancellation import entire_cancellation_proof
+
+    if entire_cancellation_proof(expr, var) is not None:
+        return []
     out = []
     if expr.is_Function:
         out.extend(
@@ -455,6 +460,8 @@ def branchpoints(expr, var, *, assumptions=S.true, return_result=False):
 
 
 def definition_cuts(expr, var, *, mode="real", assumptions=S.true):
+    """Extract source-definition cuts from singularity records."""
+
     expr = sp.sympify(expr)
     var = sp.sympify(var)
     out = []
@@ -509,6 +516,8 @@ def definition_cuts(expr, var, *, mode="real", assumptions=S.true):
 
 
 def essential_singularities(expr, var, *, assumptions=S.true):
+    """Extract proved essential-singularity loci from an analysis result."""
+
     expr = sp.sympify(expr)
     var = sp.sympify(var)
     out = []
@@ -719,7 +728,10 @@ def _piecewise_branch_for_side(expr, var, point, side):
             continue
         # reduce simple one-variable inequalities in the positive probe.
         try:
-            red = sp.reduce_inequalities(test, t)
+            relations = And.make_args(test)
+            if not all(isinstance(relation, Relational) for relation in relations):
+                return None
+            red = sp.reduce_inequalities(list(relations), t)
             if red is S.true:
                 return value
             if red is S.false:
@@ -855,19 +867,36 @@ def _function_discontinuity_records(expr, var, *, assumptions=S.true):
                             source="piecewise",
                         )
                     )
-    # Discontinuities of inner arguments propagate through ordinary composition
-    # unless an outer rule proves a cancellation; conservatively retain them.
-    recursive_args = (
-        [v for v, _ in expr.args]
-        if isinstance(expr, sp.Piecewise)
-        else getattr(expr, "args", ())
+    # Inner jumps are candidates: products/compositions can remove them, and
+    # inactive Piecewise arms must not contribute unconditional exceptions.
+    if isinstance(expr, sp.Piecewise):
+        from ..real_analysis.piecewise import piecewise_branches
+
+        for branch in piecewise_branches(expr, var, assumptions):
+            for record in _function_discontinuity_records(
+                branch.expression, var, assumptions=assumptions
+            ):
+                out.append(
+                    Singularity(
+                        record.kind,
+                        sp.And(record.condition, branch.condition),
+                        record.guard,
+                        source=record.source,
+                    )
+                )
+    else:
+        for arg in getattr(expr, "args", ()):
+            if getattr(arg, "has", lambda *_: False)(var):
+                out.extend(
+                    _function_discontinuity_records(arg, var, assumptions=assumptions)
+                )
+    from ..regularity_evidence import filter_discontinuity_candidate
+
+    checked = (
+        filter_discontinuity_candidate(expr, var, record, assumptions)
+        for record in _unique(out)
     )
-    for arg in recursive_args:
-        if getattr(arg, "has", lambda *_: False)(var):
-            out.extend(
-                _function_discontinuity_records(arg, var, assumptions=assumptions)
-            )
-    return _unique(out)
+    return _unique([record for record in checked if record is not None])
 
 
 _SINGULARITY_LOCUS_SIMPLIFY_OP_LIMIT = 12

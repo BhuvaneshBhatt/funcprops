@@ -8,11 +8,20 @@ The zero set contains the domain points at which the expression is exactly zero.
 
 ## API and return values
 
-```python
+```text
 zeros(expr, variable, *, domain=True, allow_numerical=False, assumptions=True, return_result=False)
 ```
 
 Usually a SymPy Set; return_result=True exposes structured/conditional information.
+
+| Parameter | Meaning |
+| --- | --- |
+| `expr` | SymPy expression whose global property is queried. |
+| `variable` | Independent scalar coordinate. Real and native complex routes have different assumption requirements; see result contracts. |
+| `domain` | Input domain or logical condition. The default depends on the property family. |
+| `allow_numerical` | Permit explicitly marked numerical zero information when exact analysis is unavailable. |
+| `assumptions` | Symbolic hypotheses used while proving the property. |
+| `return_result` | Return structured metadata, certificates, or diagnostics. |
 
 ## Domains, assumptions, and parameters
 
@@ -30,7 +39,7 @@ import funcprops as fp
 
 x, y = sp.symbols("x y", real=True)
 result = fp.zeros((x - 1) * (x + 2), x)
-result
+assert result == sp.FiniteSet(-2, 1)
 ```
 
 Expected: ``{-2, 1}``.
@@ -39,7 +48,7 @@ Application: Locate exact roots used for sign partitions and critical-event anal
 
 ## Applications
 
-This property is useful whenever later mathematics depends on a global qualitative fact, not isolated samples. Typical uses include symbolic preprocessing, theorem-hypothesis verification, optimization, inverse problems, robust numerical method selection, and simplifying downstream case analysis.
+Locate candidate stationary points, source exclusions or intersections and retain whether the root description is exhaustive.
 
 ## How funcprops proves it
 
@@ -60,4 +69,4 @@ Infinite or transcendental zero sets may require structured representations, and
 
 ## Source
 
-The implementation is exposed through [`funcprops.api`](https://github.com/BhuvaneshBhatt/funcprops/blob/main/src/funcprops/api.py).
+The callable is exported through funcprops; its implementation module is [`funcprops.real_analysis.zeros`](https://github.com/BhuvaneshBhatt/funcprops/blob/main/src/funcprops/real_analysis/zeros.py).

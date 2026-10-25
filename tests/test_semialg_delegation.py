@@ -57,7 +57,7 @@ def test_project_requires_semialg_public_api_release():
     with project_path.open("rb") as stream:
         project = tomllib.load(stream)
 
-    assert "semialg>=1.3.0" in project["project"]["dependencies"]
+    assert "semialg>=1.3.2" in project["project"]["dependencies"]
 
 
 def test_monotonicity_delegates_semialgebraic_domain_to_semialg():

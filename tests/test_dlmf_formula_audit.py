@@ -9,7 +9,7 @@ from funcprops import (
     domain,
     transcendental_roots,
 )
-from funcprops.conditions import AIntegerQ, parse_catalogue_expression
+from funcprops.conditions import IntegerCondition, parse_catalogue_expression
 
 
 def test_formula_audit_promotes_all_remaining_or_corrects_mapping():
@@ -20,7 +20,7 @@ def test_formula_audit_promotes_all_remaining_or_corrects_mapping():
     assert summary["dlmf_mapping_corrections"] == 1
 
 
-def test_formula_audit_has_exact_equation_reference_for_jacobi_and_helper():
+def test_jacobi_formula_references():
     jac = dlmf_audit_report("jacobi")
     assert jac["status"] == "formula-verified-core"
     assert "18.16.E1" in jac["formula_refs"]
@@ -45,7 +45,7 @@ def test_dlmf_facts_exposes_formula_level_runtime_provenance():
 
 def test_catalogue_parser_roundtrips_semantic_predicates():
     x, y = sp.symbols("x y")
-    expected = sp.And(AIntegerQ(x), AIntegerQ(y / 2))
+    expected = sp.And(IntegerCondition(x), IntegerCondition(y / 2))
     got = parse_catalogue_expression(sp.srepr(expected))
     assert got == expected
 
@@ -63,7 +63,6 @@ def test_assoc_legendre_domain_catalogue_condition_no_longer_crashes():
     dom = domain(sp.assoc_legendre(n, 1, x), x)
     # The exact catalogue rule is parameter-aware; the important regression is
     # that mixed parameter membership is preserved as a Boolean condition.
-    assert dom is not None
     assert sp.simplify(dom.subs(x, 0)) is sp.S.true
 
 
@@ -162,7 +161,7 @@ def test_incomplete_elliptic_f_parameter_branch_condition_is_recorded():
     assert any(r.source == "DLMF 19.2.4-19.2.5" for r in records)
 
 
-def test_elliptic_pi_characteristic_does_not_get_endpoint_only_fake_cut():
+def test_elliptic_characteristic_cut():
     n, phi = sp.symbols("n phi", real=True)
     expr = sp.elliptic_pi(n, phi, sp.Rational(1, 2))
     records = branch_cuts(expr, n, mode="records")

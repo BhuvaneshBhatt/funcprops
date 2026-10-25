@@ -9,11 +9,10 @@ consistency checks on every property table.
 
 from __future__ import annotations
 
-import contextlib
 import json
 from pathlib import Path
 
-from dlmf_formula_audit import FORMULA_AUDIT
+from tools.dlmf_formula_audit import FORMULA_AUDIT
 
 ROOT = Path(__file__).resolve().parents[1]
 CAT = ROOT / "src/funcprops/data/catalogue.json"
@@ -91,11 +90,8 @@ def structural_issues(f):
         for i, c in enumerate(p.get("cases", [])):
             if "value_source" not in c or "condition_source" not in c:
                 issues.append(f"{name}[{i}]: missing value/condition")
-            if not c.get("source_lhs"):
-                issues.append(f"{name}[{i}]: missing source_lhs")
-    if f.get("entire", {}).get("cases") and f.get("poles", {}).get("cases"):
-        # Not automatically a contradiction because conditional guards may differ.
-        pass
+            if not c.get("rule_id") or "signature" not in c:
+                issues.append(f"{name}[{i}]: missing rule identity/signature")
     return issues
 
 
@@ -124,9 +120,7 @@ def main():
             status = "chapter-mapped-core-needs-formula-review"
         urls = []
         if chapters:
-            for bit in chapters.split(", "):
-                with contextlib.suppress(Exception):
-                    urls.append(URL[int(bit)])
+            urls.extend(URL[int(bit)] for bit in chapters.split(", "))
         audit = FORMULA_AUDIT.get(fid)
         rows.append(
             {

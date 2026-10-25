@@ -9,6 +9,8 @@ from .results import as_detailed_result
 
 @dataclass(frozen=True)
 class ResultExplanation:
+    """Present a query's value, cases, evidence and unresolved obligations."""
+
     conclusion: object
     route: str | None
     established: tuple[str, ...] = ()
@@ -29,6 +31,8 @@ class ResultExplanation:
 
 
 def explain(value):
+    """Present a property's value, guarded cases and evidence in a common view."""
+
     d = as_detailed_result(value)
     established = []
     unresolved = []

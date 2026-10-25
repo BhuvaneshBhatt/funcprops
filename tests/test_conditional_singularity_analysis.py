@@ -85,7 +85,7 @@ def test_nested_branchcuts_keep_outer_and_inner_loci():
     assert any(c.has(1 - z) for c in cuts)
 
 
-def test_principal_log_is_analytic_on_natural_domain_but_not_meromorphic():
+def test_principal_log_domain():
     z = sp.Symbol("z")
     assert analytic(sp.log(z), z, domain=sp.S.Complexes) == Analyticity.ANALYTIC
     assert meromorphic(sp.log(z), z) == Meromorphicity.NOT_MEROMORPHIC
@@ -146,7 +146,7 @@ def test_piecewise_step_discontinuity_is_found():
     assert continuous(expr, x) == Continuity.DISCONTINUOUS
 
 
-def test_continuous_piecewise_boundary_is_not_reported_as_discontinuity():
+def test_continuous_piecewise_seam():
     x = sp.Symbol("x", real=True)
     expr = sp.Piecewise((-x, x < 0), (x, True))
     assert discontinuities(expr, x) is sp.S.false
@@ -160,7 +160,7 @@ def test_multivariate_condition_preserves_domain_dimension():
     assert result.domain == sp.And(x > 0, y > 0)
 
 
-def test_piecewise_boundary_does_not_treat_unproved_equality_as_continuity():
+def test_unresolved_seam_equality():
     from funcprops.singularities import _piecewise_discontinuous_at
 
     x = sp.Symbol("x", real=True)

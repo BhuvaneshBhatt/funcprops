@@ -16,6 +16,8 @@ _REL = (sp.Eq, sp.Ne, sp.Lt, sp.Le, sp.Gt, sp.Ge)
 
 @dataclass(frozen=True)
 class UnivariateReductionResult:
+    """Retain a reduced univariate condition and its exactness obligations."""
+
     condition: object
     complete: bool
     cells: tuple[sp.Set, ...] = ()

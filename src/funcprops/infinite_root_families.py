@@ -7,10 +7,13 @@ from dataclasses import dataclass
 import sympy as sp
 
 from .exactness import certify_identity_equal
+from .source_syntax import differentiate
 
 
 @dataclass(frozen=True)
 class IndexedRootFamily:
+    """Describe a root formula, index set, multiplicities and support premises."""
+
     expression: sp.Expr
     variable: sp.Symbol
     formula: sp.Expr
@@ -22,12 +25,20 @@ class IndexedRootFamily:
     multiplicity: int = 1
 
     def verify(self):
-        if not self.complete or self.multiplicity < 1:
+        """Return whether the record satisfies its declared replay obligations."""
+
+        if (
+            not self.complete
+            or self.multiplicity < 1
+            or self.index_domain is not sp.S.Integers
+            or self.index.is_integer is not True
+            or self.formula.is_real is not True
+        ):
             return False
         x = self.variable
         if certify_identity_equal(self.expression.subs(x, self.formula), 0) is not True:
             return False
-        d = sp.diff(self.expression, x).subs(x, self.formula)
+        d = differentiate(self.expression, x).subs(x, self.formula)
         if self.simple and sp.simplify(d).is_zero is not False:
             return False
         return True
@@ -56,17 +67,26 @@ class IndexedRootFamily:
 
 def _affine_arg(f, x):
     arg = sp.expand(f.args[0])
-    a = sp.simplify(sp.diff(arg, x))
+    a = sp.simplify(differentiate(arg, x))
     b = sp.simplify(arg - a * x)
-    if a.has(x) or a.is_zero is not False or a.is_real is not True:
+    if (
+        a.has(x)
+        or a.is_zero is not False
+        or a.is_real is not True
+        or b.is_real is not True
+    ):
         return None
     return a, b
 
 
 def affine_trig_root_family(expr, var):
+    """Construct an exhaustive affine sine, cosine or tangent zero family."""
+
     f = sp.sympify(expr)
     x = sp.sympify(var)
     n = sp.Symbol("n", integer=True)
+    if f.has(n):
+        n = sp.Dummy("n", integer=True)
     if f.func not in (sp.sin, sp.cos, sp.tan):
         return None
     ab = _affine_arg(f, x)
@@ -85,10 +105,14 @@ def affine_trig_root_family(expr, var):
 
 
 def affine_sine_root_family(expr, var):
+    """Construct a guarded indexed zero family for an affine sine argument."""
+
     fam = affine_trig_root_family(expr, var)
     return fam if fam and fam.expression.func is sp.sin else None
 
 
 def structured_zero_geometry(expr, var):
+    """Return supported indexed zero geometry for a structured expression."""
+
     fam = affine_trig_root_family(expr, var)
     return None if fam is None else fam.to_zero_geometry()

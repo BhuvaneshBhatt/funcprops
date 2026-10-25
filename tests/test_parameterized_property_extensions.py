@@ -28,11 +28,11 @@ def test_guarded_special_facts():
 def test_global_minimum_nonconstant_second_derivative():
     x = sp.symbols("x", real=True)
     c = certify_global_minimum(x**4 + x**2, x)
-    assert c is not None and c.point == 0 and c.unique and c.verify()
+    assert c.point == 0 and c.unique and c.verify()
 
 
 def test_polynomial_transition_locus():
     x, a, b = sp.symbols("x a b", real=True)
     c = polynomial_transition_locus(x**3 + a * x + b, x)
-    assert c is not None and c.verify()
+    assert c.verify()
     assert sp.simplify(c.locus / (-4 * a**3 - 27 * b**2)) in (1, -1)

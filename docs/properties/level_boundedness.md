@@ -8,11 +8,19 @@ A function is level-bounded when every sublevel set is bounded; on Euclidean spa
 
 ## API and return values
 
-```python
+```text
 level_boundedness(expr, variables, *, domain=Reals, assumptions=True, return_result=False)
 ```
 
 TruthValue.TRUE, FALSE, or UNKNOWN by default; return_result=True returns the level-boundedness certificate and evidence.
+
+| Parameter | Meaning |
+| --- | --- |
+| `expr` | SymPy expression whose global property is queried. |
+| `variables` | Independent symbol or ordered variable sequence for multivariate geometry. |
+| `domain` | Input domain or logical condition. The default depends on the property family. |
+| `assumptions` | Symbolic hypotheses used while proving the property. |
+| `return_result` | Return structured metadata, certificates, or diagnostics. |
 
 ## Domains, assumptions, and parameters
 
@@ -30,7 +38,7 @@ import funcprops as fp
 
 x, y = sp.symbols("x y", real=True)
 result = fp.level_boundedness(x**4 - x, x)
-result
+assert result is fp.TruthValue.TRUE
 ```
 
 Expected: a verified level-boundedness certificate.
@@ -39,7 +47,7 @@ Application: Prove bounded sublevel sets without numerical optimization.
 
 ## Applications
 
-This property is useful whenever later mathematics depends on a global qualitative fact, not isolated samples. Typical uses include symbolic preprocessing, theorem-hypothesis verification, optimization, inverse problems, robust numerical method selection, and simplifying downstream case analysis.
+Use the executable level boundedness examples to check the corresponding source, domain and branch premises before consuming the result in a larger analysis.
 
 ## How funcprops proves it
 
@@ -61,4 +69,4 @@ The proof engine uses sufficient structural implications and does not claim a co
 
 ## Source
 
-The implementation is exposed through [`funcprops.api`](https://github.com/BhuvaneshBhatt/funcprops/blob/main/src/funcprops/api.py).
+The callable is exported through funcprops; its implementation module is [`funcprops.geometry`](https://github.com/BhuvaneshBhatt/funcprops/blob/main/src/funcprops/geometry.py).

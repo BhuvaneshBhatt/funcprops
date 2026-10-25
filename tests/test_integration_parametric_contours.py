@@ -83,7 +83,7 @@ def test_general_analytic_adaptive_interval_taylor():
     )
     assert r.complete and r.certified
     assert r.method == "parametric-analytic-taylor"
-    assert r.error_bound is not None and float(r.error_bound) <= 1e-8
+    assert float(r.error_bound) <= 1e-8
 
 
 def test_generic_certificate_replay():

@@ -21,7 +21,7 @@ def test_airy_ordering_theorem_is_exact_and_derived():
     assert "Airy energy" in t.proof
 
 
-def test_airy_envelope_collapses_to_first_two_extrema_on_negative_halfline():
+def test_airy_extremum_envelope():
     r = symbolic_extremum_range(sp.airyai(x), x, sp.Interval(-sp.oo, 0))
     assert isinstance(r, ExtremumRange) and r.complete
     assert r.lower.func is sp.airyai and isinstance(r.lower.args[0], IndexedZero)
@@ -58,9 +58,8 @@ def test_bessel_j_positive_order_first_two_extrema_dominate():
 
 def test_range_collapses_j0_envelope():
     r = range(sp.besselj(0, x), x, y, constraints=x > 0)
-    if isinstance(r, ExtremumRange):
-        assert r.as_condition(y) is not None
-        assert r.upper == 1 and r.upper_attained is False
+    lower = sp.besselj(0, IndexedZero("BesselJ", 2, 0, 1, "positive"))
+    assert r == sp.And(y >= lower, y < 1)
 
 
 def test_bessel_y0_positive_semiaxis_first_max_dominates():

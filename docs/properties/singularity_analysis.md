@@ -8,11 +8,20 @@ Detailed singularity analysis reports analytic obstructions together with comple
 
 ## API and return values
 
-```python
+```text
 singularity_analysis(expr, variable, *, domain=Complexes, assumptions=True, ignore_unknown=False, return_result=False)
 ```
 
 A SingularityAnalysis object containing singularity groups, domain exterior, completeness, unknown heads, and provenance.
+
+| Parameter | Meaning |
+| --- | --- |
+| `expr` | SymPy expression whose global property is queried. |
+| `variable` | Independent scalar coordinate. Real and native complex routes have different assumption requirements; see result contracts. |
+| `domain` | Input domain or logical condition. The default depends on the property family. |
+| `assumptions` | Symbolic hypotheses used while proving the property. |
+| `ignore_unknown` | Allow detailed singularity analysis to omit unresolved primitive heads from completeness checks. |
+| `return_result` | Return structured metadata, certificates, or diagnostics. |
 
 ## Domains, assumptions, and parameters
 
@@ -29,8 +38,8 @@ import sympy as sp
 import funcprops as fp
 
 x, y = sp.symbols("x y", real=True)
-result = fp.singularity_analysis(1/x, x)
-result
+result = fp.singularity_analysis(1 / x, x)
+assert result.complete is True and len(result.poles) == 1 and result.unknown_heads == ()
 ```
 
 Expected: a complete analysis with one pole.
@@ -39,7 +48,7 @@ Application: Inspect completeness and provenance when a downstream proof require
 
 ## Applications
 
-This property is useful whenever later mathematics depends on a global qualitative fact, not isolated samples. Typical uses include symbolic preprocessing, theorem-hypothesis verification, optimization, inverse problems, robust numerical method selection, and simplifying downstream case analysis.
+Use the executable singularity analysis examples to check the corresponding source, domain and branch premises before consuming the result in a larger analysis.
 
 ## How funcprops proves it
 
@@ -60,4 +69,4 @@ complete=False is an explicit warning that the returned inventory is not exhaust
 
 ## Source
 
-The implementation is exposed through [`funcprops.api`](https://github.com/BhuvaneshBhatt/funcprops/blob/main/src/funcprops/api.py).
+The callable is exported through funcprops; its implementation module is [`funcprops.singularities.analysis`](https://github.com/BhuvaneshBhatt/funcprops/blob/main/src/funcprops/singularities/analysis.py).

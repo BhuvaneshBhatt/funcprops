@@ -15,7 +15,11 @@ from .sign import sign
 
 @dataclass(frozen=True)
 class ConvexityCertificate:
-    """Replayable evidence for one ordinary convexity classification."""
+    """Bind a curvature classification to its route and optional uniform modulus.
+
+    Box-Hessian records retain source/C2 and entry-bound data. Other methods
+    use their declared scalar or factory replay routes.
+    """
 
     classification: Convexity
     domain: object
@@ -58,6 +62,8 @@ def parameterized_power_convexity(expr, var, domain):
 
 
 def parameterized_exp_convexity(expr, var):
+    """Classify a supported parameterized exponential family's curvature."""
+
     if expr.func is not sp.exp:
         return None
     affine = affine_real_parameter_guard(expr.args[0], var)
@@ -81,6 +87,8 @@ def parameterized_exp_convexity(expr, var):
 
 def strong_convexity(expr, var, domain):
     """Prove strong convexity/concavity by an exact second-derivative bound."""
+    if expr.has(sp.Piecewise):
+        return None
     try:
         from ..proof_cache import cached_derivative
 
@@ -149,6 +157,8 @@ def convexity_implications(primary):
 
 
 def secondary_convexity_properties(expr, var, domain, primary):
+    """Apply supported implications for related convexity properties."""
+
     props = list(convexity_implications(primary))
     evidence = []
     # Positive f: log-convexity/concavity reduces exactly to convexity of log(f).
@@ -204,6 +214,8 @@ def _positive_domain(domain, var):
 
 
 def special_function_convexity(expr, var, domain):
+    """Apply guarded special-function convexity theorems."""
+
     condition_to_set(domain, var)
     # Gamma is positive and strictly log-convex on (0, infinity); positivity
     # plus strict log-convexity also implies strict ordinary convexity.

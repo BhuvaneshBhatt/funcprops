@@ -90,7 +90,7 @@ def test_multivariate_classification_coverage_is_complete():
             assert getattr(result, field_for_kind[record.kind]) is not sp.S.false
 
 
-def test_multivariate_classification_is_symmetric_under_variable_exchange():
+def test_classification_coordinate_exchange():
     x, y = sp.symbols("x y")
     expressions = (
         sp.sin(x + 2 * y) / (x + 2 * y),
@@ -153,7 +153,7 @@ def test_joint_registry_transport_preserves_two_argument_geometry():
     assert dummy_names == set()
 
 
-def test_joint_registry_transport_preserves_real_definition_cut_guards():
+def test_joint_definition_cut_guards():
     x, y = sp.symbols("x y", real=True)
     result = fp.singularities(
         sp.elliptic_e(x, y), (x, y), sp.S.Reals, return_result=True

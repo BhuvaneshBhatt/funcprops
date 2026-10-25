@@ -9,6 +9,8 @@ from .theorem_registry import matching_theorem
 
 @dataclass(frozen=True)
 class TheoremFact:
+    """Pair a derived property with the theorem and guard establishing it."""
+
     property: str
     value: object
     source: str = "given"
@@ -16,6 +18,8 @@ class TheoremFact:
 
 
 def close_theorems(facts):
+    """Close guarded theorem facts under supported implication rules."""
+
     out = {(f.property, f.value): f for f in facts}
     changed = True
     while changed:

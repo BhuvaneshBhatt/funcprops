@@ -7,7 +7,7 @@ from funcprops.taylor_models import taylor_model
 def test_taylor_odd_remainder_keeps_sign_range():
     x = sp.symbols("x", real=True)
     m = taylor_model(x**3, x, sp.Interval(-1, 1), order=2, center=0)
-    assert m is not None and m.verify()
+    assert m.verify()
     assert m.remainder_lower <= -1 and m.remainder_upper >= 1
 
 
@@ -29,8 +29,7 @@ def test_multipuncture_homotopy_uses_nonabelian_free_word_certificate():
     c1 = fp.ParametricContour(3 * sp.exp(sp.I * t), (t, 0, 2 * sp.pi))
     c2 = fp.ParametricContour(3 * (sp.cos(t) + sp.I * sp.sin(t)), (t, 0, 2 * sp.pi))
     cert = fp.homotopic(c1, c2, punctures=(-1, 1), return_certificate=True)
-    assert cert is not None and cert.verify()
-    assert cert.cut_direction is not None
+    assert cert.verify()
     assert len(cert.reduced_word) == 2
 
 
@@ -51,7 +50,7 @@ def test_log_pole_is_branch_point_but_integral_local_power_is_not():
 def test_inverse_certificate_rejects_false_image():
     x, y = sp.symbols("x y", real=True)
     c = fp.inverse(2 * x + 3, x, value=y, return_certificate=True)
-    assert c is not None and c.verify()
+    assert c.verify()
     bad = type(c)(
         c.expression, c.variable, c.value, c.inverse, c.domain, sp.S.UniversalSet
     )

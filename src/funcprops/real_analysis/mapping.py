@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from builtins import range as builtin_range
+from dataclasses import replace
 
 import sympy as sp
 from sympy import S
@@ -8,7 +9,9 @@ from sympy import S
 from .. import _semialg
 from ..exactness import certify_identity_equal, certify_zero
 from ..exceptions import SYMBOLIC_QUERY_ERRORS
+from ..proof_cache import cached_domain_record
 from ..results import ConditionalExpression, Monotonicity, PropertyResult, TruthValue
+from ..source_syntax import differentiate
 from ..stratification import (
     combine_truth_results,
     exact_set_equal,
@@ -20,12 +23,14 @@ from .common import (
     combine_domain_condition,
     condition_to_set,
     is_semialgebraic_condition,
-    is_semialgebraic_expression,
     normalize_variables,
+    original_definition_guard,
+    set_to_condition,
 )
 from .domain import domain as _domain
 from .monotonic_certificates import (
     injectivity_from_partition,
+    matching_partition,
     monotonic_partition,
 )
 from .monotonicity import monotonicity
@@ -33,15 +38,15 @@ from .range import range
 
 
 def _combined_domain(expr, var, domain):
+    record = cached_domain_record(expr, var, domain)
+    if record.complete:
+        return set_to_condition(record.effective, var)
     return combine_domain_condition(_domain(expr, var), domain, var)
 
 
 def _semialg_mapping_result(expr, var, domain, *, codomain=True):
     """Return semialg mapping metadata when the whole problem is semialgebraic."""
-    if not (
-        is_semialgebraic_expression(expr, var)
-        and is_semialgebraic_condition(domain, var)
-    ):
+    if not (_semialg.eligible_problem(expr, var, domain=domain)):
         return None
     # semialg's mapping-properties query is currently nonparametric. Preserve
     # funcprops' guarded parameter strata
@@ -82,13 +87,25 @@ def _domain_at_most_one_point(dom, var):
     return False
 
 
+def _constant_injectivity(dom, var):
+    ds = condition_to_set(dom, var)
+    if ds is S.EmptySet or (isinstance(ds, sp.FiniteSet) and len(ds) <= 1):
+        return TruthValue.TRUE
+    if isinstance(ds, sp.Interval) and ds.measure.is_extended_positive is True:
+        return TruthValue.FALSE
+    if isinstance(ds, sp.FiniteSet):
+        points = tuple(ds)
+        for i, p in enumerate(points):
+            if any(certify_zero(p - q) is False for q in points[:i]):
+                return TruthValue.FALSE
+    return TruthValue.UNKNOWN
+
+
 def _injectivity_from_monotonicity(m, dom, var):
     if m in (Monotonicity.STRICTLY_INCREASING, Monotonicity.STRICTLY_DECREASING):
         return TruthValue.TRUE
     if m is Monotonicity.CONSTANT:
-        return (
-            TruthValue.TRUE if _domain_at_most_one_point(dom, var) else TruthValue.FALSE
-        )
+        return _constant_injectivity(dom, var)
     return TruthValue.UNKNOWN
 
 
@@ -109,7 +126,7 @@ def _multivariate_affine_map(expr, variables):
     offsets = []
     for f in outs:
         try:
-            row = [sp.simplify(sp.diff(f, v)) for v in vv]
+            row = [sp.simplify(differentiate(f, v)) for v in vv]
             if any(a.has(*vv) for a in row):
                 return None
             b = sp.simplify(f - sum(a * v for a, v in zip(row, vv, strict=False)))
@@ -163,24 +180,74 @@ def _multivariate_mapping_truth(
 ):
     # Exact support currently covers the natural full-real affine map. More
     # complicated restricted multivariate domains must not be guessed.
+    """Apply supported multivariate mapping theorems with realness and rank premises."""
+
     if domain not in (True, None, S.true, S.Reals):
+        return TruthValue.UNKNOWN
+    # Float arithmetic can round a nonzero determinant to zero (or vice versa).
+    # This exact theorem does not infer rank from approximate coefficients.
+    source_values = (
+        tuple(expr)
+        if isinstance(expr, (tuple, list, sp.Tuple, sp.MatrixBase))
+        else (sp.sympify(expr),)
+    )
+    if any(sp.sympify(value).has(sp.Float) for value in source_values):
+        return TruthValue.UNKNOWN
+    definition = original_definition_guard(expr, variables)
+    if definition is None or definition is S.false:
         return TruthValue.UNKNOWN
     aff = _multivariate_affine_map(expr, variables)
     if aff is None:
         return TruthValue.UNKNOWN
-    A, _ = aff
+    A, offset = aff
+    reality = sp.And(
+        definition,
+        *(
+            S.true
+            if value.is_real is True and value.is_finite is True
+            else S.false
+            if value.is_real is False or value.is_finite is False
+            else sp.Q.real(value)
+            for value in (*A, *offset)
+        ),
+    )
+    if reality is S.false:
+        return TruthValue.UNKNOWN
     m, n = A.shape
     if mode == "injective":
-        return _rank_truth_result(A, n, source="affine-rank-injectivity")
-    if mode == "surjective":
+        result = _rank_truth_result(A, n, source="affine-rank-injectivity")
+    elif mode == "surjective":
         if codomain not in (S.Reals, True, None):
             return TruthValue.UNKNOWN
-        return _rank_truth_result(A, m, source="affine-rank-surjectivity")
-    if mode == "bijective":
-        if m != n:
-            return TruthValue.FALSE
-        return _rank_truth_result(A, n, source="affine-rank-bijectivity")
-    return TruthValue.UNKNOWN
+        result = _rank_truth_result(A, m, source="affine-rank-surjectivity")
+    elif mode == "bijective":
+        if codomain not in (S.Reals, True, None):
+            return TruthValue.UNKNOWN
+        result = (
+            TruthValue.FALSE
+            if m != n
+            else _rank_truth_result(A, n, source="affine-rank-bijectivity")
+        )
+    else:
+        return TruthValue.UNKNOWN
+    if reality is S.true:
+        return (
+            replace(result, complete=True, certified=True)
+            if isinstance(result, PropertyResult)
+            else result
+        )
+    guarded = guarded_result(result, reality, source="real-affine-rank")
+    return replace(
+        normalize_cases(
+            (
+                *guarded.cases,
+                ConditionalExpression(TruthValue.UNKNOWN, sp.Not(reality)),
+            ),
+            source="real-affine-rank",
+        ),
+        complete=False,
+        certified=True,
+    )
 
 
 def _affine_output_transform(expr, var):
@@ -194,27 +261,36 @@ def _affine_output_transform(expr, var):
     return sp.simplify(scale), inner, sp.simplify(offset)
 
 
+def _real_on_support(inner, var, domain):
+    if inner.is_real is True:
+        return True
+    try:
+        support = condition_to_set(domain, var)
+        real_support = condition_to_set(_domain(inner, var), var)
+        return (
+            support is not None
+            and real_support is not None
+            and support.is_subset(real_support) is True
+        )
+    except SYMBOLIC_QUERY_ERRORS:
+        return False
+
+
 def _injective_structural_closure(expr, var, domain, partition):
     """Apply exact injectivity-preserving composition and affine-output rules."""
     transform = _affine_output_transform(expr, var)
     if transform is not None:
         scale, inner, _ = transform
+        if not _real_on_support(inner, var, domain):
+            return TruthValue.UNKNOWN
         scale_zero = certify_zero(scale)
         if scale_zero is False:
             return injective(inner, var, domain=domain, partition=partition)
         if scale_zero is True:
-            return (
-                TruthValue.TRUE
-                if _domain_at_most_one_point(domain, var)
-                else TruthValue.FALSE
-            )
+            return _constant_injectivity(domain, var)
         if scale.free_symbols:
             nonzero = injective(inner, var, domain=domain, partition=partition)
-            zero = (
-                TruthValue.TRUE
-                if _domain_at_most_one_point(domain, var)
-                else TruthValue.FALSE
-            )
+            zero = _constant_injectivity(domain, var)
             nz = guarded_result(
                 nonzero, sp.Ne(scale, 0), source="affine-output-injectivity"
             )
@@ -232,8 +308,40 @@ def _injective_structural_closure(expr, var, domain, partition):
     ):
         inner = expr.args[0]
         if inner != var and inner.has(var):
-            return injective(inner, var, domain=domain, partition=partition)
+            if _real_on_support(inner, var, domain):
+                return injective(inner, var, domain=domain, partition=partition)
     return TruthValue.UNKNOWN
+
+
+def _finite_injectivity(expr, var, support):
+    points = []
+    natural = _domain(expr, var)
+    if hasattr(natural, "primary"):
+        return TruthValue.UNKNOWN
+    for point in support:
+        if point.is_real is not True or point.is_finite is not True:
+            return TruthValue.UNKNOWN
+        guard = sp.simplify(natural.subs(var, point))
+        if guard is S.false:
+            continue
+        if guard is not S.true:
+            return TruthValue.UNKNOWN
+        value = sp.simplify(expr.subs(var, point))
+        if value.is_real is not True or value.is_finite is not True:
+            return TruthValue.UNKNOWN
+        points.append((point, value))
+    unknown = False
+    for i, (point, value) in enumerate(points):
+        for other, output in points[:i]:
+            if certify_zero(point - other) is not False:
+                unknown = True
+                continue
+            equal = certify_zero(value - output)
+            if equal is True:
+                return TruthValue.FALSE
+            if equal is not False:
+                unknown = True
+    return TruthValue.UNKNOWN if unknown else TruthValue.TRUE
 
 
 def injective(expr, var, *, domain=True, partition=None):
@@ -248,6 +356,9 @@ def injective(expr, var, *, domain=True, partition=None):
         return _multivariate_mapping_truth(expr, vv, mode="injective", domain=domain)
     expr = sp.sympify(expr)
     var = vv[0]
+    requested = condition_to_set(domain, var)
+    if requested is S.EmptySet or isinstance(requested, sp.FiniteSet):
+        return _finite_injectivity(expr, var, requested)
     dom = _combined_domain(expr, var, domain)
     backend = _semialg_mapping_result(expr, var, dom)
     if backend is not None and backend.injective is not None:
@@ -271,22 +382,16 @@ def injective(expr, var, *, domain=True, partition=None):
         if direct is not TruthValue.UNKNOWN:
             return direct
 
-    # Reuse the exact monotonic partition
-    # again.  Same-direction strict cells cover stationary inflections; a
-    # certified direction reversal gives an exact noninjectivity proof.
-    part = (
-        partition
-        if partition is not None
-        and getattr(partition, "domain", None) == condition_to_set(dom, var)
-        else monotonic_partition(expr, var, domain=dom, return_result=True)
-    )
+    # Strict cells need ordered images across gaps; a continuous direction
+    # reversal instead supplies an exact collision witness.
+    part = matching_partition(partition, expr, var, condition_to_set(dom, var))
+    if part is None:
+        part = monotonic_partition(expr, var, domain=dom, return_result=True)
     pv = injectivity_from_partition(part)
     if pv is not TruthValue.UNKNOWN:
         return pv
     if not expr.has(var):
-        return (
-            TruthValue.TRUE if _domain_at_most_one_point(dom, var) else TruthValue.FALSE
-        )
+        return _constant_injectivity(dom, var)
 
     # Periodicity is an exact disproof only when the requested interval contains
     # a pair x,x+p.  Merely having width == p is insufficient for a half-open
@@ -330,6 +435,8 @@ def _surjectivity_from_range(cond, y, target):
 
 
 def surjective(expr, var, *, domain=True, codomain=S.Reals):
+    """Decide surjectivity onto the requested codomain using supported image proofs."""
+
     vv = normalize_variables(var)
     if len(vv) > 1:
         return _multivariate_mapping_truth(
@@ -366,6 +473,8 @@ def surjective(expr, var, *, domain=True, codomain=S.Reals):
 
 
 def bijective(expr, var, *, domain=True, codomain=S.Reals):
+    """Combine supported injectivity and surjectivity conclusions on the requested sets."""
+
     vv = normalize_variables(var)
     if len(vv) > 1:
         return _multivariate_mapping_truth(

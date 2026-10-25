@@ -7,7 +7,7 @@ from sympy import S
 
 from .. import _semialg
 from ..engine import evaluate_property
-from ..exactness import certify_zero
+from ..exactness import certify_equal, certify_zero
 from ..exceptions import SYMBOLIC_QUERY_ERRORS
 from ..results import ConditionalExpression, Monotonicity, PropertyResult, Sign
 from ..stratification import (
@@ -19,10 +19,12 @@ from .common import (
     affine_real_parameter_guard,
     combine_domain_condition,
     condition_to_set,
+    exact_order_real_points,
     is_full_natural_domain,
 )
 from .domain import domain as _domain
 from .monotonic_certificates import (
+    matching_partition,
     monotonic_decomposition,
     monotonic_partition,
     quick_nonmonotonicity_witness,
@@ -212,12 +214,22 @@ def _closure_monotonicity(expr, var, domain):
 
 def _piecewise_monotonicity(expr, var, domain):
     """Classify effective branches and certify ordering through every seam."""
+    if expr.has(sp.Piecewise):
+        expr = sp.piecewise_fold(expr)
     if not isinstance(expr, sp.Piecewise):
         return Monotonicity.UNKNOWN
     decomp = piecewise_decomposition(expr, var, domain)
     branches = decomp.branches
     if not branches:
         return Monotonicity.UNKNOWN
+    if len(branches) == 1 and decomp.complete:
+        return monotonicity(branches[0].expression, var, domain=branches[0].condition)
+    support = condition_to_set(domain, var)
+    if not isinstance(support, sp.Interval):
+        witness = quick_nonmonotonicity_witness(expr, var, support)
+        return (
+            Monotonicity.NOT_MONOTONE if witness is not None else Monotonicity.UNKNOWN
+        )
     values = [
         monotonicity(b.expression, var, domain=b.condition)
         for b in branches
@@ -231,6 +243,34 @@ def _piecewise_monotonicity(expr, var, domain):
     if not decomp.complete:
         return direction if len(branches) == 1 else Monotonicity.UNKNOWN
     seams = certify_piecewise_boundaries(decomp, max_order=0)
+    if direction is Monotonicity.CONSTANT:
+        if not seams:
+            return Monotonicity.UNKNOWN
+        jumps = []
+        for seam in seams:
+            if (
+                seam.left_limit is None
+                or seam.right_limit is None
+                or seam.value is None
+            ):
+                return Monotonicity.UNKNOWN
+            jumps.extend(
+                (
+                    sp.simplify(seam.value - seam.left_limit),
+                    sp.simplify(seam.right_limit - seam.value),
+                )
+            )
+        if all(certify_equal(jump, 0) is True for jump in jumps):
+            return Monotonicity.CONSTANT
+        if all(jump.is_nonnegative is True for jump in jumps):
+            return Monotonicity.NONDECREASING
+        if all(jump.is_nonpositive is True for jump in jumps):
+            return Monotonicity.NONINCREASING
+        if any(jump.is_positive is True for jump in jumps) and any(
+            jump.is_negative is True for jump in jumps
+        ):
+            return Monotonicity.NOT_MONOTONE
+        return Monotonicity.UNKNOWN
     for seam in seams:
         if seam.left_limit is None or seam.right_limit is None or seam.value is None:
             return Monotonicity.UNKNOWN
@@ -298,7 +338,7 @@ def _semialgebraic_monotonicity_stage(
 ):
     """Run the exact semialgebraic monotonicity stage, if eligible.
 
-    Interval requests deliberately continue to funcprops' shared partition
+    Interval requests continue to funcprops' shared partition
     engine because callers rely on its boundary/zero-geometry certificates.
     """
     if intervals or not _semialg.eligible_problem(expr, var, domain=assumptions):
@@ -328,6 +368,37 @@ def _monotonicity_output(value, *, intervals, return_result, source=None, eviden
     return value
 
 
+def _finite_monotonicity(expr, var, support):
+    if support is S.EmptySet:
+        return Monotonicity.CONSTANT, ()
+    points = exact_order_real_points(support)
+    if points is None:
+        return Monotonicity.UNKNOWN, ()
+    values = tuple(sp.simplify(expr.subs(var, p)) for p in points)
+    if any(v.is_real is not True or v.is_finite is not True for v in values):
+        return Monotonicity.UNKNOWN, ()
+    differences = tuple(
+        sp.simplify(values[i + 1] - v) for i, v in enumerate(values[:-1])
+    )
+    if all(d.is_zero is True for d in differences):
+        value = Monotonicity.CONSTANT
+    elif all(d.is_positive is True for d in differences):
+        value = Monotonicity.STRICTLY_INCREASING
+    elif all(d.is_negative is True for d in differences):
+        value = Monotonicity.STRICTLY_DECREASING
+    elif all(d.is_nonnegative is True for d in differences):
+        value = Monotonicity.NONDECREASING
+    elif all(d.is_nonpositive is True for d in differences):
+        value = Monotonicity.NONINCREASING
+    elif any(d.is_positive is True for d in differences) and any(
+        d.is_negative is True for d in differences
+    ):
+        value = Monotonicity.NOT_MONOTONE
+    else:
+        value = Monotonicity.UNKNOWN
+    return value, (points, values)
+
+
 def _monotonicity_theorem_stage(
     expr,
     var,
@@ -341,6 +412,8 @@ def _monotonicity_theorem_stage(
     return_result,
     partition,
 ):
+    """Apply guarded monotonicity theorems whose source-domain premises are proved."""
+
     strata = _parameter_strata(expr, var, assumptions)
     if strata is not None:
         return strata
@@ -352,6 +425,13 @@ def _monotonicity_theorem_stage(
             intervals=intervals,
             return_result=return_result,
             source="piecewise-analysis",
+        )
+    if expr.has(sp.Piecewise):
+        return _monotonicity_output(
+            Monotonicity.UNKNOWN,
+            intervals=intervals,
+            return_result=return_result,
+            source="unproved-piecewise-seams",
         )
 
     try:
@@ -385,14 +465,11 @@ def _monotonicity_theorem_stage(
         result = _direct_registry(expr, var)
         if result is not Monotonicity.UNKNOWN:
             if intervals or return_result:
-                part = (
-                    partition
-                    if partition is not None
-                    and getattr(partition, "domain", None) == geometry_domain
-                    else monotonic_partition(
+                part = matching_partition(partition, expr, var, geometry_domain)
+                if part is None:
+                    part = monotonic_partition(
                         expr, var, domain=geometry_domain, return_result=True
                     )
-                )
                 evidence = (
                     (part.property_decomposition,)
                     if part.property_decomposition is not None
@@ -434,6 +511,10 @@ def _monotonicity_theorem_stage(
 def _monotonicity_fallback_stage(
     expr, var, *, assumptions, geometry_domain, intervals, return_result, partition
 ):
+    """Combine supported derivative partitions and structural order proofs on the effective domain."""
+
+    connected = isinstance(geometry_domain, sp.Interval)
+
     def finish(value, source=None, evidence=()):
         return _monotonicity_output(
             value,
@@ -479,6 +560,10 @@ def _monotonicity_fallback_stage(
         return finish(m, "composition")
 
     def from_sign(v):
+        # Derivative signs prove order only on a connected interval. A function
+        # can decrease on every component and jump upward across a missing pole.
+        if not connected:
+            return Monotonicity.UNKNOWN
         if v is Sign.POSITIVE:
             return Monotonicity.STRICTLY_INCREASING
         if v is Sign.NEGATIVE:
@@ -520,16 +605,14 @@ def _monotonicity_fallback_stage(
         if not part.complete:
             return None
         if part.cells:
+            same = part.same_strict_direction()
+            if same is not None:
+                return finish(same, "monotonic-partition", ev)
             dirs = {c.direction for c in part.cells}
-            if dirs == {Monotonicity.STRICTLY_INCREASING}:
-                return finish(
-                    Monotonicity.STRICTLY_INCREASING, "monotonic-partition", ev
-                )
-            if dirs == {Monotonicity.STRICTLY_DECREASING}:
-                return finish(
-                    Monotonicity.STRICTLY_DECREASING, "monotonic-partition", ev
-                )
-            if len(dirs) > 1:
+            if {
+                Monotonicity.STRICTLY_INCREASING,
+                Monotonicity.STRICTLY_DECREASING,
+            }.issubset(dirs):
                 return finish(Monotonicity.NOT_MONOTONE, "monotonic-partition", ev)
         return None
 
@@ -546,12 +629,7 @@ def _monotonicity_fallback_stage(
             )
         except SYMBOLIC_QUERY_ERRORS:
             need_part = False
-    part = (
-        partition
-        if partition is not None
-        and getattr(partition, "domain", None) == geometry_domain
-        else None
-    )
+    part = matching_partition(partition, expr, var, geometry_domain)
     if need_part and part is None:
         part = monotonic_partition(
             expr, var, domain=geometry_domain, return_result=True
@@ -595,7 +673,7 @@ def _monotonicity_fallback_stage(
         )
     if derivative == 0:
         return finish(
-            Monotonicity.CONSTANT,
+            Monotonicity.CONSTANT if connected else Monotonicity.UNKNOWN,
             "zero-derivative",
             (part,) if part is not None else (),
         )
@@ -653,7 +731,7 @@ def _classify_monotonicity(
 ):
     """Classify global monotonicity on the natural/requested real domain.
 
-    Expensive critical-point decomposition is deliberately delayed until cheap
+    Expensive critical-point decomposition is delayed until cheap
     registry, closure, and composition proofs have failed.  When needed, the
     shared :func:`monotonic_partition` certificate is reused by range,
     injectivity, inverse, oscillation, and extrema consumers.
@@ -688,7 +766,16 @@ def _classify_monotonicity(
         if split is not None:
             return split
     ds = condition_to_set(assumptions, var)
-    geom_domain = ds if isinstance(ds, sp.Set) else S.Reals
+    geom_domain = ds if isinstance(ds, sp.Set) else assumptions
+    if ds is S.EmptySet or isinstance(ds, sp.FiniteSet):
+        value, evidence = _finite_monotonicity(expr, var, ds)
+        return _monotonicity_output(
+            value,
+            intervals=intervals,
+            return_result=return_result,
+            source="finite-values",
+            evidence=evidence,
+        )
 
     early = _monotonicity_theorem_stage(
         expr,

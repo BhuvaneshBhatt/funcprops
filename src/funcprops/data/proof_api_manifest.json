@@ -1,0 +1,4691 @@
+{
+  "inventory_version": 1,
+  "description": "Approximate static call graph of exported functions reaching proof-record constructors. Ordinary/unknown returns remain possible. Factory-based replay is distinct from independent witness checking. SymPy and arithmetic backends remain trusted.",
+  "records": [
+    {
+      "type": "funcprops.adaptive_roots.AdaptiveRootResult",
+      "has_verify": true,
+      "line": 144,
+      "constructor_sites": [
+        "funcprops.adaptive_roots._run",
+        "funcprops.adaptive_roots._run",
+        "funcprops.adaptive_roots._wall_result"
+      ],
+      "replay_supported": true,
+      "contract": "witness-kernel",
+      "replay_mode": "theorem-premise-check",
+      "exported_names": [
+        "AdaptiveRootResult"
+      ]
+    },
+    {
+      "type": "funcprops.adaptive_roots.CoverageState",
+      "has_verify": true,
+      "line": 51,
+      "constructor_sites": [
+        "funcprops.adaptive_roots._initial",
+        "funcprops.adaptive_roots._run",
+        "funcprops.adaptive_roots._timeout_seed"
+      ],
+      "replay_supported": true,
+      "contract": "witness-kernel",
+      "replay_mode": "theorem-premise-check",
+      "exported_names": [
+        "CoverageState"
+      ]
+    },
+    {
+      "type": "funcprops.algebraic_coefficients.AlgebraicCoefficientEncoding",
+      "has_verify": true,
+      "line": 52,
+      "constructor_sites": [
+        "funcprops.algebraic_coefficients._encoding"
+      ],
+      "replay_supported": true,
+      "contract": "witness-kernel",
+      "replay_mode": "theorem-premise-check",
+      "exported_names": [
+        "AlgebraicCoefficientEncoding"
+      ]
+    },
+    {
+      "type": "funcprops.algebraic_complex.AlgebraicComplexRootProof",
+      "has_verify": true,
+      "line": 300,
+      "constructor_sites": [
+        "funcprops.algebraic_complex.certify_algebraic_complex_roots"
+      ],
+      "replay_supported": true,
+      "contract": "backend-adapter",
+      "replay_mode": "algroots-exact-backend-replay",
+      "exported_names": [
+        "AlgebraicComplexRootProof"
+      ]
+    },
+    {
+      "type": "funcprops.analytic_contours.AnalyticComplexCoverage",
+      "has_verify": true,
+      "line": 371,
+      "constructor_sites": [
+        "funcprops.analytic_contours.analytic_complex_coverage",
+        "funcprops.work_budget.bounded_query"
+      ],
+      "replay_supported": true,
+      "contract": "witness-kernel",
+      "replay_mode": "theorem-premise-check",
+      "exported_names": [
+        "AnalyticComplexCoverage"
+      ]
+    },
+    {
+      "type": "funcprops.analytic_contours.AnalyticContourCertificate",
+      "has_verify": true,
+      "line": 106,
+      "constructor_sites": [
+        "funcprops.analytic_contours._seed"
+      ],
+      "replay_supported": true,
+      "contract": "witness-kernel",
+      "replay_mode": "theorem-premise-check",
+      "exported_names": [
+        "AnalyticContourCertificate"
+      ]
+    },
+    {
+      "type": "funcprops.analytic_contours.ComplexBoxWitness",
+      "has_verify": true,
+      "line": 59,
+      "constructor_sites": [
+        "funcprops.analytic_contours.certify_analytic_contour",
+        "funcprops.complex_newton._propose_refinement",
+        "funcprops.complex_multiplicity._unit_witness",
+        "funcprops.branch_atlas.certify_log_atlas"
+      ],
+      "replay_supported": true,
+      "contract": "witness-kernel",
+      "replay_mode": "theorem-premise-check",
+      "exported_names": [
+        "ComplexBoxWitness"
+      ]
+    },
+    {
+      "type": "funcprops.assumptions.PropertyDecision",
+      "has_verify": false,
+      "line": 35,
+      "constructor_sites": [
+        "funcprops.assumptions.decide"
+      ],
+      "replay_supported": false,
+      "contract": "factory-certificate",
+      "replay_mode": "unsupported-unified-replay",
+      "exported_names": [
+        "PropertyDecision"
+      ]
+    },
+    {
+      "type": "funcprops.asymptotic_tails.TailSignCertificate",
+      "has_verify": true,
+      "line": 85,
+      "constructor_sites": [
+        "funcprops.asymptotic_tails.certify_tail_sign",
+        "funcprops.asymptotic_tails.certify_tail_sign",
+        "funcprops.asymptotic_tails.certify_tail_sign"
+      ],
+      "replay_supported": true,
+      "contract": "factory-certificate",
+      "replay_mode": "declared-backend-replay",
+      "exported_names": [
+        "TailSignCertificate"
+      ]
+    },
+    {
+      "type": "funcprops.branch_atlas.GluedPowerProof",
+      "has_verify": true,
+      "line": 240,
+      "constructor_sites": [],
+      "replay_supported": true,
+      "contract": "witness-kernel",
+      "replay_mode": "theorem-premise-check",
+      "exported_names": [
+        "GluedPowerProof"
+      ]
+    },
+    {
+      "type": "funcprops.branch_atlas.LogAtlasProof",
+      "has_verify": true,
+      "line": 144,
+      "constructor_sites": [
+        "funcprops.branch_atlas.glue_log_charts",
+        "funcprops.branch_atlas.certify_log_atlas"
+      ],
+      "replay_supported": true,
+      "contract": "witness-kernel",
+      "replay_mode": "theorem-premise-check",
+      "exported_names": [
+        "LogAtlasProof"
+      ]
+    },
+    {
+      "type": "funcprops.branch_atlas.LogBranchChart",
+      "has_verify": true,
+      "line": null,
+      "constructor_sites": [
+        "funcprops.branch_atlas.certify_log_atlas"
+      ],
+      "replay_supported": true,
+      "contract": "witness-kernel",
+      "replay_mode": "theorem-premise-check",
+      "exported_names": [
+        "LogBranchChart"
+      ]
+    },
+    {
+      "type": "funcprops.branch_atlas._Replay",
+      "has_verify": true,
+      "line": 61,
+      "constructor_sites": [],
+      "replay_supported": false,
+      "contract": "witness-kernel",
+      "replay_mode": "unsupported-unified-replay",
+      "exported_names": []
+    },
+    {
+      "type": "funcprops.branch_gluing.BranchGluingProof",
+      "has_verify": true,
+      "line": 260,
+      "constructor_sites": [
+        "funcprops.branch_gluing.glue_branch_charts"
+      ],
+      "replay_supported": true,
+      "contract": "witness-kernel",
+      "replay_mode": "theorem-premise-check",
+      "exported_names": [
+        "BranchGluingProof"
+      ]
+    },
+    {
+      "type": "funcprops.branch_gluing.BranchOverlapProof",
+      "has_verify": false,
+      "line": 214,
+      "constructor_sites": [
+        "funcprops.branch_gluing.glue_branch_charts",
+        "funcprops.branch_gluing.glue_branch_charts",
+        "funcprops.branch_gluing.glue_branch_charts",
+        "funcprops.branch_gluing.glue_branch_charts"
+      ],
+      "replay_supported": false,
+      "contract": "witness-kernel",
+      "replay_mode": "unsupported-unified-replay",
+      "exported_names": [
+        "BranchOverlapProof"
+      ]
+    },
+    {
+      "type": "funcprops.branch_gluing.HolomorphicBranchChart",
+      "has_verify": true,
+      "line": 84,
+      "constructor_sites": [
+        "funcprops.branch_gluing.certify_branch_chart"
+      ],
+      "replay_supported": true,
+      "contract": "witness-kernel",
+      "replay_mode": "theorem-premise-check",
+      "exported_names": [
+        "HolomorphicBranchChart"
+      ]
+    },
+    {
+      "type": "funcprops.certified_balls.RealBallCertificate",
+      "has_verify": true,
+      "line": 13,
+      "constructor_sites": [
+        "funcprops.certified_balls._real_ball_once"
+      ],
+      "replay_supported": true,
+      "contract": "factory-certificate",
+      "replay_mode": "declared-backend-replay",
+      "exported_names": [
+        "RealBallCertificate"
+      ]
+    },
+    {
+      "type": "funcprops.certified_inequalities.InequalityCertificate",
+      "has_verify": true,
+      "line": 79,
+      "constructor_sites": [
+        "funcprops.certified_inequalities.certify_inequality"
+      ],
+      "replay_supported": true,
+      "contract": "factory-certificate",
+      "replay_mode": "declared-backend-replay",
+      "exported_names": [
+        "InequalityCertificate"
+      ]
+    },
+    {
+      "type": "funcprops.certified_inequalities._FiniteSignCertificate",
+      "has_verify": true,
+      "line": 49,
+      "constructor_sites": [
+        "funcprops.certified_inequalities.certify_inequality"
+      ],
+      "replay_supported": false,
+      "contract": "factory-certificate",
+      "replay_mode": "unsupported-unified-replay",
+      "exported_names": []
+    },
+    {
+      "type": "funcprops.certified_operations.ArgumentPrincipleResult",
+      "has_verify": true,
+      "line": 607,
+      "constructor_sites": [
+        "funcprops.certified_operations.argument_principle"
+      ],
+      "replay_supported": true,
+      "contract": "factory-certificate",
+      "replay_mode": "declared-backend-replay",
+      "exported_names": [
+        "ArgumentPrincipleResult"
+      ]
+    },
+    {
+      "type": "funcprops.certified_operations.ContinuationCertificate",
+      "has_verify": true,
+      "line": 974,
+      "constructor_sites": [
+        "funcprops.certified_operations.analytic_continue"
+      ],
+      "replay_supported": true,
+      "contract": "factory-certificate",
+      "replay_mode": "declared-backend-replay",
+      "exported_names": [
+        "ContinuationCertificate"
+      ]
+    },
+    {
+      "type": "funcprops.certified_operations.ContourDeformationCertificate",
+      "has_verify": true,
+      "line": 1267,
+      "constructor_sites": [
+        "funcprops.certified_operations.deform_contour"
+      ],
+      "replay_supported": true,
+      "contract": "factory-certificate",
+      "replay_mode": "declared-backend-replay",
+      "exported_names": [
+        "ContourDeformationCertificate"
+      ]
+    },
+    {
+      "type": "funcprops.certified_operations.EquationSolutionCertificate",
+      "has_verify": true,
+      "line": 251,
+      "constructor_sites": [
+        "funcprops.certified_operations.solve"
+      ],
+      "replay_supported": true,
+      "contract": "factory-certificate",
+      "replay_mode": "declared-backend-replay",
+      "exported_names": [
+        "EquationSolutionCertificate"
+      ]
+    },
+    {
+      "type": "funcprops.certified_operations.HomotopyCertificate",
+      "has_verify": true,
+      "line": 680,
+      "constructor_sites": [
+        "funcprops.certified_operations.homotopic",
+        "funcprops.certified_operations.homotopic"
+      ],
+      "replay_supported": true,
+      "contract": "factory-certificate",
+      "replay_mode": "declared-backend-replay",
+      "exported_names": [
+        "HomotopyCertificate"
+      ]
+    },
+    {
+      "type": "funcprops.certified_operations.InverseCertificate",
+      "has_verify": true,
+      "line": 42,
+      "constructor_sites": [
+        "funcprops.certified_operations.inverse"
+      ],
+      "replay_supported": true,
+      "contract": "factory-certificate",
+      "replay_mode": "declared-backend-replay",
+      "exported_names": [
+        "InverseCertificate"
+      ]
+    },
+    {
+      "type": "funcprops.certified_operations.LaurentCertificate",
+      "has_verify": true,
+      "line": 339,
+      "constructor_sites": [
+        "funcprops.certified_operations.laurent_series",
+        "funcprops.certified_operations.laurent_series"
+      ],
+      "replay_supported": true,
+      "contract": "factory-certificate",
+      "replay_mode": "declared-backend-replay",
+      "exported_names": [
+        "LaurentCertificate"
+      ]
+    },
+    {
+      "type": "funcprops.certified_operations.ResidueCertificate",
+      "has_verify": true,
+      "line": 415,
+      "constructor_sites": [
+        "funcprops.certified_operations.residue",
+        "funcprops.certified_operations.residue"
+      ],
+      "replay_supported": true,
+      "contract": "factory-certificate",
+      "replay_mode": "declared-backend-replay",
+      "exported_names": [
+        "ResidueCertificate"
+      ]
+    },
+    {
+      "type": "funcprops.certified_operations.SingularityClassificationCertificate",
+      "has_verify": true,
+      "line": 1129,
+      "constructor_sites": [
+        "funcprops.certified_operations.classify_singularity",
+        "funcprops.certified_operations.classify_singularity"
+      ],
+      "replay_supported": true,
+      "contract": "factory-certificate",
+      "replay_mode": "declared-backend-replay",
+      "exported_names": [
+        "SingularityClassificationCertificate"
+      ]
+    },
+    {
+      "type": "funcprops.certified_operations.WindingCertificate",
+      "has_verify": true,
+      "line": 486,
+      "constructor_sites": [
+        "funcprops.certified_operations.winding_number",
+        "funcprops.certified_operations.winding_number",
+        "funcprops.certified_operations.winding_number"
+      ],
+      "replay_supported": true,
+      "contract": "factory-certificate",
+      "replay_mode": "declared-backend-replay",
+      "exported_names": [
+        "WindingCertificate"
+      ]
+    },
+    {
+      "type": "funcprops.certified_operations._ReplayedOperation",
+      "has_verify": false,
+      "line": 22,
+      "constructor_sites": [],
+      "replay_supported": false,
+      "contract": "factory-certificate",
+      "replay_mode": "unsupported-unified-replay",
+      "exported_names": []
+    },
+    {
+      "type": "funcprops.certified_optimization.GlobalMinimumCertificate",
+      "has_verify": true,
+      "line": 15,
+      "constructor_sites": [
+        "funcprops.certified_optimization._curvature_minimum",
+        "funcprops.certified_optimization.certify_global_minimum"
+      ],
+      "replay_supported": true,
+      "contract": "factory-certificate",
+      "replay_mode": "declared-backend-replay",
+      "exported_names": [
+        "GlobalMinimumCertificate"
+      ]
+    },
+    {
+      "type": "funcprops.complex_certification.ArgumentPrincipleCertificate",
+      "has_verify": true,
+      "line": 136,
+      "constructor_sites": [
+        "funcprops.complex_certification.argument_principle_rectangle"
+      ],
+      "replay_supported": true,
+      "contract": "factory-certificate",
+      "replay_mode": "declared-backend-replay",
+      "exported_names": [
+        "ArgumentPrincipleCertificate"
+      ]
+    },
+    {
+      "type": "funcprops.complex_certification.RectangleRoucheCertificate",
+      "has_verify": true,
+      "line": 206,
+      "constructor_sites": [
+        "funcprops.complex_certification.rouche_polynomial_rectangle"
+      ],
+      "replay_supported": true,
+      "contract": "factory-certificate",
+      "replay_mode": "declared-backend-replay",
+      "exported_names": [
+        "RectangleRoucheCertificate"
+      ]
+    },
+    {
+      "type": "funcprops.complex_certification.RoucheCertificate",
+      "has_verify": true,
+      "line": 37,
+      "constructor_sites": [
+        "funcprops.complex_certification.rouche_polynomial_circle"
+      ],
+      "replay_supported": true,
+      "contract": "factory-certificate",
+      "replay_mode": "declared-backend-replay",
+      "exported_names": [
+        "RoucheCertificate"
+      ]
+    },
+    {
+      "type": "funcprops.complex_clusters.ComplexClusterCertificate",
+      "has_verify": true,
+      "line": 79,
+      "constructor_sites": [
+        "funcprops.complex_clusters.certify_complex_cluster"
+      ],
+      "replay_supported": true,
+      "contract": "witness-kernel",
+      "replay_mode": "theorem-premise-check",
+      "exported_names": [
+        "ComplexClusterCertificate"
+      ]
+    },
+    {
+      "type": "funcprops.complex_cofinal.ComplexIsolationGuarantee",
+      "has_verify": true,
+      "line": 167,
+      "constructor_sites": [],
+      "replay_supported": true,
+      "contract": "witness-kernel",
+      "replay_mode": "theorem-premise-check",
+      "exported_names": [
+        "ComplexIsolationGuarantee"
+      ]
+    },
+    {
+      "type": "funcprops.complex_cofinal.ComplexIsolationRun",
+      "has_verify": true,
+      "line": 39,
+      "constructor_sites": [
+        "funcprops.complex_cofinal._seed_run",
+        "funcprops.complex_cofinal.resume_adaptive_complex_isolation"
+      ],
+      "replay_supported": true,
+      "contract": "witness-kernel",
+      "replay_mode": "theorem-premise-check",
+      "exported_names": [
+        "ComplexIsolationRun"
+      ]
+    },
+    {
+      "type": "funcprops.complex_coverage.ComplexRootCoverage",
+      "has_verify": true,
+      "line": 132,
+      "constructor_sites": [
+        "funcprops.complex_coverage.complex_root_coverage",
+        "funcprops.complex_coverage.complex_root_coverage"
+      ],
+      "replay_supported": true,
+      "contract": "factory-certificate",
+      "replay_mode": "declared-backend-replay",
+      "exported_names": [
+        "ComplexRootCoverage"
+      ]
+    },
+    {
+      "type": "funcprops.complex_coverage.ComplexRootRegionProof",
+      "has_verify": true,
+      "line": 73,
+      "constructor_sites": [
+        "funcprops.complex_coverage.complex_root_coverage"
+      ],
+      "replay_supported": true,
+      "contract": "factory-certificate",
+      "replay_mode": "declared-backend-replay",
+      "exported_names": [
+        "ComplexRootRegionProof"
+      ]
+    },
+    {
+      "type": "funcprops.complex_isolation.ComplexIsolationProof",
+      "has_verify": true,
+      "line": 100,
+      "constructor_sites": [
+        "funcprops.complex_isolation._seed"
+      ],
+      "replay_supported": true,
+      "contract": "witness-kernel",
+      "replay_mode": "theorem-premise-check",
+      "exported_names": [
+        "ComplexIsolationProof"
+      ]
+    },
+    {
+      "type": "funcprops.complex_isolation.ComplexIsolationState",
+      "has_verify": true,
+      "line": 456,
+      "constructor_sites": [
+        "funcprops.complex_isolation._seed",
+        "funcprops.complex_isolation._run"
+      ],
+      "replay_supported": true,
+      "contract": "witness-kernel",
+      "replay_mode": "theorem-premise-check",
+      "exported_names": [
+        "ComplexIsolationState"
+      ]
+    },
+    {
+      "type": "funcprops.complex_multiplicity.ComplexExactMultiplicity",
+      "has_verify": true,
+      "line": null,
+      "constructor_sites": [
+        "funcprops.complex_multiplicity._propose_multiple_impl"
+      ],
+      "replay_supported": true,
+      "contract": "witness-kernel",
+      "replay_mode": "theorem-premise-check",
+      "exported_names": [
+        "ComplexExactMultiplicity"
+      ]
+    },
+    {
+      "type": "funcprops.complex_multiplicity.ComplexLocatedRegion",
+      "has_verify": true,
+      "line": null,
+      "constructor_sites": [
+        "funcprops.complex_isolation._run",
+        "funcprops.complex_isolation._run"
+      ],
+      "replay_supported": true,
+      "contract": "witness-kernel",
+      "replay_mode": "theorem-premise-check",
+      "exported_names": [
+        "ComplexLocatedRegion"
+      ]
+    },
+    {
+      "type": "funcprops.complex_multiplicity.ComplexPowerFactorProof",
+      "has_verify": true,
+      "line": 248,
+      "constructor_sites": [
+        "funcprops.complex_multiplicity._propose_multiple_impl"
+      ],
+      "replay_supported": true,
+      "contract": "witness-kernel",
+      "replay_mode": "theorem-premise-check",
+      "exported_names": [
+        "ComplexPowerFactorProof"
+      ]
+    },
+    {
+      "type": "funcprops.complex_multiplicity.ComplexPowerRootRegion",
+      "has_verify": true,
+      "line": null,
+      "constructor_sites": [
+        "funcprops.quotient_refinement._transfer",
+        "funcprops.complex_isolation._run",
+        "funcprops.complex_isolation._run"
+      ],
+      "replay_supported": true,
+      "contract": "witness-kernel",
+      "replay_mode": "theorem-premise-check",
+      "exported_names": [
+        "ComplexPowerRootRegion"
+      ]
+    },
+    {
+      "type": "funcprops.complex_multiplicity.ComplexTaylorWitness",
+      "has_verify": true,
+      "line": 53,
+      "constructor_sites": [
+        "funcprops.complex_multiplicity._propose_multiple_impl"
+      ],
+      "replay_supported": true,
+      "contract": "witness-kernel",
+      "replay_mode": "theorem-premise-check",
+      "exported_names": [
+        "ComplexTaylorWitness"
+      ]
+    },
+    {
+      "type": "funcprops.complex_multiplicity.ComplexUnitWitness",
+      "has_verify": true,
+      "line": 101,
+      "constructor_sites": [
+        "funcprops.complex_multiplicity._unit_witness",
+        "funcprops.complex_multiplicity._unit_witness"
+      ],
+      "replay_supported": true,
+      "contract": "witness-kernel",
+      "replay_mode": "theorem-premise-check",
+      "exported_names": [
+        "ComplexUnitWitness"
+      ]
+    },
+    {
+      "type": "funcprops.complex_multiplicity._CountRecord",
+      "has_verify": true,
+      "line": 146,
+      "constructor_sites": [],
+      "replay_supported": false,
+      "contract": "witness-kernel",
+      "replay_mode": "unsupported-unified-replay",
+      "exported_names": []
+    },
+    {
+      "type": "funcprops.complex_newton.ComplexDerivativeWitness",
+      "has_verify": true,
+      "line": 102,
+      "constructor_sites": [
+        "funcprops.complex_newton._propose_refinement",
+        "funcprops.complex_newton._propose_refinement"
+      ],
+      "replay_supported": true,
+      "contract": "witness-kernel",
+      "replay_mode": "theorem-premise-check",
+      "exported_names": [
+        "ComplexDerivativeWitness"
+      ]
+    },
+    {
+      "type": "funcprops.complex_newton.ComplexNewtonRefinement",
+      "has_verify": true,
+      "line": 152,
+      "constructor_sites": [
+        "funcprops.complex_newton._propose_refinement"
+      ],
+      "replay_supported": true,
+      "contract": "witness-kernel",
+      "replay_mode": "theorem-premise-check",
+      "exported_names": [
+        "ComplexNewtonRefinement"
+      ]
+    },
+    {
+      "type": "funcprops.complex_newton.ComplexNewtonRegion",
+      "has_verify": true,
+      "line": 221,
+      "constructor_sites": [],
+      "replay_supported": true,
+      "contract": "witness-kernel",
+      "replay_mode": "theorem-premise-check",
+      "exported_names": [
+        "ComplexNewtonRegion"
+      ]
+    },
+    {
+      "type": "funcprops.component_optimization.ComponentMinimumResult",
+      "has_verify": true,
+      "line": 24,
+      "constructor_sites": [
+        "funcprops.component_optimization.finite_component_minimum",
+        "funcprops.component_optimization.finite_component_minimum",
+        "funcprops.component_optimization.finite_component_minimum"
+      ],
+      "replay_supported": true,
+      "contract": "factory-certificate",
+      "replay_mode": "declared-backend-replay",
+      "exported_names": [
+        "ComponentMinimumResult"
+      ]
+    },
+    {
+      "type": "funcprops.coverage_contract.CellDomainWitness",
+      "has_verify": true,
+      "line": 69,
+      "constructor_sites": [
+        "funcprops.coverage_search.coverage_context"
+      ],
+      "replay_supported": true,
+      "contract": "witness-kernel",
+      "replay_mode": "theorem-premise-check",
+      "exported_names": [
+        "CellDomainWitness"
+      ]
+    },
+    {
+      "type": "funcprops.coverage_contract.CoverageLeaf",
+      "has_verify": true,
+      "line": 198,
+      "constructor_sites": [
+        "funcprops.coverage_search._accepted"
+      ],
+      "replay_supported": true,
+      "contract": "witness-kernel",
+      "replay_mode": "theorem-premise-check",
+      "exported_names": [
+        "CoverageLeaf"
+      ]
+    },
+    {
+      "type": "funcprops.coverage_contract.CoverageProof",
+      "has_verify": true,
+      "line": 235,
+      "constructor_sites": [
+        "funcprops.coverage_search._assemble",
+        "funcprops.coverage_search.prove_root_coverage",
+        "funcprops.coverage_search.prove_root_coverage"
+      ],
+      "replay_supported": true,
+      "contract": "witness-kernel",
+      "replay_mode": "theorem-premise-check",
+      "exported_names": [
+        "CoverageProof"
+      ]
+    },
+    {
+      "type": "funcprops.coverage_contract.EnclosureWitness",
+      "has_verify": true,
+      "line": 47,
+      "constructor_sites": [
+        "funcprops.enclosures._enclosure_leaf"
+      ],
+      "replay_supported": true,
+      "contract": "witness-kernel",
+      "replay_mode": "theorem-premise-check",
+      "exported_names": [
+        "EnclosureWitness"
+      ]
+    },
+    {
+      "type": "funcprops.coverage_contract.InadmissibleProof",
+      "has_verify": true,
+      "line": 289,
+      "constructor_sites": [
+        "funcprops.coverage_search.prove_root_coverage"
+      ],
+      "replay_supported": true,
+      "contract": "witness-kernel",
+      "replay_mode": "theorem-premise-check",
+      "exported_names": [
+        "InadmissibleProof"
+      ]
+    },
+    {
+      "type": "funcprops.derivative_inequalities.DerivativeChainCertificate",
+      "has_verify": true,
+      "line": 17,
+      "constructor_sites": [
+        "funcprops.derivative_inequalities.derivative_chain_positive"
+      ],
+      "replay_supported": true,
+      "contract": "factory-certificate",
+      "replay_mode": "declared-backend-replay",
+      "exported_names": [
+        "DerivativeChainCertificate"
+      ]
+    },
+    {
+      "type": "funcprops.domain_tracking.DomainRecord",
+      "has_verify": true,
+      "line": 21,
+      "constructor_sites": [
+        "funcprops.domain_tracking._domain_from_condition",
+        "funcprops.domain_tracking._global_domain",
+        "funcprops.domain_tracking._global_domain",
+        "funcprops.domain_tracking._global_domain",
+        "funcprops.domain_tracking._global_domain",
+        "funcprops.domain_tracking._global_domain",
+        "funcprops.domain_tracking._positive_power_coverage",
+        "funcprops.work_budget.bounded_query",
+        "funcprops.adaptive_roots._timeout_seed"
+      ],
+      "replay_supported": true,
+      "contract": "factory-certificate",
+      "replay_mode": "declared-backend-replay",
+      "exported_names": [
+        "DomainRecord"
+      ]
+    },
+    {
+      "type": "funcprops.enclosures.DerivativeEnclosure",
+      "has_verify": true,
+      "line": 222,
+      "constructor_sites": [
+        "funcprops.enclosures.enclose_derivative",
+        "funcprops.enclosures.enclose_derivative",
+        "funcprops.enclosures.enclose_derivative"
+      ],
+      "replay_supported": true,
+      "contract": "witness-kernel",
+      "replay_mode": "theorem-premise-check",
+      "exported_names": [
+        "DerivativeEnclosure"
+      ]
+    },
+    {
+      "type": "funcprops.enclosures.EnclosureResult",
+      "has_verify": true,
+      "line": 121,
+      "constructor_sites": [
+        "funcprops.enclosures.enclose_expression",
+        "funcprops.enclosures.enclose_expression",
+        "funcprops.enclosures.enclose_expression",
+        "funcprops.enclosures.enclose_expression"
+      ],
+      "replay_supported": true,
+      "contract": "witness-kernel",
+      "replay_mode": "theorem-premise-check",
+      "exported_names": [
+        "EnclosureResult"
+      ]
+    },
+    {
+      "type": "funcprops.entire_cancellation.EntireCancellationProof",
+      "has_verify": true,
+      "line": 44,
+      "constructor_sites": [
+        "funcprops.entire_cancellation.entire_cancellation_proof"
+      ],
+      "replay_supported": true,
+      "contract": "witness-kernel",
+      "replay_mode": "theorem-premise-check",
+      "exported_names": [
+        "EntireCancellationProof"
+      ]
+    },
+    {
+      "type": "funcprops.extrema_bounds.ExtremaBoundsProof",
+      "has_verify": true,
+      "line": 114,
+      "constructor_sites": [
+        "funcprops.extrema_bounds.certify_extrema_bounds"
+      ],
+      "replay_supported": true,
+      "contract": "witness-kernel",
+      "replay_mode": "theorem-premise-check",
+      "exported_names": [
+        "ExtremaBoundsProof"
+      ]
+    },
+    {
+      "type": "funcprops.geometry.LevelBoundednessCertificate",
+      "has_verify": true,
+      "line": 137,
+      "constructor_sites": [
+        "funcprops.geometry._univariate_level_boundedness_impl",
+        "funcprops.geometry._univariate_level_boundedness_impl",
+        "funcprops.geometry._univariate_level_boundedness_impl",
+        "funcprops.geometry._univariate_level_boundedness_impl",
+        "funcprops.geometry._level_boundedness_certificate_impl",
+        "funcprops.geometry._level_boundedness_certificate_impl",
+        "funcprops.geometry._level_boundedness_certificate_impl"
+      ],
+      "replay_supported": true,
+      "contract": "factory-certificate",
+      "replay_mode": "declared-backend-replay",
+      "exported_names": [
+        "LevelBoundednessCertificate"
+      ]
+    },
+    {
+      "type": "funcprops.geometry.ModeExistenceCertificate",
+      "has_verify": true,
+      "line": 167,
+      "constructor_sites": [
+        "funcprops.geometry._mode_existence_from_facts",
+        "funcprops.geometry._mode_existence_from_facts"
+      ],
+      "replay_supported": true,
+      "contract": "factory-certificate",
+      "replay_mode": "declared-backend-replay",
+      "exported_names": [
+        "ModeExistenceCertificate"
+      ]
+    },
+    {
+      "type": "funcprops.global_analysis.GlobalInequalityCertificate",
+      "has_verify": true,
+      "line": 17,
+      "constructor_sites": [
+        "funcprops.global_analysis.certify_global_positive"
+      ],
+      "replay_supported": true,
+      "contract": "factory-certificate",
+      "replay_mode": "declared-backend-replay",
+      "exported_names": [
+        "GlobalInequalityCertificate"
+      ]
+    },
+    {
+      "type": "funcprops.global_multivariate.ComposedMapCertificate",
+      "has_verify": true,
+      "line": 148,
+      "constructor_sites": [
+        "funcprops.global_multivariate.compose_global_maps"
+      ],
+      "replay_supported": true,
+      "contract": "factory-certificate",
+      "replay_mode": "declared-backend-replay",
+      "exported_names": [
+        "ComposedMapCertificate"
+      ]
+    },
+    {
+      "type": "funcprops.global_multivariate.GlobalMapCertificate",
+      "has_verify": true,
+      "line": 65,
+      "constructor_sites": [
+        "funcprops.global_multivariate.affine_global_mapping"
+      ],
+      "replay_supported": true,
+      "contract": "factory-certificate",
+      "replay_mode": "declared-backend-replay",
+      "exported_names": [
+        "GlobalMapCertificate"
+      ]
+    },
+    {
+      "type": "funcprops.guarded_affine.GuardedAffineContourCertificate",
+      "has_verify": true,
+      "line": 194,
+      "constructor_sites": [
+        "funcprops.guarded_affine.affine_contour_cases"
+      ],
+      "replay_supported": true,
+      "contract": "factory-certificate",
+      "replay_mode": "declared-backend-replay",
+      "exported_names": [
+        "GuardedAffineContourCertificate"
+      ]
+    },
+    {
+      "type": "funcprops.guarded_affine.GuardedAffineEquationCertificate",
+      "has_verify": true,
+      "line": 22,
+      "constructor_sites": [
+        "funcprops.guarded_affine.affine_equation_cases"
+      ],
+      "replay_supported": true,
+      "contract": "factory-certificate",
+      "replay_mode": "declared-backend-replay",
+      "exported_names": [
+        "GuardedAffineEquationCertificate"
+      ]
+    },
+    {
+      "type": "funcprops.implicit_orders.CommonZeroProof",
+      "has_verify": true,
+      "line": 195,
+      "constructor_sites": [
+        "funcprops.implicit_orders.certify_common_zero"
+      ],
+      "replay_supported": true,
+      "contract": "witness-kernel",
+      "replay_mode": "theorem-premise-check",
+      "exported_names": [
+        "CommonZeroProof"
+      ]
+    },
+    {
+      "type": "funcprops.implicit_orders.ImplicitJetWitness",
+      "has_verify": true,
+      "line": 93,
+      "constructor_sites": [
+        "funcprops.implicit_orders.certify_implicit_multiplicity"
+      ],
+      "replay_supported": true,
+      "contract": "witness-kernel",
+      "replay_mode": "theorem-premise-check",
+      "exported_names": [
+        "ImplicitJetWitness"
+      ]
+    },
+    {
+      "type": "funcprops.implicit_orders.ImplicitMultiplicityProof",
+      "has_verify": true,
+      "line": 164,
+      "constructor_sites": [
+        "funcprops.implicit_orders.certify_implicit_multiplicity",
+        "funcprops.implicit_orders.certify_implicit_multiplicity",
+        "funcprops.implicit_orders.certify_implicit_multiplicity"
+      ],
+      "replay_supported": true,
+      "contract": "witness-kernel",
+      "replay_mode": "theorem-premise-check",
+      "exported_names": [
+        "ImplicitMultiplicityProof"
+      ]
+    },
+    {
+      "type": "funcprops.implicit_orders.ImplicitRootValueProof",
+      "has_verify": true,
+      "line": 138,
+      "constructor_sites": [
+        "funcprops.implicit_orders.certify_root_value"
+      ],
+      "replay_supported": true,
+      "contract": "witness-kernel",
+      "replay_mode": "theorem-premise-check",
+      "exported_names": [
+        "ImplicitRootValueProof"
+      ]
+    },
+    {
+      "type": "funcprops.implicit_orders._Local",
+      "has_verify": true,
+      "line": 61,
+      "constructor_sites": [],
+      "replay_supported": false,
+      "contract": "witness-kernel",
+      "replay_mode": "unsupported-unified-replay",
+      "exported_names": []
+    },
+    {
+      "type": "funcprops.infinite_contract.PeriodicDomainWitness",
+      "has_verify": true,
+      "line": 22,
+      "constructor_sites": [
+        "funcprops.infinite_roots.periodic_domain"
+      ],
+      "replay_supported": true,
+      "contract": "witness-kernel",
+      "replay_mode": "theorem-premise-check",
+      "exported_names": [
+        "PeriodicDomainWitness"
+      ]
+    },
+    {
+      "type": "funcprops.infinite_root_families.IndexedRootFamily",
+      "has_verify": true,
+      "line": 14,
+      "constructor_sites": [
+        "funcprops.infinite_root_families.affine_trig_root_family"
+      ],
+      "replay_supported": false,
+      "contract": "factory-certificate",
+      "replay_mode": "unsupported-unified-replay",
+      "exported_names": [
+        "IndexedRootFamily"
+      ]
+    },
+    {
+      "type": "funcprops.integration.IntegralResult",
+      "has_verify": true,
+      "line": 73,
+      "constructor_sites": [
+        "funcprops.integration._unknown",
+        "funcprops.integration._parametric",
+        "funcprops.integration._parametric",
+        "funcprops.integration._polygon_integral",
+        "funcprops.integration.integrate"
+      ],
+      "replay_supported": true,
+      "contract": "factory-certificate",
+      "replay_mode": "declared-backend-replay",
+      "exported_names": [
+        "IntegralResult"
+      ]
+    },
+    {
+      "type": "funcprops.meromorphic_contours.MeromorphicContourCertificate",
+      "has_verify": true,
+      "line": 82,
+      "constructor_sites": [
+        "funcprops.meromorphic_contours.meromorphic_rectangle_count"
+      ],
+      "replay_supported": true,
+      "contract": "factory-certificate",
+      "replay_mode": "declared-backend-replay",
+      "exported_names": [
+        "MeromorphicContourCertificate"
+      ]
+    },
+    {
+      "type": "funcprops.metric_proofs.FiniteLipschitzProof",
+      "has_verify": true,
+      "line": 74,
+      "constructor_sites": [
+        "funcprops.metric_proofs.certify_finite_lipschitz"
+      ],
+      "replay_supported": true,
+      "contract": "witness-kernel",
+      "replay_mode": "theorem-premise-check",
+      "exported_names": [
+        "FiniteLipschitzProof"
+      ]
+    },
+    {
+      "type": "funcprops.metric_proofs.JumpVariationProof",
+      "has_verify": true,
+      "line": 219,
+      "constructor_sites": [
+        "funcprops.metric_proofs.certify_jump_variation"
+      ],
+      "replay_supported": true,
+      "contract": "witness-kernel",
+      "replay_mode": "theorem-premise-check",
+      "exported_names": [
+        "JumpVariationProof"
+      ]
+    },
+    {
+      "type": "funcprops.multivariate_intervals.KrawczykBoxCertificate",
+      "has_verify": true,
+      "line": 152,
+      "constructor_sites": [
+        "funcprops.multivariate_intervals.krawczyk_box"
+      ],
+      "replay_supported": false,
+      "contract": "factory-certificate",
+      "replay_mode": "unsupported-unified-replay",
+      "exported_names": [
+        "KrawczykBoxCertificate"
+      ]
+    },
+    {
+      "type": "funcprops.parameter_contract.BoxEnclosureWitness",
+      "has_verify": true,
+      "line": 11,
+      "constructor_sites": [
+        "funcprops.parameter_coverage._box_bound"
+      ],
+      "replay_supported": true,
+      "contract": "witness-kernel",
+      "replay_mode": "theorem-premise-check",
+      "exported_names": [
+        "BoxEnclosureWitness"
+      ]
+    },
+    {
+      "type": "funcprops.parameter_contract.ParameterCoverageProof",
+      "has_verify": true,
+      "line": 188,
+      "constructor_sites": [
+        "funcprops.parameter_coverage._parameter_seed"
+      ],
+      "replay_supported": true,
+      "contract": "witness-kernel",
+      "replay_mode": "theorem-premise-check",
+      "exported_names": [
+        "ParameterCoverageProof"
+      ]
+    },
+    {
+      "type": "funcprops.parameter_contract.SpecializedParameterProof",
+      "has_verify": true,
+      "line": 226,
+      "constructor_sites": [
+        "funcprops.parameter_coverage.specialize_parameter_coverage"
+      ],
+      "replay_supported": true,
+      "contract": "witness-kernel",
+      "replay_mode": "theorem-premise-check",
+      "exported_names": [
+        "SpecializedParameterProof"
+      ]
+    },
+    {
+      "type": "funcprops.parameter_contract.UniformParameterCertificate",
+      "has_verify": true,
+      "line": 60,
+      "constructor_sites": [
+        "funcprops.parameter_checker.check_uniform_cover",
+        "funcprops.parameter_coverage._uniform_seed"
+      ],
+      "replay_supported": true,
+      "contract": "witness-kernel",
+      "replay_mode": "theorem-premise-check",
+      "exported_names": [
+        "UniformParameterCertificate"
+      ]
+    },
+    {
+      "type": "funcprops.parameter_contract.UniformParameterCover",
+      "has_verify": true,
+      "line": 101,
+      "constructor_sites": [
+        "funcprops.parameter_coverage.certify_parameter_box"
+      ],
+      "replay_supported": true,
+      "contract": "witness-kernel",
+      "replay_mode": "theorem-premise-check",
+      "exported_names": [
+        "UniformParameterCover"
+      ]
+    },
+    {
+      "type": "funcprops.parameter_discriminants.ParameterTransitionLocus",
+      "has_verify": true,
+      "line": 39,
+      "constructor_sites": [
+        "funcprops.parameter_discriminants.polynomial_transition_locus"
+      ],
+      "replay_supported": false,
+      "contract": "factory-certificate",
+      "replay_mode": "unsupported-unified-replay",
+      "exported_names": [
+        "ParameterTransitionLocus"
+      ]
+    },
+    {
+      "type": "funcprops.parameter_geometry.ParameterGeometryProof",
+      "has_verify": true,
+      "line": 262,
+      "constructor_sites": [
+        "funcprops.parameter_geometry.certify_parameter_geometry",
+        "funcprops.parameter_geometry._refine_geometry"
+      ],
+      "replay_supported": true,
+      "contract": "witness-kernel",
+      "replay_mode": "theorem-premise-check",
+      "exported_names": [
+        "ParameterGeometryProof"
+      ]
+    },
+    {
+      "type": "funcprops.piecewise_proofs.PiecewiseRegularityCertificate",
+      "has_verify": true,
+      "line": 40,
+      "constructor_sites": [
+        "funcprops.piecewise_proofs.certify_piecewise_regular"
+      ],
+      "replay_supported": true,
+      "contract": "factory-certificate",
+      "replay_mode": "declared-backend-replay",
+      "exported_names": [
+        "PiecewiseRegularityCertificate"
+      ]
+    },
+    {
+      "type": "funcprops.property_contract.PropertyCoverageProof",
+      "has_verify": true,
+      "line": 33,
+      "constructor_sites": [
+        "funcprops.property_coverage._seed"
+      ],
+      "replay_supported": true,
+      "contract": "witness-kernel",
+      "replay_mode": "theorem-premise-check",
+      "exported_names": [
+        "PropertyCoverageProof"
+      ]
+    },
+    {
+      "type": "funcprops.quotient_cofinal.QuotientIsolationGuarantee",
+      "has_verify": true,
+      "line": 164,
+      "constructor_sites": [],
+      "replay_supported": true,
+      "contract": "witness-kernel",
+      "replay_mode": "theorem-premise-check",
+      "exported_names": [
+        "QuotientIsolationGuarantee"
+      ]
+    },
+    {
+      "type": "funcprops.quotient_cofinal.QuotientIsolationRun",
+      "has_verify": true,
+      "line": 20,
+      "constructor_sites": [
+        "funcprops.quotient_cofinal._seed_run",
+        "funcprops.quotient_cofinal.resume_adaptive_quotient_isolation"
+      ],
+      "replay_supported": true,
+      "contract": "witness-kernel",
+      "replay_mode": "theorem-premise-check",
+      "exported_names": [
+        "QuotientIsolationRun"
+      ]
+    },
+    {
+      "type": "funcprops.quotient_isolation.DenominatorExclusionProof",
+      "has_verify": true,
+      "line": 187,
+      "constructor_sites": [
+        "funcprops.quotient_isolation._run",
+        "funcprops.quotient_refinement._source_evidence"
+      ],
+      "replay_supported": true,
+      "contract": "witness-kernel",
+      "replay_mode": "theorem-premise-check",
+      "exported_names": [
+        "DenominatorExclusionProof"
+      ]
+    },
+    {
+      "type": "funcprops.quotient_isolation.ExactLocalZeroProof",
+      "has_verify": true,
+      "line": 223,
+      "constructor_sites": [
+        "funcprops.quotient_isolation._run",
+        "funcprops.quotient_refinement._source_evidence"
+      ],
+      "replay_supported": true,
+      "contract": "witness-kernel",
+      "replay_mode": "theorem-premise-check",
+      "exported_names": [
+        "ExactLocalZeroProof"
+      ]
+    },
+    {
+      "type": "funcprops.quotient_isolation.QuotientCellProof",
+      "has_verify": false,
+      "line": 279,
+      "constructor_sites": [
+        "funcprops.quotient_isolation._run",
+        "funcprops.quotient_isolation._run",
+        "funcprops.quotient_refinement._source_evidence"
+      ],
+      "replay_supported": false,
+      "contract": "witness-kernel",
+      "replay_mode": "unsupported-unified-replay",
+      "exported_names": [
+        "QuotientCellProof"
+      ]
+    },
+    {
+      "type": "funcprops.quotient_isolation.QuotientContourCertificate",
+      "has_verify": true,
+      "line": 792,
+      "constructor_sites": [
+        "funcprops.meromorphic_contours.meromorphic_rectangle_count"
+      ],
+      "replay_supported": true,
+      "contract": "witness-kernel",
+      "replay_mode": "theorem-premise-check",
+      "exported_names": [
+        "QuotientContourCertificate"
+      ]
+    },
+    {
+      "type": "funcprops.quotient_isolation.QuotientIsolationProof",
+      "has_verify": true,
+      "line": 486,
+      "constructor_sites": [
+        "funcprops.quotient_isolation._seed"
+      ],
+      "replay_supported": true,
+      "contract": "witness-kernel",
+      "replay_mode": "theorem-premise-check",
+      "exported_names": [
+        "QuotientIsolationProof"
+      ]
+    },
+    {
+      "type": "funcprops.quotient_isolation.QuotientIsolationState",
+      "has_verify": true,
+      "line": 882,
+      "constructor_sites": [
+        "funcprops.quotient_isolation._seed",
+        "funcprops.quotient_isolation._run"
+      ],
+      "replay_supported": true,
+      "contract": "witness-kernel",
+      "replay_mode": "theorem-premise-check",
+      "exported_names": [
+        "QuotientIsolationState"
+      ]
+    },
+    {
+      "type": "funcprops.quotient_isolation.QuotientRegionProof",
+      "has_verify": true,
+      "line": 326,
+      "constructor_sites": [
+        "funcprops.transcendental.complex_roots._quotient_result"
+      ],
+      "replay_supported": true,
+      "contract": "witness-kernel",
+      "replay_mode": "theorem-premise-check",
+      "exported_names": [
+        "QuotientRegionProof"
+      ]
+    },
+    {
+      "type": "funcprops.quotient_isolation.QuotientSourceProof",
+      "has_verify": true,
+      "line": 117,
+      "constructor_sites": [
+        "funcprops.quotient_isolation._source",
+        "funcprops.quotient_isolation._source"
+      ],
+      "replay_supported": true,
+      "contract": "witness-kernel",
+      "replay_mode": "theorem-premise-check",
+      "exported_names": [
+        "QuotientSourceProof"
+      ]
+    },
+    {
+      "type": "funcprops.quotient_refinement.QuotientNewtonRefinement",
+      "has_verify": true,
+      "line": 106,
+      "constructor_sites": [
+        "funcprops.quotient_refinement._propose_quotient_refinement"
+      ],
+      "replay_supported": true,
+      "contract": "witness-kernel",
+      "replay_mode": "theorem-premise-check",
+      "exported_names": [
+        "QuotientNewtonRefinement"
+      ]
+    },
+    {
+      "type": "funcprops.real_analysis.advanced_convexity.ConvexityCertificate",
+      "has_verify": false,
+      "line": 17,
+      "constructor_sites": [
+        "funcprops.verification.verify_convexity_certificate",
+        "funcprops.verification.verify_convexity_certificate",
+        "funcprops.real_analysis.advanced_convexity.strong_convexity",
+        "funcprops.real_analysis.advanced_convexity.strong_convexity",
+        "funcprops.real_analysis.advanced_convexity.strong_convexity",
+        "funcprops.real_analysis.advanced_convexity.strong_convexity",
+        "funcprops.real_analysis.hessian_bounds.hessian_dominance_certificate",
+        "funcprops.real_analysis.hessian_bounds.structural_hessian_certificate",
+        "funcprops.real_analysis.convexity._convexity_property_result"
+      ],
+      "replay_supported": true,
+      "contract": "factory-certificate",
+      "replay_mode": "declared-backend-replay",
+      "exported_names": [
+        "ConvexityCertificate"
+      ]
+    },
+    {
+      "type": "funcprops.real_analysis.complete_monotonicity.CompleteMonotonicityCertificate",
+      "has_verify": true,
+      "line": 17,
+      "constructor_sites": [
+        "funcprops.real_analysis.complete_monotonicity.complete_monotonicity"
+      ],
+      "replay_supported": true,
+      "contract": "factory-certificate",
+      "replay_mode": "declared-backend-replay",
+      "exported_names": [
+        "CompleteMonotonicityCertificate"
+      ]
+    },
+    {
+      "type": "funcprops.real_analysis.monotonic_certificates.InverseSolutionCertificate",
+      "has_verify": false,
+      "line": 247,
+      "constructor_sites": [
+        "funcprops.real_analysis.monotonic_certificates.certified_monotonic_inverse",
+        "funcprops.real_analysis.monotonic_certificates.certified_monotonic_inverse",
+        "funcprops.real_analysis.monotonic_certificates.certified_monotonic_inverse",
+        "funcprops.real_analysis.monotonic_certificates.certified_monotonic_inverse"
+      ],
+      "replay_supported": false,
+      "contract": "factory-certificate",
+      "replay_mode": "unsupported-unified-replay",
+      "exported_names": [
+        "InverseSolutionCertificate"
+      ]
+    },
+    {
+      "type": "funcprops.real_analysis.monotonic_certificates.MonotonicDecomposition",
+      "has_verify": false,
+      "line": null,
+      "constructor_sites": [
+        "funcprops.real_analysis.monotonic_certificates._monotonic_decomposition_result",
+        "funcprops.real_analysis.monotonic_certificates._monotonic_decomposition_result",
+        "funcprops.real_analysis.monotonic_certificates._monotonic_decomposition_result",
+        "funcprops.real_analysis.monotonic_certificates._monotonic_decomposition_result",
+        "funcprops.real_analysis.monotonic_certificates._monotonic_decomposition_result",
+        "funcprops.real_analysis.monotonic_certificates._monotonic_decomposition_result",
+        "funcprops.real_analysis.monotonic_certificates._monotonic_decomposition_result",
+        "funcprops.real_analysis.monotonic_certificates._monotonic_decomposition_result",
+        "funcprops.real_analysis.monotonic_certificates._monotonic_decomposition_result",
+        "funcprops.real_analysis.monotonic_certificates._monotonic_decomposition_result"
+      ],
+      "replay_supported": true,
+      "contract": "factory-certificate",
+      "replay_mode": "declared-backend-replay",
+      "exported_names": [
+        "MonotonicDecomposition"
+      ]
+    },
+    {
+      "type": "funcprops.real_analysis.monotonic_certificates.MonotonicPartition",
+      "has_verify": false,
+      "line": null,
+      "constructor_sites": [
+        "funcprops.real_analysis.monotonic_certificates._piecewise_partition",
+        "funcprops.real_analysis.monotonic_certificates._piecewise_partition",
+        "funcprops.real_analysis.monotonic_certificates._monotonic_partition_on_set",
+        "funcprops.real_analysis.monotonic_certificates._monotonic_partition_on_set",
+        "funcprops.real_analysis.monotonic_certificates._monotonic_partition_on_set",
+        "funcprops.real_analysis.monotonic_certificates._monotonic_partition_on_set",
+        "funcprops.real_analysis.monotonic_certificates._monotonic_partition_result"
+      ],
+      "replay_supported": true,
+      "contract": "factory-certificate",
+      "replay_mode": "declared-backend-replay",
+      "exported_names": [
+        "MonotonicPartition"
+      ]
+    },
+    {
+      "type": "funcprops.real_analysis.oscillation.OscillationCertificate",
+      "has_verify": false,
+      "line": 23,
+      "constructor_sites": [
+        "funcprops.real_analysis.oscillation._function_oscillation_impl",
+        "funcprops.real_analysis.oscillation._function_oscillation_impl",
+        "funcprops.real_analysis.oscillation._function_oscillation_impl",
+        "funcprops.real_analysis.oscillation._function_oscillation_impl",
+        "funcprops.real_analysis.oscillation._function_oscillation_impl",
+        "funcprops.real_analysis.oscillation._function_oscillation_impl",
+        "funcprops.real_analysis.oscillation._function_oscillation_impl"
+      ],
+      "replay_supported": false,
+      "contract": "factory-certificate",
+      "replay_mode": "unsupported-unified-replay",
+      "exported_names": [
+        "OscillationCertificate"
+      ]
+    },
+    {
+      "type": "funcprops.real_analysis.piecewise.PiecewiseBoundaryCertificate",
+      "has_verify": false,
+      "line": 50,
+      "constructor_sites": [
+        "funcprops.real_analysis.piecewise.certify_piecewise_boundaries"
+      ],
+      "replay_supported": false,
+      "contract": "factory-certificate",
+      "replay_mode": "unsupported-unified-replay",
+      "exported_names": [
+        "PiecewiseBoundaryCertificate"
+      ]
+    },
+    {
+      "type": "funcprops.real_analysis.regularity_extensions.LipschitzResult",
+      "has_verify": true,
+      "line": 26,
+      "constructor_sites": [
+        "funcprops.real_analysis.regularity_extensions._finite_lipschitz",
+        "funcprops.real_analysis.regularity_extensions.lipschitz",
+        "funcprops.real_analysis.regularity_extensions.lipschitz",
+        "funcprops.real_analysis.regularity_extensions.lipschitz",
+        "funcprops.real_analysis.regularity_extensions.lipschitz",
+        "funcprops.real_analysis.regularity_extensions.lipschitz"
+      ],
+      "replay_supported": true,
+      "contract": "witness-kernel",
+      "replay_mode": "theorem-premise-check",
+      "exported_names": [
+        "LipschitzResult"
+      ]
+    },
+    {
+      "type": "funcprops.real_analysis.structural_properties.HomogeneityResult",
+      "has_verify": false,
+      "line": null,
+      "constructor_sites": [
+        "funcprops.real_analysis.structural_properties._homogeneity_impl",
+        "funcprops.real_analysis.structural_properties._homogeneity_impl"
+      ],
+      "replay_supported": true,
+      "contract": "factory-certificate",
+      "replay_mode": "declared-backend-replay",
+      "exported_names": [
+        "HomogeneityResult"
+      ]
+    },
+    {
+      "type": "funcprops.real_analysis.structural_properties.PeriodicityResult",
+      "has_verify": false,
+      "line": null,
+      "constructor_sites": [
+        "funcprops.real_analysis.structural_properties._periodicity_impl",
+        "funcprops.real_analysis.structural_properties._periodicity_impl",
+        "funcprops.real_analysis.structural_properties._periodicity_impl",
+        "funcprops.real_analysis.structural_properties._periodicity_impl",
+        "funcprops.real_analysis.structural_properties._periodicity_impl",
+        "funcprops.real_analysis.structural_properties._periodicity_impl",
+        "funcprops.real_analysis.structural_properties._periodicity_impl"
+      ],
+      "replay_supported": true,
+      "contract": "factory-certificate",
+      "replay_mode": "declared-backend-replay",
+      "exported_names": [
+        "PeriodicityResult"
+      ]
+    },
+    {
+      "type": "funcprops.real_analysis.structural_properties.SymmetryResult",
+      "has_verify": false,
+      "line": null,
+      "constructor_sites": [
+        "funcprops.real_analysis.structural_properties._symmetry_impl",
+        "funcprops.real_analysis.structural_properties._symmetry_impl",
+        "funcprops.real_analysis.structural_properties._symmetry_impl",
+        "funcprops.real_analysis.structural_properties._symmetry_impl",
+        "funcprops.real_analysis.structural_properties._symmetry_impl"
+      ],
+      "replay_supported": true,
+      "contract": "factory-certificate",
+      "replay_mode": "declared-backend-replay",
+      "exported_names": [
+        "SymmetryResult"
+      ]
+    },
+    {
+      "type": "funcprops.real_analysis.variation.VariationResult",
+      "has_verify": true,
+      "line": 22,
+      "constructor_sites": [
+        "funcprops.real_analysis.variation._variation_result",
+        "funcprops.real_analysis.variation._variation_result",
+        "funcprops.real_analysis.variation._variation_result",
+        "funcprops.real_analysis.variation._piecewise_variation",
+        "funcprops.real_analysis.variation.variation",
+        "funcprops.real_analysis.variation.variation",
+        "funcprops.real_analysis.variation.variation",
+        "funcprops.real_analysis.variation.variation",
+        "funcprops.real_analysis.variation.variation",
+        "funcprops.real_analysis.variation.variation"
+      ],
+      "replay_supported": true,
+      "contract": "witness-kernel",
+      "replay_mode": "theorem-premise-check",
+      "exported_names": [
+        "VariationResult"
+      ]
+    },
+    {
+      "type": "funcprops.registry_derivatives.ChainRuleCertificate",
+      "has_verify": true,
+      "line": 229,
+      "constructor_sites": [
+        "funcprops.registry_derivatives.registry_derivative",
+        "funcprops.registry_derivatives.registry_derivative",
+        "funcprops.registry_derivatives.registry_derivative",
+        "funcprops.registry_derivatives.registry_derivative"
+      ],
+      "replay_supported": false,
+      "contract": "factory-certificate",
+      "replay_mode": "unsupported-unified-replay",
+      "exported_names": [
+        "ChainRuleCertificate"
+      ]
+    },
+    {
+      "type": "funcprops.registry_derivatives.GradientCertificate",
+      "has_verify": true,
+      "line": 188,
+      "constructor_sites": [
+        "funcprops.registry_derivatives.registry_gradient",
+        "funcprops.registry_derivatives.registry_gradient"
+      ],
+      "replay_supported": false,
+      "contract": "factory-certificate",
+      "replay_mode": "unsupported-unified-replay",
+      "exported_names": [
+        "GradientCertificate"
+      ]
+    },
+    {
+      "type": "funcprops.registry_derivatives.HessianCertificate",
+      "has_verify": true,
+      "line": 430,
+      "constructor_sites": [
+        "funcprops.registry_derivatives.registry_hessian",
+        "funcprops.registry_derivatives.registry_hessian",
+        "funcprops.registry_derivatives.registry_hessian"
+      ],
+      "replay_supported": false,
+      "contract": "factory-certificate",
+      "replay_mode": "unsupported-unified-replay",
+      "exported_names": [
+        "HessianCertificate"
+      ]
+    },
+    {
+      "type": "funcprops.registry_derivatives.JacobianCertificate",
+      "has_verify": true,
+      "line": 405,
+      "constructor_sites": [
+        "funcprops.registry_derivatives.registry_jacobian"
+      ],
+      "replay_supported": false,
+      "contract": "factory-certificate",
+      "replay_mode": "unsupported-unified-replay",
+      "exported_names": [
+        "JacobianCertificate"
+      ]
+    },
+    {
+      "type": "funcprops.registry_derivatives.MultivariateChainRuleCertificate",
+      "has_verify": true,
+      "line": 452,
+      "constructor_sites": [
+        "funcprops.registry_derivatives.registry_chain_rule",
+        "funcprops.registry_derivatives.registry_chain_rule",
+        "funcprops.registry_derivatives.registry_chain_rule",
+        "funcprops.registry_derivatives.registry_chain_rule",
+        "funcprops.registry_derivatives.registry_chain_rule"
+      ],
+      "replay_supported": false,
+      "contract": "factory-certificate",
+      "replay_mode": "unsupported-unified-replay",
+      "exported_names": [
+        "MultivariateChainRuleCertificate"
+      ]
+    },
+    {
+      "type": "funcprops.root_coverage.RootCoverageCertificate",
+      "has_verify": true,
+      "line": 227,
+      "constructor_sites": [
+        "funcprops.root_coverage._assemble",
+        "funcprops.root_coverage.root_coverage"
+      ],
+      "replay_supported": true,
+      "contract": "factory-certificate",
+      "replay_mode": "declared-backend-replay",
+      "exported_names": [
+        "RootCoverageCertificate"
+      ]
+    },
+    {
+      "type": "funcprops.root_coverage.RootRegionProof",
+      "has_verify": true,
+      "line": 185,
+      "constructor_sites": [
+        "funcprops.root_coverage._leaf"
+      ],
+      "replay_supported": true,
+      "contract": "factory-certificate",
+      "replay_mode": "declared-backend-replay",
+      "exported_names": [
+        "RootRegionProof"
+      ]
+    },
+    {
+      "type": "funcprops.root_coverage.SpecializedRootCoverage",
+      "has_verify": true,
+      "line": 447,
+      "constructor_sites": [
+        "funcprops.root_coverage.specialize_root_coverage"
+      ],
+      "replay_supported": true,
+      "contract": "factory-certificate",
+      "replay_mode": "declared-backend-replay",
+      "exported_names": [
+        "SpecializedRootCoverage"
+      ]
+    },
+    {
+      "type": "funcprops.seam_regularity.SeamRegularityProof",
+      "has_verify": true,
+      "line": 191,
+      "constructor_sites": [
+        "funcprops.seam_regularity.seam_regularity_proof"
+      ],
+      "replay_supported": true,
+      "contract": "witness-kernel",
+      "replay_mode": "theorem-premise-check",
+      "exported_names": [
+        "SeamRegularityProof"
+      ]
+    },
+    {
+      "type": "funcprops.shared_zeros.ComplexZeroSubsetProof",
+      "has_verify": true,
+      "line": 239,
+      "constructor_sites": [
+        "funcprops.quotient_isolation._run",
+        "funcprops.quotient_refinement._transfer"
+      ],
+      "replay_supported": true,
+      "contract": "witness-kernel",
+      "replay_mode": "theorem-premise-check",
+      "exported_names": [
+        "ComplexZeroSubsetProof"
+      ]
+    },
+    {
+      "type": "funcprops.shared_zeros.SharedZeroImplication",
+      "has_verify": true,
+      "line": 42,
+      "constructor_sites": [
+        "funcprops.shared_zeros._propose_implication",
+        "funcprops.shared_zeros._propose_implication"
+      ],
+      "replay_supported": true,
+      "contract": "witness-kernel",
+      "replay_mode": "theorem-premise-check",
+      "exported_names": [
+        "SharedZeroImplication"
+      ]
+    },
+    {
+      "type": "funcprops.shared_zeros.SharedZeroOrderProof",
+      "has_verify": true,
+      "line": 141,
+      "constructor_sites": [
+        "funcprops.quotient_isolation._run"
+      ],
+      "replay_supported": true,
+      "contract": "witness-kernel",
+      "replay_mode": "theorem-premise-check",
+      "exported_names": [
+        "SharedZeroOrderProof"
+      ]
+    },
+    {
+      "type": "funcprops.shared_zeros.SharedZeroRegion",
+      "has_verify": true,
+      "line": 193,
+      "constructor_sites": [
+        "funcprops.quotient_refinement._transfer",
+        "funcprops.quotient_refinement._transfer"
+      ],
+      "replay_supported": true,
+      "contract": "witness-kernel",
+      "replay_mode": "theorem-premise-check",
+      "exported_names": [
+        "SharedZeroRegion"
+      ]
+    },
+    {
+      "type": "funcprops.shared_zeros._Replay",
+      "has_verify": false,
+      "line": 20,
+      "constructor_sites": [],
+      "replay_supported": false,
+      "contract": "witness-kernel",
+      "replay_mode": "unsupported-unified-replay",
+      "exported_names": []
+    },
+    {
+      "type": "funcprops.taylor_models.TaylorModel",
+      "has_verify": true,
+      "line": 33,
+      "constructor_sites": [
+        "funcprops.taylor_models.taylor_model"
+      ],
+      "replay_supported": true,
+      "contract": "factory-certificate",
+      "replay_mode": "declared-backend-replay",
+      "exported_names": [
+        "TaylorModel"
+      ]
+    },
+    {
+      "type": "funcprops.transcendental.analytic.AnalyticNeighborhoodCertificate",
+      "has_verify": false,
+      "line": 15,
+      "constructor_sites": [
+        "funcprops.transcendental.analytic.holomorphic_on_rectangle",
+        "funcprops.transcendental.analytic.analytic_neighborhood",
+        "funcprops.transcendental.analytic.analytic_neighborhood"
+      ],
+      "replay_supported": false,
+      "contract": "factory-certificate",
+      "replay_mode": "unsupported-unified-replay",
+      "exported_names": [
+        "AnalyticNeighborhoodCertificate"
+      ]
+    },
+    {
+      "type": "funcprops.transcendental.complex_roots.ArgumentPrincipleCertificate",
+      "has_verify": false,
+      "line": 50,
+      "constructor_sites": [
+        "funcprops.transcendental.complex_roots.argument_principle_count",
+        "funcprops.transcendental.complex_roots.argument_principle_count",
+        "funcprops.transcendental.complex_roots.argument_principle_count"
+      ],
+      "replay_supported": false,
+      "contract": "factory-certificate",
+      "replay_mode": "unsupported-unified-replay",
+      "exported_names": [
+        "TranscendentalArgumentPrincipleCertificate"
+      ]
+    },
+    {
+      "type": "funcprops.transcendental.complex_roots.ComplexRootIsolationResult",
+      "has_verify": true,
+      "line": 85,
+      "constructor_sites": [
+        "funcprops.transcendental.complex_roots._native_result",
+        "funcprops.transcendental.complex_roots._quotient_result",
+        "funcprops.transcendental.complex_roots._timeout_isolation",
+        "funcprops.transcendental.complex_roots.isolate_complex_roots",
+        "funcprops.transcendental.complex_roots.isolate_complex_roots",
+        "funcprops.transcendental.complex_roots.isolate_complex_roots",
+        "funcprops.transcendental.complex_roots.isolate_complex_roots",
+        "funcprops.transcendental.complex_roots.isolate_complex_roots",
+        "funcprops.transcendental.complex_roots.isolate_complex_roots",
+        "funcprops.transcendental.complex_roots.isolate_complex_roots"
+      ],
+      "replay_supported": true,
+      "contract": "route-dependent",
+      "replay_mode": "bound-native-or-algroots-replay",
+      "exported_names": [
+        "ComplexRootIsolationResult"
+      ]
+    },
+    {
+      "type": "funcprops.transcendental.extrema.ExtremumFamilyCertificate",
+      "has_verify": false,
+      "line": 98,
+      "constructor_sites": [
+        "funcprops.transcendental.extrema._extremum_geometry_impl"
+      ],
+      "replay_supported": true,
+      "contract": "factory-certificate",
+      "replay_mode": "declared-backend-replay",
+      "exported_names": [
+        "ExtremumFamilyCertificate"
+      ]
+    },
+    {
+      "type": "funcprops.transcendental.extrema.ExtremumOrderingTheorem",
+      "has_verify": false,
+      "line": null,
+      "constructor_sites": [
+        "funcprops.transcendental.extrema.extremum_ordering_theorems",
+        "funcprops.transcendental.extrema.extremum_ordering_theorems"
+      ],
+      "replay_supported": true,
+      "contract": "factory-certificate",
+      "replay_mode": "declared-backend-replay",
+      "exported_names": [
+        "ExtremumOrderingTheorem"
+      ]
+    },
+    {
+      "type": "funcprops.transcendental.extrema.ExtremumRange",
+      "has_verify": false,
+      "line": null,
+      "constructor_sites": [
+        "funcprops.transcendental.extrema._simplify_indexed_tail",
+        "funcprops.transcendental.extrema._simplify_indexed_tail",
+        "funcprops.transcendental.extrema._simplify_indexed_extrema",
+        "funcprops.transcendental.extrema._simplify_indexed_extrema",
+        "funcprops.transcendental.extrema._simplify_indexed_extrema",
+        "funcprops.transcendental.extrema._simplify_indexed_extrema",
+        "funcprops.transcendental.extrema._simplify_indexed_extrema",
+        "funcprops.transcendental.extrema._symbolic_extremum_range_impl",
+        "funcprops.transcendental.extrema._symbolic_extremum_range_impl"
+      ],
+      "replay_supported": true,
+      "contract": "factory-certificate",
+      "replay_mode": "declared-backend-replay",
+      "exported_names": [
+        "ExtremumRange"
+      ]
+    },
+    {
+      "type": "funcprops.transcendental.reduce.UnivariateReductionResult",
+      "has_verify": false,
+      "line": 18,
+      "constructor_sites": [
+        "funcprops.transcendental.reduce._reduce_interval",
+        "funcprops.transcendental.reduce._reduce_interval",
+        "funcprops.transcendental.reduce._reduce_interval",
+        "funcprops.transcendental.reduce._reduce_interval",
+        "funcprops.transcendental.reduce._reduce_interval",
+        "funcprops.transcendental.reduce._reduce_interval",
+        "funcprops.transcendental.reduce.reduce_univariate_condition",
+        "funcprops.transcendental.reduce.reduce_univariate_condition",
+        "funcprops.transcendental.reduce.reduce_univariate_condition",
+        "funcprops.transcendental.reduce.reduce_univariate_condition",
+        "funcprops.transcendental.reduce.reduce_univariate_condition"
+      ],
+      "replay_supported": false,
+      "contract": "factory-certificate",
+      "replay_mode": "unsupported-unified-replay",
+      "exported_names": [
+        "UnivariateReductionResult"
+      ]
+    },
+    {
+      "type": "funcprops.transcendental.roots.RootCertificate",
+      "has_verify": false,
+      "line": 20,
+      "constructor_sites": [
+        "funcprops.transcendental.roots._periodic",
+        "funcprops.transcendental.roots._special",
+        "funcprops.transcendental.roots._special",
+        "funcprops.transcendental.roots._orthogonal_special",
+        "funcprops.transcendental.roots._orthogonal_special",
+        "funcprops.transcendental.roots._orthogonal_special",
+        "funcprops.transcendental.roots._orthogonal_special",
+        "funcprops.transcendental.roots._orthogonal_special",
+        "funcprops.transcendental.roots._identically_zero_interval",
+        "funcprops.transcendental.roots._identically_zero_interval",
+        "funcprops.transcendental.roots._solveset",
+        "funcprops.transcendental.roots._solveset",
+        "funcprops.transcendental.roots._solveset",
+        "funcprops.transcendental.roots._certified_monotone_interval",
+        "funcprops.transcendental.roots._certified_monotone_interval",
+        "funcprops.transcendental.roots._certified_monotone_interval",
+        "funcprops.transcendental.roots._certified_monotone_interval",
+        "funcprops.transcendental.roots._certified_monotone_interval",
+        "funcprops.transcendental.roots._certified_monotone_interval",
+        "funcprops.transcendental.roots._certified_interval_resolution",
+        "funcprops.transcendental.roots._certified_interval_resolution",
+        "funcprops.transcendental.roots._certified_interval_resolution",
+        "funcprops.transcendental.roots._certified_interval_resolution",
+        "funcprops.transcendental.roots._certified_interval_resolution",
+        "funcprops.transcendental.roots._certified_interval_resolution",
+        "funcprops.transcendental.roots._certified_interval_resolution",
+        "funcprops.transcendental.roots._certified_interval_isolation",
+        "funcprops.transcendental.roots._certified_interval_isolation",
+        "funcprops.transcendental.roots._certified_interval_isolation",
+        "funcprops.transcendental.roots._certified_interval_isolation",
+        "funcprops.transcendental.roots._certified_interval_isolation",
+        "funcprops.transcendental.roots._scale_root_certificate",
+        "funcprops.transcendental.roots._repeated_power_roots",
+        "funcprops.transcendental.roots._validated_even_multiplicity_numeric",
+        "funcprops.transcendental.roots._exponential_fourier_count",
+        "funcprops.transcendental.roots._transcendental_roots_impl",
+        "funcprops.transcendental.roots._transcendental_roots_impl",
+        "funcprops.transcendental.roots._transcendental_roots_impl",
+        "funcprops.real_analysis.monotonic_certificates._certified_inverse_cell",
+        "funcprops.real_analysis.zeros._zeros_on_set"
+      ],
+      "replay_supported": true,
+      "contract": "factory-certificate",
+      "replay_mode": "declared-backend-replay",
+      "exported_names": [
+        "RootCertificate"
+      ]
+    },
+    {
+      "type": "funcprops.transcendental.roots.RootIsolationResult",
+      "has_verify": true,
+      "line": 55,
+      "constructor_sites": [
+        "funcprops.transcendental.roots._periodic",
+        "funcprops.transcendental.roots._special",
+        "funcprops.transcendental.roots._special",
+        "funcprops.transcendental.roots._orthogonal_special",
+        "funcprops.transcendental.roots._orthogonal_special",
+        "funcprops.transcendental.roots._orthogonal_special",
+        "funcprops.transcendental.roots._orthogonal_special",
+        "funcprops.transcendental.roots._orthogonal_special",
+        "funcprops.transcendental.roots._orthogonal_special",
+        "funcprops.transcendental.roots._orthogonal_special",
+        "funcprops.transcendental.roots._orthogonal_special",
+        "funcprops.transcendental.roots._identically_zero_interval",
+        "funcprops.transcendental.roots._identically_zero_interval",
+        "funcprops.transcendental.roots._solveset",
+        "funcprops.transcendental.roots._certified_monotone_interval",
+        "funcprops.transcendental.roots._certified_monotone_interval",
+        "funcprops.transcendental.roots._certified_monotone_interval",
+        "funcprops.transcendental.roots._certified_monotone_interval",
+        "funcprops.transcendental.roots._certified_monotone_interval",
+        "funcprops.transcendental.roots._certified_interval_resolution",
+        "funcprops.transcendental.roots._certified_interval_resolution",
+        "funcprops.transcendental.roots._certified_interval_resolution",
+        "funcprops.transcendental.roots._certified_interval_resolution",
+        "funcprops.transcendental.roots._certified_interval_resolution",
+        "funcprops.transcendental.roots._certified_interval_resolution",
+        "funcprops.transcendental.roots._certified_interval_resolution",
+        "funcprops.transcendental.roots._certified_interval_isolation",
+        "funcprops.transcendental.roots._repeated_power_roots",
+        "funcprops.transcendental.roots._validated_even_multiplicity_numeric",
+        "funcprops.transcendental.roots._numeric",
+        "funcprops.transcendental.roots._exponential_fourier_count",
+        "funcprops.transcendental.roots._exponential_fourier_count",
+        "funcprops.transcendental.roots._transcendental_roots_impl",
+        "funcprops.transcendental.roots._transcendental_roots_impl",
+        "funcprops.transcendental.roots._transcendental_roots_impl",
+        "funcprops.transcendental.roots._transcendental_roots_impl",
+        "funcprops.transcendental.roots._transcendental_roots_impl",
+        "funcprops.transcendental.roots._transcendental_roots_impl",
+        "funcprops.transcendental.roots._transcendental_roots_impl",
+        "funcprops.real_analysis.zeros._merge_root_results",
+        "funcprops.real_analysis.zeros._zeros_on_set",
+        "funcprops.real_analysis.zeros._function_zeros_impl",
+        "funcprops.real_analysis.zeros._function_zeros_impl"
+      ],
+      "replay_supported": true,
+      "contract": "factory-certificate",
+      "replay_mode": "declared-backend-replay",
+      "exported_names": [
+        "RootIsolationResult"
+      ]
+    },
+    {
+      "type": "funcprops.transcendental.zero_geometry.CertifiedIntegerBracket",
+      "has_verify": false,
+      "line": null,
+      "constructor_sites": [
+        "funcprops.transcendental.zero_geometry.indexed_tail_integer_bracket"
+      ],
+      "replay_supported": true,
+      "contract": "factory-certificate",
+      "replay_mode": "declared-backend-replay",
+      "exported_names": [
+        "CertifiedIntegerBracket"
+      ]
+    },
+    {
+      "type": "funcprops.transcendental.zero_geometry.IndexedTailInversionCertificate",
+      "has_verify": false,
+      "line": 1080,
+      "constructor_sites": [
+        "funcprops.transcendental.zero_geometry.indexed_tail_inversion",
+        "funcprops.transcendental.zero_geometry.indexed_tail_inversion",
+        "funcprops.transcendental.zero_geometry.indexed_tail_inversion",
+        "funcprops.transcendental.zero_geometry.indexed_tail_inversion"
+      ],
+      "replay_supported": true,
+      "contract": "factory-certificate",
+      "replay_mode": "declared-backend-replay",
+      "exported_names": [
+        "IndexedTailInversionCertificate"
+      ]
+    },
+    {
+      "type": "funcprops.transcendental.zero_geometry.ZeroGeometryCertificate",
+      "has_verify": false,
+      "line": 88,
+      "constructor_sites": [
+        "funcprops.transcendental.zero_geometry._bessel_geometry",
+        "funcprops.transcendental.zero_geometry._airy_geometry",
+        "funcprops.transcendental.zero_geometry._orthogonal_geometry",
+        "funcprops.transcendental.zero_geometry._legendre_geometry",
+        "funcprops.transcendental.zero_geometry._legendre_geometry",
+        "funcprops.transcendental.zero_geometry.property_interval_decomposition",
+        "funcprops.transcendental.zero_geometry.property_interval_decomposition"
+      ],
+      "replay_supported": true,
+      "contract": "factory-certificate",
+      "replay_mode": "declared-backend-replay",
+      "exported_names": [
+        "ZeroGeometryCertificate"
+      ]
+    },
+    {
+      "type": "funcprops.transformation.ChangeOfVariablesCertificate",
+      "has_verify": true,
+      "line": 382,
+      "constructor_sites": [
+        "funcprops.transformation._change_of_variables_from_facts"
+      ],
+      "replay_supported": true,
+      "contract": "factory-certificate",
+      "replay_mode": "declared-backend-replay",
+      "exported_names": [
+        "ChangeOfVariablesCertificate"
+      ]
+    },
+    {
+      "type": "funcprops.transformation.DeterminantNonvanishingCertificate",
+      "has_verify": true,
+      "line": 211,
+      "constructor_sites": [
+        "funcprops.transformation._det_nonzero_from_jacobian",
+        "funcprops.transformation._det_nonzero_from_jacobian",
+        "funcprops.transformation._det_nonzero_from_jacobian",
+        "funcprops.transformation._det_nonzero_from_jacobian",
+        "funcprops.transformation._det_nonzero_from_jacobian",
+        "funcprops.transformation._det_nonzero_from_jacobian",
+        "funcprops.transformation._det_nonzero_from_jacobian",
+        "funcprops.transformation._det_nonzero_from_jacobian",
+        "funcprops.transformation._det_nonzero_from_jacobian",
+        "funcprops.transformation._det_nonzero_from_jacobian",
+        "funcprops.transformation._det_nonzero_from_jacobian"
+      ],
+      "replay_supported": true,
+      "contract": "factory-certificate",
+      "replay_mode": "declared-backend-replay",
+      "exported_names": [
+        "DeterminantNonvanishingCertificate"
+      ]
+    },
+    {
+      "type": "funcprops.transformation.LocalInvertibilityCertificate",
+      "has_verify": true,
+      "line": 286,
+      "constructor_sites": [
+        "funcprops.transformation._local_invertibility_from_facts",
+        "funcprops.transformation._local_invertibility_from_facts"
+      ],
+      "replay_supported": true,
+      "contract": "factory-certificate",
+      "replay_mode": "declared-backend-replay",
+      "exported_names": [
+        "LocalInvertibilityCertificate"
+      ]
+    },
+    {
+      "type": "funcprops.verified_roots.RealRootInterval",
+      "has_verify": true,
+      "line": 26,
+      "constructor_sites": [
+        "funcprops.verified_roots.verify_real_root_interval",
+        "funcprops.verified_roots.verify_real_root_interval",
+        "funcprops.verified_roots.verify_real_root_interval",
+        "funcprops.verified_roots.verify_real_root_interval",
+        "funcprops.verified_roots.verify_real_root_interval"
+      ],
+      "replay_supported": true,
+      "contract": "factory-certificate",
+      "replay_mode": "declared-backend-replay",
+      "exported_names": [
+        "RealRootInterval"
+      ]
+    },
+    {
+      "type": "funcprops.work_budget.BudgetedResult",
+      "has_verify": true,
+      "line": 70,
+      "constructor_sites": [
+        "funcprops.work_budget.bounded_query"
+      ],
+      "replay_supported": false,
+      "contract": "factory-certificate",
+      "replay_mode": "unsupported-unified-replay",
+      "exported_names": []
+    }
+  ],
+  "public_entrypoints": [
+    {
+      "api": "adaptive_complex_isolation",
+      "implementation": "funcprops.complex_cofinal.adaptive_complex_isolation",
+      "possible_record_types": [
+        "funcprops.adaptive_roots.AdaptiveRootResult",
+        "funcprops.adaptive_roots.CoverageState",
+        "funcprops.analytic_contours.AnalyticComplexCoverage",
+        "funcprops.complex_cofinal.ComplexIsolationRun",
+        "funcprops.complex_isolation.ComplexIsolationProof",
+        "funcprops.complex_isolation.ComplexIsolationState",
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.parameter_contract.ParameterCoverageProof",
+        "funcprops.parameter_contract.UniformParameterCertificate",
+        "funcprops.property_contract.PropertyCoverageProof",
+        "funcprops.quotient_cofinal.QuotientIsolationRun",
+        "funcprops.quotient_isolation.QuotientIsolationProof",
+        "funcprops.quotient_isolation.QuotientIsolationState",
+        "funcprops.quotient_isolation.QuotientRegionProof",
+        "funcprops.quotient_isolation.QuotientSourceProof",
+        "funcprops.transcendental.complex_roots.ComplexRootIsolationResult",
+        "funcprops.work_budget.BudgetedResult"
+      ]
+    },
+    {
+      "api": "adaptive_quotient_isolation",
+      "implementation": "funcprops.quotient_cofinal.adaptive_quotient_isolation",
+      "possible_record_types": [
+        "funcprops.adaptive_roots.AdaptiveRootResult",
+        "funcprops.adaptive_roots.CoverageState",
+        "funcprops.analytic_contours.AnalyticComplexCoverage",
+        "funcprops.complex_cofinal.ComplexIsolationRun",
+        "funcprops.complex_isolation.ComplexIsolationProof",
+        "funcprops.complex_isolation.ComplexIsolationState",
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.parameter_contract.ParameterCoverageProof",
+        "funcprops.parameter_contract.UniformParameterCertificate",
+        "funcprops.property_contract.PropertyCoverageProof",
+        "funcprops.quotient_cofinal.QuotientIsolationRun",
+        "funcprops.quotient_isolation.QuotientIsolationProof",
+        "funcprops.quotient_isolation.QuotientIsolationState",
+        "funcprops.quotient_isolation.QuotientRegionProof",
+        "funcprops.quotient_isolation.QuotientSourceProof",
+        "funcprops.transcendental.complex_roots.ComplexRootIsolationResult",
+        "funcprops.work_budget.BudgetedResult"
+      ]
+    },
+    {
+      "api": "adaptive_root_coverage",
+      "implementation": "funcprops.adaptive_roots.adaptive_root_coverage",
+      "possible_record_types": [
+        "funcprops.adaptive_roots.AdaptiveRootResult",
+        "funcprops.adaptive_roots.CoverageState",
+        "funcprops.analytic_contours.AnalyticComplexCoverage",
+        "funcprops.complex_cofinal.ComplexIsolationRun",
+        "funcprops.complex_isolation.ComplexIsolationProof",
+        "funcprops.complex_isolation.ComplexIsolationState",
+        "funcprops.coverage_contract.CellDomainWitness",
+        "funcprops.coverage_contract.CoverageLeaf",
+        "funcprops.coverage_contract.EnclosureWitness",
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.infinite_contract.PeriodicDomainWitness",
+        "funcprops.parameter_contract.ParameterCoverageProof",
+        "funcprops.parameter_contract.UniformParameterCertificate",
+        "funcprops.property_contract.PropertyCoverageProof",
+        "funcprops.quotient_isolation.QuotientIsolationProof",
+        "funcprops.quotient_isolation.QuotientIsolationState",
+        "funcprops.quotient_isolation.QuotientRegionProof",
+        "funcprops.quotient_isolation.QuotientSourceProof",
+        "funcprops.transcendental.complex_roots.ComplexRootIsolationResult",
+        "funcprops.work_budget.BudgetedResult"
+      ]
+    },
+    {
+      "api": "affine_global_mapping",
+      "implementation": "funcprops.global_multivariate.affine_global_mapping",
+      "possible_record_types": [
+        "funcprops.global_multivariate.GlobalMapCertificate"
+      ]
+    },
+    {
+      "api": "affine_sine_root_family",
+      "implementation": "funcprops.infinite_root_families.affine_sine_root_family",
+      "possible_record_types": [
+        "funcprops.infinite_root_families.IndexedRootFamily"
+      ]
+    },
+    {
+      "api": "affine_trig_root_family",
+      "implementation": "funcprops.infinite_root_families.affine_trig_root_family",
+      "possible_record_types": [
+        "funcprops.infinite_root_families.IndexedRootFamily"
+      ]
+    },
+    {
+      "api": "algebraize",
+      "implementation": "funcprops.transcendental.algebraize.algebraize",
+      "possible_record_types": [
+        "funcprops.entire_cancellation.EntireCancellationProof"
+      ]
+    },
+    {
+      "api": "analytic",
+      "implementation": "funcprops.singularities.analysis.analytic",
+      "possible_record_types": [
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.real_analysis.piecewise.PiecewiseBoundaryCertificate",
+        "funcprops.registry_derivatives.ChainRuleCertificate",
+        "funcprops.registry_derivatives.GradientCertificate"
+      ]
+    },
+    {
+      "api": "analytic_complex_coverage",
+      "implementation": "funcprops.analytic_contours.analytic_complex_coverage",
+      "possible_record_types": [
+        "funcprops.adaptive_roots.AdaptiveRootResult",
+        "funcprops.adaptive_roots.CoverageState",
+        "funcprops.analytic_contours.AnalyticComplexCoverage",
+        "funcprops.analytic_contours.AnalyticContourCertificate",
+        "funcprops.analytic_contours.ComplexBoxWitness",
+        "funcprops.complex_cofinal.ComplexIsolationRun",
+        "funcprops.complex_isolation.ComplexIsolationProof",
+        "funcprops.complex_isolation.ComplexIsolationState",
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.parameter_contract.ParameterCoverageProof",
+        "funcprops.parameter_contract.UniformParameterCertificate",
+        "funcprops.property_contract.PropertyCoverageProof",
+        "funcprops.quotient_isolation.QuotientIsolationProof",
+        "funcprops.quotient_isolation.QuotientIsolationState",
+        "funcprops.quotient_isolation.QuotientRegionProof",
+        "funcprops.quotient_isolation.QuotientSourceProof",
+        "funcprops.transcendental.complex_roots.ComplexRootIsolationResult",
+        "funcprops.work_budget.BudgetedResult"
+      ]
+    },
+    {
+      "api": "analytic_continue",
+      "implementation": "funcprops.certified_operations.analytic_continue",
+      "possible_record_types": [
+        "funcprops.algebraic_coefficients.AlgebraicCoefficientEncoding",
+        "funcprops.certified_operations.ContinuationCertificate",
+        "funcprops.certified_operations.WindingCertificate",
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.integration.IntegralResult",
+        "funcprops.piecewise_proofs.PiecewiseRegularityCertificate",
+        "funcprops.real_analysis.piecewise.PiecewiseBoundaryCertificate",
+        "funcprops.registry_derivatives.ChainRuleCertificate",
+        "funcprops.registry_derivatives.GradientCertificate"
+      ]
+    },
+    {
+      "api": "analytic_neighborhood",
+      "implementation": "funcprops.transcendental.analytic.analytic_neighborhood",
+      "possible_record_types": [
+        "funcprops.transcendental.analytic.AnalyticNeighborhoodCertificate"
+      ]
+    },
+    {
+      "api": "analyze_transcendental_real",
+      "implementation": "funcprops.transcendental.unified_real.analyze_transcendental_real",
+      "possible_record_types": [
+        "funcprops.asymptotic_tails.TailSignCertificate",
+        "funcprops.infinite_root_families.IndexedRootFamily"
+      ]
+    },
+    {
+      "api": "argument_principle",
+      "implementation": "funcprops.certified_operations.argument_principle",
+      "possible_record_types": [
+        "funcprops.algebraic_coefficients.AlgebraicCoefficientEncoding",
+        "funcprops.certified_operations.ArgumentPrincipleResult",
+        "funcprops.certified_operations.WindingCertificate",
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.guarded_affine.GuardedAffineContourCertificate",
+        "funcprops.guarded_affine.GuardedAffineEquationCertificate",
+        "funcprops.integration.IntegralResult",
+        "funcprops.piecewise_proofs.PiecewiseRegularityCertificate",
+        "funcprops.real_analysis.piecewise.PiecewiseBoundaryCertificate",
+        "funcprops.registry_derivatives.ChainRuleCertificate",
+        "funcprops.registry_derivatives.GradientCertificate"
+      ]
+    },
+    {
+      "api": "argument_principle_count",
+      "implementation": "funcprops.transcendental.complex_roots.argument_principle_count",
+      "possible_record_types": [
+        "funcprops.adaptive_roots.AdaptiveRootResult",
+        "funcprops.adaptive_roots.CoverageState",
+        "funcprops.analytic_contours.AnalyticComplexCoverage",
+        "funcprops.analytic_contours.AnalyticContourCertificate",
+        "funcprops.analytic_contours.ComplexBoxWitness",
+        "funcprops.complex_cofinal.ComplexIsolationRun",
+        "funcprops.complex_isolation.ComplexIsolationProof",
+        "funcprops.complex_isolation.ComplexIsolationState",
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.parameter_contract.ParameterCoverageProof",
+        "funcprops.parameter_contract.UniformParameterCertificate",
+        "funcprops.property_contract.PropertyCoverageProof",
+        "funcprops.quotient_isolation.QuotientIsolationProof",
+        "funcprops.quotient_isolation.QuotientIsolationState",
+        "funcprops.quotient_isolation.QuotientRegionProof",
+        "funcprops.quotient_isolation.QuotientSourceProof",
+        "funcprops.transcendental.analytic.AnalyticNeighborhoodCertificate",
+        "funcprops.transcendental.complex_roots.ArgumentPrincipleCertificate",
+        "funcprops.transcendental.complex_roots.ComplexRootIsolationResult",
+        "funcprops.work_budget.BudgetedResult"
+      ]
+    },
+    {
+      "api": "argument_principle_rectangle",
+      "implementation": "funcprops.complex_certification.argument_principle_rectangle",
+      "possible_record_types": [
+        "funcprops.complex_certification.ArgumentPrincipleCertificate"
+      ]
+    },
+    {
+      "api": "bijective",
+      "implementation": "funcprops.real_analysis.mapping.bijective",
+      "possible_record_types": [
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.real_analysis.monotonic_certificates.MonotonicDecomposition",
+        "funcprops.real_analysis.monotonic_certificates.MonotonicPartition",
+        "funcprops.real_analysis.piecewise.PiecewiseBoundaryCertificate",
+        "funcprops.registry_derivatives.ChainRuleCertificate",
+        "funcprops.registry_derivatives.GradientCertificate",
+        "funcprops.transcendental.extrema.ExtremumFamilyCertificate",
+        "funcprops.transcendental.extrema.ExtremumOrderingTheorem",
+        "funcprops.transcendental.extrema.ExtremumRange",
+        "funcprops.transcendental.zero_geometry.CertifiedIntegerBracket",
+        "funcprops.transcendental.zero_geometry.IndexedTailInversionCertificate",
+        "funcprops.transcendental.zero_geometry.ZeroGeometryCertificate"
+      ]
+    },
+    {
+      "api": "boundary_behavior",
+      "implementation": "funcprops.geometry.boundary_behavior",
+      "possible_record_types": [
+        "funcprops.entire_cancellation.EntireCancellationProof"
+      ]
+    },
+    {
+      "api": "boundedness",
+      "implementation": "funcprops.real_analysis.boundedness.boundedness",
+      "possible_record_types": [
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.real_analysis.monotonic_certificates.MonotonicDecomposition",
+        "funcprops.real_analysis.monotonic_certificates.MonotonicPartition",
+        "funcprops.real_analysis.piecewise.PiecewiseBoundaryCertificate",
+        "funcprops.registry_derivatives.ChainRuleCertificate",
+        "funcprops.registry_derivatives.GradientCertificate",
+        "funcprops.transcendental.extrema.ExtremumFamilyCertificate",
+        "funcprops.transcendental.extrema.ExtremumOrderingTheorem",
+        "funcprops.transcendental.extrema.ExtremumRange",
+        "funcprops.transcendental.zero_geometry.CertifiedIntegerBracket",
+        "funcprops.transcendental.zero_geometry.IndexedTailInversionCertificate",
+        "funcprops.transcendental.zero_geometry.ZeroGeometryCertificate"
+      ]
+    },
+    {
+      "api": "branch_cuts",
+      "implementation": "funcprops.api.branch_cuts",
+      "possible_record_types": [
+        "funcprops.algebraic_coefficients.AlgebraicCoefficientEncoding"
+      ]
+    },
+    {
+      "api": "branch_points",
+      "implementation": "funcprops.singularities.records.branchpoints",
+      "possible_record_types": [
+        "funcprops.entire_cancellation.EntireCancellationProof"
+      ]
+    },
+    {
+      "api": "certified_monotonic_inverse",
+      "implementation": "funcprops.real_analysis.monotonic_certificates.certified_monotonic_inverse",
+      "possible_record_types": [
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.real_analysis.monotonic_certificates.InverseSolutionCertificate",
+        "funcprops.real_analysis.monotonic_certificates.MonotonicPartition",
+        "funcprops.real_analysis.piecewise.PiecewiseBoundaryCertificate",
+        "funcprops.registry_derivatives.ChainRuleCertificate",
+        "funcprops.registry_derivatives.GradientCertificate",
+        "funcprops.transcendental.roots.RootCertificate",
+        "funcprops.transcendental.zero_geometry.ZeroGeometryCertificate"
+      ]
+    },
+    {
+      "api": "certified_real_ball",
+      "implementation": "funcprops.certified_balls.certified_real_ball",
+      "possible_record_types": [
+        "funcprops.certified_balls.RealBallCertificate"
+      ]
+    },
+    {
+      "api": "certify_algebraic_complex_roots",
+      "implementation": "funcprops.algebraic_complex.certify_algebraic_complex_roots",
+      "possible_record_types": [
+        "funcprops.algebraic_complex.AlgebraicComplexRootProof"
+      ]
+    },
+    {
+      "api": "certify_analytic_contour",
+      "implementation": "funcprops.analytic_contours.certify_analytic_contour",
+      "possible_record_types": [
+        "funcprops.adaptive_roots.AdaptiveRootResult",
+        "funcprops.adaptive_roots.CoverageState",
+        "funcprops.analytic_contours.AnalyticComplexCoverage",
+        "funcprops.analytic_contours.AnalyticContourCertificate",
+        "funcprops.analytic_contours.ComplexBoxWitness",
+        "funcprops.complex_cofinal.ComplexIsolationRun",
+        "funcprops.complex_isolation.ComplexIsolationProof",
+        "funcprops.complex_isolation.ComplexIsolationState",
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.parameter_contract.ParameterCoverageProof",
+        "funcprops.parameter_contract.UniformParameterCertificate",
+        "funcprops.property_contract.PropertyCoverageProof",
+        "funcprops.quotient_isolation.QuotientIsolationProof",
+        "funcprops.quotient_isolation.QuotientIsolationState",
+        "funcprops.quotient_isolation.QuotientRegionProof",
+        "funcprops.quotient_isolation.QuotientSourceProof",
+        "funcprops.transcendental.complex_roots.ComplexRootIsolationResult",
+        "funcprops.work_budget.BudgetedResult"
+      ]
+    },
+    {
+      "api": "certify_branch_chart",
+      "implementation": "funcprops.branch_gluing.certify_branch_chart",
+      "possible_record_types": [
+        "funcprops.branch_gluing.HolomorphicBranchChart"
+      ]
+    },
+    {
+      "api": "certify_common_zero",
+      "implementation": "funcprops.implicit_orders.certify_common_zero",
+      "possible_record_types": [
+        "funcprops.adaptive_roots.AdaptiveRootResult",
+        "funcprops.adaptive_roots.CoverageState",
+        "funcprops.analytic_contours.AnalyticComplexCoverage",
+        "funcprops.complex_cofinal.ComplexIsolationRun",
+        "funcprops.complex_isolation.ComplexIsolationProof",
+        "funcprops.complex_isolation.ComplexIsolationState",
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.implicit_orders.CommonZeroProof",
+        "funcprops.implicit_orders.ImplicitJetWitness",
+        "funcprops.implicit_orders.ImplicitMultiplicityProof",
+        "funcprops.implicit_orders.ImplicitRootValueProof",
+        "funcprops.parameter_contract.ParameterCoverageProof",
+        "funcprops.parameter_contract.UniformParameterCertificate",
+        "funcprops.property_contract.PropertyCoverageProof",
+        "funcprops.quotient_isolation.QuotientIsolationProof",
+        "funcprops.quotient_isolation.QuotientIsolationState",
+        "funcprops.quotient_isolation.QuotientRegionProof",
+        "funcprops.quotient_isolation.QuotientSourceProof",
+        "funcprops.transcendental.complex_roots.ComplexRootIsolationResult",
+        "funcprops.work_budget.BudgetedResult"
+      ]
+    },
+    {
+      "api": "certify_complex_cluster",
+      "implementation": "funcprops.complex_clusters.certify_complex_cluster",
+      "possible_record_types": [
+        "funcprops.adaptive_roots.AdaptiveRootResult",
+        "funcprops.adaptive_roots.CoverageState",
+        "funcprops.analytic_contours.AnalyticComplexCoverage",
+        "funcprops.complex_clusters.ComplexClusterCertificate",
+        "funcprops.complex_cofinal.ComplexIsolationRun",
+        "funcprops.complex_isolation.ComplexIsolationProof",
+        "funcprops.complex_isolation.ComplexIsolationState",
+        "funcprops.coverage_contract.EnclosureWitness",
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.parameter_contract.ParameterCoverageProof",
+        "funcprops.parameter_contract.UniformParameterCertificate",
+        "funcprops.property_contract.PropertyCoverageProof",
+        "funcprops.quotient_isolation.QuotientIsolationProof",
+        "funcprops.quotient_isolation.QuotientIsolationState",
+        "funcprops.quotient_isolation.QuotientRegionProof",
+        "funcprops.quotient_isolation.QuotientSourceProof",
+        "funcprops.transcendental.complex_roots.ComplexRootIsolationResult",
+        "funcprops.work_budget.BudgetedResult"
+      ]
+    },
+    {
+      "api": "certify_complex_isolation",
+      "implementation": "funcprops.complex_isolation.certify_complex_isolation",
+      "possible_record_types": [
+        "funcprops.adaptive_roots.AdaptiveRootResult",
+        "funcprops.adaptive_roots.CoverageState",
+        "funcprops.analytic_contours.AnalyticComplexCoverage",
+        "funcprops.analytic_contours.AnalyticContourCertificate",
+        "funcprops.analytic_contours.ComplexBoxWitness",
+        "funcprops.complex_cofinal.ComplexIsolationRun",
+        "funcprops.complex_isolation.ComplexIsolationProof",
+        "funcprops.complex_isolation.ComplexIsolationState",
+        "funcprops.complex_multiplicity.ComplexExactMultiplicity",
+        "funcprops.complex_multiplicity.ComplexLocatedRegion",
+        "funcprops.complex_multiplicity.ComplexPowerFactorProof",
+        "funcprops.complex_multiplicity.ComplexPowerRootRegion",
+        "funcprops.complex_multiplicity.ComplexTaylorWitness",
+        "funcprops.complex_multiplicity.ComplexUnitWitness",
+        "funcprops.complex_newton.ComplexDerivativeWitness",
+        "funcprops.complex_newton.ComplexNewtonRefinement",
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.implicit_orders.ImplicitJetWitness",
+        "funcprops.implicit_orders.ImplicitMultiplicityProof",
+        "funcprops.implicit_orders.ImplicitRootValueProof",
+        "funcprops.parameter_contract.ParameterCoverageProof",
+        "funcprops.parameter_contract.UniformParameterCertificate",
+        "funcprops.property_contract.PropertyCoverageProof",
+        "funcprops.quotient_isolation.DenominatorExclusionProof",
+        "funcprops.quotient_isolation.ExactLocalZeroProof",
+        "funcprops.quotient_isolation.QuotientCellProof",
+        "funcprops.quotient_isolation.QuotientIsolationProof",
+        "funcprops.quotient_isolation.QuotientIsolationState",
+        "funcprops.quotient_isolation.QuotientRegionProof",
+        "funcprops.quotient_isolation.QuotientSourceProof",
+        "funcprops.quotient_refinement.QuotientNewtonRefinement",
+        "funcprops.shared_zeros.ComplexZeroSubsetProof",
+        "funcprops.shared_zeros.SharedZeroImplication",
+        "funcprops.shared_zeros.SharedZeroOrderProof",
+        "funcprops.shared_zeros.SharedZeroRegion",
+        "funcprops.transcendental.complex_roots.ComplexRootIsolationResult",
+        "funcprops.work_budget.BudgetedResult"
+      ]
+    },
+    {
+      "api": "certify_complex_multiple_root",
+      "implementation": "funcprops.complex_multiplicity.certify_complex_multiple_root",
+      "possible_record_types": [
+        "funcprops.adaptive_roots.AdaptiveRootResult",
+        "funcprops.adaptive_roots.CoverageState",
+        "funcprops.analytic_contours.AnalyticComplexCoverage",
+        "funcprops.analytic_contours.AnalyticContourCertificate",
+        "funcprops.analytic_contours.ComplexBoxWitness",
+        "funcprops.complex_cofinal.ComplexIsolationRun",
+        "funcprops.complex_isolation.ComplexIsolationProof",
+        "funcprops.complex_isolation.ComplexIsolationState",
+        "funcprops.complex_multiplicity.ComplexExactMultiplicity",
+        "funcprops.complex_multiplicity.ComplexPowerFactorProof",
+        "funcprops.complex_multiplicity.ComplexTaylorWitness",
+        "funcprops.complex_multiplicity.ComplexUnitWitness",
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.parameter_contract.ParameterCoverageProof",
+        "funcprops.parameter_contract.UniformParameterCertificate",
+        "funcprops.property_contract.PropertyCoverageProof",
+        "funcprops.quotient_isolation.QuotientIsolationProof",
+        "funcprops.quotient_isolation.QuotientIsolationState",
+        "funcprops.quotient_isolation.QuotientRegionProof",
+        "funcprops.quotient_isolation.QuotientSourceProof",
+        "funcprops.transcendental.complex_roots.ComplexRootIsolationResult",
+        "funcprops.work_budget.BudgetedResult"
+      ]
+    },
+    {
+      "api": "certify_complex_refinement",
+      "implementation": "funcprops.complex_newton.certify_complex_refinement",
+      "possible_record_types": [
+        "funcprops.adaptive_roots.AdaptiveRootResult",
+        "funcprops.adaptive_roots.CoverageState",
+        "funcprops.analytic_contours.AnalyticComplexCoverage",
+        "funcprops.analytic_contours.ComplexBoxWitness",
+        "funcprops.complex_cofinal.ComplexIsolationRun",
+        "funcprops.complex_isolation.ComplexIsolationProof",
+        "funcprops.complex_isolation.ComplexIsolationState",
+        "funcprops.complex_newton.ComplexDerivativeWitness",
+        "funcprops.complex_newton.ComplexNewtonRefinement",
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.parameter_contract.ParameterCoverageProof",
+        "funcprops.parameter_contract.UniformParameterCertificate",
+        "funcprops.property_contract.PropertyCoverageProof",
+        "funcprops.quotient_isolation.QuotientIsolationProof",
+        "funcprops.quotient_isolation.QuotientIsolationState",
+        "funcprops.quotient_isolation.QuotientRegionProof",
+        "funcprops.quotient_isolation.QuotientSourceProof",
+        "funcprops.transcendental.complex_roots.ComplexRootIsolationResult",
+        "funcprops.work_budget.BudgetedResult"
+      ]
+    },
+    {
+      "api": "certify_extrema_bounds",
+      "implementation": "funcprops.extrema_bounds.certify_extrema_bounds",
+      "possible_record_types": [
+        "funcprops.adaptive_roots.AdaptiveRootResult",
+        "funcprops.adaptive_roots.CoverageState",
+        "funcprops.analytic_contours.AnalyticComplexCoverage",
+        "funcprops.complex_cofinal.ComplexIsolationRun",
+        "funcprops.complex_isolation.ComplexIsolationProof",
+        "funcprops.complex_isolation.ComplexIsolationState",
+        "funcprops.coverage_contract.CellDomainWitness",
+        "funcprops.coverage_contract.CoverageLeaf",
+        "funcprops.coverage_contract.CoverageProof",
+        "funcprops.coverage_contract.EnclosureWitness",
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.extrema_bounds.ExtremaBoundsProof",
+        "funcprops.infinite_contract.PeriodicDomainWitness",
+        "funcprops.parameter_contract.ParameterCoverageProof",
+        "funcprops.parameter_contract.UniformParameterCertificate",
+        "funcprops.property_contract.PropertyCoverageProof",
+        "funcprops.quotient_isolation.QuotientIsolationProof",
+        "funcprops.quotient_isolation.QuotientIsolationState",
+        "funcprops.quotient_isolation.QuotientRegionProof",
+        "funcprops.quotient_isolation.QuotientSourceProof",
+        "funcprops.transcendental.complex_roots.ComplexRootIsolationResult",
+        "funcprops.work_budget.BudgetedResult"
+      ]
+    },
+    {
+      "api": "certify_finite_lipschitz",
+      "implementation": "funcprops.metric_proofs.certify_finite_lipschitz",
+      "possible_record_types": [
+        "funcprops.metric_proofs.FiniteLipschitzProof"
+      ]
+    },
+    {
+      "api": "certify_global_minimum",
+      "implementation": "funcprops.certified_optimization.certify_global_minimum",
+      "possible_record_types": [
+        "funcprops.certified_optimization.GlobalMinimumCertificate",
+        "funcprops.component_optimization.ComponentMinimumResult",
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.entire_cancellation.EntireCancellationProof"
+      ]
+    },
+    {
+      "api": "certify_global_positive",
+      "implementation": "funcprops.global_analysis.certify_global_positive",
+      "possible_record_types": [
+        "funcprops.asymptotic_tails.TailSignCertificate",
+        "funcprops.certified_balls.RealBallCertificate",
+        "funcprops.certified_inequalities.InequalityCertificate",
+        "funcprops.certified_inequalities._FiniteSignCertificate",
+        "funcprops.component_optimization.ComponentMinimumResult",
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.global_analysis.GlobalInequalityCertificate",
+        "funcprops.root_coverage.RootCoverageCertificate",
+        "funcprops.root_coverage.RootRegionProof",
+        "funcprops.taylor_models.TaylorModel",
+        "funcprops.transcendental.roots.RootCertificate",
+        "funcprops.transcendental.roots.RootIsolationResult",
+        "funcprops.verified_roots.RealRootInterval"
+      ]
+    },
+    {
+      "api": "certify_implicit_multiplicity",
+      "implementation": "funcprops.implicit_orders.certify_implicit_multiplicity",
+      "possible_record_types": [
+        "funcprops.adaptive_roots.AdaptiveRootResult",
+        "funcprops.adaptive_roots.CoverageState",
+        "funcprops.analytic_contours.AnalyticComplexCoverage",
+        "funcprops.complex_cofinal.ComplexIsolationRun",
+        "funcprops.complex_isolation.ComplexIsolationProof",
+        "funcprops.complex_isolation.ComplexIsolationState",
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.implicit_orders.ImplicitJetWitness",
+        "funcprops.implicit_orders.ImplicitMultiplicityProof",
+        "funcprops.implicit_orders.ImplicitRootValueProof",
+        "funcprops.parameter_contract.ParameterCoverageProof",
+        "funcprops.parameter_contract.UniformParameterCertificate",
+        "funcprops.property_contract.PropertyCoverageProof",
+        "funcprops.quotient_isolation.QuotientIsolationProof",
+        "funcprops.quotient_isolation.QuotientIsolationState",
+        "funcprops.quotient_isolation.QuotientRegionProof",
+        "funcprops.quotient_isolation.QuotientSourceProof",
+        "funcprops.transcendental.complex_roots.ComplexRootIsolationResult",
+        "funcprops.work_budget.BudgetedResult"
+      ]
+    },
+    {
+      "api": "certify_inequality",
+      "implementation": "funcprops.certified_inequalities.certify_inequality",
+      "possible_record_types": [
+        "funcprops.asymptotic_tails.TailSignCertificate",
+        "funcprops.certified_balls.RealBallCertificate",
+        "funcprops.certified_inequalities.InequalityCertificate",
+        "funcprops.certified_inequalities._FiniteSignCertificate",
+        "funcprops.component_optimization.ComponentMinimumResult",
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.root_coverage.RootCoverageCertificate",
+        "funcprops.root_coverage.RootRegionProof",
+        "funcprops.taylor_models.TaylorModel",
+        "funcprops.transcendental.roots.RootCertificate",
+        "funcprops.transcendental.roots.RootIsolationResult",
+        "funcprops.verified_roots.RealRootInterval"
+      ]
+    },
+    {
+      "api": "certify_jump_variation",
+      "implementation": "funcprops.metric_proofs.certify_jump_variation",
+      "possible_record_types": [
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.metric_proofs.JumpVariationProof",
+        "funcprops.real_analysis.monotonic_certificates.MonotonicPartition",
+        "funcprops.real_analysis.piecewise.PiecewiseBoundaryCertificate",
+        "funcprops.registry_derivatives.ChainRuleCertificate",
+        "funcprops.registry_derivatives.GradientCertificate",
+        "funcprops.transcendental.zero_geometry.ZeroGeometryCertificate"
+      ]
+    },
+    {
+      "api": "certify_log_atlas",
+      "implementation": "funcprops.branch_atlas.certify_log_atlas",
+      "possible_record_types": [
+        "funcprops.adaptive_roots.AdaptiveRootResult",
+        "funcprops.adaptive_roots.CoverageState",
+        "funcprops.analytic_contours.AnalyticComplexCoverage",
+        "funcprops.analytic_contours.ComplexBoxWitness",
+        "funcprops.branch_atlas.LogAtlasProof",
+        "funcprops.branch_atlas.LogBranchChart",
+        "funcprops.complex_cofinal.ComplexIsolationRun",
+        "funcprops.complex_isolation.ComplexIsolationProof",
+        "funcprops.complex_isolation.ComplexIsolationState",
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.parameter_contract.ParameterCoverageProof",
+        "funcprops.parameter_contract.UniformParameterCertificate",
+        "funcprops.property_contract.PropertyCoverageProof",
+        "funcprops.quotient_isolation.QuotientIsolationProof",
+        "funcprops.quotient_isolation.QuotientIsolationState",
+        "funcprops.quotient_isolation.QuotientRegionProof",
+        "funcprops.quotient_isolation.QuotientSourceProof",
+        "funcprops.transcendental.complex_roots.ComplexRootIsolationResult",
+        "funcprops.work_budget.BudgetedResult"
+      ]
+    },
+    {
+      "api": "certify_parameter_box",
+      "implementation": "funcprops.parameter_coverage.certify_parameter_box",
+      "possible_record_types": [
+        "funcprops.adaptive_roots.AdaptiveRootResult",
+        "funcprops.adaptive_roots.CoverageState",
+        "funcprops.analytic_contours.AnalyticComplexCoverage",
+        "funcprops.complex_cofinal.ComplexIsolationRun",
+        "funcprops.complex_isolation.ComplexIsolationProof",
+        "funcprops.complex_isolation.ComplexIsolationState",
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.parameter_contract.BoxEnclosureWitness",
+        "funcprops.parameter_contract.ParameterCoverageProof",
+        "funcprops.parameter_contract.UniformParameterCertificate",
+        "funcprops.parameter_contract.UniformParameterCover",
+        "funcprops.property_contract.PropertyCoverageProof",
+        "funcprops.quotient_isolation.QuotientIsolationProof",
+        "funcprops.quotient_isolation.QuotientIsolationState",
+        "funcprops.quotient_isolation.QuotientRegionProof",
+        "funcprops.quotient_isolation.QuotientSourceProof",
+        "funcprops.transcendental.complex_roots.ComplexRootIsolationResult",
+        "funcprops.work_budget.BudgetedResult"
+      ]
+    },
+    {
+      "api": "certify_parameter_geometry",
+      "implementation": "funcprops.parameter_geometry.certify_parameter_geometry",
+      "possible_record_types": [
+        "funcprops.algebraic_coefficients.AlgebraicCoefficientEncoding",
+        "funcprops.parameter_geometry.ParameterGeometryProof"
+      ]
+    },
+    {
+      "api": "certify_piecewise_boundaries",
+      "implementation": "funcprops.real_analysis.piecewise.certify_piecewise_boundaries",
+      "possible_record_types": [
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.real_analysis.piecewise.PiecewiseBoundaryCertificate",
+        "funcprops.registry_derivatives.ChainRuleCertificate",
+        "funcprops.registry_derivatives.GradientCertificate"
+      ]
+    },
+    {
+      "api": "certify_piecewise_regular",
+      "implementation": "funcprops.piecewise_proofs.certify_piecewise_regular",
+      "possible_record_types": [
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.piecewise_proofs.PiecewiseRegularityCertificate",
+        "funcprops.real_analysis.piecewise.PiecewiseBoundaryCertificate",
+        "funcprops.registry_derivatives.ChainRuleCertificate",
+        "funcprops.registry_derivatives.GradientCertificate"
+      ]
+    },
+    {
+      "api": "certify_property_coverage",
+      "implementation": "funcprops.property_coverage.certify_property_coverage",
+      "possible_record_types": [
+        "funcprops.adaptive_roots.AdaptiveRootResult",
+        "funcprops.adaptive_roots.CoverageState",
+        "funcprops.analytic_contours.AnalyticComplexCoverage",
+        "funcprops.complex_cofinal.ComplexIsolationRun",
+        "funcprops.complex_isolation.ComplexIsolationProof",
+        "funcprops.complex_isolation.ComplexIsolationState",
+        "funcprops.coverage_contract.CellDomainWitness",
+        "funcprops.coverage_contract.CoverageLeaf",
+        "funcprops.coverage_contract.EnclosureWitness",
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.infinite_contract.PeriodicDomainWitness",
+        "funcprops.parameter_contract.ParameterCoverageProof",
+        "funcprops.parameter_contract.UniformParameterCertificate",
+        "funcprops.property_contract.PropertyCoverageProof",
+        "funcprops.quotient_isolation.QuotientIsolationProof",
+        "funcprops.quotient_isolation.QuotientIsolationState",
+        "funcprops.quotient_isolation.QuotientRegionProof",
+        "funcprops.quotient_isolation.QuotientSourceProof",
+        "funcprops.transcendental.complex_roots.ComplexRootIsolationResult",
+        "funcprops.work_budget.BudgetedResult"
+      ]
+    },
+    {
+      "api": "certify_quotient_isolation",
+      "implementation": "funcprops.quotient_isolation.certify_quotient_isolation",
+      "possible_record_types": [
+        "funcprops.adaptive_roots.AdaptiveRootResult",
+        "funcprops.adaptive_roots.CoverageState",
+        "funcprops.analytic_contours.AnalyticComplexCoverage",
+        "funcprops.analytic_contours.AnalyticContourCertificate",
+        "funcprops.analytic_contours.ComplexBoxWitness",
+        "funcprops.complex_cofinal.ComplexIsolationRun",
+        "funcprops.complex_isolation.ComplexIsolationProof",
+        "funcprops.complex_isolation.ComplexIsolationState",
+        "funcprops.complex_multiplicity.ComplexExactMultiplicity",
+        "funcprops.complex_multiplicity.ComplexPowerFactorProof",
+        "funcprops.complex_multiplicity.ComplexPowerRootRegion",
+        "funcprops.complex_multiplicity.ComplexTaylorWitness",
+        "funcprops.complex_multiplicity.ComplexUnitWitness",
+        "funcprops.complex_newton.ComplexDerivativeWitness",
+        "funcprops.complex_newton.ComplexNewtonRefinement",
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.implicit_orders.ImplicitJetWitness",
+        "funcprops.implicit_orders.ImplicitMultiplicityProof",
+        "funcprops.implicit_orders.ImplicitRootValueProof",
+        "funcprops.parameter_contract.ParameterCoverageProof",
+        "funcprops.parameter_contract.UniformParameterCertificate",
+        "funcprops.property_contract.PropertyCoverageProof",
+        "funcprops.quotient_isolation.DenominatorExclusionProof",
+        "funcprops.quotient_isolation.ExactLocalZeroProof",
+        "funcprops.quotient_isolation.QuotientCellProof",
+        "funcprops.quotient_isolation.QuotientIsolationProof",
+        "funcprops.quotient_isolation.QuotientIsolationState",
+        "funcprops.quotient_isolation.QuotientRegionProof",
+        "funcprops.quotient_isolation.QuotientSourceProof",
+        "funcprops.quotient_refinement.QuotientNewtonRefinement",
+        "funcprops.shared_zeros.ComplexZeroSubsetProof",
+        "funcprops.shared_zeros.SharedZeroImplication",
+        "funcprops.shared_zeros.SharedZeroOrderProof",
+        "funcprops.shared_zeros.SharedZeroRegion",
+        "funcprops.transcendental.complex_roots.ComplexRootIsolationResult",
+        "funcprops.work_budget.BudgetedResult"
+      ]
+    },
+    {
+      "api": "certify_quotient_refinement",
+      "implementation": "funcprops.quotient_refinement.certify_quotient_refinement",
+      "possible_record_types": [
+        "funcprops.adaptive_roots.AdaptiveRootResult",
+        "funcprops.adaptive_roots.CoverageState",
+        "funcprops.analytic_contours.AnalyticComplexCoverage",
+        "funcprops.analytic_contours.AnalyticContourCertificate",
+        "funcprops.analytic_contours.ComplexBoxWitness",
+        "funcprops.complex_cofinal.ComplexIsolationRun",
+        "funcprops.complex_isolation.ComplexIsolationProof",
+        "funcprops.complex_isolation.ComplexIsolationState",
+        "funcprops.complex_multiplicity.ComplexPowerRootRegion",
+        "funcprops.complex_newton.ComplexDerivativeWitness",
+        "funcprops.complex_newton.ComplexNewtonRefinement",
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.parameter_contract.ParameterCoverageProof",
+        "funcprops.parameter_contract.UniformParameterCertificate",
+        "funcprops.property_contract.PropertyCoverageProof",
+        "funcprops.quotient_isolation.DenominatorExclusionProof",
+        "funcprops.quotient_isolation.ExactLocalZeroProof",
+        "funcprops.quotient_isolation.QuotientCellProof",
+        "funcprops.quotient_isolation.QuotientIsolationProof",
+        "funcprops.quotient_isolation.QuotientIsolationState",
+        "funcprops.quotient_isolation.QuotientRegionProof",
+        "funcprops.quotient_isolation.QuotientSourceProof",
+        "funcprops.quotient_refinement.QuotientNewtonRefinement",
+        "funcprops.shared_zeros.ComplexZeroSubsetProof",
+        "funcprops.shared_zeros.SharedZeroRegion",
+        "funcprops.transcendental.complex_roots.ComplexRootIsolationResult",
+        "funcprops.work_budget.BudgetedResult"
+      ]
+    },
+    {
+      "api": "certify_root_value",
+      "implementation": "funcprops.implicit_orders.certify_root_value",
+      "possible_record_types": [
+        "funcprops.implicit_orders.ImplicitRootValueProof"
+      ]
+    },
+    {
+      "api": "certify_tail_sign",
+      "implementation": "funcprops.asymptotic_tails.certify_tail_sign",
+      "possible_record_types": [
+        "funcprops.asymptotic_tails.TailSignCertificate"
+      ]
+    },
+    {
+      "api": "change_of_variables",
+      "implementation": "funcprops.api.change_of_variables",
+      "possible_record_types": [
+        "funcprops.algebraic_coefficients.AlgebraicCoefficientEncoding",
+        "funcprops.coverage_contract.EnclosureWitness",
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.real_analysis.piecewise.PiecewiseBoundaryCertificate",
+        "funcprops.registry_derivatives.ChainRuleCertificate",
+        "funcprops.registry_derivatives.GradientCertificate",
+        "funcprops.registry_derivatives.JacobianCertificate",
+        "funcprops.transcendental.roots.RootCertificate",
+        "funcprops.transcendental.roots.RootIsolationResult",
+        "funcprops.transformation.ChangeOfVariablesCertificate",
+        "funcprops.transformation.DeterminantNonvanishingCertificate",
+        "funcprops.transformation.LocalInvertibilityCertificate"
+      ]
+    },
+    {
+      "api": "check_coverage",
+      "implementation": "funcprops.coverage_checker.check_coverage",
+      "possible_record_types": [
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.entire_cancellation.EntireCancellationProof"
+      ]
+    },
+    {
+      "api": "check_leaf",
+      "implementation": "funcprops.coverage_checker.check_leaf",
+      "possible_record_types": [
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.entire_cancellation.EntireCancellationProof"
+      ]
+    },
+    {
+      "api": "classify_singularity",
+      "implementation": "funcprops.certified_operations.classify_singularity",
+      "possible_record_types": [
+        "funcprops.certified_operations.SingularityClassificationCertificate"
+      ]
+    },
+    {
+      "api": "complete_monotonicity",
+      "implementation": "funcprops.real_analysis.complete_monotonicity.complete_monotonicity",
+      "possible_record_types": [
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.real_analysis.complete_monotonicity.CompleteMonotonicityCertificate"
+      ]
+    },
+    {
+      "api": "complex_root_coverage",
+      "implementation": "funcprops.complex_coverage.complex_root_coverage",
+      "possible_record_types": [
+        "funcprops.complex_coverage.ComplexRootCoverage",
+        "funcprops.complex_coverage.ComplexRootRegionProof"
+      ]
+    },
+    {
+      "api": "complex_zeros",
+      "implementation": "funcprops.api.complex_zeros",
+      "possible_record_types": [
+        "funcprops.adaptive_roots.AdaptiveRootResult",
+        "funcprops.adaptive_roots.CoverageState",
+        "funcprops.algebraic_complex.AlgebraicComplexRootProof",
+        "funcprops.analytic_contours.AnalyticComplexCoverage",
+        "funcprops.analytic_contours.AnalyticContourCertificate",
+        "funcprops.analytic_contours.ComplexBoxWitness",
+        "funcprops.complex_cofinal.ComplexIsolationRun",
+        "funcprops.complex_isolation.ComplexIsolationProof",
+        "funcprops.complex_isolation.ComplexIsolationState",
+        "funcprops.complex_multiplicity.ComplexExactMultiplicity",
+        "funcprops.complex_multiplicity.ComplexLocatedRegion",
+        "funcprops.complex_multiplicity.ComplexPowerFactorProof",
+        "funcprops.complex_multiplicity.ComplexPowerRootRegion",
+        "funcprops.complex_multiplicity.ComplexTaylorWitness",
+        "funcprops.complex_multiplicity.ComplexUnitWitness",
+        "funcprops.complex_newton.ComplexDerivativeWitness",
+        "funcprops.complex_newton.ComplexNewtonRefinement",
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.implicit_orders.ImplicitJetWitness",
+        "funcprops.implicit_orders.ImplicitMultiplicityProof",
+        "funcprops.implicit_orders.ImplicitRootValueProof",
+        "funcprops.parameter_contract.ParameterCoverageProof",
+        "funcprops.parameter_contract.UniformParameterCertificate",
+        "funcprops.property_contract.PropertyCoverageProof",
+        "funcprops.quotient_isolation.DenominatorExclusionProof",
+        "funcprops.quotient_isolation.ExactLocalZeroProof",
+        "funcprops.quotient_isolation.QuotientCellProof",
+        "funcprops.quotient_isolation.QuotientIsolationProof",
+        "funcprops.quotient_isolation.QuotientIsolationState",
+        "funcprops.quotient_isolation.QuotientRegionProof",
+        "funcprops.quotient_isolation.QuotientSourceProof",
+        "funcprops.quotient_refinement.QuotientNewtonRefinement",
+        "funcprops.shared_zeros.ComplexZeroSubsetProof",
+        "funcprops.shared_zeros.SharedZeroImplication",
+        "funcprops.shared_zeros.SharedZeroOrderProof",
+        "funcprops.shared_zeros.SharedZeroRegion",
+        "funcprops.transcendental.analytic.AnalyticNeighborhoodCertificate",
+        "funcprops.transcendental.complex_roots.ArgumentPrincipleCertificate",
+        "funcprops.transcendental.complex_roots.ComplexRootIsolationResult",
+        "funcprops.work_budget.BudgetedResult"
+      ]
+    },
+    {
+      "api": "compose_global_maps",
+      "implementation": "funcprops.global_multivariate.compose_global_maps",
+      "possible_record_types": [
+        "funcprops.global_multivariate.ComposedMapCertificate",
+        "funcprops.global_multivariate.GlobalMapCertificate"
+      ]
+    },
+    {
+      "api": "continuous",
+      "implementation": "funcprops.singularities.analysis.continuous",
+      "possible_record_types": [
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.real_analysis.piecewise.PiecewiseBoundaryCertificate",
+        "funcprops.registry_derivatives.ChainRuleCertificate",
+        "funcprops.registry_derivatives.GradientCertificate",
+        "funcprops.seam_regularity.SeamRegularityProof"
+      ]
+    },
+    {
+      "api": "convexity",
+      "implementation": "funcprops.real_analysis.convexity.convexity",
+      "possible_record_types": [
+        "funcprops.coverage_contract.EnclosureWitness",
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.real_analysis.advanced_convexity.ConvexityCertificate",
+        "funcprops.real_analysis.monotonic_certificates.MonotonicDecomposition",
+        "funcprops.real_analysis.monotonic_certificates.MonotonicPartition",
+        "funcprops.real_analysis.piecewise.PiecewiseBoundaryCertificate",
+        "funcprops.registry_derivatives.ChainRuleCertificate",
+        "funcprops.registry_derivatives.GradientCertificate",
+        "funcprops.transcendental.zero_geometry.ZeroGeometryCertificate"
+      ]
+    },
+    {
+      "api": "decide",
+      "implementation": "funcprops.assumptions.decide",
+      "possible_record_types": [
+        "funcprops.assumptions.PropertyDecision"
+      ]
+    },
+    {
+      "api": "deflate_real_root",
+      "implementation": "funcprops.multiple_roots.deflate_real_root",
+      "possible_record_types": [
+        "funcprops.adaptive_roots.AdaptiveRootResult",
+        "funcprops.adaptive_roots.CoverageState",
+        "funcprops.analytic_contours.AnalyticComplexCoverage",
+        "funcprops.complex_cofinal.ComplexIsolationRun",
+        "funcprops.complex_isolation.ComplexIsolationProof",
+        "funcprops.complex_isolation.ComplexIsolationState",
+        "funcprops.coverage_contract.CellDomainWitness",
+        "funcprops.coverage_contract.CoverageLeaf",
+        "funcprops.coverage_contract.EnclosureWitness",
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.infinite_contract.PeriodicDomainWitness",
+        "funcprops.parameter_contract.ParameterCoverageProof",
+        "funcprops.parameter_contract.UniformParameterCertificate",
+        "funcprops.property_contract.PropertyCoverageProof",
+        "funcprops.quotient_isolation.QuotientIsolationProof",
+        "funcprops.quotient_isolation.QuotientIsolationState",
+        "funcprops.quotient_isolation.QuotientRegionProof",
+        "funcprops.quotient_isolation.QuotientSourceProof",
+        "funcprops.transcendental.complex_roots.ComplexRootIsolationResult",
+        "funcprops.work_budget.BudgetedResult"
+      ]
+    },
+    {
+      "api": "deform_contour",
+      "implementation": "funcprops.certified_operations.deform_contour",
+      "possible_record_types": [
+        "funcprops.algebraic_coefficients.AlgebraicCoefficientEncoding",
+        "funcprops.certified_operations.ContourDeformationCertificate",
+        "funcprops.certified_operations.HomotopyCertificate",
+        "funcprops.certified_operations.WindingCertificate",
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.integration.IntegralResult",
+        "funcprops.piecewise_proofs.PiecewiseRegularityCertificate",
+        "funcprops.real_analysis.piecewise.PiecewiseBoundaryCertificate",
+        "funcprops.registry_derivatives.ChainRuleCertificate",
+        "funcprops.registry_derivatives.GradientCertificate"
+      ]
+    },
+    {
+      "api": "derivative_chain_positive",
+      "implementation": "funcprops.derivative_inequalities.derivative_chain_positive",
+      "possible_record_types": [
+        "funcprops.asymptotic_tails.TailSignCertificate",
+        "funcprops.certified_balls.RealBallCertificate",
+        "funcprops.certified_inequalities.InequalityCertificate",
+        "funcprops.certified_inequalities._FiniteSignCertificate",
+        "funcprops.component_optimization.ComponentMinimumResult",
+        "funcprops.derivative_inequalities.DerivativeChainCertificate",
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.root_coverage.RootCoverageCertificate",
+        "funcprops.root_coverage.RootRegionProof",
+        "funcprops.taylor_models.TaylorModel",
+        "funcprops.transcendental.roots.RootCertificate",
+        "funcprops.transcendental.roots.RootIsolationResult",
+        "funcprops.verified_roots.RealRootInterval"
+      ]
+    },
+    {
+      "api": "determinant_nonvanishing",
+      "implementation": "funcprops.api.determinant_nonvanishing",
+      "possible_record_types": [
+        "funcprops.algebraic_coefficients.AlgebraicCoefficientEncoding",
+        "funcprops.coverage_contract.EnclosureWitness",
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.real_analysis.piecewise.PiecewiseBoundaryCertificate",
+        "funcprops.registry_derivatives.ChainRuleCertificate",
+        "funcprops.registry_derivatives.GradientCertificate",
+        "funcprops.registry_derivatives.JacobianCertificate",
+        "funcprops.transcendental.roots.RootCertificate",
+        "funcprops.transcendental.roots.RootIsolationResult",
+        "funcprops.transformation.DeterminantNonvanishingCertificate"
+      ]
+    },
+    {
+      "api": "differentiability",
+      "implementation": "funcprops.real_analysis.differentiability.differentiability",
+      "possible_record_types": [
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.real_analysis.piecewise.PiecewiseBoundaryCertificate",
+        "funcprops.registry_derivatives.ChainRuleCertificate",
+        "funcprops.registry_derivatives.GradientCertificate"
+      ]
+    },
+    {
+      "api": "discontinuities",
+      "implementation": "funcprops.singularities.records.discontinuities",
+      "possible_record_types": [
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.real_analysis.piecewise.PiecewiseBoundaryCertificate",
+        "funcprops.registry_derivatives.ChainRuleCertificate",
+        "funcprops.registry_derivatives.GradientCertificate"
+      ]
+    },
+    {
+      "api": "enclose_derivative",
+      "implementation": "funcprops.enclosures.enclose_derivative",
+      "possible_record_types": [
+        "funcprops.adaptive_roots.AdaptiveRootResult",
+        "funcprops.adaptive_roots.CoverageState",
+        "funcprops.analytic_contours.AnalyticComplexCoverage",
+        "funcprops.complex_cofinal.ComplexIsolationRun",
+        "funcprops.complex_isolation.ComplexIsolationProof",
+        "funcprops.complex_isolation.ComplexIsolationState",
+        "funcprops.coverage_contract.EnclosureWitness",
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.enclosures.DerivativeEnclosure",
+        "funcprops.enclosures.EnclosureResult",
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.parameter_contract.ParameterCoverageProof",
+        "funcprops.parameter_contract.UniformParameterCertificate",
+        "funcprops.property_contract.PropertyCoverageProof",
+        "funcprops.quotient_isolation.QuotientIsolationProof",
+        "funcprops.quotient_isolation.QuotientIsolationState",
+        "funcprops.quotient_isolation.QuotientRegionProof",
+        "funcprops.quotient_isolation.QuotientSourceProof",
+        "funcprops.transcendental.complex_roots.ComplexRootIsolationResult",
+        "funcprops.work_budget.BudgetedResult"
+      ]
+    },
+    {
+      "api": "enclose_expression",
+      "implementation": "funcprops.enclosures.enclose_expression",
+      "possible_record_types": [
+        "funcprops.adaptive_roots.AdaptiveRootResult",
+        "funcprops.adaptive_roots.CoverageState",
+        "funcprops.analytic_contours.AnalyticComplexCoverage",
+        "funcprops.complex_cofinal.ComplexIsolationRun",
+        "funcprops.complex_isolation.ComplexIsolationProof",
+        "funcprops.complex_isolation.ComplexIsolationState",
+        "funcprops.coverage_contract.EnclosureWitness",
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.enclosures.EnclosureResult",
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.parameter_contract.ParameterCoverageProof",
+        "funcprops.parameter_contract.UniformParameterCertificate",
+        "funcprops.property_contract.PropertyCoverageProof",
+        "funcprops.quotient_isolation.QuotientIsolationProof",
+        "funcprops.quotient_isolation.QuotientIsolationState",
+        "funcprops.quotient_isolation.QuotientRegionProof",
+        "funcprops.quotient_isolation.QuotientSourceProof",
+        "funcprops.transcendental.complex_roots.ComplexRootIsolationResult",
+        "funcprops.work_budget.BudgetedResult"
+      ]
+    },
+    {
+      "api": "encode_algebraic_coefficients",
+      "implementation": "funcprops.algebraic_coefficients.encode_algebraic_coefficients",
+      "possible_record_types": [
+        "funcprops.algebraic_coefficients.AlgebraicCoefficientEncoding"
+      ]
+    },
+    {
+      "api": "export_coverage_proof",
+      "implementation": "funcprops.coverage_search.export_coverage_proof",
+      "possible_record_types": [
+        "funcprops.coverage_contract.CellDomainWitness",
+        "funcprops.coverage_contract.CoverageLeaf",
+        "funcprops.coverage_contract.CoverageProof",
+        "funcprops.coverage_contract.EnclosureWitness",
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.infinite_contract.PeriodicDomainWitness"
+      ]
+    },
+    {
+      "api": "extremum_geometry",
+      "implementation": "funcprops.transcendental.extrema.extremum_geometry",
+      "possible_record_types": [
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.real_analysis.monotonic_certificates.MonotonicPartition",
+        "funcprops.real_analysis.piecewise.PiecewiseBoundaryCertificate",
+        "funcprops.registry_derivatives.ChainRuleCertificate",
+        "funcprops.registry_derivatives.GradientCertificate",
+        "funcprops.transcendental.extrema.ExtremumFamilyCertificate",
+        "funcprops.transcendental.zero_geometry.ZeroGeometryCertificate"
+      ]
+    },
+    {
+      "api": "extremum_ordering_theorems",
+      "implementation": "funcprops.transcendental.extrema.extremum_ordering_theorems",
+      "possible_record_types": [
+        "funcprops.transcendental.extrema.ExtremumOrderingTheorem"
+      ]
+    },
+    {
+      "api": "finite_component_minimum",
+      "implementation": "funcprops.component_optimization.finite_component_minimum",
+      "possible_record_types": [
+        "funcprops.component_optimization.ComponentMinimumResult",
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.entire_cancellation.EntireCancellationProof"
+      ]
+    },
+    {
+      "api": "geometry",
+      "implementation": "funcprops.geometry.geometry",
+      "possible_record_types": [
+        "funcprops.coverage_contract.EnclosureWitness",
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.geometry.LevelBoundednessCertificate",
+        "funcprops.geometry.ModeExistenceCertificate",
+        "funcprops.real_analysis.advanced_convexity.ConvexityCertificate",
+        "funcprops.real_analysis.monotonic_certificates.MonotonicDecomposition",
+        "funcprops.real_analysis.monotonic_certificates.MonotonicPartition",
+        "funcprops.real_analysis.piecewise.PiecewiseBoundaryCertificate",
+        "funcprops.registry_derivatives.ChainRuleCertificate",
+        "funcprops.registry_derivatives.GradientCertificate",
+        "funcprops.transcendental.zero_geometry.ZeroGeometryCertificate"
+      ]
+    },
+    {
+      "api": "glue_branch_charts",
+      "implementation": "funcprops.branch_gluing.glue_branch_charts",
+      "possible_record_types": [
+        "funcprops.branch_gluing.BranchGluingProof",
+        "funcprops.branch_gluing.BranchOverlapProof"
+      ]
+    },
+    {
+      "api": "glue_log_charts",
+      "implementation": "funcprops.branch_atlas.glue_log_charts",
+      "possible_record_types": [
+        "funcprops.branch_atlas.LogAtlasProof"
+      ]
+    },
+    {
+      "api": "holder_regularity",
+      "implementation": "funcprops.real_analysis.regularity_extensions.holder_regularity",
+      "possible_record_types": [
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.metric_proofs.FiniteLipschitzProof",
+        "funcprops.real_analysis.monotonic_certificates.MonotonicDecomposition",
+        "funcprops.real_analysis.monotonic_certificates.MonotonicPartition",
+        "funcprops.real_analysis.piecewise.PiecewiseBoundaryCertificate",
+        "funcprops.real_analysis.regularity_extensions.LipschitzResult",
+        "funcprops.registry_derivatives.ChainRuleCertificate",
+        "funcprops.registry_derivatives.GradientCertificate",
+        "funcprops.seam_regularity.SeamRegularityProof",
+        "funcprops.transcendental.extrema.ExtremumFamilyCertificate",
+        "funcprops.transcendental.extrema.ExtremumOrderingTheorem",
+        "funcprops.transcendental.extrema.ExtremumRange",
+        "funcprops.transcendental.zero_geometry.CertifiedIntegerBracket",
+        "funcprops.transcendental.zero_geometry.IndexedTailInversionCertificate",
+        "funcprops.transcendental.zero_geometry.ZeroGeometryCertificate"
+      ]
+    },
+    {
+      "api": "holomorphic_on_rectangle",
+      "implementation": "funcprops.transcendental.analytic.holomorphic_on_rectangle",
+      "possible_record_types": [
+        "funcprops.transcendental.analytic.AnalyticNeighborhoodCertificate"
+      ]
+    },
+    {
+      "api": "homogeneity",
+      "implementation": "funcprops.real_analysis.structural_properties.homogeneity",
+      "possible_record_types": [
+        "funcprops.real_analysis.structural_properties.HomogeneityResult"
+      ]
+    },
+    {
+      "api": "homotopic",
+      "implementation": "funcprops.certified_operations.homotopic",
+      "possible_record_types": [
+        "funcprops.algebraic_coefficients.AlgebraicCoefficientEncoding",
+        "funcprops.certified_operations.HomotopyCertificate",
+        "funcprops.certified_operations.WindingCertificate",
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.integration.IntegralResult",
+        "funcprops.piecewise_proofs.PiecewiseRegularityCertificate",
+        "funcprops.real_analysis.piecewise.PiecewiseBoundaryCertificate",
+        "funcprops.registry_derivatives.ChainRuleCertificate",
+        "funcprops.registry_derivatives.GradientCertificate"
+      ]
+    },
+    {
+      "api": "indexed_tail_integer_bracket",
+      "implementation": "funcprops.transcendental.zero_geometry.indexed_tail_integer_bracket",
+      "possible_record_types": [
+        "funcprops.transcendental.zero_geometry.CertifiedIntegerBracket"
+      ]
+    },
+    {
+      "api": "indexed_tail_inversion",
+      "implementation": "funcprops.transcendental.zero_geometry.indexed_tail_inversion",
+      "possible_record_types": [
+        "funcprops.transcendental.zero_geometry.CertifiedIntegerBracket",
+        "funcprops.transcendental.zero_geometry.IndexedTailInversionCertificate"
+      ]
+    },
+    {
+      "api": "infinite_root_coverage",
+      "implementation": "funcprops.infinite_roots.infinite_root_coverage",
+      "possible_record_types": [
+        "funcprops.adaptive_roots.AdaptiveRootResult",
+        "funcprops.adaptive_roots.CoverageState",
+        "funcprops.analytic_contours.AnalyticComplexCoverage",
+        "funcprops.complex_cofinal.ComplexIsolationRun",
+        "funcprops.complex_isolation.ComplexIsolationProof",
+        "funcprops.complex_isolation.ComplexIsolationState",
+        "funcprops.coverage_contract.CellDomainWitness",
+        "funcprops.coverage_contract.CoverageLeaf",
+        "funcprops.coverage_contract.EnclosureWitness",
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.infinite_contract.PeriodicDomainWitness",
+        "funcprops.parameter_contract.ParameterCoverageProof",
+        "funcprops.parameter_contract.UniformParameterCertificate",
+        "funcprops.property_contract.PropertyCoverageProof",
+        "funcprops.quotient_isolation.QuotientIsolationProof",
+        "funcprops.quotient_isolation.QuotientIsolationState",
+        "funcprops.quotient_isolation.QuotientRegionProof",
+        "funcprops.quotient_isolation.QuotientSourceProof",
+        "funcprops.transcendental.complex_roots.ComplexRootIsolationResult",
+        "funcprops.work_budget.BudgetedResult"
+      ]
+    },
+    {
+      "api": "injective",
+      "implementation": "funcprops.real_analysis.mapping.injective",
+      "possible_record_types": [
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.real_analysis.monotonic_certificates.MonotonicDecomposition",
+        "funcprops.real_analysis.monotonic_certificates.MonotonicPartition",
+        "funcprops.real_analysis.piecewise.PiecewiseBoundaryCertificate",
+        "funcprops.registry_derivatives.ChainRuleCertificate",
+        "funcprops.registry_derivatives.GradientCertificate",
+        "funcprops.transcendental.zero_geometry.ZeroGeometryCertificate"
+      ]
+    },
+    {
+      "api": "integrability",
+      "implementation": "funcprops.real_analysis.integrability.integrability",
+      "possible_record_types": [
+        "funcprops.entire_cancellation.EntireCancellationProof"
+      ]
+    },
+    {
+      "api": "integrate",
+      "implementation": "funcprops.integration.integrate",
+      "possible_record_types": [
+        "funcprops.algebraic_coefficients.AlgebraicCoefficientEncoding",
+        "funcprops.integration.IntegralResult"
+      ]
+    },
+    {
+      "api": "inverse",
+      "implementation": "funcprops.certified_operations.inverse",
+      "possible_record_types": [
+        "funcprops.certified_operations.InverseCertificate",
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.entire_cancellation.EntireCancellationProof"
+      ]
+    },
+    {
+      "api": "isolate_complex_roots",
+      "implementation": "funcprops.transcendental.complex_roots.isolate_complex_roots",
+      "possible_record_types": [
+        "funcprops.adaptive_roots.AdaptiveRootResult",
+        "funcprops.adaptive_roots.CoverageState",
+        "funcprops.algebraic_complex.AlgebraicComplexRootProof",
+        "funcprops.analytic_contours.AnalyticComplexCoverage",
+        "funcprops.analytic_contours.AnalyticContourCertificate",
+        "funcprops.analytic_contours.ComplexBoxWitness",
+        "funcprops.complex_cofinal.ComplexIsolationRun",
+        "funcprops.complex_isolation.ComplexIsolationProof",
+        "funcprops.complex_isolation.ComplexIsolationState",
+        "funcprops.complex_multiplicity.ComplexExactMultiplicity",
+        "funcprops.complex_multiplicity.ComplexLocatedRegion",
+        "funcprops.complex_multiplicity.ComplexPowerFactorProof",
+        "funcprops.complex_multiplicity.ComplexPowerRootRegion",
+        "funcprops.complex_multiplicity.ComplexTaylorWitness",
+        "funcprops.complex_multiplicity.ComplexUnitWitness",
+        "funcprops.complex_newton.ComplexDerivativeWitness",
+        "funcprops.complex_newton.ComplexNewtonRefinement",
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.implicit_orders.ImplicitJetWitness",
+        "funcprops.implicit_orders.ImplicitMultiplicityProof",
+        "funcprops.implicit_orders.ImplicitRootValueProof",
+        "funcprops.parameter_contract.ParameterCoverageProof",
+        "funcprops.parameter_contract.UniformParameterCertificate",
+        "funcprops.property_contract.PropertyCoverageProof",
+        "funcprops.quotient_isolation.DenominatorExclusionProof",
+        "funcprops.quotient_isolation.ExactLocalZeroProof",
+        "funcprops.quotient_isolation.QuotientCellProof",
+        "funcprops.quotient_isolation.QuotientIsolationProof",
+        "funcprops.quotient_isolation.QuotientIsolationState",
+        "funcprops.quotient_isolation.QuotientRegionProof",
+        "funcprops.quotient_isolation.QuotientSourceProof",
+        "funcprops.quotient_refinement.QuotientNewtonRefinement",
+        "funcprops.shared_zeros.ComplexZeroSubsetProof",
+        "funcprops.shared_zeros.SharedZeroImplication",
+        "funcprops.shared_zeros.SharedZeroOrderProof",
+        "funcprops.shared_zeros.SharedZeroRegion",
+        "funcprops.transcendental.analytic.AnalyticNeighborhoodCertificate",
+        "funcprops.transcendental.complex_roots.ArgumentPrincipleCertificate",
+        "funcprops.transcendental.complex_roots.ComplexRootIsolationResult",
+        "funcprops.work_budget.BudgetedResult"
+      ]
+    },
+    {
+      "api": "jacobian",
+      "implementation": "funcprops.api.jacobian",
+      "possible_record_types": [
+        "funcprops.registry_derivatives.JacobianCertificate"
+      ]
+    },
+    {
+      "api": "krawczyk_box",
+      "implementation": "funcprops.multivariate_intervals.krawczyk_box",
+      "possible_record_types": [
+        "funcprops.multivariate_intervals.KrawczykBoxCertificate"
+      ]
+    },
+    {
+      "api": "laurent_series",
+      "implementation": "funcprops.certified_operations.laurent_series",
+      "possible_record_types": [
+        "funcprops.certified_operations.LaurentCertificate"
+      ]
+    },
+    {
+      "api": "level_boundedness",
+      "implementation": "funcprops.geometry.level_boundedness",
+      "possible_record_types": [
+        "funcprops.coverage_contract.EnclosureWitness",
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.geometry.LevelBoundednessCertificate",
+        "funcprops.real_analysis.advanced_convexity.ConvexityCertificate",
+        "funcprops.real_analysis.monotonic_certificates.MonotonicDecomposition",
+        "funcprops.real_analysis.monotonic_certificates.MonotonicPartition",
+        "funcprops.real_analysis.piecewise.PiecewiseBoundaryCertificate",
+        "funcprops.registry_derivatives.ChainRuleCertificate",
+        "funcprops.registry_derivatives.GradientCertificate",
+        "funcprops.transcendental.zero_geometry.ZeroGeometryCertificate"
+      ]
+    },
+    {
+      "api": "lipschitz",
+      "implementation": "funcprops.real_analysis.regularity_extensions.lipschitz",
+      "possible_record_types": [
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.metric_proofs.FiniteLipschitzProof",
+        "funcprops.real_analysis.monotonic_certificates.MonotonicDecomposition",
+        "funcprops.real_analysis.monotonic_certificates.MonotonicPartition",
+        "funcprops.real_analysis.piecewise.PiecewiseBoundaryCertificate",
+        "funcprops.real_analysis.regularity_extensions.LipschitzResult",
+        "funcprops.registry_derivatives.ChainRuleCertificate",
+        "funcprops.registry_derivatives.GradientCertificate",
+        "funcprops.seam_regularity.SeamRegularityProof",
+        "funcprops.transcendental.extrema.ExtremumFamilyCertificate",
+        "funcprops.transcendental.extrema.ExtremumOrderingTheorem",
+        "funcprops.transcendental.extrema.ExtremumRange",
+        "funcprops.transcendental.zero_geometry.CertifiedIntegerBracket",
+        "funcprops.transcendental.zero_geometry.IndexedTailInversionCertificate",
+        "funcprops.transcendental.zero_geometry.ZeroGeometryCertificate"
+      ]
+    },
+    {
+      "api": "local_invertibility",
+      "implementation": "funcprops.api.local_invertibility",
+      "possible_record_types": [
+        "funcprops.algebraic_coefficients.AlgebraicCoefficientEncoding",
+        "funcprops.coverage_contract.EnclosureWitness",
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.real_analysis.piecewise.PiecewiseBoundaryCertificate",
+        "funcprops.registry_derivatives.ChainRuleCertificate",
+        "funcprops.registry_derivatives.GradientCertificate",
+        "funcprops.registry_derivatives.JacobianCertificate",
+        "funcprops.transcendental.roots.RootCertificate",
+        "funcprops.transcendental.roots.RootIsolationResult",
+        "funcprops.transformation.DeterminantNonvanishingCertificate",
+        "funcprops.transformation.LocalInvertibilityCertificate"
+      ]
+    },
+    {
+      "api": "meromorphic",
+      "implementation": "funcprops.singularities.regularity.meromorphic",
+      "possible_record_types": [
+        "funcprops.certified_operations.SingularityClassificationCertificate",
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.entire_cancellation.EntireCancellationProof"
+      ]
+    },
+    {
+      "api": "meromorphic_rectangle_count",
+      "implementation": "funcprops.meromorphic_contours.meromorphic_rectangle_count",
+      "possible_record_types": [
+        "funcprops.adaptive_roots.AdaptiveRootResult",
+        "funcprops.adaptive_roots.CoverageState",
+        "funcprops.analytic_contours.AnalyticComplexCoverage",
+        "funcprops.analytic_contours.AnalyticContourCertificate",
+        "funcprops.analytic_contours.ComplexBoxWitness",
+        "funcprops.complex_cofinal.ComplexIsolationRun",
+        "funcprops.complex_isolation.ComplexIsolationProof",
+        "funcprops.complex_isolation.ComplexIsolationState",
+        "funcprops.complex_multiplicity.ComplexExactMultiplicity",
+        "funcprops.complex_multiplicity.ComplexPowerFactorProof",
+        "funcprops.complex_multiplicity.ComplexPowerRootRegion",
+        "funcprops.complex_multiplicity.ComplexTaylorWitness",
+        "funcprops.complex_multiplicity.ComplexUnitWitness",
+        "funcprops.complex_newton.ComplexDerivativeWitness",
+        "funcprops.complex_newton.ComplexNewtonRefinement",
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.implicit_orders.ImplicitJetWitness",
+        "funcprops.implicit_orders.ImplicitMultiplicityProof",
+        "funcprops.implicit_orders.ImplicitRootValueProof",
+        "funcprops.meromorphic_contours.MeromorphicContourCertificate",
+        "funcprops.parameter_contract.ParameterCoverageProof",
+        "funcprops.parameter_contract.UniformParameterCertificate",
+        "funcprops.property_contract.PropertyCoverageProof",
+        "funcprops.quotient_isolation.DenominatorExclusionProof",
+        "funcprops.quotient_isolation.ExactLocalZeroProof",
+        "funcprops.quotient_isolation.QuotientCellProof",
+        "funcprops.quotient_isolation.QuotientContourCertificate",
+        "funcprops.quotient_isolation.QuotientIsolationProof",
+        "funcprops.quotient_isolation.QuotientIsolationState",
+        "funcprops.quotient_isolation.QuotientRegionProof",
+        "funcprops.quotient_isolation.QuotientSourceProof",
+        "funcprops.quotient_refinement.QuotientNewtonRefinement",
+        "funcprops.shared_zeros.ComplexZeroSubsetProof",
+        "funcprops.shared_zeros.SharedZeroImplication",
+        "funcprops.shared_zeros.SharedZeroOrderProof",
+        "funcprops.shared_zeros.SharedZeroRegion",
+        "funcprops.transcendental.complex_roots.ComplexRootIsolationResult",
+        "funcprops.work_budget.BudgetedResult"
+      ]
+    },
+    {
+      "api": "mode_existence",
+      "implementation": "funcprops.geometry.mode_existence",
+      "possible_record_types": [
+        "funcprops.coverage_contract.EnclosureWitness",
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.geometry.LevelBoundednessCertificate",
+        "funcprops.geometry.ModeExistenceCertificate",
+        "funcprops.real_analysis.advanced_convexity.ConvexityCertificate",
+        "funcprops.real_analysis.monotonic_certificates.MonotonicDecomposition",
+        "funcprops.real_analysis.monotonic_certificates.MonotonicPartition",
+        "funcprops.real_analysis.piecewise.PiecewiseBoundaryCertificate",
+        "funcprops.registry_derivatives.ChainRuleCertificate",
+        "funcprops.registry_derivatives.GradientCertificate",
+        "funcprops.transcendental.zero_geometry.ZeroGeometryCertificate"
+      ]
+    },
+    {
+      "api": "monodromy",
+      "implementation": "funcprops.certified_operations.monodromy",
+      "possible_record_types": [
+        "funcprops.algebraic_coefficients.AlgebraicCoefficientEncoding",
+        "funcprops.certified_operations.ContinuationCertificate",
+        "funcprops.certified_operations.WindingCertificate",
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.integration.IntegralResult",
+        "funcprops.piecewise_proofs.PiecewiseRegularityCertificate",
+        "funcprops.real_analysis.piecewise.PiecewiseBoundaryCertificate",
+        "funcprops.registry_derivatives.ChainRuleCertificate",
+        "funcprops.registry_derivatives.GradientCertificate"
+      ]
+    },
+    {
+      "api": "monotonic_decomposition",
+      "implementation": "funcprops.real_analysis.monotonic_certificates.monotonic_decomposition",
+      "possible_record_types": [
+        "funcprops.real_analysis.monotonic_certificates.MonotonicDecomposition"
+      ]
+    },
+    {
+      "api": "monotonic_partition",
+      "implementation": "funcprops.real_analysis.monotonic_certificates.monotonic_partition",
+      "possible_record_types": [
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.real_analysis.monotonic_certificates.MonotonicPartition",
+        "funcprops.real_analysis.piecewise.PiecewiseBoundaryCertificate",
+        "funcprops.registry_derivatives.ChainRuleCertificate",
+        "funcprops.registry_derivatives.GradientCertificate",
+        "funcprops.transcendental.zero_geometry.ZeroGeometryCertificate"
+      ]
+    },
+    {
+      "api": "monotonicity",
+      "implementation": "funcprops.real_analysis.monotonicity.monotonicity",
+      "possible_record_types": [
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.real_analysis.monotonic_certificates.MonotonicDecomposition",
+        "funcprops.real_analysis.monotonic_certificates.MonotonicPartition",
+        "funcprops.real_analysis.piecewise.PiecewiseBoundaryCertificate",
+        "funcprops.registry_derivatives.ChainRuleCertificate",
+        "funcprops.registry_derivatives.GradientCertificate",
+        "funcprops.transcendental.zero_geometry.ZeroGeometryCertificate"
+      ]
+    },
+    {
+      "api": "oscillation",
+      "implementation": "funcprops.real_analysis.oscillation.oscillation",
+      "possible_record_types": [
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.real_analysis.monotonic_certificates.MonotonicDecomposition",
+        "funcprops.real_analysis.monotonic_certificates.MonotonicPartition",
+        "funcprops.real_analysis.oscillation.OscillationCertificate",
+        "funcprops.real_analysis.piecewise.PiecewiseBoundaryCertificate",
+        "funcprops.registry_derivatives.ChainRuleCertificate",
+        "funcprops.registry_derivatives.GradientCertificate",
+        "funcprops.transcendental.zero_geometry.ZeroGeometryCertificate"
+      ]
+    },
+    {
+      "api": "parameter_root_coverage",
+      "implementation": "funcprops.parameter_coverage.parameter_root_coverage",
+      "possible_record_types": [
+        "funcprops.adaptive_roots.AdaptiveRootResult",
+        "funcprops.adaptive_roots.CoverageState",
+        "funcprops.analytic_contours.AnalyticComplexCoverage",
+        "funcprops.complex_cofinal.ComplexIsolationRun",
+        "funcprops.complex_isolation.ComplexIsolationProof",
+        "funcprops.complex_isolation.ComplexIsolationState",
+        "funcprops.coverage_contract.EnclosureWitness",
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.parameter_contract.BoxEnclosureWitness",
+        "funcprops.parameter_contract.ParameterCoverageProof",
+        "funcprops.parameter_contract.UniformParameterCertificate",
+        "funcprops.parameter_contract.UniformParameterCover",
+        "funcprops.property_contract.PropertyCoverageProof",
+        "funcprops.quotient_isolation.QuotientIsolationProof",
+        "funcprops.quotient_isolation.QuotientIsolationState",
+        "funcprops.quotient_isolation.QuotientRegionProof",
+        "funcprops.quotient_isolation.QuotientSourceProof",
+        "funcprops.transcendental.complex_roots.ComplexRootIsolationResult",
+        "funcprops.work_budget.BudgetedResult"
+      ]
+    },
+    {
+      "api": "periodicity",
+      "implementation": "funcprops.real_analysis.structural_properties.periodicity",
+      "possible_record_types": [
+        "funcprops.real_analysis.structural_properties.PeriodicityResult"
+      ]
+    },
+    {
+      "api": "piecewise_decomposition",
+      "implementation": "funcprops.real_analysis.piecewise.piecewise_decomposition",
+      "possible_record_types": [
+        "funcprops.entire_cancellation.EntireCancellationProof"
+      ]
+    },
+    {
+      "api": "poles",
+      "implementation": "funcprops.singularities.records.poles",
+      "possible_record_types": [
+        "funcprops.entire_cancellation.EntireCancellationProof"
+      ]
+    },
+    {
+      "api": "polynomial_transition_locus",
+      "implementation": "funcprops.parameter_discriminants.polynomial_transition_locus",
+      "possible_record_types": [
+        "funcprops.parameter_discriminants.ParameterTransitionLocus"
+      ]
+    },
+    {
+      "api": "property_interval_decomposition",
+      "implementation": "funcprops.transcendental.zero_geometry.property_interval_decomposition",
+      "possible_record_types": [
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.registry_derivatives.ChainRuleCertificate",
+        "funcprops.registry_derivatives.GradientCertificate",
+        "funcprops.transcendental.zero_geometry.ZeroGeometryCertificate"
+      ]
+    },
+    {
+      "api": "prove_root_coverage",
+      "implementation": "funcprops.coverage_search.prove_root_coverage",
+      "possible_record_types": [
+        "funcprops.adaptive_roots.AdaptiveRootResult",
+        "funcprops.adaptive_roots.CoverageState",
+        "funcprops.analytic_contours.AnalyticComplexCoverage",
+        "funcprops.complex_cofinal.ComplexIsolationRun",
+        "funcprops.complex_isolation.ComplexIsolationProof",
+        "funcprops.complex_isolation.ComplexIsolationState",
+        "funcprops.coverage_contract.CellDomainWitness",
+        "funcprops.coverage_contract.CoverageLeaf",
+        "funcprops.coverage_contract.CoverageProof",
+        "funcprops.coverage_contract.EnclosureWitness",
+        "funcprops.coverage_contract.InadmissibleProof",
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.infinite_contract.PeriodicDomainWitness",
+        "funcprops.parameter_contract.ParameterCoverageProof",
+        "funcprops.parameter_contract.UniformParameterCertificate",
+        "funcprops.property_contract.PropertyCoverageProof",
+        "funcprops.quotient_isolation.QuotientIsolationProof",
+        "funcprops.quotient_isolation.QuotientIsolationState",
+        "funcprops.quotient_isolation.QuotientRegionProof",
+        "funcprops.quotient_isolation.QuotientSourceProof",
+        "funcprops.transcendental.complex_roots.ComplexRootIsolationResult",
+        "funcprops.work_budget.BudgetedResult"
+      ]
+    },
+    {
+      "api": "range",
+      "implementation": "funcprops.real_analysis.range.range",
+      "possible_record_types": [
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.real_analysis.monotonic_certificates.MonotonicDecomposition",
+        "funcprops.real_analysis.monotonic_certificates.MonotonicPartition",
+        "funcprops.real_analysis.piecewise.PiecewiseBoundaryCertificate",
+        "funcprops.registry_derivatives.ChainRuleCertificate",
+        "funcprops.registry_derivatives.GradientCertificate",
+        "funcprops.transcendental.extrema.ExtremumFamilyCertificate",
+        "funcprops.transcendental.extrema.ExtremumOrderingTheorem",
+        "funcprops.transcendental.extrema.ExtremumRange",
+        "funcprops.transcendental.zero_geometry.CertifiedIntegerBracket",
+        "funcprops.transcendental.zero_geometry.IndexedTailInversionCertificate",
+        "funcprops.transcendental.zero_geometry.ZeroGeometryCertificate"
+      ]
+    },
+    {
+      "api": "range_from_monotonic_partition",
+      "implementation": "funcprops.real_analysis.monotonic_certificates.range_from_monotonic_partition",
+      "possible_record_types": [
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.real_analysis.monotonic_certificates.MonotonicPartition",
+        "funcprops.real_analysis.piecewise.PiecewiseBoundaryCertificate",
+        "funcprops.registry_derivatives.ChainRuleCertificate",
+        "funcprops.registry_derivatives.GradientCertificate",
+        "funcprops.transcendental.zero_geometry.ZeroGeometryCertificate"
+      ]
+    },
+    {
+      "api": "reduce_univariate_condition",
+      "implementation": "funcprops.transcendental.reduce.reduce_univariate_condition",
+      "possible_record_types": [
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.transcendental.reduce.UnivariateReductionResult",
+        "funcprops.transcendental.roots.RootCertificate",
+        "funcprops.transcendental.roots.RootIsolationResult"
+      ]
+    },
+    {
+      "api": "registry_chain_rule",
+      "implementation": "funcprops.registry_derivatives.registry_chain_rule",
+      "possible_record_types": [
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.registry_derivatives.GradientCertificate",
+        "funcprops.registry_derivatives.HessianCertificate",
+        "funcprops.registry_derivatives.JacobianCertificate",
+        "funcprops.registry_derivatives.MultivariateChainRuleCertificate"
+      ]
+    },
+    {
+      "api": "registry_derivative",
+      "implementation": "funcprops.registry_derivatives.registry_derivative",
+      "possible_record_types": [
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.registry_derivatives.ChainRuleCertificate",
+        "funcprops.registry_derivatives.GradientCertificate"
+      ]
+    },
+    {
+      "api": "registry_gradient",
+      "implementation": "funcprops.registry_derivatives.registry_gradient",
+      "possible_record_types": [
+        "funcprops.registry_derivatives.GradientCertificate"
+      ]
+    },
+    {
+      "api": "registry_hessian",
+      "implementation": "funcprops.registry_derivatives.registry_hessian",
+      "possible_record_types": [
+        "funcprops.registry_derivatives.HessianCertificate"
+      ]
+    },
+    {
+      "api": "registry_jacobian",
+      "implementation": "funcprops.registry_derivatives.registry_jacobian",
+      "possible_record_types": [
+        "funcprops.registry_derivatives.JacobianCertificate"
+      ]
+    },
+    {
+      "api": "replay_status",
+      "implementation": "funcprops.diagnostics.replay_status",
+      "possible_record_types": [
+        "funcprops.adaptive_roots.AdaptiveRootResult",
+        "funcprops.adaptive_roots.CoverageState",
+        "funcprops.analytic_contours.AnalyticComplexCoverage",
+        "funcprops.complex_cofinal.ComplexIsolationRun",
+        "funcprops.complex_isolation.ComplexIsolationProof",
+        "funcprops.complex_isolation.ComplexIsolationState",
+        "funcprops.coverage_contract.EnclosureWitness",
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.parameter_contract.ParameterCoverageProof",
+        "funcprops.parameter_contract.UniformParameterCertificate",
+        "funcprops.property_contract.PropertyCoverageProof",
+        "funcprops.quotient_isolation.QuotientIsolationProof",
+        "funcprops.quotient_isolation.QuotientIsolationState",
+        "funcprops.quotient_isolation.QuotientRegionProof",
+        "funcprops.quotient_isolation.QuotientSourceProof",
+        "funcprops.real_analysis.advanced_convexity.ConvexityCertificate",
+        "funcprops.real_analysis.monotonic_certificates.MonotonicDecomposition",
+        "funcprops.real_analysis.monotonic_certificates.MonotonicPartition",
+        "funcprops.real_analysis.piecewise.PiecewiseBoundaryCertificate",
+        "funcprops.real_analysis.structural_properties.HomogeneityResult",
+        "funcprops.real_analysis.structural_properties.PeriodicityResult",
+        "funcprops.real_analysis.structural_properties.SymmetryResult",
+        "funcprops.registry_derivatives.ChainRuleCertificate",
+        "funcprops.registry_derivatives.GradientCertificate",
+        "funcprops.transcendental.complex_roots.ComplexRootIsolationResult",
+        "funcprops.transcendental.zero_geometry.ZeroGeometryCertificate",
+        "funcprops.work_budget.BudgetedResult"
+      ]
+    },
+    {
+      "api": "residue",
+      "implementation": "funcprops.certified_operations.residue",
+      "possible_record_types": [
+        "funcprops.certified_operations.ResidueCertificate"
+      ]
+    },
+    {
+      "api": "resume_adaptive_complex_isolation",
+      "implementation": "funcprops.complex_cofinal.resume_adaptive_complex_isolation",
+      "possible_record_types": [
+        "funcprops.adaptive_roots.AdaptiveRootResult",
+        "funcprops.adaptive_roots.CoverageState",
+        "funcprops.analytic_contours.AnalyticComplexCoverage",
+        "funcprops.complex_cofinal.ComplexIsolationRun",
+        "funcprops.complex_isolation.ComplexIsolationProof",
+        "funcprops.complex_isolation.ComplexIsolationState",
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.parameter_contract.ParameterCoverageProof",
+        "funcprops.parameter_contract.UniformParameterCertificate",
+        "funcprops.property_contract.PropertyCoverageProof",
+        "funcprops.quotient_cofinal.QuotientIsolationRun",
+        "funcprops.quotient_isolation.QuotientIsolationProof",
+        "funcprops.quotient_isolation.QuotientIsolationState",
+        "funcprops.quotient_isolation.QuotientRegionProof",
+        "funcprops.quotient_isolation.QuotientSourceProof",
+        "funcprops.transcendental.complex_roots.ComplexRootIsolationResult",
+        "funcprops.work_budget.BudgetedResult"
+      ]
+    },
+    {
+      "api": "resume_adaptive_quotient_isolation",
+      "implementation": "funcprops.quotient_cofinal.resume_adaptive_quotient_isolation",
+      "possible_record_types": [
+        "funcprops.adaptive_roots.AdaptiveRootResult",
+        "funcprops.adaptive_roots.CoverageState",
+        "funcprops.analytic_contours.AnalyticComplexCoverage",
+        "funcprops.complex_cofinal.ComplexIsolationRun",
+        "funcprops.complex_isolation.ComplexIsolationProof",
+        "funcprops.complex_isolation.ComplexIsolationState",
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.parameter_contract.ParameterCoverageProof",
+        "funcprops.parameter_contract.UniformParameterCertificate",
+        "funcprops.property_contract.PropertyCoverageProof",
+        "funcprops.quotient_cofinal.QuotientIsolationRun",
+        "funcprops.quotient_isolation.QuotientIsolationProof",
+        "funcprops.quotient_isolation.QuotientIsolationState",
+        "funcprops.quotient_isolation.QuotientRegionProof",
+        "funcprops.quotient_isolation.QuotientSourceProof",
+        "funcprops.transcendental.complex_roots.ComplexRootIsolationResult",
+        "funcprops.work_budget.BudgetedResult"
+      ]
+    },
+    {
+      "api": "resume_complex_isolation",
+      "implementation": "funcprops.complex_isolation.resume_complex_isolation",
+      "possible_record_types": [
+        "funcprops.adaptive_roots.AdaptiveRootResult",
+        "funcprops.adaptive_roots.CoverageState",
+        "funcprops.analytic_contours.AnalyticComplexCoverage",
+        "funcprops.analytic_contours.AnalyticContourCertificate",
+        "funcprops.analytic_contours.ComplexBoxWitness",
+        "funcprops.complex_cofinal.ComplexIsolationRun",
+        "funcprops.complex_isolation.ComplexIsolationProof",
+        "funcprops.complex_isolation.ComplexIsolationState",
+        "funcprops.complex_multiplicity.ComplexExactMultiplicity",
+        "funcprops.complex_multiplicity.ComplexLocatedRegion",
+        "funcprops.complex_multiplicity.ComplexPowerFactorProof",
+        "funcprops.complex_multiplicity.ComplexPowerRootRegion",
+        "funcprops.complex_multiplicity.ComplexTaylorWitness",
+        "funcprops.complex_multiplicity.ComplexUnitWitness",
+        "funcprops.complex_newton.ComplexDerivativeWitness",
+        "funcprops.complex_newton.ComplexNewtonRefinement",
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.implicit_orders.ImplicitJetWitness",
+        "funcprops.implicit_orders.ImplicitMultiplicityProof",
+        "funcprops.implicit_orders.ImplicitRootValueProof",
+        "funcprops.parameter_contract.ParameterCoverageProof",
+        "funcprops.parameter_contract.UniformParameterCertificate",
+        "funcprops.property_contract.PropertyCoverageProof",
+        "funcprops.quotient_isolation.DenominatorExclusionProof",
+        "funcprops.quotient_isolation.ExactLocalZeroProof",
+        "funcprops.quotient_isolation.QuotientCellProof",
+        "funcprops.quotient_isolation.QuotientIsolationProof",
+        "funcprops.quotient_isolation.QuotientIsolationState",
+        "funcprops.quotient_isolation.QuotientRegionProof",
+        "funcprops.quotient_isolation.QuotientSourceProof",
+        "funcprops.quotient_refinement.QuotientNewtonRefinement",
+        "funcprops.shared_zeros.ComplexZeroSubsetProof",
+        "funcprops.shared_zeros.SharedZeroImplication",
+        "funcprops.shared_zeros.SharedZeroOrderProof",
+        "funcprops.shared_zeros.SharedZeroRegion",
+        "funcprops.transcendental.complex_roots.ComplexRootIsolationResult",
+        "funcprops.work_budget.BudgetedResult"
+      ]
+    },
+    {
+      "api": "resume_parameter_geometry",
+      "implementation": "funcprops.parameter_geometry.resume_parameter_geometry",
+      "possible_record_types": [
+        "funcprops.algebraic_coefficients.AlgebraicCoefficientEncoding",
+        "funcprops.parameter_geometry.ParameterGeometryProof"
+      ]
+    },
+    {
+      "api": "resume_quotient_isolation",
+      "implementation": "funcprops.quotient_isolation.resume_quotient_isolation",
+      "possible_record_types": [
+        "funcprops.adaptive_roots.AdaptiveRootResult",
+        "funcprops.adaptive_roots.CoverageState",
+        "funcprops.analytic_contours.AnalyticComplexCoverage",
+        "funcprops.analytic_contours.AnalyticContourCertificate",
+        "funcprops.analytic_contours.ComplexBoxWitness",
+        "funcprops.complex_cofinal.ComplexIsolationRun",
+        "funcprops.complex_isolation.ComplexIsolationProof",
+        "funcprops.complex_isolation.ComplexIsolationState",
+        "funcprops.complex_multiplicity.ComplexExactMultiplicity",
+        "funcprops.complex_multiplicity.ComplexPowerFactorProof",
+        "funcprops.complex_multiplicity.ComplexPowerRootRegion",
+        "funcprops.complex_multiplicity.ComplexTaylorWitness",
+        "funcprops.complex_multiplicity.ComplexUnitWitness",
+        "funcprops.complex_newton.ComplexDerivativeWitness",
+        "funcprops.complex_newton.ComplexNewtonRefinement",
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.implicit_orders.ImplicitJetWitness",
+        "funcprops.implicit_orders.ImplicitMultiplicityProof",
+        "funcprops.implicit_orders.ImplicitRootValueProof",
+        "funcprops.parameter_contract.ParameterCoverageProof",
+        "funcprops.parameter_contract.UniformParameterCertificate",
+        "funcprops.property_contract.PropertyCoverageProof",
+        "funcprops.quotient_isolation.DenominatorExclusionProof",
+        "funcprops.quotient_isolation.ExactLocalZeroProof",
+        "funcprops.quotient_isolation.QuotientCellProof",
+        "funcprops.quotient_isolation.QuotientIsolationProof",
+        "funcprops.quotient_isolation.QuotientIsolationState",
+        "funcprops.quotient_isolation.QuotientRegionProof",
+        "funcprops.quotient_isolation.QuotientSourceProof",
+        "funcprops.quotient_refinement.QuotientNewtonRefinement",
+        "funcprops.shared_zeros.ComplexZeroSubsetProof",
+        "funcprops.shared_zeros.SharedZeroImplication",
+        "funcprops.shared_zeros.SharedZeroOrderProof",
+        "funcprops.shared_zeros.SharedZeroRegion",
+        "funcprops.transcendental.complex_roots.ComplexRootIsolationResult",
+        "funcprops.work_budget.BudgetedResult"
+      ]
+    },
+    {
+      "api": "resume_root_coverage",
+      "implementation": "funcprops.adaptive_roots.resume_root_coverage",
+      "possible_record_types": [
+        "funcprops.adaptive_roots.AdaptiveRootResult",
+        "funcprops.adaptive_roots.CoverageState",
+        "funcprops.analytic_contours.AnalyticComplexCoverage",
+        "funcprops.complex_cofinal.ComplexIsolationRun",
+        "funcprops.complex_isolation.ComplexIsolationProof",
+        "funcprops.complex_isolation.ComplexIsolationState",
+        "funcprops.coverage_contract.CellDomainWitness",
+        "funcprops.coverage_contract.CoverageLeaf",
+        "funcprops.coverage_contract.EnclosureWitness",
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.infinite_contract.PeriodicDomainWitness",
+        "funcprops.parameter_contract.ParameterCoverageProof",
+        "funcprops.parameter_contract.UniformParameterCertificate",
+        "funcprops.property_contract.PropertyCoverageProof",
+        "funcprops.quotient_isolation.QuotientIsolationProof",
+        "funcprops.quotient_isolation.QuotientIsolationState",
+        "funcprops.quotient_isolation.QuotientRegionProof",
+        "funcprops.quotient_isolation.QuotientSourceProof",
+        "funcprops.transcendental.complex_roots.ComplexRootIsolationResult",
+        "funcprops.work_budget.BudgetedResult"
+      ]
+    },
+    {
+      "api": "root_coverage",
+      "implementation": "funcprops.root_coverage.root_coverage",
+      "possible_record_types": [
+        "funcprops.asymptotic_tails.TailSignCertificate",
+        "funcprops.certified_balls.RealBallCertificate",
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.root_coverage.RootCoverageCertificate",
+        "funcprops.root_coverage.RootRegionProof",
+        "funcprops.taylor_models.TaylorModel",
+        "funcprops.transcendental.roots.RootCertificate",
+        "funcprops.transcendental.roots.RootIsolationResult",
+        "funcprops.verified_roots.RealRootInterval"
+      ]
+    },
+    {
+      "api": "rouche_polynomial_circle",
+      "implementation": "funcprops.complex_certification.rouche_polynomial_circle",
+      "possible_record_types": [
+        "funcprops.complex_certification.RoucheCertificate"
+      ]
+    },
+    {
+      "api": "rouche_polynomial_rectangle",
+      "implementation": "funcprops.complex_certification.rouche_polynomial_rectangle",
+      "possible_record_types": [
+        "funcprops.complex_certification.RectangleRoucheCertificate"
+      ]
+    },
+    {
+      "api": "simplify_extremum_range",
+      "implementation": "funcprops.transcendental.extrema.simplify_extremum_range",
+      "possible_record_types": [
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.real_analysis.monotonic_certificates.MonotonicPartition",
+        "funcprops.real_analysis.piecewise.PiecewiseBoundaryCertificate",
+        "funcprops.registry_derivatives.ChainRuleCertificate",
+        "funcprops.registry_derivatives.GradientCertificate",
+        "funcprops.transcendental.extrema.ExtremumFamilyCertificate",
+        "funcprops.transcendental.extrema.ExtremumOrderingTheorem",
+        "funcprops.transcendental.extrema.ExtremumRange",
+        "funcprops.transcendental.zero_geometry.CertifiedIntegerBracket",
+        "funcprops.transcendental.zero_geometry.IndexedTailInversionCertificate",
+        "funcprops.transcendental.zero_geometry.ZeroGeometryCertificate"
+      ]
+    },
+    {
+      "api": "smooth",
+      "implementation": "funcprops.real_analysis.smoothness.smooth",
+      "possible_record_types": [
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.real_analysis.piecewise.PiecewiseBoundaryCertificate",
+        "funcprops.registry_derivatives.ChainRuleCertificate",
+        "funcprops.registry_derivatives.GradientCertificate"
+      ]
+    },
+    {
+      "api": "smoothness",
+      "implementation": "funcprops.real_analysis.smoothness.smoothness",
+      "possible_record_types": [
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.real_analysis.piecewise.PiecewiseBoundaryCertificate",
+        "funcprops.registry_derivatives.ChainRuleCertificate",
+        "funcprops.registry_derivatives.GradientCertificate"
+      ]
+    },
+    {
+      "api": "solve",
+      "implementation": "funcprops.certified_operations.solve",
+      "possible_record_types": [
+        "funcprops.certified_operations.EquationSolutionCertificate",
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.guarded_affine.GuardedAffineEquationCertificate"
+      ]
+    },
+    {
+      "api": "specialize_parameter_coverage",
+      "implementation": "funcprops.parameter_coverage.specialize_parameter_coverage",
+      "possible_record_types": [
+        "funcprops.parameter_contract.SpecializedParameterProof"
+      ]
+    },
+    {
+      "api": "specialize_root_coverage",
+      "implementation": "funcprops.root_coverage.specialize_root_coverage",
+      "possible_record_types": [
+        "funcprops.asymptotic_tails.TailSignCertificate",
+        "funcprops.certified_balls.RealBallCertificate",
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.root_coverage.RootCoverageCertificate",
+        "funcprops.root_coverage.RootRegionProof",
+        "funcprops.root_coverage.SpecializedRootCoverage",
+        "funcprops.taylor_models.TaylorModel",
+        "funcprops.transcendental.roots.RootCertificate",
+        "funcprops.transcendental.roots.RootIsolationResult",
+        "funcprops.verified_roots.RealRootInterval"
+      ]
+    },
+    {
+      "api": "structured_zero_geometry",
+      "implementation": "funcprops.infinite_root_families.structured_zero_geometry",
+      "possible_record_types": [
+        "funcprops.infinite_root_families.IndexedRootFamily"
+      ]
+    },
+    {
+      "api": "surjective",
+      "implementation": "funcprops.real_analysis.mapping.surjective",
+      "possible_record_types": [
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.real_analysis.monotonic_certificates.MonotonicDecomposition",
+        "funcprops.real_analysis.monotonic_certificates.MonotonicPartition",
+        "funcprops.real_analysis.piecewise.PiecewiseBoundaryCertificate",
+        "funcprops.registry_derivatives.ChainRuleCertificate",
+        "funcprops.registry_derivatives.GradientCertificate",
+        "funcprops.transcendental.extrema.ExtremumFamilyCertificate",
+        "funcprops.transcendental.extrema.ExtremumOrderingTheorem",
+        "funcprops.transcendental.extrema.ExtremumRange",
+        "funcprops.transcendental.zero_geometry.CertifiedIntegerBracket",
+        "funcprops.transcendental.zero_geometry.IndexedTailInversionCertificate",
+        "funcprops.transcendental.zero_geometry.ZeroGeometryCertificate"
+      ]
+    },
+    {
+      "api": "symbolic_extremum_range",
+      "implementation": "funcprops.transcendental.extrema.symbolic_extremum_range",
+      "possible_record_types": [
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.real_analysis.monotonic_certificates.MonotonicPartition",
+        "funcprops.real_analysis.piecewise.PiecewiseBoundaryCertificate",
+        "funcprops.registry_derivatives.ChainRuleCertificate",
+        "funcprops.registry_derivatives.GradientCertificate",
+        "funcprops.transcendental.extrema.ExtremumFamilyCertificate",
+        "funcprops.transcendental.extrema.ExtremumOrderingTheorem",
+        "funcprops.transcendental.extrema.ExtremumRange",
+        "funcprops.transcendental.zero_geometry.CertifiedIntegerBracket",
+        "funcprops.transcendental.zero_geometry.IndexedTailInversionCertificate",
+        "funcprops.transcendental.zero_geometry.ZeroGeometryCertificate"
+      ]
+    },
+    {
+      "api": "symmetry",
+      "implementation": "funcprops.real_analysis.structural_properties.symmetry",
+      "possible_record_types": [
+        "funcprops.real_analysis.structural_properties.SymmetryResult"
+      ]
+    },
+    {
+      "api": "taylor_model",
+      "implementation": "funcprops.taylor_models.taylor_model",
+      "possible_record_types": [
+        "funcprops.certified_balls.RealBallCertificate",
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.taylor_models.TaylorModel"
+      ]
+    },
+    {
+      "api": "track_domain",
+      "implementation": "funcprops.domain_tracking.track_domain",
+      "possible_record_types": [
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.entire_cancellation.EntireCancellationProof"
+      ]
+    },
+    {
+      "api": "transcendental_roots",
+      "implementation": "funcprops.transcendental.roots.transcendental_roots",
+      "possible_record_types": [
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.transcendental.roots.RootCertificate",
+        "funcprops.transcendental.roots.RootIsolationResult"
+      ]
+    },
+    {
+      "api": "transformation_geometry",
+      "implementation": "funcprops.api.transformation_geometry",
+      "possible_record_types": [
+        "funcprops.algebraic_coefficients.AlgebraicCoefficientEncoding",
+        "funcprops.coverage_contract.EnclosureWitness",
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.real_analysis.piecewise.PiecewiseBoundaryCertificate",
+        "funcprops.registry_derivatives.ChainRuleCertificate",
+        "funcprops.registry_derivatives.GradientCertificate",
+        "funcprops.registry_derivatives.JacobianCertificate",
+        "funcprops.transcendental.roots.RootCertificate",
+        "funcprops.transcendental.roots.RootIsolationResult",
+        "funcprops.transformation.ChangeOfVariablesCertificate",
+        "funcprops.transformation.DeterminantNonvanishingCertificate",
+        "funcprops.transformation.LocalInvertibilityCertificate"
+      ]
+    },
+    {
+      "api": "transport_instantiated_rule",
+      "implementation": "funcprops.registry_transport.transport_instantiated_rule",
+      "possible_record_types": [
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.real_analysis.monotonic_certificates.MonotonicDecomposition",
+        "funcprops.real_analysis.monotonic_certificates.MonotonicPartition",
+        "funcprops.real_analysis.piecewise.PiecewiseBoundaryCertificate",
+        "funcprops.registry_derivatives.ChainRuleCertificate",
+        "funcprops.registry_derivatives.GradientCertificate",
+        "funcprops.registry_derivatives.HessianCertificate",
+        "funcprops.registry_derivatives.JacobianCertificate",
+        "funcprops.registry_derivatives.MultivariateChainRuleCertificate",
+        "funcprops.transcendental.zero_geometry.ZeroGeometryCertificate"
+      ]
+    },
+    {
+      "api": "uniformly_continuous",
+      "implementation": "funcprops.real_analysis.regularity_extensions.uniformly_continuous",
+      "possible_record_types": [
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.metric_proofs.FiniteLipschitzProof",
+        "funcprops.real_analysis.monotonic_certificates.MonotonicDecomposition",
+        "funcprops.real_analysis.monotonic_certificates.MonotonicPartition",
+        "funcprops.real_analysis.piecewise.PiecewiseBoundaryCertificate",
+        "funcprops.real_analysis.regularity_extensions.LipschitzResult",
+        "funcprops.registry_derivatives.ChainRuleCertificate",
+        "funcprops.registry_derivatives.GradientCertificate",
+        "funcprops.seam_regularity.SeamRegularityProof",
+        "funcprops.transcendental.extrema.ExtremumFamilyCertificate",
+        "funcprops.transcendental.extrema.ExtremumOrderingTheorem",
+        "funcprops.transcendental.extrema.ExtremumRange",
+        "funcprops.transcendental.zero_geometry.CertifiedIntegerBracket",
+        "funcprops.transcendental.zero_geometry.IndexedTailInversionCertificate",
+        "funcprops.transcendental.zero_geometry.ZeroGeometryCertificate"
+      ]
+    },
+    {
+      "api": "variation",
+      "implementation": "funcprops.real_analysis.variation.variation",
+      "possible_record_types": [
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.metric_proofs.JumpVariationProof",
+        "funcprops.real_analysis.monotonic_certificates.MonotonicDecomposition",
+        "funcprops.real_analysis.monotonic_certificates.MonotonicPartition",
+        "funcprops.real_analysis.piecewise.PiecewiseBoundaryCertificate",
+        "funcprops.real_analysis.variation.VariationResult",
+        "funcprops.registry_derivatives.ChainRuleCertificate",
+        "funcprops.registry_derivatives.GradientCertificate",
+        "funcprops.transcendental.zero_geometry.ZeroGeometryCertificate"
+      ]
+    },
+    {
+      "api": "verify_certificate",
+      "implementation": "funcprops.verification.verify_certificate",
+      "possible_record_types": [
+        "funcprops.adaptive_roots.AdaptiveRootResult",
+        "funcprops.adaptive_roots.CoverageState",
+        "funcprops.analytic_contours.AnalyticComplexCoverage",
+        "funcprops.complex_cofinal.ComplexIsolationRun",
+        "funcprops.complex_isolation.ComplexIsolationProof",
+        "funcprops.complex_isolation.ComplexIsolationState",
+        "funcprops.coverage_contract.EnclosureWitness",
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.parameter_contract.ParameterCoverageProof",
+        "funcprops.parameter_contract.UniformParameterCertificate",
+        "funcprops.property_contract.PropertyCoverageProof",
+        "funcprops.quotient_isolation.QuotientIsolationProof",
+        "funcprops.quotient_isolation.QuotientIsolationState",
+        "funcprops.quotient_isolation.QuotientRegionProof",
+        "funcprops.quotient_isolation.QuotientSourceProof",
+        "funcprops.real_analysis.advanced_convexity.ConvexityCertificate",
+        "funcprops.real_analysis.monotonic_certificates.MonotonicDecomposition",
+        "funcprops.real_analysis.monotonic_certificates.MonotonicPartition",
+        "funcprops.real_analysis.piecewise.PiecewiseBoundaryCertificate",
+        "funcprops.real_analysis.structural_properties.HomogeneityResult",
+        "funcprops.real_analysis.structural_properties.PeriodicityResult",
+        "funcprops.real_analysis.structural_properties.SymmetryResult",
+        "funcprops.registry_derivatives.ChainRuleCertificate",
+        "funcprops.registry_derivatives.GradientCertificate",
+        "funcprops.transcendental.complex_roots.ComplexRootIsolationResult",
+        "funcprops.transcendental.zero_geometry.ZeroGeometryCertificate",
+        "funcprops.work_budget.BudgetedResult"
+      ]
+    },
+    {
+      "api": "verify_convexity_certificate",
+      "implementation": "funcprops.verification.verify_convexity_certificate",
+      "possible_record_types": [
+        "funcprops.coverage_contract.EnclosureWitness",
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.real_analysis.advanced_convexity.ConvexityCertificate",
+        "funcprops.real_analysis.monotonic_certificates.MonotonicDecomposition",
+        "funcprops.real_analysis.monotonic_certificates.MonotonicPartition",
+        "funcprops.real_analysis.piecewise.PiecewiseBoundaryCertificate",
+        "funcprops.registry_derivatives.ChainRuleCertificate",
+        "funcprops.registry_derivatives.GradientCertificate",
+        "funcprops.transcendental.zero_geometry.ZeroGeometryCertificate"
+      ]
+    },
+    {
+      "api": "verify_extremum_family",
+      "implementation": "funcprops.verification.verify_extremum_family",
+      "possible_record_types": [
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.real_analysis.monotonic_certificates.MonotonicPartition",
+        "funcprops.real_analysis.piecewise.PiecewiseBoundaryCertificate",
+        "funcprops.registry_derivatives.ChainRuleCertificate",
+        "funcprops.registry_derivatives.GradientCertificate",
+        "funcprops.transcendental.extrema.ExtremumFamilyCertificate",
+        "funcprops.transcendental.zero_geometry.ZeroGeometryCertificate"
+      ]
+    },
+    {
+      "api": "verify_extremum_ordering",
+      "implementation": "funcprops.verification.verify_extremum_ordering",
+      "possible_record_types": [
+        "funcprops.transcendental.extrema.ExtremumOrderingTheorem"
+      ]
+    },
+    {
+      "api": "verify_extremum_range",
+      "implementation": "funcprops.verification.verify_extremum_range",
+      "possible_record_types": [
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.real_analysis.monotonic_certificates.MonotonicPartition",
+        "funcprops.real_analysis.piecewise.PiecewiseBoundaryCertificate",
+        "funcprops.registry_derivatives.ChainRuleCertificate",
+        "funcprops.registry_derivatives.GradientCertificate",
+        "funcprops.transcendental.extrema.ExtremumFamilyCertificate",
+        "funcprops.transcendental.extrema.ExtremumOrderingTheorem",
+        "funcprops.transcendental.extrema.ExtremumRange",
+        "funcprops.transcendental.zero_geometry.CertifiedIntegerBracket",
+        "funcprops.transcendental.zero_geometry.IndexedTailInversionCertificate",
+        "funcprops.transcendental.zero_geometry.ZeroGeometryCertificate"
+      ]
+    },
+    {
+      "api": "verify_indexed_tail_inversion",
+      "implementation": "funcprops.verification.verify_indexed_tail_inversion",
+      "possible_record_types": [
+        "funcprops.transcendental.zero_geometry.CertifiedIntegerBracket",
+        "funcprops.transcendental.zero_geometry.IndexedTailInversionCertificate"
+      ]
+    },
+    {
+      "api": "verify_integer_bracket",
+      "implementation": "funcprops.verification.verify_integer_bracket",
+      "possible_record_types": [
+        "funcprops.transcendental.zero_geometry.CertifiedIntegerBracket"
+      ]
+    },
+    {
+      "api": "verify_monotonic_decomposition",
+      "implementation": "funcprops.verification.verify_monotonic_decomposition",
+      "possible_record_types": [
+        "funcprops.real_analysis.monotonic_certificates.MonotonicDecomposition"
+      ]
+    },
+    {
+      "api": "verify_monotonic_partition",
+      "implementation": "funcprops.verification.verify_monotonic_partition",
+      "possible_record_types": [
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.real_analysis.monotonic_certificates.MonotonicPartition",
+        "funcprops.real_analysis.piecewise.PiecewiseBoundaryCertificate",
+        "funcprops.registry_derivatives.ChainRuleCertificate",
+        "funcprops.registry_derivatives.GradientCertificate",
+        "funcprops.transcendental.zero_geometry.ZeroGeometryCertificate"
+      ]
+    },
+    {
+      "api": "verify_real_root_interval",
+      "implementation": "funcprops.verified_roots.verify_real_root_interval",
+      "possible_record_types": [
+        "funcprops.certified_balls.RealBallCertificate",
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.verified_roots.RealRootInterval"
+      ]
+    },
+    {
+      "api": "verify_root_certificate",
+      "implementation": "funcprops.verification.verify_root_certificate",
+      "possible_record_types": [
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.transcendental.roots.RootCertificate",
+        "funcprops.transcendental.roots.RootIsolationResult"
+      ]
+    },
+    {
+      "api": "winding_number",
+      "implementation": "funcprops.certified_operations.winding_number",
+      "possible_record_types": [
+        "funcprops.algebraic_coefficients.AlgebraicCoefficientEncoding",
+        "funcprops.certified_operations.WindingCertificate",
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.integration.IntegralResult",
+        "funcprops.piecewise_proofs.PiecewiseRegularityCertificate",
+        "funcprops.real_analysis.piecewise.PiecewiseBoundaryCertificate",
+        "funcprops.registry_derivatives.ChainRuleCertificate",
+        "funcprops.registry_derivatives.GradientCertificate"
+      ]
+    },
+    {
+      "api": "zeros",
+      "implementation": "funcprops.real_analysis.zeros.zeros",
+      "possible_record_types": [
+        "funcprops.domain_tracking.DomainRecord",
+        "funcprops.entire_cancellation.EntireCancellationProof",
+        "funcprops.transcendental.roots.RootCertificate",
+        "funcprops.transcendental.roots.RootIsolationResult"
+      ]
+    }
+  ]
+}

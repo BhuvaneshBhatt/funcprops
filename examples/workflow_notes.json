@@ -1,0 +1,154 @@
+{
+  "piecewise-partitions": {
+    "level": "introductory",
+    "topic": "Domains and shape",
+    "question": "How can I reuse branch results without losing jumps?",
+    "expected": "The image is [-1,0) union [2,3]; the owned spike breaks strict order.",
+    "interpretation": "A complete cell cover is separate from global order and derivative-root completeness.",
+    "limits": "Source holes and unresolved seams can prevent partition completion."
+  },
+  "finite-metric-proofs": {
+    "level": "introductory",
+    "topic": "Regularity",
+    "question": "Can I certify an optimal finite bound and a total variation?",
+    "expected": "The finite constant is 2, the spike variation is 22, and both supplied proofs replay.",
+    "interpretation": "All finite pairs and all owned excursions contribute. A changed total is rejected.",
+    "limits": "Interval derivative bounds can be useful without the finite replay contract."
+  },
+  "algebraic-coefficients": {
+    "level": "intermediate",
+    "topic": "Exact arithmetic",
+    "question": "How do I keep an algebraic coefficient on its intended real conjugate?",
+    "expected": "The image is (0,sqrt(2)); a canceled source hole has empty image at its excluded point.",
+    "interpretation": "The rational generator guard selects a unique real embedding.",
+    "limits": "The compositum degree is at most four, with at most four nonrational constants and no extra coefficient parameters in the lift."
+  },
+  "parameter-geometry": {
+    "level": "intermediate",
+    "topic": "Parameters",
+    "question": "How many distinct real roots does a polynomial family have?",
+    "expected": "The demonstrated quadratic strata have counts 2, 1 and 0; the partial frontier resumes to completion.",
+    "interpretation": "Counts refer to distinct roots and exact guarded regions, including degree loss.",
+    "limits": "Degree is at most four in the root coordinate, with up to four real parameters and rational interval endpoints. Transcendental families are outside this interface."
+  },
+  "branch-recipes": {
+    "level": "advanced",
+    "topic": "Complex branches",
+    "question": "Do my selected local solutions agree on every overlap?",
+    "expected": "The compatible square-root recipes glue; opposite selected recipes disagree; crossing branches stay unresolved.",
+    "interpretation": "Agreement at one anchor does not prove equality of local formulas.",
+    "limits": "This assembles supplied recipes for entire implicit relations; it does not discover arbitrary implicit branches."
+  },
+  "certified-extrema-bounds": {
+    "level": "intermediate",
+    "topic": "Real optimization",
+    "question": "Can I bound extrema without solving the stationary equation exactly?",
+    "expected": "Both value brackets have width at most 1/10000, while exact extrema remain unresolved.",
+    "interpretation": "Value accuracy can be certified without a closed-form stationary coordinate.",
+    "limits": "The supported finite smooth branches and interval enclosures do not cover arbitrary nonsmooth inputs."
+  },
+  "branch-chart-gluing": {
+    "level": "advanced",
+    "topic": "Complex branches",
+    "question": "Can local logarithms cover a loop without a global logarithm?",
+    "expected": "The logarithm has full chart coverage and an obstruction; the selected square root of z**2 glues.",
+    "interpretation": "Logarithm sheet transitions and power multipliers have different completion conditions.",
+    "limits": "Finite log/power atlases do not supply a general chart-aware contour grammar."
+  },
+  "implicit-common-orders": {
+    "level": "advanced",
+    "topic": "Complex roots",
+    "question": "Can I prove common zeros and their orders at an implicitly located root?",
+    "expected": "The local multiplicities are (1,2); this local theorem is not exhaustive root coverage.",
+    "interpretation": "Exact congruences and nonzero jets establish local orders.",
+    "limits": "Unproved identities and possible additional zeros keep the corresponding completion fields false."
+  },
+  "restricted-domains": {
+    "level": "introductory",
+    "topic": "Domains and shape",
+    "question": "How do input restrictions and held operations affect an answer?",
+    "expected": "The exponential image is (1,E); held x/x excludes zero; positive irrational powers retain zero.",
+    "interpretation": "Source definition is tracked before cancellation and before branch rules.",
+    "limits": "Holding cannot recover operands already simplified by SymPy before the query."
+  },
+  "guarded-piecewise": {
+    "level": "intermediate",
+    "topic": "Parameters",
+    "question": "How do parameter guards and singleton branches reach downstream results?",
+    "expected": "The affine equation has three guarded cases, and the Piecewise maximum is 100 at zero.",
+    "interpretation": "First-match ownership and parameter hypotheses are mathematical premises.",
+    "limits": "Unresolved guards or missing seams cannot supply unconditional conclusions."
+  },
+  "real-root-coverage": {
+    "level": "intermediate",
+    "topic": "Real roots",
+    "question": "When is a real-root count exhaustive?",
+    "expected": "The compact exponential has one root; the repeated polynomial has two distinct roots of total multiplicity six.",
+    "interpretation": "Open endpoints, periodic indexed families and tail proofs complete different parts of the domain.",
+    "limits": "A compact root count cannot cover an infinite domain without exhaustive families or tails."
+  },
+  "complex-isolation": {
+    "level": "advanced",
+    "topic": "Complex roots",
+    "question": "Does my complex result isolate roots individually at the requested accuracy?",
+    "expected": "Three sine zeros and two non-real exponential zeros are counted; a retained cluster is valid partial evidence.",
+    "interpretation": "Coverage, individual isolation and requested box accuracy are separate claims.",
+    "limits": "The native route requires its declared parameter-free grammar, rational rectangles and clear outer boundary."
+  },
+  "algebraic-roots": {
+    "level": "intermediate",
+    "topic": "Complex roots",
+    "question": "How does the algebraic backend preserve principal branches and holes?",
+    "expected": "A cubic zero has multiplicity three; a held hole removes a candidate; sqrt(z) has unresolved source multiplicity.",
+    "interpretation": "Candidate coverage and source multiplicity use separate contracts.",
+    "limits": "Exact root locations do not automatically establish source multiplicity for radicals."
+  },
+  "quotients-and-holes": {
+    "level": "advanced",
+    "topic": "Complex roots",
+    "question": "Which counted points are source zeros, excluded extension zeros or poles?",
+    "expected": "The held cancellation has zero source roots and extension multiplicity two; the examples have zero and one pole.",
+    "interpretation": "Original denominator restrictions survive meromorphic extension.",
+    "limits": "Unknown shared orders or unclear boundaries prevent the corresponding complete ledger."
+  },
+  "budgets-and-resume": {
+    "level": "intermediate",
+    "topic": "Budgets and replay",
+    "question": "What can I retain when a bounded search stops?",
+    "expected": "An unresolved real seed resumes to one root; the cofinal quotient seed retains its unresolved region.",
+    "interpretation": "A resource limit stops a search without proving exclusion.",
+    "limits": "Checkpoints are trusted same-environment records, not a durable untrusted-file format."
+  },
+  "newton-refinement": {
+    "level": "advanced",
+    "topic": "Complex roots",
+    "question": "Can I shrink a root box without discarding its complement?",
+    "expected": "Five child/complement regions preserve total zero count one.",
+    "interpretation": "Certified contraction accelerates an already checked local count.",
+    "limits": "A small candidate box alone does not prove isolation or discard the surrounding region."
+  },
+  "replay": {
+    "level": "intermediate",
+    "topic": "Budgets and replay",
+    "question": "Can I check a native proof with its proposer disabled?",
+    "expected": "The original proof replays; the altered total and foreign source fail.",
+    "interpretation": "Registered concrete proof types bind the theorem to its original context.",
+    "limits": "Factory-based and algebraic routes have their own declared replay dependencies."
+  },
+  "local-branches": {
+    "level": "advanced",
+    "topic": "Complex branches",
+    "question": "How does a selected logarithmic germ affect a local residue?",
+    "expected": "The selected residue is I*pi; removing the branch context fails replay.",
+    "interpretation": "A local germ supplies source-bound branch values at a particular point.",
+    "limits": "A local branch calculation is not a global principal-branch identity."
+  },
+  "unsupported-and-partial": {
+    "level": "intermediate",
+    "topic": "Budgets and replay",
+    "question": "How should I interpret unsupported or unfinished isolation?",
+    "expected": "The unresolved seed and boundary obstruction retain unknown totals and incomplete status.",
+    "interpretation": "Successful local replay does not assert exhaustive coverage.",
+    "limits": "Unsupported grammar and unclear boundaries are neither root-exclusion proofs nor mathematical counterexamples."
+  }
+}

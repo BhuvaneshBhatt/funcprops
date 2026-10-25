@@ -7,6 +7,24 @@ from exprtest import zerotest
 from sympy import S
 
 
+def _complex_zero_parts(expr):
+    """Do not let a real-only zero decision certify a complex expression."""
+    if expr.is_real is True or (not expr.has(sp.I) and expr.is_real is not False):
+        return None
+    real, imaginary = sp.expand_complex(expr).as_real_imag()
+    if real == expr and imaginary == 0:
+        return None
+    return real, imaginary
+
+
+def _combine_zero_parts(parts):
+    if any(part is False for part in parts):
+        return False
+    if all(part is True for part in parts):
+        return True
+    return None
+
+
 def certify_zero(expr, assumptions=True) -> bool | None:
     """Return whether ``expr`` is provably zero under ``assumptions``.
 
@@ -14,6 +32,11 @@ def certify_zero(expr, assumptions=True) -> bool | None:
     preserves unresolved symbolic cases.  Only exprtest's certified mode is used.
     """
     expr = sp.sympify(expr)
+    parts = _complex_zero_parts(expr)
+    if parts is not None:
+        return _combine_zero_parts(
+            tuple(certify_zero(part, assumptions) for part in parts)
+        )
     result = zerotest(expr, assumptions=assumptions, confidence="certified")
     if result is True:
         return True
@@ -29,13 +52,13 @@ def certify_zero(expr, assumptions=True) -> bool | None:
     if not expr.free_symbols:
         return False
     try:
-        nonzero = sp.ask(sp.Q.nonzero(expr), assumptions)
+        zero = sp.ask(sp.Q.zero(expr), assumptions)
     except (TypeError, ValueError, NotImplementedError):
-        nonzero = None
-    if nonzero is True:
-        return False
-    if nonzero is False:
+        zero = None
+    if zero is True:
         return True
+    if zero is False:
+        return False
     return None
 
 
@@ -52,6 +75,9 @@ def certify_identity_zero(expr) -> bool | None:
     the expression is not the zero polynomial.
     """
     expr = sp.sympify(expr)
+    parts = _complex_zero_parts(expr)
+    if parts is not None:
+        return _combine_zero_parts(tuple(certify_identity_zero(part) for part in parts))
     result = zerotest(expr, confidence="certified")
     if result is not None:
         return result

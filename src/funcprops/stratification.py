@@ -9,26 +9,27 @@ from __future__ import annotations
 
 import contextlib
 from collections.abc import Callable, Iterable
+from dataclasses import replace
 from typing import Any
 
 import sympy as sp
 from sympy import S
 
 from .conditions import (
-    AAlgebraicQ,
-    AEqualQ,
-    AEvenQ,
-    AIntegerQ,
-    ANegative,
-    ANonIntegerQ,
-    ANonNegative,
-    ANonPositive,
-    AOddQ,
-    APositive,
-    ARationalQ,
-    ARealIfDefinedQ,
-    ARealQ,
-    AUnequalQ,
+    AlgebraicCondition,
+    EqualCondition,
+    EvenCondition,
+    IntegerCondition,
+    NegativeCondition,
+    NonintegerCondition,
+    NonnegativeCondition,
+    NonpositiveCondition,
+    OddCondition,
+    PositiveCondition,
+    RationalCondition,
+    RealCondition,
+    RealIfDefinedCondition,
+    UnequalCondition,
 )
 from .engine import simplify_condition
 from .exceptions import SIMPLIFICATION_ERRORS, SYMBOLIC_QUERY_ERRORS
@@ -38,7 +39,7 @@ from .results import ConditionalExpression, PropertyResult, TruthValue
 def semantic_condition(condition):
     """Lower catalogue semantic predicates to ordinary SymPy predicates.
 
-    This is deliberately one-way.  Native inequalities/membership expressions
+    This is one-way.  Native inequalities/membership expressions
     are much easier for ``simplify_logic``, ``refine`` and set conversion to
     reason about, while the catalogue parser can continue to preserve source
     semantics internally.
@@ -50,33 +51,33 @@ def semantic_condition(condition):
             return node
         f = node.func
         a = node.args
-        if f is APositive and len(a) == 1:
+        if f is PositiveCondition and len(a) == 1:
             return a[0] > 0
-        if f is ANegative and len(a) == 1:
+        if f is NegativeCondition and len(a) == 1:
             return a[0] < 0
-        if f is ANonPositive and len(a) == 1:
+        if f is NonpositiveCondition and len(a) == 1:
             return a[0] <= 0
-        if f is ANonNegative and len(a) == 1:
+        if f is NonnegativeCondition and len(a) == 1:
             return a[0] >= 0
-        if f is AIntegerQ and len(a) == 1:
+        if f is IntegerCondition and len(a) == 1:
             return sp.Contains(a[0], S.Integers)
-        if f is ANonIntegerQ and len(a) == 1:
+        if f is NonintegerCondition and len(a) == 1:
             return sp.Not(sp.Contains(a[0], S.Integers))
-        if f is ARationalQ and len(a) == 1:
+        if f is RationalCondition and len(a) == 1:
             return sp.Contains(a[0], S.Rationals)
-        if f in (ARealQ, ARealIfDefinedQ) and len(a) == 1:
+        if f in (RealCondition, RealIfDefinedCondition) and len(a) == 1:
             return sp.Contains(a[0], S.Reals)
-        if f is AAlgebraicQ and len(a) == 1:
+        if f is AlgebraicCondition and len(a) == 1:
             # SymPy has no global Algebraics singleton that behaves as cleanly
             # as Reals/Integers in Boolean simplification.  Preserve this one.
             return node
-        if f is AEvenQ and len(a) == 1:
+        if f is EvenCondition and len(a) == 1:
             return sp.And(sp.Contains(a[0], S.Integers), sp.Eq(sp.Mod(a[0], 2), 0))
-        if f is AOddQ and len(a) == 1:
+        if f is OddCondition and len(a) == 1:
             return sp.And(sp.Contains(a[0], S.Integers), sp.Eq(sp.Mod(a[0], 2), 1))
-        if f is AUnequalQ and len(a) == 2:
+        if f is UnequalCondition and len(a) == 2:
             return sp.Ne(a[0], a[1])
-        if f is AEqualQ and len(a) == 2:
+        if f is EqualCondition and len(a) == 2:
             return sp.Eq(a[0], a[1])
         return node
 
@@ -86,20 +87,20 @@ def semantic_condition(condition):
                 isinstance(n, sp.Basic)
                 and n.func
                 in {
-                    APositive,
-                    ANegative,
-                    ANonPositive,
-                    ANonNegative,
-                    AIntegerQ,
-                    ANonIntegerQ,
-                    ARationalQ,
-                    ARealQ,
-                    ARealIfDefinedQ,
-                    AAlgebraicQ,
-                    AEvenQ,
-                    AOddQ,
-                    AUnequalQ,
-                    AEqualQ,
+                    PositiveCondition,
+                    NegativeCondition,
+                    NonpositiveCondition,
+                    NonnegativeCondition,
+                    IntegerCondition,
+                    NonintegerCondition,
+                    RationalCondition,
+                    RealCondition,
+                    RealIfDefinedCondition,
+                    AlgebraicCondition,
+                    EvenCondition,
+                    OddCondition,
+                    UnequalCondition,
+                    EqualCondition,
                 }
             ),
             repl,
@@ -112,6 +113,8 @@ def semantic_condition(condition):
 
 
 def parameter_symbols(expr, var=None, *extra):
+    """Find free parameter symbols independently of analysis coordinates."""
+
     syms = set(sp.sympify(expr).free_symbols)
     for obj in extra:
         with contextlib.suppress(SYMBOLIC_QUERY_ERRORS):
@@ -209,7 +212,7 @@ def normalize_cases(
     )
 
 
-def resolve_result_assumptions(result, assumptions):
+def resolve_result_assumptions(result, assumptions, *, preserve_result=False):
     """Filter a parameter-stratified result through known assumptions.
 
     A uniquely implied stratum is returned as its compact value.  Otherwise
@@ -237,10 +240,23 @@ def resolve_result_assumptions(result, assumptions):
     if implied:
         first = implied[0]
         if all(value == first for value in implied):
+            if preserve_result:
+                unknown = getattr(first, "value", None) == "unknown"
+                return replace(
+                    result,
+                    primary=first,
+                    cases=(ConditionalExpression(first, S.true),),
+                    complete=False
+                    if unknown
+                    else True
+                    if result.complete is not None
+                    else None,
+                    certified=False if unknown else result.certified,
+                )
             return first
     if not remaining:
         return result.primary if result.primary is not None else result
-    return normalize_cases(
+    normalized = normalize_cases(
         remaining,
         source=result.source,
         primary=result.primary
@@ -249,9 +265,22 @@ def resolve_result_assumptions(result, assumptions):
         all_properties=result.all_properties,
         evidence=result.evidence,
     )
+    complete = result.complete
+    if complete is not None and result.certified is True:
+        complete = not any(
+            getattr(c.value, "value", None) == "unknown" for c in remaining
+        )
+    return replace(
+        normalized,
+        complete=complete,
+        certified=result.certified,
+        exceptions=result.exceptions,
+    )
 
 
 def map_conditional(value, mapper: Callable[[Any], Any], *, source=None):
+    """Transform guarded values while preserving their conditions."""
+
     if not isinstance(value, PropertyResult):
         return mapper(value)
     cases = [ConditionalExpression(mapper(c.value), c.condition) for c in value.cases]
@@ -377,7 +406,7 @@ def _guard_satisfiable(guard):
 
     SymPy's Boolean satisfier is propositional for inequalities, so polynomial
     real guards are sent to semialg first.  Unsupported guards fall back to
-    conservative propositional reasoning.
+    propositional sufficient conditions.
     """
     guard = semantic_condition(guard)
     if guard is S.false:

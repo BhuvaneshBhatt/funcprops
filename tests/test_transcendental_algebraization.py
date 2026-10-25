@@ -7,13 +7,11 @@ from funcprops import (
     sign,
 )
 from funcprops.results import Convexity, Monotonicity, Sign
-from funcprops.transcendental import (
-    PeriodicCondition,
-    algebraize,
-    condition_to_intervals,
-    reduce_univariate_condition,
-    transcendental_roots,
-)
+from funcprops.transcendental.algebraize import algebraize
+from funcprops.transcendental.periodic import PeriodicCondition
+from funcprops.transcendental.proof import condition_to_intervals
+from funcprops.transcendental.reduce import reduce_univariate_condition
+from funcprops.transcendental.roots import transcendental_roots
 
 x = sp.symbols("x", real=True)
 y = sp.symbols("y", real=True)
@@ -38,7 +36,7 @@ def test_periodic_condition_tan_positive_partitions_at_pole():
 
 def test_structural_periodic_root_certificate():
     r = transcendental_roots(sp.sin(2 * x + 1), x)
-    assert r.complete and r.periodic is not None
+    assert r.complete
     assert sp.simplify(r.periodic.period - sp.pi / 2) == 0
 
 

@@ -14,6 +14,8 @@ from .results import ConditionalExpression
 
 @dataclass(frozen=True)
 class NormalizedConditionalInput:
+    """Separate an expression from its accumulated input restriction."""
+
     expr: object
     condition: sp.Basic = S.true
 
@@ -44,6 +46,8 @@ def restrict_domain(domain, condition, var):
 
 
 def combine_assumptions(assumptions, condition):
+    """Combine input restrictions and query assumptions into one condition."""
+
     condition = sp.sympify(condition)
     if condition is S.true:
         return assumptions

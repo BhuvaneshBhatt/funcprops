@@ -15,6 +15,8 @@ from .common import condition_to_set
 
 @dataclass(frozen=True)
 class CompleteMonotonicityCertificate:
+    """Bind alternating derivative signs to a supported sufficient theorem."""
+
     expression: sp.Basic
     variable: sp.Symbol
     domain: object
@@ -28,6 +30,8 @@ class CompleteMonotonicityCertificate:
         return self.classification
 
     def verify(self):
+        """Return whether the record satisfies its declared replay obligations."""
+
         value = complete_monotonicity(
             self.expression,
             self.variable,
@@ -91,7 +95,12 @@ def complete_monotonicity(
 
     if _nonnegative_axis(domain, var):
         # Pollard's theorem: E_alpha(-x) is completely monotone for 0<alpha<=1.
-        if expr.func is MittagLefflerE and len(expr.args) == 2 and expr.args[1] == -var:
+        if (
+            expr.func is MittagLefflerE
+            and len(expr.args) == 2
+            and expr.args[1] == -var
+            and not expr.args[0].has(var)
+        ):
             alpha = expr.args[0]
             guard = sp.And(alpha > 0, alpha <= 1)
             cases = (ConditionalExpression(TruthValue.TRUE, guard),)
@@ -100,7 +109,12 @@ def complete_monotonicity(
             classification = TruthValue.TRUE
             source = "elementary-exponential"
     if _positive_axis(domain, var):
-        if expr.func is sp.besselk and len(expr.args) == 2 and expr.args[1] == var:
+        if (
+            expr.func is sp.besselk
+            and len(expr.args) == 2
+            and expr.args[1] == var
+            and not expr.args[0].has(var)
+        ):
             nu = expr.args[0]
             cases = (ConditionalExpression(TruthValue.TRUE, sp.Contains(nu, S.Reals)),)
             source = "besselk-integral-representation"

@@ -1,7 +1,7 @@
 """Conditional property-rule evaluation for funcprops.
 
 This module turns the declarative catalogue-derived registry into an actual
-rule engine.  It is intentionally conservative: unknown parameter conditions
+rule engine.  It is limited to sufficient conditions: unknown parameter conditions
 remain symbolic.
 """
 
@@ -19,29 +19,31 @@ from sympy.logic.boolalg import And, BooleanFunction, Not, Or
 from sympy.sets.contains import Contains
 
 from .conditions import (
-    AAlgebraicQ,
-    AAssumedIneqQ,
-    AAssumedQ,
-    AEqualQ,
-    AEvenQ,
-    AIntegerQ,
-    ANegative,
-    ANonIntegerQ,
-    ANonNegative,
-    ANonPositive,
-    AOddQ,
-    APositive,
-    ARationalQ,
-    ARealIfDefinedQ,
-    ARealQ,
-    AUnequalQ,
-    NonTerminatingQ,
+    AlgebraicCondition,
+    AssumedCondition,
+    AssumedInequalityCondition,
+    EqualCondition,
+    EvenCondition,
+    IntegerCondition,
+    NegativeCondition,
+    NonintegerCondition,
+    NonnegativeCondition,
+    NonpositiveCondition,
+    NonterminatingCondition,
+    OddCondition,
+    PositiveCondition,
+    RationalCondition,
+    RealCondition,
+    RealIfDefinedCondition,
+    UnequalCondition,
 )
 from .exactness import certify_equal
 from .results import ConditionalExpression, PropertyResult
 
 
 class ConditionTruth(str, Enum):
+    """Distinguish true, false and unresolved symbolic conditions."""
+
     TRUE = "true"
     FALSE = "false"
     UNKNOWN = "unknown"
@@ -77,50 +79,50 @@ def _semantic_predicate(node):
         return None
     a = args[0]
     cls = node.func
-    if cls is AIntegerQ:
+    if cls is IntegerCondition:
         return _ask_predicate(a, "is_integer", Q.integer)
-    if cls is ARationalQ:
+    if cls is RationalCondition:
         return _ask_predicate(a, "is_rational", Q.rational)
-    if cls is ARealQ:
+    if cls is RealCondition:
         return _ask_predicate(a, "is_real", Q.real)
-    if cls is ARealIfDefinedQ:
+    if cls is RealIfDefinedCondition:
         # The source predicate allows undefined/infinite values.  Real is a
         # sufficient proof; otherwise retain the predicate.
         return _ask_predicate(a, "is_real", Q.real)
-    if cls is AAlgebraicQ:
+    if cls is AlgebraicCondition:
         return _ask_predicate(a, "is_algebraic", Q.algebraic)
-    if cls is ANonIntegerQ:
+    if cls is NonintegerCondition:
         v = _ask_predicate(a, "is_integer", Q.integer)
-        return Not(AIntegerQ(a)) if v is None else Not(v)
-    if cls is APositive:
+        return Not(IntegerCondition(a)) if v is None else Not(v)
+    if cls is PositiveCondition:
         return _ask_predicate(a, "is_positive", Q.positive)
-    if cls is ANegative:
+    if cls is NegativeCondition:
         return _ask_predicate(a, "is_negative", Q.negative)
-    if cls is ANonPositive:
+    if cls is NonpositiveCondition:
         return _ask_predicate(a, "is_nonpositive", Q.nonpositive)
-    if cls is ANonNegative:
+    if cls is NonnegativeCondition:
         return _ask_predicate(a, "is_nonnegative", Q.nonnegative)
-    if cls is AEvenQ:
+    if cls is EvenCondition:
         return _ask_predicate(a, "is_even", Q.even)
-    if cls is AOddQ:
+    if cls is OddCondition:
         return _ask_predicate(a, "is_odd", Q.odd)
-    if cls is AUnequalQ and len(args) == 2:
+    if cls is UnequalCondition and len(args) == 2:
         equal = certify_equal(args[0], args[1])
         if equal is True:
             return S.false
         if equal is False:
             return S.true
         return None
-    if cls is AEqualQ and len(args) == 2:
+    if cls is EqualCondition and len(args) == 2:
         equal = certify_equal(args[0], args[1])
         if equal is True:
             return S.true
         if equal is False:
             return S.false
         return None
-    if cls in (AAssumedQ, AAssumedIneqQ):
+    if cls in (AssumedCondition, AssumedInequalityCondition):
         return simplify_condition(a)
-    if cls is NonTerminatingQ:
+    if cls is NonterminatingCondition:
         # The catalogue normally passes a Tuple of upper parameters.  A
         # hypergeometric series terminates when at least one upper parameter
         # is a nonpositive integer.
@@ -183,23 +185,23 @@ def simplify_condition(condition, *, assumptions=S.true):
     has_semantic = isinstance(c, sp.Basic) and any(
         c.has(cls)
         for cls in (
-            AIntegerQ,
-            ARationalQ,
-            ARealQ,
-            ARealIfDefinedQ,
-            AAlgebraicQ,
-            ANonIntegerQ,
-            APositive,
-            ANegative,
-            ANonPositive,
-            ANonNegative,
-            AEvenQ,
-            AOddQ,
-            AUnequalQ,
-            AEqualQ,
-            AAssumedQ,
-            AAssumedIneqQ,
-            NonTerminatingQ,
+            IntegerCondition,
+            RationalCondition,
+            RealCondition,
+            RealIfDefinedCondition,
+            AlgebraicCondition,
+            NonintegerCondition,
+            PositiveCondition,
+            NegativeCondition,
+            NonpositiveCondition,
+            NonnegativeCondition,
+            EvenCondition,
+            OddCondition,
+            UnequalCondition,
+            EqualCondition,
+            AssumedCondition,
+            AssumedInequalityCondition,
+            NonterminatingCondition,
         )
     )
     if not has_semantic:
@@ -232,6 +234,8 @@ def truth_bool(condition):
 
 
 def truth_value(condition, *, assumptions=S.true) -> ConditionTruth:
+    """Reduce a symbolic condition to true, false or unresolved under assumptions."""
+
     c = simplify_condition(condition, assumptions=assumptions)
     if c is S.true:
         return ConditionTruth.TRUE
@@ -243,23 +247,23 @@ def truth_value(condition, *, assumptions=S.true) -> ConditionTruth:
     has_semantic = isinstance(c, sp.Basic) and any(
         c.has(cls)
         for cls in (
-            AIntegerQ,
-            ARationalQ,
-            ARealQ,
-            ARealIfDefinedQ,
-            AAlgebraicQ,
-            ANonIntegerQ,
-            APositive,
-            ANegative,
-            ANonPositive,
-            ANonNegative,
-            AEvenQ,
-            AOddQ,
-            AUnequalQ,
-            AEqualQ,
-            AAssumedQ,
-            AAssumedIneqQ,
-            NonTerminatingQ,
+            IntegerCondition,
+            RationalCondition,
+            RealCondition,
+            RealIfDefinedCondition,
+            AlgebraicCondition,
+            NonintegerCondition,
+            PositiveCondition,
+            NegativeCondition,
+            NonpositiveCondition,
+            NonnegativeCondition,
+            EvenCondition,
+            OddCondition,
+            UnequalCondition,
+            EqualCondition,
+            AssumedCondition,
+            AssumedInequalityCondition,
+            NonterminatingCondition,
         )
     )
     if not has_semantic:
@@ -277,9 +281,11 @@ def truth_value(condition, *, assumptions=S.true) -> ConditionTruth:
 
 @dataclass(frozen=True)
 class EvaluatedCase:
+    """Retain a registry case after its condition has been evaluated."""
+
     value: Any
     condition: sp.Basic
-    source_lhs: str | None
+    rule_id: str | None
     specificity: int
 
 
@@ -314,7 +320,7 @@ def evaluate_property(
         if guard is S.false:
             continue
         candidates.append(
-            EvaluatedCase(value, guard, rule.source_lhs, rule.specificity(mode=mode))
+            EvaluatedCase(value, guard, rule.rule_id, rule.specificity(mode=mode))
         )
 
     if not candidates:

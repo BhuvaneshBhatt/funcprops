@@ -32,7 +32,7 @@ def test_zero_geometry_shared_between_partition_and_direct_query():
     p = monotonic_partition(
         sp.besselj(0, x), x, domain=sp.Interval.open(0, sp.oo), return_result=True
     )
-    assert p.indexed is not None
+    assert p.indexed.complete and p.has_indexed_oscillation
     before = property_proof_cache_info()["zero_geometry"]
     g = zero_geometry(
         sp.besselj(0, x), x, derivative_order=1, domain=sp.Interval.open(0, sp.oo)
@@ -50,7 +50,7 @@ def test_endpoint_limit_shared_with_extrema():
     before = property_proof_cache_info()["endpoint_limit"]
     r = symbolic_extremum_range(x**2, x, d)
     after = property_proof_cache_info()["endpoint_limit"]
-    assert r is not None
+    assert (r.lower, r.upper, r.lower_attained, r.upper_attained) == (0, 1, True, False)
     assert after.hits > before.hits
 
 

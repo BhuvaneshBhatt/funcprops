@@ -33,6 +33,7 @@ from .common import (
     combine_domain_condition,
     condition_to_set,
     normalize_variables,
+    original_definition_guard,
 )
 from .domain import domain as _domain
 from .monotonicity import monotonicity
@@ -110,6 +111,8 @@ def _sum_closure(expr, var, domain, strict):
 
 
 def _composition(expr, var, domain, strict):
+    """Apply convex composition rules only on proved inner images and outer monotonicity regions."""
+
     varying = [(i, a) for i, a in enumerate(expr.args) if a.has(var)]
     if len(varying) != 1 or expr.func in (sp.Add, sp.Mul, sp.Pow, sp.Piecewise):
         return Convexity.UNKNOWN
@@ -125,6 +128,17 @@ def _composition(expr, var, domain, strict):
     ic = convexity(inner, var, domain=domain, strict_inequalities=strict)
     inc = om in (Monotonicity.STRICTLY_INCREASING, Monotonicity.NONDECREASING)
     dec = om in (Monotonicity.STRICTLY_DECREASING, Monotonicity.NONINCREASING)
+    # A strictly convex outer function can still produce a flat composition.
+    # Strictness requires a strict outer order with strict inner curvature, or
+    # strict outer curvature with an injective inner function. Strict global
+    # monotonicity is a conservative, inexpensive injectivity certificate.
+    inner_injective = False
+    if oc in (Convexity.STRICTLY_CONVEX, Convexity.STRICTLY_CONCAVE):
+        inner_order = monotonicity(inner, var, domain=domain)
+        inner_injective = inner_order in (
+            Monotonicity.STRICTLY_INCREASING,
+            Monotonicity.STRICTLY_DECREASING,
+        )
     if (
         oc in (Convexity.STRICTLY_CONVEX, Convexity.CONVEX)
         and inc
@@ -132,7 +146,11 @@ def _composition(expr, var, domain, strict):
     ):
         return (
             Convexity.STRICTLY_CONVEX
-            if oc is Convexity.STRICTLY_CONVEX or ic is Convexity.STRICTLY_CONVEX
+            if (
+                om is Monotonicity.STRICTLY_INCREASING
+                and ic is Convexity.STRICTLY_CONVEX
+            )
+            or (oc is Convexity.STRICTLY_CONVEX and inner_injective)
             else Convexity.CONVEX
         )
     if (
@@ -142,7 +160,11 @@ def _composition(expr, var, domain, strict):
     ):
         return (
             Convexity.STRICTLY_CONCAVE
-            if oc is Convexity.STRICTLY_CONCAVE or ic is Convexity.STRICTLY_CONCAVE
+            if (
+                om is Monotonicity.STRICTLY_INCREASING
+                and ic is Convexity.STRICTLY_CONCAVE
+            )
+            or (oc is Convexity.STRICTLY_CONCAVE and inner_injective)
             else Convexity.CONCAVE
         )
     if (
@@ -188,18 +210,9 @@ def _flip_convexity(v):
     }.get(v, Convexity.UNKNOWN)
 
 
-def _constant_hessian_convexity(expr, variables):
-    """Exact classification for expressions with a constant symmetric Hessian.
-
-    This intentionally handles only the zero-cost exact case. Variable
-    Hessians remain on the established scalar/semialgebraic paths
-    triggering expensive multivariate inequality solving here.
-    """
+def _constant_hessian_convexity(H, variables):
+    """Classify a computed constant Hessian using exact matrix predicates."""
     vv = tuple(variables)
-    try:
-        H = sp.hessian(expr, vv)
-    except SYMBOLIC_QUERY_ERRORS:
-        return Convexity.UNKNOWN
     if any(entry.has(*vv) for entry in H):
         return Convexity.UNKNOWN
     if sp.zeros(len(vv)) == H:
@@ -240,6 +253,8 @@ def _constant_hessian_convexity(expr, variables):
 
 def _piecewise_convexity(expr, var, domain, strict):
     """Combine convex branch cells after certified value/slope seam checks."""
+    if expr.has(sp.Piecewise):
+        expr = sp.piecewise_fold(expr)
     if not isinstance(expr, sp.Piecewise):
         return Convexity.UNKNOWN
     decomp = piecewise_decomposition(expr, var, domain)
@@ -344,35 +359,248 @@ def _semialgebraic_convexity_stage(
 
 
 def _multivariate_convexity_stage(
-    expr, var, *, all_properties, return_result, intervals
+    expr, var, *, domain, all_properties, return_result, intervals
 ):
+    """Classify multivariate curvature using supported Hessian and structural premises."""
+
     if not isinstance(var, (tuple, list, sp.Tuple)):
         return NO_STAGE_RESULT
     variables = normalize_variables(var)
-    primary = (
-        Convexity.AFFINE
-        if not any(expr.has(v) for v in variables)
-        else _constant_hessian_convexity(expr, variables)
-    )
-    detailed = all_properties or return_result or intervals
-    if primary is Convexity.UNKNOWN:
-        return (
-            _convexity_property_result(
-                primary, S.Reals, "multivariate-variable-hessian"
+    original_domain = domain
+    axes = tuple(sp.Dummy("axis", real=True) for _ in variables)
+    replacements = dict(zip(variables, axes, strict=True))
+    normalized = expr.xreplace(replacements)
+    if (
+        normalized.xreplace(dict(zip(axes, variables, strict=True))) != expr
+        and original_definition_guard(expr, variables) is not S.true
+    ):
+        return _multivariate_convexity_output(
+            Convexity.UNKNOWN,
+            domain,
+            "unproved-source-definition",
+            all_properties,
+            return_result,
+            intervals,
+        )
+    if isinstance(domain, sp.ProductSet):
+        if len(domain.args) != len(axes):
+            return _multivariate_convexity_output(
+                Convexity.UNKNOWN,
+                domain,
+                "unproved-domain-convexity",
+                all_properties,
+                return_result,
+                intervals,
             )
-            if detailed
-            else primary
+        domain = sp.And(
+            *(
+                sp.Contains(v, component)
+                for v, component in zip(variables, domain.args, strict=True)
+            )
         )
-    return (
-        _convexity_property_result(
-            primary,
-            S.Reals,
-            "constant-hessian",
-            all_properties=convexity_implications(primary),
+    elif isinstance(domain, sp.Set) and domain is not S.Reals:
+        return _multivariate_convexity_output(
+            Convexity.UNKNOWN,
+            domain,
+            "unproved-domain-convexity",
+            all_properties,
+            return_result,
+            intervals,
         )
-        if detailed
-        else primary
+    requested = (
+        S.true
+        if domain in (True, None, S.true, S.Reals)
+        else sp.sympify(domain).xreplace(replacements)
     )
+    clauses = list(sp.And.make_args(requested))
+    coordinate_domains = []
+    for axis in axes:
+        relevant = []
+        for clause in clauses:
+            involved = clause.free_symbols.intersection(axes)
+            if len(involved) > 1 or isinstance(clause, sp.Or):
+                return _multivariate_convexity_output(
+                    Convexity.UNKNOWN,
+                    domain,
+                    "unproved-domain-convexity",
+                    all_properties,
+                    return_result,
+                    intervals,
+                )
+            if axis in involved:
+                relevant.append(clause)
+        coordinate_domains.append(sp.And(*relevant))
+    terms = sp.Add.make_args(normalized)
+    functions = []
+    separable = all(len(term.free_symbols.intersection(axes)) <= 1 for term in terms)
+    if normalized.has(sp.I) and normalized.is_real is not True:
+        return _multivariate_convexity_output(
+            Convexity.UNKNOWN,
+            domain,
+            "unproved-real-output",
+            all_properties,
+            return_result,
+            intervals,
+        )
+    for axis, restriction in zip(axes, coordinate_domains, strict=True):
+        pieces = [term for term in terms if term.has(axis)]
+        if separable:
+            function = sp.Add(*pieces)
+            natural = _domain(function, axis)
+            if isinstance(natural, PropertyResult):
+                return _multivariate_convexity_output(
+                    Convexity.UNKNOWN,
+                    domain,
+                    "unproved-natural-domain",
+                    all_properties,
+                    return_result,
+                    intervals,
+                )
+            restriction = sp.And(restriction, natural)
+            functions.append(function)
+        elif normalized.is_real is not True:
+            return _multivariate_convexity_output(
+                Convexity.UNKNOWN,
+                domain,
+                "unproved-natural-domain",
+                all_properties,
+                return_result,
+                intervals,
+            )
+        support = condition_to_set(restriction, axis)
+        if not isinstance(support, sp.Interval):
+            return _multivariate_convexity_output(
+                Convexity.UNKNOWN,
+                domain,
+                "unproved-domain-convexity",
+                all_properties,
+                return_result,
+                intervals,
+            )
+        coordinate_domains[axes.index(axis)] = restriction
+    constants = [term for term in terms if not term.has(*axes)]
+    if any(
+        term.is_real is not True or term.is_finite is not True for term in constants
+    ):
+        return _multivariate_convexity_output(
+            Convexity.UNKNOWN,
+            domain,
+            "unproved-real-output",
+            all_properties,
+            return_result,
+            intervals,
+        )
+    effective_domain = sp.And(
+        *coordinate_domains,
+        *(clause for clause in clauses if not clause.free_symbols.intersection(axes)),
+    ).xreplace(dict(zip(axes, variables, strict=True)))
+    # SymPy differentiates Piecewise branch formulas without adding jump terms.
+    # Their Hessian cannot establish curvature across value or slope seams.
+    hessian_applicable = not normalized.has(sp.Piecewise)
+    H = sp.hessian(normalized, axes) if hessian_applicable else None
+    primary = (
+        _constant_hessian_convexity(H, axes) if H is not None else Convexity.UNKNOWN
+    )
+    source = "constant-hessian"
+    if primary is Convexity.UNKNOWN:
+        if H is not None and not separable:
+            from .hessian_bounds import hessian_dominance_certificate
+
+            certificate = hessian_dominance_certificate(
+                expr, variables, original_domain
+            )
+            if certificate is None:
+                from .hessian_bounds import structural_hessian_certificate
+
+                certificate = structural_hessian_certificate(
+                    expr, variables, original_domain
+                )
+            if certificate is not None:
+                if all_properties or return_result or intervals:
+                    return _convexity_property_result(
+                        certificate.classification,
+                        certificate.domain,
+                        certificate.method,
+                        all_properties=convexity_implications(
+                            certificate.classification
+                        ),
+                        evidence=(certificate,),
+                    )
+                return certificate.classification
+        if H is not None and all(
+            H[i, j] == 0 for i in range(len(axes)) for j in range(len(axes)) if i != j
+        ):
+            signs = [
+                sign(H[i, i], axis, domain=restriction)
+                for i, (axis, restriction) in enumerate(
+                    zip(axes, coordinate_domains, strict=True)
+                )
+            ]
+            if all(v is Sign.POSITIVE for v in signs):
+                primary = Convexity.STRICTLY_CONVEX
+            elif all(v is Sign.NEGATIVE for v in signs):
+                primary = Convexity.STRICTLY_CONCAVE
+            elif all(v in (Sign.POSITIVE, Sign.NONNEGATIVE, Sign.ZERO) for v in signs):
+                primary = Convexity.CONVEX
+            elif all(v in (Sign.NEGATIVE, Sign.NONPOSITIVE, Sign.ZERO) for v in signs):
+                primary = Convexity.CONCAVE
+            source = "diagonal-hessian"
+        if separable:
+            classes = [
+                convexity(function, axis, domain=restriction)
+                for function, axis, restriction in zip(
+                    functions, axes, coordinate_domains, strict=True
+                )
+            ]
+            cv = (
+                Convexity.CONVEX,
+                Convexity.STRICTLY_CONVEX,
+                Convexity.STRONGLY_CONVEX,
+                Convexity.AFFINE,
+            )
+            cc = (
+                Convexity.CONCAVE,
+                Convexity.STRICTLY_CONCAVE,
+                Convexity.STRONGLY_CONCAVE,
+                Convexity.AFFINE,
+            )
+            if all(c in cv for c in classes):
+                primary = (
+                    Convexity.STRONGLY_CONVEX
+                    if all(c is Convexity.STRONGLY_CONVEX for c in classes)
+                    else Convexity.STRICTLY_CONVEX
+                    if all(
+                        c in (Convexity.STRICTLY_CONVEX, Convexity.STRONGLY_CONVEX)
+                        for c in classes
+                    )
+                    else Convexity.CONVEX
+                )
+                source = "separable-curvature"
+            elif all(c in cc for c in classes):
+                primary = (
+                    Convexity.STRONGLY_CONCAVE
+                    if all(c is Convexity.STRONGLY_CONCAVE for c in classes)
+                    else Convexity.STRICTLY_CONCAVE
+                    if all(
+                        c in (Convexity.STRICTLY_CONCAVE, Convexity.STRONGLY_CONCAVE)
+                        for c in classes
+                    )
+                    else Convexity.CONCAVE
+                )
+                source = "separable-curvature"
+    return _multivariate_convexity_output(
+        primary, effective_domain, source, all_properties, return_result, intervals
+    )
+
+
+def _multivariate_convexity_output(
+    primary, domain, source, all_properties, return_result, intervals
+):
+    if all_properties or return_result or intervals:
+        return _convexity_property_result(
+            primary, domain, source, all_properties=convexity_implications(primary)
+        )
+    return primary
 
 
 def _convexity_domain_stage(assumptions, domain, var, *, detailed):
@@ -423,6 +651,8 @@ def _convexity_fallback_stage(
     curvature_decomposition,
     options,
 ):
+    """Try supported curvature and composition rules after direct registry analysis."""
+
     registry_hint = Convexity.UNKNOWN
     primary = Convexity.UNKNOWN
     source = "insufficient-evidence"
@@ -447,7 +677,7 @@ def _convexity_fallback_stage(
         if registry_hint not in (Convexity.UNKNOWN, Convexity.NEITHER):
             primary = registry_hint
             source = "registry"
-        elif expr.func is sp.exp:
+        elif expr.func is sp.exp and expr.args[0] == var:
             primary = Convexity.STRICTLY_CONVEX
             source = "primitive"
 
@@ -624,6 +854,7 @@ def _function_convexity_impl(
     multivariate = _multivariate_convexity_stage(
         expr,
         var,
+        domain=domain,
         all_properties=all_properties,
         return_result=return_result,
         intervals=intervals,
@@ -692,6 +923,14 @@ def _function_convexity_impl(
                 all_properties=convexity_implications(piecewise),
             )
         return piecewise
+    if expr.has(sp.Piecewise):
+        return (
+            _convexity_property_result(
+                Convexity.UNKNOWN, assumptions, "unproved-piecewise-seams"
+            )
+            if all_properties or return_result or intervals
+            else Convexity.UNKNOWN
+        )
 
     # Cheap theorem strata precede zero-geometry/semialgebraic analysis.  This is
     # important for special functions whose derivatives are transcendental but

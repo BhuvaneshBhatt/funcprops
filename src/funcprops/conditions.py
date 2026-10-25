@@ -15,92 +15,126 @@ from sympy.core.relational import Relational
 from sympy.logic.boolalg import Boolean, BooleanFunction
 
 
-class AIntegerQ(BooleanFunction):
+class IntegerCondition(BooleanFunction):
+    """Keep the condition that catalogue arguments are integer-valued explicit until evaluation."""
+
     pass
 
 
-class ARationalQ(BooleanFunction):
+class RationalCondition(BooleanFunction):
+    """Keep the condition that catalogue arguments are rational-valued explicit until evaluation."""
+
     pass
 
 
-class ARealQ(BooleanFunction):
+class RealCondition(BooleanFunction):
+    """Keep the condition that catalogue arguments are real-valued explicit until evaluation."""
+
     pass
 
 
-class ARealIfDefinedQ(BooleanFunction):
+class RealIfDefinedCondition(BooleanFunction):
+    """Keep the condition that catalogue arguments are real-valued wherever defined explicit until evaluation."""
+
     pass
 
 
-class AAlgebraicQ(BooleanFunction):
+class AlgebraicCondition(BooleanFunction):
+    """Keep the condition that catalogue arguments are algebraic-valued explicit until evaluation."""
+
     pass
 
 
-class ANonIntegerQ(BooleanFunction):
+class NonintegerCondition(BooleanFunction):
+    """Keep the condition that catalogue arguments are noninteger-valued explicit until evaluation."""
+
     pass
 
 
-class APositive(BooleanFunction):
+class PositiveCondition(BooleanFunction):
+    """Keep the condition that catalogue arguments are positive explicit until evaluation."""
+
     pass
 
 
-class ANegative(BooleanFunction):
+class NegativeCondition(BooleanFunction):
+    """Keep the condition that catalogue arguments are negative explicit until evaluation."""
+
     pass
 
 
-class ANonPositive(BooleanFunction):
+class NonpositiveCondition(BooleanFunction):
+    """Keep the condition that catalogue arguments are nonpositive explicit until evaluation."""
+
     pass
 
 
-class ANonNegative(BooleanFunction):
+class NonnegativeCondition(BooleanFunction):
+    """Keep the condition that catalogue arguments are nonnegative explicit until evaluation."""
+
     pass
 
 
-class AEvenQ(BooleanFunction):
+class EvenCondition(BooleanFunction):
+    """Keep the condition that catalogue arguments are an even integer explicit until evaluation."""
+
     pass
 
 
-class AOddQ(BooleanFunction):
+class OddCondition(BooleanFunction):
+    """Keep the condition that catalogue arguments are an odd integer explicit until evaluation."""
+
     pass
 
 
-class AUnequalQ(BooleanFunction):
+class UnequalCondition(BooleanFunction):
+    """Keep the condition that catalogue arguments are unequal explicit until evaluation."""
+
     pass
 
 
-class AEqualQ(BooleanFunction):
+class EqualCondition(BooleanFunction):
+    """Keep the condition that catalogue arguments are equal explicit until evaluation."""
+
     pass
 
 
-class AAssumedQ(BooleanFunction):
+class AssumedCondition(BooleanFunction):
+    """Keep the condition that catalogue arguments are entailed by the query assumptions explicit until evaluation."""
+
     pass
 
 
-class AAssumedIneqQ(BooleanFunction):
+class AssumedInequalityCondition(BooleanFunction):
+    """Keep the condition that catalogue arguments are an entailed inequality explicit until evaluation."""
+
     pass
 
 
-class NonTerminatingQ(BooleanFunction):
+class NonterminatingCondition(BooleanFunction):
+    """Keep the condition that catalogue arguments are a nonterminating series explicit until evaluation."""
+
     pass
 
 
 _PREDICATE_TYPES = (
-    AIntegerQ,
-    ARationalQ,
-    ARealQ,
-    ARealIfDefinedQ,
-    AAlgebraicQ,
-    ANonIntegerQ,
-    APositive,
-    ANegative,
-    ANonPositive,
-    ANonNegative,
-    AEvenQ,
-    AOddQ,
-    AUnequalQ,
-    AEqualQ,
-    AAssumedQ,
-    AAssumedIneqQ,
-    NonTerminatingQ,
+    IntegerCondition,
+    RationalCondition,
+    RealCondition,
+    RealIfDefinedCondition,
+    AlgebraicCondition,
+    NonintegerCondition,
+    PositiveCondition,
+    NegativeCondition,
+    NonpositiveCondition,
+    NonnegativeCondition,
+    EvenCondition,
+    OddCondition,
+    UnequalCondition,
+    EqualCondition,
+    AssumedCondition,
+    AssumedInequalityCondition,
+    NonterminatingCondition,
 )
 _PREDICATES = {cls.__name__: cls for cls in _PREDICATE_TYPES}
 

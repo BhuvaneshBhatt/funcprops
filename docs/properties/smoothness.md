@@ -8,11 +8,21 @@ Smoothness records continuity, the certified differentiability order, C-infinity
 
 ## API and return values
 
-```python
-smoothness(expr, variable, *, domain=True, max_order=6, assumptions=True, return_result=False)
+```text
+smoothness(expr, variable, *, domain=True, max_order=6, work_budget=None, assumptions=True, return_result=False)
 ```
 
 A SmoothnessResult with regularity fields and evidence.
+
+| Parameter | Meaning |
+| --- | --- |
+| `expr` | SymPy expression whose global property is queried. |
+| `variable` | Independent scalar coordinate. Real and native complex routes have different assumption requirements; see result contracts. |
+| `domain` | Input domain or logical condition. The default depends on the property family. |
+| `max_order` | Maximum finite derivative order tried when no structural smoothness proof is available. |
+| `work_budget` | Optional positive wall budget in seconds; exhaustion follows the operation-specific incomplete/unknown contract. |
+| `assumptions` | Symbolic hypotheses used while proving the property. |
+| `return_result` | Return structured metadata, certificates, or diagnostics. |
 
 ## Domains, assumptions, and parameters
 
@@ -30,7 +40,7 @@ import funcprops as fp
 
 x, y = sp.symbols("x y", real=True)
 result = fp.smoothness(sp.exp(x), x)
-result
+assert result is sp.oo
 ```
 
 Expected: ``oo`` (C-infinity).
@@ -39,7 +49,7 @@ Application: Verify regularity assumptions required by approximation and differe
 
 ## Applications
 
-This property is useful whenever later mathematics depends on a global qualitative fact, not isolated samples. Typical uses include symbolic preprocessing, theorem-hypothesis verification, optimization, inverse problems, robust numerical method selection, and simplifying downstream case analysis.
+Establish the supported derivative order needed for Taylor bounds or local approximation.
 
 ## How funcprops proves it
 
@@ -61,4 +71,4 @@ Finite-order search can understate differentiability when no structural C-infini
 
 ## Source
 
-The implementation is exposed through [`funcprops.api`](https://github.com/BhuvaneshBhatt/funcprops/blob/main/src/funcprops/api.py).
+The callable is exported through funcprops; its implementation module is [`funcprops.real_analysis.smoothness`](https://github.com/BhuvaneshBhatt/funcprops/blob/main/src/funcprops/real_analysis/smoothness.py).

@@ -1,6 +1,6 @@
 """Canonical normalization for public assumptions and domain predicates.
 
-This module is intentionally low-level and side-effect free so every funcprops
+This module is low-level and side-effect free so every funcprops
 query, cache key, and downstream package shares exactly the same normalization.
 """
 
@@ -67,6 +67,8 @@ def normalize_assumptions(value):
 
 
 def normalize_domain(value):
+    """Normalize a query domain against the analysis coordinate and assumptions."""
+
     if isinstance(value, sp.Set):
         return value
     return normalize_assumptions(value)

@@ -97,7 +97,7 @@ def test_mapping_contracts_and_codomain():
     assert fp.bijective(x, x, codomain=sp.S.Reals) is TruthValue.TRUE
 
 
-def test_new_periodicity_details_and_negative_proof():
+def test_periodicity_details_and_negative_proof():
     r = fp.periodicity(sp.sin(2 * x), x, return_result=True)
     assert r.classification is Periodicity.PERIODIC
     assert sp.simplify(r.period - sp.pi) == 0
@@ -105,14 +105,14 @@ def test_new_periodicity_details_and_negative_proof():
     assert fp.periodicity(sp.Integer(7), x) is Periodicity.CONSTANT
 
 
-def test_new_symmetry_about_zero_and_center():
+def test_symmetry_about_zero_and_center():
     assert fp.symmetry(sp.cos(x), x) is Symmetry.EVEN
     assert fp.symmetry(sp.sin(x), x) is Symmetry.ODD
     assert fp.symmetry(x + 1, x) is Symmetry.NEITHER
     assert fp.symmetry((x - 2) ** 2, x, center=2) is Symmetry.EVEN
 
 
-def test_new_homogeneity_degree_contract():
+def test_homogeneity_degree_contract():
     r = fp.homogeneity(x**2 + y**2, (x, y), return_result=True)
     assert r.classification is Homogeneity.HOMOGENEOUS and r.degree == 2
     assert fp.homogeneity(x + y**2, (x, y)) is Homogeneity.NOT_HOMOGENEOUS

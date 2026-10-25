@@ -34,7 +34,7 @@ def test_parameterized_affine_frequency_retains_condition():
     assert verify_periodicity_result(e, x, r)
 
 
-def test_parameterized_affine_frequency_replay_keeps_realness_prerequisite():
+def test_frequency_realness_guard():
     u = sp.Symbol("u")
     e = sp.sin(u * x)
     r = fp.periodicity(e, x, return_result=True)
@@ -177,7 +177,7 @@ def test_symmetry_replay_does_not_turn_unknown_identity_into_neither(monkeypatch
     assert not verification.verify_symmetry_result(sp.Function("f")(x), x, cert)
 
 
-def test_periodicity_replay_does_not_trust_incommensurate_evidence_label():
+def test_periodicity_evidence_binding():
     from funcprops.real_analysis.structural_properties import PeriodicityResult
 
     forged = PeriodicityResult(

@@ -1,6 +1,6 @@
 """Sound declarative composition rules for already-certified properties.
 
-The module deliberately separates value algebra from interface validation.  Callers
+The module separates value algebra from interface validation.  Callers
 that know domains/images should pass them; a rule is not returned when containment
 cannot be proved.
 """
@@ -16,6 +16,8 @@ from .results import Convexity, Monotonicity, TruthValue
 
 @dataclass(frozen=True)
 class CompositionFact:
+    """Record a property transported through a supported composition rule."""
+
     property: str
     value: object
     theorem_id: str

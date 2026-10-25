@@ -144,7 +144,7 @@ def test_sympy_range_result_containing_input_variable_is_rejected():
     assert _sympy_range(sp.besselk(nu, x), x, y, x > 0) is None
 
 
-def test_reducer_does_not_claim_singularity_completeness_after_failure():
+def test_unresolved_singularity_reduction():
     x = sp.symbols("x", real=True)
     r = reduce_univariate_condition(sp.gamma(x) > 0, x, sp.Interval(-2, 2))
     assert r.complete is False

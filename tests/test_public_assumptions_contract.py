@@ -19,15 +19,14 @@ from funcprops import (
 
 def test_public_symbolic_property_queries_expose_neutral_assumptions():
     exempt = {"jacobian"}
-    for name in sorted(item for item in dir(funcprops) if item.startswith("function_")):
+    for name, _category, _description in funcprops.properties():
         if name in exempt:
             continue
         function = getattr(funcprops, name)
         if not callable(function):
             continue
         signature = inspect.signature(function)
-        parameter = signature.parameters.get("assumptions")
-        assert parameter is not None, name
+        parameter = signature.parameters["assumptions"]
         assert parameter.default in (True, sp.S.true), name
 
 

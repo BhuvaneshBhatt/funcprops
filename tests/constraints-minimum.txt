@@ -1,0 +1,6 @@
+# Minimum declared runtime versions; test-tool versions remain compatible/current.
+sympy==1.14.0
+mpmath==1.3.0
+semialg==1.3.2
+algroots==0.8.1
+exprtest==0.1.0

@@ -14,6 +14,8 @@ from .exactness import certify_equal
 
 
 class PropertyKnowledge(str, Enum):
+    """Classify the available knowledge about a property predicate."""
+
     EXACT = "exact"
     SUFFICIENT = "sufficient"
     NECESSARY = "necessary"
@@ -22,6 +24,8 @@ class PropertyKnowledge(str, Enum):
 
 @dataclass(frozen=True)
 class PropertyProvenance:
+    """Identify the assumptions or theorem supporting a property decision."""
+
     source: str
     reference: str | None = None
     note: str | None = None
@@ -29,6 +33,8 @@ class PropertyProvenance:
 
 @dataclass(frozen=True)
 class PropertyDecision:
+    """Pair a property conclusion with its condition and provenance."""
+
     predicate: sp.Expr
     verdict: bool | None
     assumptions: sp.Expr = S.true
@@ -48,6 +54,8 @@ class PropertyDecision:
 
 
 class PropertyEnforcementError(ValueError):
+    """Report that a required property could not be established."""
+
     def __init__(self, decision: PropertyDecision, *, operation: str | None = None):
         self.decision = decision
         self.operation = operation
@@ -158,6 +166,8 @@ def _structural_entailment(condition: sp.Expr, assumptions: sp.Expr) -> bool | N
 
 
 def _affine_equalities_consistent(expr: sp.Expr) -> bool | None:
+    """Check affine equality consistency without assuming unspecified symbolic coefficients nonzero."""
+
     clauses = sp.And.make_args(_normalize_logic(expr))
     eqs = [c for c in clauses if isinstance(c, sp.Equality)]
     neqs = [c for c in clauses if isinstance(c, sp.Unequality)]
@@ -179,7 +189,7 @@ def _affine_equalities_consistent(expr: sp.Expr) -> bool | None:
     def union(left: sp.Symbol, right: sp.Symbol) -> None:
         a, b = find(left), find(right)
         if a != b:
-            # Use a stable representative so normalization is determinstic.
+            # Use a stable representative so normalization is deterministic.
             if sp.default_sort_key(a) <= sp.default_sort_key(b):
                 parent[b] = a
             else:
@@ -230,7 +240,7 @@ def _affine_equalities_consistent(expr: sp.Expr) -> bool | None:
 def _ask_refine(condition: sp.Expr, assumptions: sp.Expr) -> bool | None:
     try:
         refined = sp.refine(condition, assumptions)
-    except (TypeError, ValueError, NotImplementedError):
+    except (TypeError, ValueError, NotImplementedError, IndexError):
         refined = condition
     if refined is S.true:
         return True
@@ -238,7 +248,7 @@ def _ask_refine(condition: sp.Expr, assumptions: sp.Expr) -> bool | None:
         return False
     try:
         asked = sp.ask(condition, assumptions)
-    except (TypeError, ValueError, NotImplementedError):
+    except (TypeError, ValueError, NotImplementedError, IndexError):
         asked = None
     return bool(asked) if asked is not None else None
 
@@ -280,7 +290,7 @@ def _entails_cached(condition: sp.Expr, assumptions: sp.Expr) -> bool | None:
 def entails(condition: sp.Expr, assumptions: sp.Expr | bool = True) -> bool | None:
     """Return whether normalized assumptions entail ``condition``.
 
-    The implementation is deliberately bounded: structural and affine Eq/Ne
+    The implementation is bounded: structural and affine Eq/Ne
     reasoning precede SymPy's assumptions engine; unresolved predicates remain
     unresolved.
     """
@@ -295,6 +305,8 @@ def decide(
     provenance: tuple[PropertyProvenance, ...] = (),
     reasons: tuple[str, ...] = (),
 ) -> PropertyDecision:
+    """Decide a property predicate from assumptions and retained theorem provenance."""
+
     assumptions = _normalize_logic(assumptions)
     return PropertyDecision(
         predicate,
@@ -312,14 +324,20 @@ def require_decision(
     operation: str | None = None,
     allow_unknown: bool = False,
 ) -> PropertyDecision:
+    """Return a proved property decision or raise PropertyEnforcementError."""
+
     if decision.verdict is False or (decision.verdict is None and not allow_unknown):
         raise PropertyEnforcementError(decision, operation=operation)
     return decision
 
 
 def clear_entailment_cache() -> None:
+    """Clear memoized assumption-entailment decisions."""
+
     _entails_cached.cache_clear()
 
 
 def entailment_cache_info():
+    """Report memoized assumption-entailment cache statistics."""
+
     return _entails_cached.cache_info()

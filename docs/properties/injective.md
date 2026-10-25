@@ -8,11 +8,21 @@ A function is injective when distinct domain points cannot have the same output.
 
 ## API and return values
 
-```python
-injective(expr, variable, *, domain=True, partition=None, assumptions=True, return_result=False)
+```text
+injective(expr, variable, *, domain=True, partition=None, work_budget=None, assumptions=True, return_result=False)
 ```
 
 TruthValue.TRUE, FALSE, or UNKNOWN. Parameter-stratified results are returned as a SymPy `Piecewise` by default; `return_result=True` preserves the full `PropertyResult`.
+
+| Parameter | Meaning |
+| --- | --- |
+| `expr` | SymPy expression whose global property is queried. |
+| `variable` | Independent scalar coordinate. Real and native complex routes have different assumption requirements; see result contracts. |
+| `domain` | Input domain or logical condition. The default depends on the property family. |
+| `partition` | Optional precomputed monotonic partition for exact reuse. |
+| `work_budget` | Optional positive wall budget in seconds; exhaustion follows the operation-specific incomplete/unknown contract. |
+| `assumptions` | Symbolic hypotheses used while proving the property. |
+| `return_result` | Return structured metadata, certificates, or diagnostics. |
 
 ## Domains, assumptions, and parameters
 
@@ -30,7 +40,7 @@ import funcprops as fp
 
 x, y = sp.symbols("x y", real=True)
 result = fp.injective(sp.exp(x), x)
-result
+assert result is fp.TruthValue.TRUE
 ```
 
 Expected: ``TruthValue.TRUE``.
@@ -39,7 +49,7 @@ Application: Establish whether a symbolic inverse is single-valued on the chosen
 
 ## Applications
 
-This property is useful whenever later mathematics depends on a global qualitative fact, not isolated samples. Typical uses include symbolic preprocessing, theorem-hypothesis verification, optimization, inverse problems, robust numerical method selection, and simplifying downstream case analysis.
+Check whether an inverse can be single-valued on the requested source domain.
 
 ## How funcprops proves it
 
@@ -61,4 +71,4 @@ General multivariate and transcendental injectivity are difficult; UNKNOWN is pr
 
 ## Source
 
-The implementation is exposed through [`funcprops.api`](https://github.com/BhuvaneshBhatt/funcprops/blob/main/src/funcprops/api.py).
+The callable is exported through funcprops; its implementation module is [`funcprops.real_analysis.mapping`](https://github.com/BhuvaneshBhatt/funcprops/blob/main/src/funcprops/real_analysis/mapping.py).

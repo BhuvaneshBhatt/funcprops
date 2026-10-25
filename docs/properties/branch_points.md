@@ -8,15 +8,22 @@ Branch-point analysis identifies points around which analytic continuation can c
 
 ## API and return values
 
-```python
+```text
 branch_points(expr, variable, *, assumptions=True, return_result=False)
 ```
 
 A Boolean branch-point locus by default; return_result=True returns the supporting Singularity records.
 
+| Parameter | Meaning |
+| --- | --- |
+| `expr` | SymPy expression whose global property is queried. |
+| `variable` | Independent scalar coordinate. Real and native complex routes have different assumption requirements; see result contracts. |
+| `assumptions` | Symbolic hypotheses used while proving the property. |
+| `return_result` | Return structured metadata, certificates, or diagnostics. |
+
 ## Domains, assumptions, and parameters
 
-The query is interpreted on the supplied domain, not from the expression in isolation. When symbolic parameters change the property, funcprops preserves those cases as guarded parameter strata. Assumptions are proof hypotheses: they can simplify a stratum or branch condition, but they do not justify numerical guessing.
+The query uses the natural source domain and the supplied assumptions. This API has no domain keyword. Parameter-dependent singularity or branch conditions remain explicit in the detailed result.
 
 ## Executable examples
 
@@ -30,7 +37,7 @@ import funcprops as fp
 
 x, y = sp.symbols("x y", real=True)
 result = fp.branch_points(sp.log(x), x)
-result
+assert result == sp.Eq(x, 0)
 ```
 
 Expected: a branch point at ``x = 0``.
@@ -39,7 +46,7 @@ Application: Identify non-isolated analytic structure relevant to continuation a
 
 ## Applications
 
-This property is useful whenever later mathematics depends on a global qualitative fact, not isolated samples. Typical uses include symbolic preprocessing, theorem-hypothesis verification, optimization, inverse problems, robust numerical method selection, and simplifying downstream case analysis.
+Use the executable branch points examples to check the corresponding source, domain and branch premises before consuming the result in a larger analysis.
 
 ## How funcprops proves it
 
@@ -60,4 +67,4 @@ General nested transcendental preimages can be difficult to reduce to a simple e
 
 ## Source
 
-The implementation is exposed through [`funcprops.api`](https://github.com/BhuvaneshBhatt/funcprops/blob/main/src/funcprops/api.py).
+The callable is exported through funcprops; its implementation module is [`funcprops.singularities.records`](https://github.com/BhuvaneshBhatt/funcprops/blob/main/src/funcprops/singularities/records.py).

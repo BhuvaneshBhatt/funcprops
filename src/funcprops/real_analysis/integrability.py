@@ -9,11 +9,14 @@ from sympy import S
 
 from ..results import Continuity, TruthValue
 from ..singularities import continuous
-from .common import normalize_domain_set
+from .common import condition_to_set, normalize_domain_set
+from .domain import domain as real_domain
 
 
 @dataclass(frozen=True)
 class IntegrabilityResult:
+    """Distinguish supported integral notions and their values or obstructions."""
+
     riemann: TruthValue = TruthValue.UNKNOWN
     locally_integrable: TruthValue = TruthValue.UNKNOWN
     absolutely_integrable: TruthValue = TruthValue.UNKNOWN
@@ -54,7 +57,9 @@ def integrability(expr, var, *, domain=S.Reals, return_result=False):
     evidence = []
     if isinstance(d, sp.Interval):
         finite = d.start.is_finite is True and d.end.is_finite is True
-        continuity = continuous(expr, var, domain=d)
+        natural = condition_to_set(real_domain(expr, var), var)
+        defined = natural is not None and d.is_subset(natural) is True
+        continuity = continuous(expr, var, domain=d) if defined else Continuity.UNKNOWN
         if (
             finite
             and not d.left_open

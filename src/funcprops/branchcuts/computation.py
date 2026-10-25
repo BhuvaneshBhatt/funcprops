@@ -80,10 +80,14 @@ def condition_simplify(cond, symbols, assumptions=True):
 
 
 def condition_false_q(cond, symbols, assumptions=True) -> bool:
+    """Decide whether a jump condition simplifies to false."""
+
     return condition_simplify(cond, symbols, assumptions=assumptions) is S.false
 
 
 def clean_pairs(pairs: Iterable[Pair]) -> list[Pair]:
+    """Remove false or undefined entries from branch-jump pairs."""
+
     out: list[Pair] = []
     for pair in pairs:
         if not isinstance(pair, (tuple, list)) or len(pair) != 2:
@@ -97,6 +101,8 @@ def clean_pairs(pairs: Iterable[Pair]) -> list[Pair]:
 
 
 def map_pairs(f: Callable, pairs: Iterable[Pair]) -> list[Pair]:
+    """Apply a value transformation while retaining each branch-jump condition."""
+
     return [(f(expr), cond) for expr, cond in clean_pairs(pairs)]
 
 
@@ -118,6 +124,8 @@ def differentiate_pairs(pairs: Iterable[Pair], *vars_and_counts) -> list[Pair]:
 def gate_pairs(
     g: Callable, pairs: Iterable[Pair], symbols, assumptions=True
 ) -> list[Pair]:
+    """Restrict branch-jump pairs by an additional condition."""
+
     out = []
     for expr, cond in clean_pairs(pairs):
         gated = condition_simplify(And(cond, g(expr)), symbols, assumptions=assumptions)
@@ -129,6 +137,8 @@ def gate_pairs(
 def cross_diff_pairs(
     f_plus: Callable, f_minus: Callable, plus: Iterable[Pair], minus: Iterable[Pair]
 ) -> list[Pair]:
+    """Form pairwise jump differences on intersections of their conditions."""
+
     out = []
     for p_expr, p_cond in clean_pairs(plus):
         for m_expr, m_cond in clean_pairs(minus):
@@ -149,6 +159,8 @@ def combine_general_capped(
     pair_lists: list[list[Pair]],
     cap: Callable[[list[Pair]], list[Pair]] | None = None,
 ) -> list[Pair]:
+    """Combine branch-jump alternatives within an explicit expansion cap."""
+
     pair_lists = [clean_pairs(lst) for lst in pair_lists]
     if not pair_lists:
         return []
@@ -166,6 +178,8 @@ def combine_general_capped(
 def cap_pairs(
     pairs: Iterable[Pair], max_per_expr: int = 2, max_total: int = 128
 ) -> list[Pair]:
+    """Bound branch-jump pair expansion while retaining unresolved alternatives."""
+
     grouped = {}
     for expr, cond in clean_pairs(pairs):
         grouped.setdefault(expr, []).append((expr, cond))
@@ -176,6 +190,8 @@ def cap_pairs(
 
 
 def ensure_neutral_pairs(pairs: Iterable[Pair]) -> list[Pair]:
+    """Supply the neutral jump on conditions not covered by nonzero alternatives."""
+
     pairs = clean_pairs(pairs)
     if any(expr == 0 and cond is S.true for expr, cond in pairs):
         return pairs
@@ -183,6 +199,8 @@ def ensure_neutral_pairs(pairs: Iterable[Pair]) -> list[Pair]:
 
 
 def simplify_pairs(pairs: Iterable[Pair], symbols, assumptions=True) -> list[Pair]:
+    """Simplify branch-jump values and their conditions."""
+
     out = []
     for expr, cond in clean_pairs(pairs):
         new_cond = condition_simplify(cond, symbols, assumptions=assumptions)
@@ -192,12 +210,16 @@ def simplify_pairs(pairs: Iterable[Pair], symbols, assumptions=True) -> list[Pai
 
 
 def pairs_to_restricted(pairs: Iterable[Pair]):
+    """Convert jump pairs into condition-preserving restricted expressions."""
+
     from .core import restrict
 
     return tuple(restrict(expr, cond) for expr, cond in clean_pairs(pairs))
 
 
 def pairs_to_piecewise_list(pairs: Iterable[Pair], default=None):
+    """Convert jump pairs to first-match Piecewise alternatives."""
+
     if default is None:
         default = Undefined()
     return tuple(
@@ -235,6 +257,8 @@ def jump_compose(
     assumptions=True,
     cap: Callable[[list[Pair]], list[Pair]] | None = None,
 ):
+    """Transport inner branch jumps through a supported outer expression."""
+
     expr = head(u)
     plus_pairs = map_pairs(head, inner_assoc["Plus"])
     minus_pairs = map_pairs(head, inner_assoc["Minus"])
@@ -301,6 +325,17 @@ def branch_cut_jumps_pairs(
         key = e
         if key in cache:
             return cache[key]
+
+        from ..entire_cancellation import entire_cancellation_proof
+
+        if entire_cancellation_proof(e, z) is not None:
+            out = {
+                "Plus": [(e, S.true)],
+                "Minus": [(e, S.true)],
+                "Jump": [(S.Zero, S.true)],
+            }
+            cache[key] = out
+            return out
 
         if _expr_is_z_free(e, z):
             out = {
@@ -591,11 +626,6 @@ def _candidate_samples_for_condition(cond, z: Symbol):
 
 
 def _sample_from_condition(cond, z: Symbol):
-    """Find a representative point and normal for a branch condition.
-
-    This is heuristic. It now includes explicit support for the more complicated
-    seam predicates that appear in elliptic amplitude cases.
-    """
     for point, normal in _candidate_samples_for_condition(cond, z):
         if _condition_holds_numeric(cond, z, point):
             return point, normal
@@ -604,12 +634,6 @@ def _sample_from_condition(cond, z: Symbol):
 
 @lru_cache(maxsize=128)
 def _mpmath_numeric_callable(expr, z):
-    """Compile a reusable generic mpmath evaluator.
-
-    Elliptic Pi is routed around mpmath's adaptive implementation separately, so
-    generic samples can use SymPy's standard mpmath lambdify mapping.  This keeps
-    complex functions such as log mapped to mpmath.
-    """
     return mp.mp, lambdify(z, expr, modules="mpmath", cse=False)
 
 
@@ -828,6 +852,8 @@ def _is_restricted_expr_instance(e):
 
 
 def ensure_neutral_assoc(assoc):
+    """Add neutral jump entries to uncovered branch-rule associations."""
+
     a = dict(assoc)
     a["Jump"] = ensure_neutral_pairs(a.get("Jump", []))
     return a

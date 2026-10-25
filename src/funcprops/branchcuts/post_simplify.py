@@ -374,10 +374,10 @@ def simplify_branch_condition(cond, z):
     out = []
     # An order relation such as ``z > a`` already expresses that ``z`` lies
     # on the ordered real axis.  Keep an explicit realness guard only when it
-    # carries information not represented by a normalized bound. In
+    # carries information not represented by a normalized bound.  In
     # particular this turns pullbacks such as
     # ``Contains(1 - z, Reals) & (1 - z < 0)`` into the clearer ``z > 1``.
-    # Non-real affine pullbacks (e.g. ``Contains(I*z, Reals)``) are not
+    # Non-real affine pullbacks (for example ``Contains(I*z, Reals)``) are not
     # recognized by ``_contains_affine_real`` and therefore remain in
     # ``filtered`` unchanged.
     if real_required and lower is None and upper is None:
@@ -396,6 +396,8 @@ def simplify_branch_condition(cond, z):
 
 
 def rewrite_branch_expr(expr):
+    """Rewrite supported branch expressions for cut and jump simplification."""
+
     expr = sympify(expr)
 
     def _rw(e):
@@ -426,6 +428,8 @@ def rewrite_branch_expr(expr):
 
 
 def merge_duplicate_pairs(pairs: Iterable[Pair], z):
+    """Combine conditions for identical branch-jump values."""
+
     _validate_pair_sequence(pairs, func_name="merge_duplicate_pairs")
     grouped = defaultdict(list)
     for expr, cond in clean_pairs(pairs):
@@ -450,6 +454,8 @@ def merge_duplicate_pairs(pairs: Iterable[Pair], z):
 
 
 def post_simplify_pairs(pairs: Iterable[Pair], z):
+    """Simplify jump expressions while preserving their attached conditions."""
+
     _validate_pair_sequence(pairs, func_name="post_simplify_pairs")
     out = []
     for expr, cond in clean_pairs(pairs):
@@ -462,6 +468,8 @@ def post_simplify_pairs(pairs: Iterable[Pair], z):
 
 
 def post_simplify_restricted(exprs: Iterable[object], z):
+    """Simplify a restricted branch expression without dropping its condition."""
+
     _validate_restricted_sequence(exprs, func_name="post_simplify_restricted")
     pairs = []
     for item in exprs:

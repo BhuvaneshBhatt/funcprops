@@ -35,6 +35,8 @@ from .regularity import (
 
 @dataclass(frozen=True)
 class SingularityAnalysis:
+    """Collect singular loci, local records and unresolved coverage obligations."""
+
     branch_cuts: tuple[Singularity, ...] = ()
     definition_cuts: tuple[Singularity, ...] = ()
     poles: tuple[Singularity, ...] = ()
@@ -48,6 +50,8 @@ class SingularityAnalysis:
     source: str = "structural-singularity-traversal"
 
     def all_records(self):
+        """Return the complete stored family catalogue."""
+
         return _unique(
             self.branch_cuts
             + self.definition_cuts

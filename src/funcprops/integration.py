@@ -15,6 +15,7 @@ import sympy as sp
 from sympy.printing.codeprinter import PrintMethodNotImplementedError
 
 from .exactness import certify_identity_equal
+from .source_syntax import differentiate
 
 
 @dataclass(frozen=True)
@@ -60,14 +61,18 @@ class ParametricContour:
 
     @property
     def derivative(self):
-        return sp.diff(self.gamma, self.parameter)
+        return differentiate(self.gamma, self.parameter)
 
     def reversed(self):
+        """Return the same contour with the opposite orientation."""
+
         return ParametricContour(self.gamma, (self.parameter, self.upper, self.lower))
 
 
 @dataclass(frozen=True)
 class IntegralResult:
+    """Pair an integral value or enclosure with its path and certification data."""
+
     expression: sp.Expr
     variable: sp.Symbol
     path: object
@@ -79,6 +84,8 @@ class IntegralResult:
     evidence: tuple = ()
 
     def verify(self) -> bool:
+        """Return whether the record satisfies its declared replay obligations."""
+
         if (
             self.method == "exact-definite"
             and isinstance(self.path, tuple)
@@ -160,7 +167,7 @@ def _trig_algebraizable(gamma, t):
         if f.func not in allowed:
             return False
         arg = sp.expand(f.args[0])
-        if sp.diff(arg, t, 2) != 0:
+        if differentiate(arg, t, 2) != 0:
             return False
     return bool(gamma.atoms(sp.sin, sp.cos))
 
@@ -169,11 +176,11 @@ def _trig_algebraization(gamma, t):
     """Return an algebraic unit-circle representation when trig arguments are integer-affine."""
     if not _trig_algebraizable(gamma, t):
         return None
-    X, Y = sp.symbols("_contour_cos _contour_sin", real=True)
+    X, Y = sp.Dummy("contour_cos", real=True), sp.Dummy("contour_sin", real=True)
     expanded = sp.expand_trig(gamma)
     # expand_trig reduces integer multiples/shifts to sin(t), cos(t) plus constants.
     alg = sp.expand(expanded.xreplace({sp.sin(t): Y, sp.cos(t): X}))
-    if alg.has(sp.sin(t), sp.cos(t)):
+    if alg.has(t) or alg.has(sp.sin, sp.cos):
         return None
     return alg, sp.Eq(X**2 + Y**2, 1), X, Y
 
@@ -241,12 +248,12 @@ def _adaptive_taylor_integral(pulled, t, a, b, *, tol=None, max_depth=10, order=
 
     Each panel expands at its midpoint.  A global maximum of |h^(n+1)| on the
     real panel supplies the Lagrange remainder bound. Unsupported maxima cause
-    conservative failure.
+    an unresolved result.
     """
     if tol is None:
         tol = sp.Rational(1, 10) ** 12
     tol = sp.sympify(tol)
-    derivatives = [sp.diff(pulled, t, k) for k in range(order + 2)]
+    derivatives = [differentiate(pulled, t, k) for k in range(order + 2)]
 
     def panel(lo, hi, depth):
         mid = sp.simplify((lo + hi) / 2)
@@ -352,6 +359,8 @@ def _pulled_continuous_on_interval(pulled, t, a, b):
 
 
 def _parametric(expr, var, contour, *, tolerance=None):
+    """Pull back a contour integral after checking path definition and source regularity."""
+
     exact, pulled = _exact_parameter_integral(expr, var, contour)
     if _branch_sensitive(expr) and not _simple_positive_real_path(contour):
         return _unknown(
@@ -460,7 +469,7 @@ def _polygon_integral(expr, var, points):
 
 
 def integrate(expr, limits, *, return_result=False, tolerance=None, _replay=False):
-    """Integrate with conservative certification.
+    """Integrate with source and error-bound certification.
 
     ``integrate(expr, (x,a,b))`` integrates over a finite interval/straight
     complex segment. ``integrate(expr, (z, contour))`` accepts a

@@ -10,8 +10,33 @@ from sympy.polys.polyerrors import DomainError
 from .exactness import certify_identity_equal
 
 
+def _polynomial_source_valid(expression, variable):
+    if (
+        not isinstance(variable, sp.Symbol)
+        or variable.assumptions0 != {"commutative": True}
+        or expression.has(sp.Float, sp.oo, -sp.oo, sp.zoo, sp.nan)
+    ):
+        return False
+    for node in sp.preorder_traversal(expression):
+        if not node.has(variable):
+            if node.is_finite is not True:
+                return False
+        elif isinstance(node, sp.Function):
+            return False
+        elif node.is_Pow and (
+            node.exp.is_Integer is not True or node.exp.is_negative is True
+        ):
+            return False
+    try:
+        return not sp.Poly(expression, variable).is_zero
+    except (sp.PolynomialError, TypeError, ValueError):
+        return False
+
+
 @dataclass(frozen=True)
 class RoucheCertificate:
+    """Bind a polynomial disk count to a strict Rouché inequality."""
+
     f: sp.Expr
     g: sp.Expr
     var: sp.Symbol
@@ -21,11 +46,35 @@ class RoucheCertificate:
     source: str = "polynomial-circle-rouche"
 
     def verify(self):
-        if self.source != "polynomial-circle-rouche":
+        """Return whether the record satisfies its declared replay obligations."""
+
+        try:
+            return self._verify()
+        except (
+            AttributeError,
+            sp.PolynomialError,
+            DomainError,
+            TypeError,
+            ValueError,
+            NotImplementedError,
+            ArithmeticError,
+        ):
+            return False
+
+    def _verify(self):
+        if (
+            self.source != "polynomial-circle-rouche"
+            or type(self.count) is not int
+            or not _polynomial_source_valid(self.f, self.var)
+            or self.center.is_finite is not True
+            or self.center.has(self.var)
+            or self.radius.is_finite is not True
+            or self.center.has(sp.Float)
+            or self.radius.has(sp.Float)
+        ):
             return False
         # Current replayable theorem: dominant monomial a*(z-c)^n against polynomial remainder.
         z = self.var
-        sp.Symbol("_w", real=True, nonnegative=True)
         shifted = sp.expand(self.f.subs(z, z + self.center))
         try:
             p = sp.Poly(shifted, z)
@@ -50,10 +99,22 @@ class RoucheCertificate:
 
 
 def rouche_polynomial_circle(expr, var, *, center=0, radius=1):
+    """Certify a polynomial disk count using a strict boundary dominance inequality."""
+
     z = sp.sympify(var)
     f = sp.sympify(expr)
     c = sp.sympify(center)
     R = sp.sympify(radius)
+    if (
+        not _polynomial_source_valid(f, z)
+        or c.is_finite is not True
+        or c.has(z)
+        or R.is_finite is not True
+        or R.has(z)
+        or c.has(sp.Float)
+        or R.has(sp.Float)
+    ):
+        return None
     shifted = sp.expand(f.subs(z, z + c))
     try:
         p = sp.Poly(shifted, z)
@@ -73,6 +134,8 @@ def rouche_polynomial_circle(expr, var, *, center=0, radius=1):
 
 @dataclass(frozen=True)
 class ArgumentPrincipleCertificate:
+    """Store a contour count with its route-specific boundary premises."""
+
     expression: sp.Expr
     variable: sp.Symbol
     lower_left: sp.Expr
@@ -81,12 +144,15 @@ class ArgumentPrincipleCertificate:
     source: str = "polynomial-argument-principle"
 
     def verify(self):
-        if self.source != "polynomial-argument-principle":
-            return False
+        """Return whether the record satisfies its declared replay obligations."""
+
         try:
-            p = sp.Poly(self.expression, self.variable)
-            return int(p.count_roots(self.lower_left, self.upper_right)) == self.count
+            actual = argument_principle_rectangle(
+                self.expression, self.variable, self.lower_left, self.upper_right
+            )
+            return type(self.count) is int and actual is not None and self == actual
         except (
+            AttributeError,
             sp.PolynomialError,
             DomainError,
             TypeError,
@@ -102,8 +168,22 @@ def argument_principle_rectangle(expr, var, lower_left, upper_right):
     SymPy's exact polynomial root counter is an argument-principle/Cauchy-index
     computation; the returned certificate independently replays the count.
     """
+    from .complex_coverage import CoverageRectangle
+    from .meromorphic_contours import _boundary_clear
+
+    expression, variable, lower_left, upper_right = map(
+        sp.sympify, (expr, var, lower_left, upper_right)
+    )
+    if (
+        not _polynomial_source_valid(expression, variable)
+        or expression.free_symbols - {variable}
+        or not CoverageRectangle(lower_left, upper_right).valid()
+    ):
+        return None
     try:
         p = sp.Poly(sp.sympify(expr), sp.sympify(var))
+        if not _boundary_clear(p, lower_left, upper_right):
+            return None
         n = int(p.count_roots(sp.sympify(lower_left), sp.sympify(upper_right)))
     except (
         sp.PolynomialError,
@@ -124,6 +204,8 @@ def argument_principle_rectangle(expr, var, lower_left, upper_right):
 
 @dataclass(frozen=True)
 class RectangleRoucheCertificate:
+    """Bind a polynomial rectangle count to Rouché boundary bounds."""
+
     expression: sp.Expr
     variable: sp.Symbol
     center: sp.Expr
@@ -134,16 +216,22 @@ class RectangleRoucheCertificate:
     source: str = "polynomial-rectangle-rouche"
 
     def verify(self):
-        if self.source != "polynomial-rectangle-rouche":
+        """Return whether the record satisfies its declared replay obligations."""
+
+        try:
+            actual = rouche_polynomial_rectangle(
+                self.expression, self.variable, self.lower_left, self.upper_right
+            )
+            return type(self.count) is int and actual is not None and self == actual
+        except (
+            AttributeError,
+            sp.PolynomialError,
+            DomainError,
+            TypeError,
+            ValueError,
+            NotImplementedError,
+        ):
             return False
-        c = rouche_polynomial_rectangle(
-            self.expression, self.variable, self.lower_left, self.upper_right
-        )
-        return (
-            c is not None
-            and c.count == self.count
-            and certify_identity_equal(c.dominant, self.dominant) is True
-        )
 
 
 def rouche_polynomial_rectangle(expr, var, lower_left, upper_right):
@@ -152,6 +240,16 @@ def rouche_polynomial_rectangle(expr, var, lower_left, upper_right):
     f = sp.sympify(expr)
     ll = sp.sympify(lower_left)
     ur = sp.sympify(upper_right)
+    if (
+        not _polynomial_source_valid(f, z)
+        or ll.is_finite is not True
+        or ur.is_finite is not True
+        or ll.has(z)
+        or ur.has(z)
+        or ll.has(sp.Float)
+        or ur.has(sp.Float)
+    ):
+        return None
     xmin, xmax, ymin, ymax = map(
         sp.simplify, (sp.re(ll), sp.re(ur), sp.im(ll), sp.im(ur))
     )

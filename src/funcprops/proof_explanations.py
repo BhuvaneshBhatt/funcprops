@@ -10,6 +10,8 @@ from .results import as_detailed_result
 
 @dataclass(frozen=True)
 class ProofExplanation:
+    """Summarize a proof's scope, premises, replay outcome and unresolved work."""
+
     conclusion: object
     theorem_ids: tuple[str, ...] = ()
     routes: tuple[str, ...] = ()
@@ -20,6 +22,8 @@ class ProofExplanation:
 
 
 def explain_proof(value, *, completeness=None):
+    """Present a proof's replay status, scope and unresolved obligations."""
+
     d = as_detailed_result(value)
     ids = tuple(e.theorem_id for e in d.evidence if getattr(e, "theorem_id", None))
     routes = (d.source,) if d.source else ()

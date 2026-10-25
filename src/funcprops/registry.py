@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import re
 from collections.abc import Iterable
 from dataclasses import dataclass
 from functools import lru_cache
@@ -18,7 +17,7 @@ from .exactness import certify_identity_equal
 class FunctionSlot(sp.Dummy):
     """A rule-local placeholder for one positional function argument.
 
-    ``FunctionSlot`` deliberately behaves like a SymPy expression so registry
+    ``FunctionSlot`` behaves like a SymPy expression so registry
     conditions and results can be written naturally, while retaining an
     explicit positional binding.  Every construction is a fresh ``Dummy``; a
     human-readable name never creates a global-symbol dependency.
@@ -142,6 +141,8 @@ class PropertyRule:
         return tuple(sorted(used, key=lambda slot: slot.position))
 
     def matches(self, expr) -> bool:
+        """Check whether the other record binds the same source and domain premises."""
+
         expr = sp.sympify(expr)
         if getattr(expr, "func", None) != self.head:
             return False
@@ -156,6 +157,8 @@ class PropertyRule:
         return {slot: args[slot.position] for slot in self.slots}
 
     def instantiate(self, expr) -> InstantiatedPropertyRule:
+        """Substitute concrete subjects into the rule while retaining its parameter guards."""
+
         expr = sp.sympify(expr)
         repl = self.substitutions(expr)
         return InstantiatedPropertyRule(
@@ -168,126 +171,69 @@ class PropertyRule:
         )
 
 
-def _balanced_content(text: str, start: int, open_char="[", close_char="]"):
-    depth = 0
-    for i in range(start, len(text)):
-        ch = text[i]
-        if ch == open_char:
-            depth += 1
-        elif ch == close_char:
-            depth -= 1
-            if depth == 0:
-                return text[start + 1 : i]
-    return None
+@dataclass(frozen=True)
+class ArgumentPattern:
+    """Match one positional argument using native type, sign or literal premises."""
+
+    name: str | None = None
+    kind: str = "any"
+    predicates: tuple[str, ...] = ()
+    choices: tuple[str, ...] = ()
+
+    def matches(self, actual):
+        """Return whether every stored argument premise is proved for actual."""
+        if self.kind == "unsupported":
+            return False
+        if self.kind == "literal":
+            return any(
+                certify_identity_equal(actual, parse_catalogue_expression(value))
+                is True
+                for value in self.choices
+            )
+        if self.kind == "tuple":
+            if not isinstance(actual, (sp.Tuple, tuple, list)):
+                return False
+        elif self.kind != "any":
+            attribute = {
+                "integer": "is_integer",
+                "real": "is_real",
+                "complex": "is_complex",
+            }.get(self.kind)
+            if attribute is None or getattr(actual, attribute, None) is not True:
+                return False
+        attributes = {
+            "even": "is_even",
+            "positive": "is_positive",
+            "negative": "is_negative",
+            "nonnegative": "is_nonnegative",
+            "numeric": "is_number",
+        }
+        return all(
+            predicate in attributes
+            and getattr(actual, attributes[predicate], None) is True
+            for predicate in self.predicates
+        )
 
 
-def _split_top_level(text: str):
-    out = []
-    start = 0
-    depth = 0
-    pairs = {"[": "]", "(": ")", "{": "}"}
-    closes = set(pairs.values())
-    stack = []
-    for i, ch in enumerate(text):
-        if ch in pairs:
-            stack.append(pairs[ch])
-            depth += 1
-        elif ch in closes and stack and ch == stack[-1]:
-            stack.pop()
-            depth -= 1
-        elif ch == "," and depth == 0:
-            out.append(text[start:i].strip())
-            start = i + 1
-    out.append(text[start:].strip())
-    return out
+@dataclass(frozen=True)
+class RuleSignature:
+    """Bind argument patterns, analysis mode, coordinate ownership and precedence."""
 
-
-def _source_signature(lhs: str | None):
-    """Extract the represented function pattern and property mode/variable."""
-    if not lhs:
-        return None, (), None, None
-    lhs = lhs.split("/;", 1)[0].strip()
-    first = lhs.find("[")
-    if first < 0:
-        return None, (), None, None
-    outer = _balanced_content(lhs, first)
-    if outer is None:
-        return None, (), None, None
-    outer_args = _split_top_level(outer)
-    if not outer_args:
-        return None, (), None, None
-    fpat = outer_args[0].strip()
-    if fpat.startswith("HoldPattern["):
-        i = fpat.find("[")
-        inner = _balanced_content(fpat, i)
-        if inner is not None:
-            fpat = inner.strip()
-    hidx = fpat.find("[")
-    if hidx < 0:
-        return fpat, (), None, outer_args[1] if len(outer_args) > 1 else None
-    head = fpat[:hidx].strip()
-    inner = _balanced_content(fpat, hidx)
-    args = tuple(_split_top_level(inner or "")) if inner is not None else ()
-    prop_head = lhs[:first].strip()
-    mode = None
-    var_token = None
-    if "SingularityProperties" in prop_head and len(outer_args) > 1:
-        token = outer_args[1].strip()
-        if token == "True":
-            mode = "real"
-        elif token == "False":
-            mode = "complex"
-        else:
-            mode = "any"
-    if "RealUnivariateProperties" in prop_head and len(outer_args) > 1:
-        var_token = outer_args[1].strip()
-    return head, args, mode, var_token
-
-
-def _pattern_name(token: str):
-    token = token.strip()
-    m = re.match(r"([A-Za-z$][A-Za-z0-9$]*)_", token)
-    if m:
-        return m.group(1)
-    m = re.match(r"([A-Za-z$][A-Za-z0-9$]*):", token)
-    if m:
-        return m.group(1)
-    return None
-
-
-def _literal_pattern_matches(token: str, actual) -> bool:
-    token = token.strip()
-    # Ordinary named patterns are handled by guards/assumptions.
-    if "_" in token and re.match(r"^[A-Za-z$][A-Za-z0-9$]*_", token):
-        return True
-    # a:(2|3), a:3 style restricted alternatives/defaults.
-    if ":" in token and re.match(r"^[A-Za-z$][A-Za-z0-9$]*:", token):
-        rhs = token.split(":", 1)[1].strip()
-        if rhs.startswith("(") and rhs.endswith(")") and "|" in rhs:
-            vals = rhs[1:-1].split("|")
-            return any(_literal_pattern_matches(v, actual) for v in vals)
-        if rhs.startswith("_"):
-            return True
-        return _literal_pattern_matches(rhs, actual)
-    # List/vector patterns and Blank/Repeated constructs are too rich to match
-    # syntactically here; leave them to their explicit registry guard.
-    if any(x in token for x in ("_", "Repeated[", "Vectors[", "Matrices[")):
-        return True
-    try:
-        literal = parse_catalogue_expression(token)
-        if isinstance(actual, sp.Basic) and isinstance(literal, sp.Basic):
-            return certify_identity_equal(actual, literal) is True
-        return actual == literal
-    except (TypeError, ValueError):
-        return False
+    arguments: tuple[ArgumentPattern, ...] = ()
+    mode: str | None = None
+    coordinate: str | None = None
+    priority: int = 0
 
 
 @dataclass(frozen=True)
 class RuleCase:
+    """Pair a sufficient property case with native argument matching and a stable identity."""
+
     value_source: str
     condition_source: str
     source_property_type: str | None = None
-    source_lhs: str | None = None
+    rule_id: str | None = None
+    signature: RuleSignature = RuleSignature()
 
     @property
     def condition(self):
@@ -297,65 +243,72 @@ class RuleCase:
     def value(self):
         return parse_catalogue_expression(self.value_source)
 
-    @property
-    def signature(self):
-        return _source_signature(self.source_lhs)
-
     def substitutions(self, expr):
-        _, patterns, _, _ = self.signature
-        repl = {}
-        for token, actual in zip(patterns, getattr(expr, "args", ()), strict=False):
-            name = _pattern_name(token)
-            if name:
-                repl[Symbol(name)] = actual
-        return repl
+        """Bind named positional subjects to their actual function arguments."""
+        return {
+            Symbol(pattern.name): actual
+            for pattern, actual in zip(
+                self.signature.arguments, getattr(expr, "args", ()), strict=False
+            )
+            if pattern.name is not None
+        }
 
     def instantiate(self, expr):
-        repl = self.substitutions(expr)
-        value = self.value
-        condition = self.condition
+        """Substitute concrete arguments into a case's value and parameter guard."""
+        replacements = self.substitutions(expr)
+        value, condition = self.value, self.condition
         if isinstance(value, sp.Basic):
-            value = value.xreplace(repl)
+            value = value.xreplace(replacements)
         if isinstance(condition, sp.Basic):
-            condition = condition.xreplace(repl)
+            condition = condition.xreplace(replacements)
         return value, condition
 
-    def matches(self, expr, *, var=None, mode=None) -> bool:
-        _, patterns, case_mode, var_token = self.signature
+    def matches(self, expr, *, var=None, mode=None):
+        """Check arity, argument premises, analysis mode and coordinate ownership."""
+        signature = self.signature
         args = getattr(expr, "args", ())
-        if patterns and len(patterns) != len(args):
+        if signature.arguments and len(signature.arguments) != len(args):
             return False
-        for token, actual in zip(patterns, args, strict=False):
-            if not _literal_pattern_matches(token, actual):
+        if not all(
+            pattern.matches(actual)
+            for pattern, actual in zip(signature.arguments, args, strict=False)
+        ):
+            return False
+        if mode in ("real", "complex") and signature.mode not in (None, "any", mode):
+            return False
+        if var is not None and signature.coordinate is not None:
+            mapped = self.substitutions(expr).get(Symbol(signature.coordinate))
+            if mapped is not None and mapped != var:
                 return False
-        if mode in ("real", "complex") and case_mode not in (None, "any", mode):
-            return False
-        if var is not None and var_token is not None:
-            name = _pattern_name(var_token)
-            if name:
-                mapped = self.substitutions(expr).get(Symbol(name))
-                if mapped is not None and mapped != var:
-                    return False
         return True
 
-    def specificity(self, *, mode=None) -> int:
-        _, patterns, case_mode, _ = self.signature
-        score = 0
-        for token in patterns:
-            t = token.strip()
-            if ":" in t:
-                score += 3
-            elif re.search(r"_(Integer|Real|Complex|Positive|NonNegative)", t):
-                score += 2
-            elif "_" not in t:
-                score += 4
-        if mode in ("real", "complex") and case_mode == mode:
-            score += 2
-        return score
+    def specificity(self, *, mode=None):
+        """Return the declared case precedence, with exact-mode cases first."""
+        return self.signature.priority + (
+            2 if mode in ("real", "complex") and self.signature.mode == mode else 0
+        )
+
+
+def _rule_signature(data):
+    # JSON lists become immutable records before rules are exposed to callers.
+    arguments = tuple(
+        ArgumentPattern(
+            name=argument.get("name"),
+            kind=argument["kind"],
+            predicates=tuple(argument.get("predicates", ())),
+            choices=tuple(argument.get("choices", ())),
+        )
+        for argument in data.get("arguments", ())
+    )
+    return RuleSignature(
+        arguments, data.get("mode"), data.get("coordinate"), data.get("priority", 0)
+    )
 
 
 @dataclass(frozen=True)
 class Family:
+    """Group property rules for a supported symbolic function family."""
+
     raw: dict[str, Any]
 
     @property
@@ -370,11 +323,9 @@ class Family:
     def mpmath_names(self):
         return tuple(self.raw.get("mpmath_names", ()))
 
-    @property
-    def catalogue_names(self):
-        return tuple(self.raw.get("catalogue_names", ()))
-
     def cases(self, prop: str) -> tuple[RuleCase, ...]:
+        """Materialize immutable native matching records for one property."""
+
         p = self.raw.get("properties", {}).get(prop, {})
         return tuple(
             RuleCase(
@@ -384,15 +335,18 @@ class Family:
                         "value_source",
                         "condition_source",
                         "source_property_type",
-                        "source_lhs",
+                        "rule_id",
                     )
-                }
+                },
+                signature=_rule_signature(c["signature"]),
             )
             for c in p.get("cases", ())
         )
 
 
 class FunctionRegistry:
+    """Load and query guarded function-property declarations."""
+
     def __init__(
         self,
         records: Iterable[dict[str, Any]],
@@ -408,7 +362,6 @@ class FunctionRegistry:
                 fam.id,
                 *fam.sympy_names,
                 *fam.mpmath_names,
-                *fam.catalogue_names,
             ):
                 self._by_name.setdefault(n, fam)
         self._property_rules: list[PropertyRule] = []
@@ -429,9 +382,13 @@ class FunctionRegistry:
         return iter(self._families)
 
     def get(self, name: str) -> Family | None:
+        """Return the matching function family, or the supplied default when absent."""
+
         return self._by_name.get(name)
 
     def require(self, name: str) -> Family:
+        """Return the matching function family or raise KeyError when absent."""
+
         f = self.get(name)
         if f is None:
             raise KeyError(name)
@@ -452,6 +409,8 @@ class FunctionRegistry:
         return rule
 
     def register_identity_rule(self, rule):
+        """Register a guarded symbolic identity with explicit argument subjects."""
+
         from .registry_derivatives import IdentityRule
 
         if not isinstance(rule, IdentityRule):
@@ -460,6 +419,8 @@ class FunctionRegistry:
         return rule
 
     def register_derivative_rule(self, rule):
+        """Register a guarded derivative rule for an argument position."""
+
         from .registry_derivatives import DerivativeRule
 
         if not isinstance(rule, DerivativeRule):
@@ -468,10 +429,14 @@ class FunctionRegistry:
         return rule
 
     def identity_rules(self, *, head=None):
+        """Return identity rules matching the requested function head."""
+
         rules = tuple(self._identity_rules)
         return tuple(r for r in rules if head is None or r.head == head)
 
     def derivative_rules(self, *, head=None, position=None):
+        """Return derivative rules matching the requested head and argument position."""
+
         rules = tuple(self._derivative_rules)
         return tuple(
             r
@@ -481,10 +446,14 @@ class FunctionRegistry:
         )
 
     def match_identity_rules(self, expr):
+        """Instantiate matching identity rules against concrete function arguments."""
+
         expr = sp.sympify(expr)
         return tuple(r for r in self.identity_rules(head=expr.func) if r.matches(expr))
 
     def match_derivative_rules(self, expr, *, position=None):
+        """Instantiate matching derivative rules against concrete function arguments."""
+
         expr = sp.sympify(expr)
         return tuple(
             r
@@ -533,6 +502,8 @@ class FunctionRegistry:
 
 @lru_cache(maxsize=1)
 def registry() -> FunctionRegistry:
+    """Return the cached registry of guarded symbolic function-property rules."""
+
     p = files("funcprops").joinpath("data/catalogue.json")
     payload = json.loads(p.read_text())
     reg = FunctionRegistry(payload["families"])
@@ -549,24 +520,19 @@ def adapt_catalogue_rule_case(
     *,
     source: str | None = None,
 ) -> PropertyRule | None:
-    """Conservatively adapt one catalogue case to a native ``PropertyRule``.
+    """Adapt a simple positional catalogue case to a native ``PropertyRule``.
 
-    Only ordinary positional named patterns are migrated. Literal/restricted,
-    sequence, vector, and otherwise richer patterns deliberately remain in the
-    catalogue representation because flattening them would lose theorem semantics.
+    Only one unrestricted named argument is localized here. Typed, literal and
+    structured argument premises require their own transport theorem.
     """
 
-    _, patterns, _, _ = case.signature
-    if len(patterns) != 1:
+    patterns = case.signature.arguments
+    if len(patterns) != 1 or any(
+        pattern.kind != "any" or pattern.name is None or pattern.predicates
+        for pattern in patterns
+    ):
         return None
-    names = []
-    for token in patterns:
-        token = token.strip()
-        # Accept only simple named blanks, e.g. ``z_`` or ``nu_``.
-        m = re.fullmatch(r"([A-Za-z$][A-Za-z0-9$]*)_", token)
-        if m is None:
-            return None
-        names.append(m.group(1))
+    names = [pattern.name for pattern in patterns]
     slots = tuple(FunctionSlot(i, name) for i, name in enumerate(names))
     substitutions = {
         Symbol(name): slot for name, slot in zip(names, slots, strict=True)
@@ -578,8 +544,8 @@ def adapt_catalogue_rule_case(
     if isinstance(condition, sp.Basic):
         condition = condition.xreplace(substitutions)
 
-    # Reject residual source-pattern symbols: the native rule would otherwise
-    # appear localized while still depending on global catalogue names.
+    # Unbound catalogue variables would make a localized rule depend on a
+    # global placeholder instead of its concrete function argument.
     residual = set()
     for obj in (value, condition):
         if isinstance(obj, sp.Basic):
@@ -593,5 +559,5 @@ def adapt_catalogue_rule_case(
         conditions=condition,
         result=value,
         proof_kind="catalogue-adaptation",
-        source=source or case.source_lhs or "catalogue",
+        source=source or case.rule_id or "catalogue",
     )

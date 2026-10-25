@@ -1,0 +1,371 @@
+{
+  "geometry": {
+    "title": "Function geometry",
+    "definition": "Function geometry combines regularity, analyticity, convexity, singularities, boundary escape, level-boundedness, and attainment information in one structural summary.",
+    "returns": "A FunctionGeometry object containing the component property results and certificates.",
+    "domain": "The query is interpreted on the supplied domain, not from the expression in isolation. When symbolic parameters change the property, funcprops preserves those cases as guarded parameter strata. Assumptions are proof hypotheses: they can simplify a stratum or branch condition, but they do not justify numerical guessing.",
+    "proof": "Delegation to the regularity, singularity, convexity, boundary-behavior, level-boundedness, and mode-existence engines with shared assumptions and domains.",
+    "limits": "The summary is only as complete as its component proof engines; unresolved component properties remain explicitly unresolved.",
+    "applications": "Use the executable function geometry examples to check the corresponding source, domain and branch premises before consuming the result in a larger analysis."
+  },
+  "determinant_nonvanishing": {
+    "title": "Determinant nonvanishing",
+    "definition": "For a square real C1 map, determinant nonvanishing asks whether det J is nonzero everywhere on the requested domain.",
+    "returns": "TruthValue.TRUE, FALSE, or UNKNOWN by default; return_result=True returns the determinant-nonvanishing certificate and evidence.",
+    "domain": "The original map must be defined and C1 throughout nonempty, resolved real input support. Coordinate assumptions, raw source exclusions and parameter hypotheses remain premises. Empty or unresolved support and unproved regularity return UNKNOWN.",
+    "proof": "Source-bound domain and C1 checks, exact Jacobian reconstruction, assumptions and semialgebraic zero-set decisions. An inconclusive backend cannot establish exclusion.",
+    "limits": "Nonsquare maps and determinant zero sets outside the supported symbolic/semialgebraic proof routes remain UNKNOWN unless a witness or theorem is available.",
+    "applications": "Use the executable determinant nonvanishing examples to check the corresponding source, domain and branch premises before consuming the result in a larger analysis."
+  },
+  "discontinuities": {
+    "title": "Discontinuities",
+    "definition": "Discontinuity analysis locates points or guarded loci where continuity fails.",
+    "returns": "A Boolean discontinuity locus by default; return_result=True returns the supporting Singularity records.",
+    "domain": "The query uses the natural source domain and the supplied assumptions. This API has no domain keyword. Parameter-dependent singularity or branch conditions remain explicit in the detailed result.",
+    "proof": "Piecewise interface limits, denominator/domain failures, branch behavior, and structural singularity traversal.",
+    "limits": "A false locus means no discontinuity was certified by the analysis, not necessarily a completeness theorem unless detailed singularity analysis is complete.",
+    "applications": "Use the executable discontinuities examples to check the corresponding source, domain and branch premises before consuming the result in a larger analysis."
+  },
+  "local_invertibility": {
+    "title": "Local invertibility",
+    "definition": "A square real C1 map is locally invertible where its Jacobian determinant is nonzero, as certified by the inverse function theorem.",
+    "returns": "TruthValue.TRUE, FALSE, or UNKNOWN by default; return_result=True returns the local-invertibility certificate and determinant evidence.",
+    "domain": "The query is interpreted on the supplied domain, not from the expression in isolation. When symbolic parameters change the property, funcprops preserves those cases as guarded parameter strata. Assumptions are proof hypotheses: they can simplify a stratum or branch condition, but they do not justify numerical guessing.",
+    "proof": "The exact Jacobian and determinant-nonvanishing certificate are combined through the inverse-function-theorem implication.",
+    "limits": "Local invertibility is not global injectivity; nonsquare maps and unresolved determinant geometry remain UNKNOWN.",
+    "applications": "Use the executable local invertibility examples to check the corresponding source, domain and branch premises before consuming the result in a larger analysis."
+  },
+  "complex_zeros": {
+    "title": "Complex zeros",
+    "definition": "Complex-zero isolation finds and certifies zeros inside a finite complex rectangle.",
+    "returns": "An exact finite set when available, or a ComplexRootIsolationResult containing certified rectangles, counts, and route-specific evidence. Native entire/quotient routes use complete = coverage_complete and isolation_complete and accuracy_complete. Algebraic/exact routes have their own contracts; consult [result contracts](../reference/result-contracts.md). Counts distinguish source zeros, extension zeros and poles. Request rectangle=(lower_left, upper_right), an EnclosurePolicy, and positive max_box_width/max_box_diameter targets when needed; see the [isolation tutorial](../tutorials/complex-isolation.md).",
+    "domain": "Native entire/quotient isolation requires an unconstrained Symbol, rational rectangle corners, no free parameters and zero-free outer boundaries for the required source components. Boundary zeros remain unresolved there. The algebraic adapter can own exact boundary roots and retains raw source holes, principal-power branches, supported exact set domains and algebraic Eq/Ne guards. Unsupported planar guards, free parameters, branch or membership uncertainty prevent an unconditional completion claim. See [result contracts](../reference/result-contracts.md).",
+    "proof": "Algebraic inputs use the algroots adapter when supported. Native entire and certified-quotient inputs use replayable contour counts, exact rectangle covers, shared-zero/order witnesses and optional Newton refinement. Original source restrictions survive cancellation.",
+    "limits": "General holomorphy and boundary nonvanishing may remain uncertified; numerical winding estimates never upgrade an incomplete result to a proof.",
+    "applications": "Use the executable complex zeros examples to check the corresponding source, domain and branch premises before consuming the result in a larger analysis."
+  },
+  "surjective": {
+    "title": "Surjectivity",
+    "definition": "A function is surjective onto a codomain when every codomain value is attained by some domain point.",
+    "returns": "TruthValue.TRUE, FALSE, or UNKNOWN. Parameter-stratified results are returned as a SymPy `Piecewise` by default; `return_result=True` preserves the full `PropertyResult`.",
+    "domain": "The query is interpreted on the supplied domain, not from the expression in isolation. When symbolic parameters change the property, funcprops preserves those cases as guarded parameter strata. Assumptions are proof hypotheses: they can simplify a stratum or branch condition, but they do not justify numerical guessing.",
+    "proof": "Exact range comparison, structural mappings, monotone/range closure, and parameter stratification.",
+    "limits": "The answer depends on both domain and codomain; an omitted or unsuitable codomain can change the mathematical question.",
+    "applications": "Determine whether the requested codomain is reached, separately from source injectivity."
+  },
+  "branch_cuts": {
+    "title": "Branch cuts",
+    "definition": "Branch-cut analysis returns the cuts used to make the selected principal branches single-valued.",
+    "returns": "By default a tuple of logical cut conditions; alternate modes expose other supported representations.",
+    "domain": "The query uses the natural source domain and the supplied assumptions. This API has no domain keyword. Parameter-dependent singularity or branch conditions remain explicit in the detailed result.",
+    "proof": "Principal-branch registry facts, compositional preimages, algebraic transformation, simplification under assumptions, and cut normalization.",
+    "limits": "Branch cuts are representation/convention dependent; they are not intrinsic singularities of the underlying multivalued analytic object.",
+    "applications": "Use the executable branch cuts examples to check the corresponding source, domain and branch premises before consuming the result in a larger analysis."
+  },
+  "injective": {
+    "title": "Injectivity",
+    "definition": "A function is injective when distinct domain points cannot have the same output.",
+    "returns": "TruthValue.TRUE, FALSE, or UNKNOWN. Parameter-stratified results are returned as a SymPy `Piecewise` by default; `return_result=True` preserves the full `PropertyResult`.",
+    "domain": "The query is interpreted on the supplied domain, not from the expression in isolation. When symbolic parameters change the property, funcprops preserves those cases as guarded parameter strata. Assumptions are proof hypotheses: they can simplify a stratum or branch condition, but they do not justify numerical guessing.",
+    "proof": "Strict monotonicity, symmetry/periodicity obstructions, affine/structural rules, shared partitions, and exact collision reasoning where available.",
+    "limits": "General multivariate and transcendental injectivity are difficult; UNKNOWN is preferred to a heuristic collision claim.",
+    "applications": "Check whether an inverse can be single-valued on the requested source domain."
+  },
+  "homogeneity": {
+    "title": "Homogeneity",
+    "definition": "A function is homogeneous when a common scaling of its variables produces a fixed power of the scale; weighted homogeneity allows variable-specific weights.",
+    "returns": "A Homogeneity value by default; return_result=True exposes degree, weights, and parameter conditions.",
+    "domain": "The scaling identity is checked on the natural source domain under its scaling premises, intrinsic coordinate assumptions and supplied assumptions. This API has no domain keyword. Weighted homogeneity assigns one weight per coordinate; parameter-dependent conclusions retain their guards.",
+    "proof": "Polynomial weighted-degree grouping, exact scaling identities, parameter strata, and structural closure.",
+    "limits": "General nonpolynomial quasi-homogeneous identities may require simplification or assumptions beyond the current proof rules.",
+    "applications": "Check exact scaling laws before reducing variables or rescaling an optimization problem."
+  },
+  "change_of_variables": {
+    "title": "Change of variables",
+    "definition": "Change-of-variables geometry records the local measure factor Abs(det J) for a square locally invertible coordinate transformation.",
+    "returns": "A ChangeOfVariablesCertificate containing the Jacobian, determinant, absolute determinant, orientation, local-invertibility certificate, and classification.",
+    "domain": "The query is interpreted on the supplied domain, not from the expression in isolation. When symbolic parameters change the property, funcprops preserves those cases as guarded parameter strata. Assumptions are proof hypotheses: they can simplify a stratum or branch condition, but they do not justify numerical guessing.",
+    "proof": "Exact Jacobian/determinant computation plus local-invertibility certification and symbolic verification of the absolute determinant factor.",
+    "limits": "The certificate is local and does not by itself prove a globally one-to-one parametrization or account for multiplicity across a noninjective map.",
+    "applications": "Use the executable change of variables examples to check the corresponding source, domain and branch premises before consuming the result in a larger analysis."
+  },
+  "boundary_behavior": {
+    "title": "Boundary behavior",
+    "definition": "Boundary behavior records certified limits at unbounded real-domain escape directions relevant to global geometry.",
+    "returns": "A BoundaryBehavior summary containing the analyzed domain, certified BoundaryLimit records, completeness, and provenance.",
+    "domain": "The query is interpreted on the supplied domain, not from the expression in isolation. When symbolic parameters change the property, funcprops preserves those cases as guarded parameter strata. Assumptions are proof hypotheses: they can simplify a stratum or branch condition, but they do not justify numerical guessing.",
+    "proof": "Exact symbolic one-sided limits at real escape boundaries, while unsupported multivariate radial escape geometry remains unresolved.",
+    "limits": "General multivariate escape directions are not exhaustively classified; an incomplete result explicitly preserves that limitation.",
+    "applications": "Use the executable boundary behavior examples to check the corresponding source, domain and branch premises before consuming the result in a larger analysis."
+  },
+  "continuous": {
+    "title": "Continuity",
+    "definition": "Continuity certifies that the function has no value/limit mismatch at points of the requested domain.",
+    "returns": "Continuity.CONTINUOUS, DISCONTINUOUS, or UNKNOWN. Parameter-stratified results are returned as a SymPy `Piecewise` by default; `return_result=True` preserves the rich result and evidence.",
+    "domain": "The query is interpreted on the supplied domain, not from the expression in isolation. When symbolic parameters change the property, funcprops preserves those cases as guarded parameter strata. Assumptions are proof hypotheses: they can simplify a stratum or branch condition, but they do not justify numerical guessing.",
+    "proof": "Structural closure, one-sided interface limits for Piecewise expressions, singularity analysis, and domain restriction.",
+    "limits": "Complicated limit problems can remain UNKNOWN.",
+    "applications": "Check source holes, branch cuts and Piecewise seams before using interval theorems."
+  },
+  "oscillation": {
+    "title": "Oscillation",
+    "definition": "Oscillation distinguishes persistent oscillation, finite oscillatory behavior, and nonoscillatory behavior on the selected domain.",
+    "returns": "An Oscillation classification by default; return_result=True exposes supporting partitions and evidence.",
+    "domain": "The query is interpreted on the supplied domain, not from the expression in isolation. When symbolic parameters change the property, funcprops preserves those cases as guarded parameter strata. Assumptions are proof hypotheses: they can simplify a stratum or branch condition, but they do not justify numerical guessing.",
+    "proof": "Zeros, extrema, monotone partitions, periodic structure, asymptotic behavior, and special-function knowledge.",
+    "limits": "Highly irregular or parameter-dependent oscillation can remain UNKNOWN without a certifiable infinite pattern.",
+    "applications": "Distinguish finite turning behavior from supported infinite oscillation without treating samples as a global theorem."
+  },
+  "analytic": {
+    "title": "Analyticity",
+    "definition": "Analyticity certifies local representation by convergent power series throughout the requested domain.",
+    "returns": "Analyticity.ANALYTIC, NOT_ANALYTIC, or UNKNOWN. Parameter-stratified results are returned as a SymPy `Piecewise` by default; `return_result=True` preserves the rich result and evidence.",
+    "domain": "The query is interpreted on the supplied domain, not from the expression in isolation. When symbolic parameters change the property, funcprops preserves those cases as guarded parameter strata. Assumptions are proof hypotheses: they can simplify a stratum or branch condition, but they do not justify numerical guessing.",
+    "proof": "Singularity/branch analysis, analytic closure rules, piecewise interface checks, domain restrictions, and theorem-backed function facts.",
+    "limits": "Real analyticity is stricter than smoothness; unresolved branch or singularity structure can produce UNKNOWN.",
+    "applications": "Check branch and seam hypotheses for local analytic arguments or contour operations."
+  },
+  "sign": {
+    "title": "Sign",
+    "definition": "Sign classification determines whether an expression is positive, nonnegative, zero, nonpositive, negative, or sign-changing throughout a domain.",
+    "returns": "A Sign value or a SymPy Piecewise for guarded parameter cases; `return_result=True` preserves the full PropertyResult, evidence, and implied weaker sign classes.",
+    "domain": "The query is interpreted on the supplied domain, not from the expression in isolation. When symbolic parameters change the property, funcprops preserves those cases as guarded parameter strata. Assumptions are proof hypotheses: they can simplify a stratum or branch condition, but they do not justify numerical guessing.",
+    "proof": "Bounded rational Sturm sign charts, guarded monotone threshold comparisons, exact central trigonometric charts, structural closure, registry facts and general certified fallbacks.",
+    "limits": "A result of UNKNOWN means the available proof engines could not certify a uniform sign; it does not mean the sign is arbitrary.",
+    "applications": "Prove an inequality under explicit input restrictions, or select regions on which a denominator stays nonzero."
+  },
+  "branch_points": {
+    "title": "Branch points",
+    "definition": "Branch-point analysis identifies points around which analytic continuation can change the value of a multivalued function.",
+    "returns": "A Boolean branch-point locus by default; return_result=True returns the supporting Singularity records.",
+    "domain": "The query uses the natural source domain and the supplied assumptions. This API has no domain keyword. Parameter-dependent singularity or branch conditions remain explicit in the detailed result.",
+    "proof": "Known principal-branch structure, compositional preimages, algebraic/logarithmic branch rules, and assumptions.",
+    "limits": "General nested transcendental preimages can be difficult to reduce to a simple exact locus.",
+    "applications": "Use the executable branch points examples to check the corresponding source, domain and branch premises before consuming the result in a larger analysis."
+  },
+  "zeros": {
+    "title": "Zeros",
+    "definition": "The zero set contains the domain points at which the expression is exactly zero.",
+    "returns": "Usually a SymPy Set; return_result=True exposes structured/conditional information.",
+    "domain": "The query is interpreted on the supplied domain, not from the expression in isolation. When symbolic parameters change the property, funcprops preserves those cases as guarded parameter strata. Assumptions are proof hypotheses: they can simplify a stratum or branch condition, but they do not justify numerical guessing.",
+    "proof": "Exact algebraic solving, semialgebraic reduction, monotone partitions, structural special-function rules, and guarded parameter cases.",
+    "limits": "Infinite or transcendental zero sets may require structured representations, and numerical roots are opt-in and are not mixed with exact results.",
+    "applications": "Locate candidate stationary points, source exclusions or intersections and retain whether the root description is exhaustive."
+  },
+  "level_boundedness": {
+    "title": "Level boundedness",
+    "definition": "A function is level-bounded when every sublevel set is bounded; on Euclidean spaces this is the coercivity notion used by the attainment machinery.",
+    "returns": "TruthValue.TRUE, FALSE, or UNKNOWN by default; return_result=True returns the level-boundedness certificate and evidence.",
+    "domain": "The query is interpreted on the supplied domain, not from the expression in isolation. When symbolic parameters change the property, funcprops preserves those cases as guarded parameter strata. Assumptions are proof hypotheses: they can simplify a stratum or branch condition, but they do not justify numerical guessing.",
+    "proof": "Bounded-domain closure, positive-infinity escape limits, strong convexity, and separable coercivity implications.",
+    "limits": "The proof engine uses sufficient structural implications and does not claim a complete decision procedure for general multivariate coercivity.",
+    "applications": "Use the executable level boundedness examples to check the corresponding source, domain and branch premises before consuming the result in a larger analysis."
+  },
+  "bijective": {
+    "title": "Bijectivity",
+    "definition": "A function is bijective when it is both injective on its domain and surjective onto its codomain.",
+    "returns": "TruthValue.TRUE, FALSE, or UNKNOWN. Parameter-stratified results are returned as a SymPy `Piecewise` by default; `return_result=True` preserves the full `PropertyResult`.",
+    "domain": "The query is interpreted on the supplied domain, not from the expression in isolation. When symbolic parameters change the property, funcprops preserves those cases as guarded parameter strata. Assumptions are proof hypotheses: they can simplify a stratum or branch condition, but they do not justify numerical guessing.",
+    "proof": "Composition of certified injectivity and surjectivity with shared structural shortcuts.",
+    "limits": "UNKNOWN from either component generally propagates unless an independent bijection theorem applies.",
+    "applications": "Check both source uniqueness and target coverage before constructing an inverse."
+  },
+  "domain": {
+    "title": "Domain",
+    "definition": "The domain is the set of input values for which the expression is defined under the selected real-domain convention.",
+    "returns": "A SymPy logical condition, or a stratified result when parameter cases must be separated.",
+    "domain": "The query is interpreted on the supplied domain, not from the expression in isolation. When symbolic parameters change the property, funcprops preserves those cases as guarded parameter strata. Assumptions are proof hypotheses: they can simplify a stratum or branch condition, but they do not justify numerical guessing.",
+    "proof": "Expression-domain rules, algebraic constraints, radical/logarithm restrictions, denominator exclusions, and exact semialgebraic reduction.",
+    "limits": "Complicated transcendental preimages and unresolved parameter relations can prevent a fully simplified condition.",
+    "applications": "Check where a later optimization, integration or inverse query is defined before simplifying its source."
+  },
+  "symmetry": {
+    "title": "Symmetry",
+    "definition": "Symmetry detects even, odd, both, central, neither, or unresolved symmetry relative to a chosen center.",
+    "returns": "A Symmetry value by default; return_result=True exposes center and evidence.",
+    "domain": "The query is interpreted on the supplied domain, not from the expression in isolation. When symbolic parameters change the property, funcprops preserves those cases as guarded parameter strata. Assumptions are proof hypotheses: they can simplify a stratum or branch condition, but they do not justify numerical guessing.",
+    "proof": "Exact substitutions around the center, structural identities, domain compatibility, and simplification.",
+    "limits": "Symbolic equivalence that SymPy cannot prove can leave symmetry UNKNOWN even when the identity is mathematically true.",
+    "applications": "Reduce paired domain calculations while retaining the required reflection or central-symmetry support."
+  },
+  "poles": {
+    "title": "Poles",
+    "definition": "Pole analysis identifies isolated singularities with finite negative local order and records multiplicity when known.",
+    "returns": "A list of (pole, multiplicity) pairs by default; return_result=True returns the supporting Singularity records.",
+    "domain": "The query uses the natural source domain and the supplied assumptions. This API has no domain keyword. Parameter-dependent singularity or branch conditions remain explicit in the detailed result.",
+    "proof": "Local order, rational denominator structure, special-function singularity facts, and guarded parameter analysis.",
+    "limits": "Multiplicity can be unknown when local cancellation or parameter dependence cannot be resolved exactly.",
+    "applications": "Use the executable poles examples to check the corresponding source, domain and branch premises before consuming the result in a larger analysis."
+  },
+  "singularities": {
+    "title": "Singularities",
+    "definition": "This query returns the Boolean locus where a function is singular: the disjunction of poles, removable and essential singularities, branch points and cuts, definition cuts, and discontinuities.",
+    "returns": "A SymPy Boolean condition by default; return_result=True returns a SingularityResult with classified Boolean loci and supporting records.",
+    "domain": "The query is interpreted on the supplied domain, not from the expression in isolation. When symbolic parameters change the property, funcprops preserves those cases as guarded parameter strata. Assumptions are proof hypotheses: they can simplify a stratum or branch condition, but they do not justify numerical guessing.",
+    "proof": "Shared structural singularity traversal and branch analysis, followed by guard-aware locus union and ConditionalExpression restriction.",
+    "limits": "Use singularity_analysis when completeness and unknown function heads matter to a proof.",
+    "applications": "Use the executable singularities examples to check the corresponding source, domain and branch premises before consuming the result in a larger analysis."
+  },
+  "periodicity": {
+    "title": "Periodicity",
+    "definition": "Periodicity detects constants, periodic functions and certified aperiodic cases; return_result=True can include a certified period.",
+    "returns": "A Periodicity value by default; return_result=True returns the period and evidence when available.",
+    "domain": "The query is interpreted on the supplied domain, not from the expression in isolation. When symbolic parameters change the property, funcprops preserves those cases as guarded parameter strata. Assumptions are proof hypotheses: they can simplify a stratum or branch condition, but they do not justify numerical guessing.",
+    "proof": "Structural periodic identities, affine pullbacks, compatible-period combination, parameter assumptions, and exact simplification.",
+    "limits": "Failure to find a period is not by itself proof of aperiodicity; UNKNOWN is used when no aperiodicity theorem applies.",
+    "applications": "Reduce a supported infinite-domain problem to a fundamental period with exact endpoint ownership."
+  },
+  "transformation_geometry": {
+    "title": "Transformation geometry",
+    "definition": "Transformation geometry collects the derivative, determinant, local-invertibility, orientation, and change-of-variables facts for an explicit coordinate map.",
+    "returns": "A TransformationGeometry summary containing the exact Jacobian and the associated transformation certificates.",
+    "domain": "The query is interpreted on the supplied domain, not from the expression in isolation. When symbolic parameters change the property, funcprops preserves those cases as guarded parameter strata. Assumptions are proof hypotheses: they can simplify a stratum or branch condition, but they do not justify numerical guessing.",
+    "proof": "Delegation to the Jacobian, determinant-nonvanishing, inverse-function-theorem, and local measure-factor proof engines.",
+    "limits": "Global bijectivity is outside this local summary and must be established separately when an application requires it.",
+    "applications": "Use the executable transformation geometry examples to check the corresponding source, domain and branch premises before consuming the result in a larger analysis."
+  },
+  "complete_monotonicity": {
+    "title": "Complete monotonicity",
+    "definition": "A function is completely monotone when all derivatives exist and (-1)^n f^(n)(x) is nonnegative for every nonnegative integer n on the requested domain.",
+    "returns": "TruthValue.TRUE, FALSE, or UNKNOWN; return_result=True exposes a CompleteMonotonicityCertificate when a theorem-backed proof is available.",
+    "domain": "The query is interpreted on the supplied domain, not from the expression in isolation. When symbolic parameters change the property, funcprops preserves those cases as guarded parameter strata. Assumptions are proof hypotheses: they can simplify a stratum or branch condition, but they do not justify numerical guessing.",
+    "proof": "Theorem-backed families, structural exponential kernels, parameter guards, and exact domain implication.",
+    "limits": "The implementation certifies supported sufficient theorem families; absence of a matching theorem yields UNKNOWN.",
+    "applications": "Recognize supported derivative-sign patterns used in Laplace-transform and positivity arguments."
+  },
+  "jacobian": {
+    "title": "Jacobian",
+    "definition": "The Jacobian is the matrix of first partial derivatives of an explicit coordinate map with respect to its analysis variables.",
+    "returns": "The exact SymPy Jacobian matrix by default; return_result=True returns a replayable JacobianCertificate with derivative evidence.",
+    "domain": "Differentiate the supplied map with respect to the declared coordinates. Assumptions can refine symbolic coefficients; this API has no domain keyword. A Jacobian alone does not certify a local or global inverse.",
+    "proof": "Exact symbolic differentiation, including registered derivative rules where available, with structural replay of the derivative matrix.",
+    "limits": "The Jacobian matrix alone does not establish injectivity, global invertibility, or domain-wide nonvanishing of its determinant.",
+    "applications": "Use the executable jacobian examples to check the corresponding source, domain and branch premises before consuming the result in a larger analysis."
+  },
+  "mode_existence": {
+    "title": "Mode existence",
+    "definition": "Mode-existence analysis certifies structural attainment of a global minimum or maximum on the requested domain.",
+    "returns": "TruthValue.TRUE, FALSE, or UNKNOWN by default; return_result=True returns the attainment certificate and evidence.",
+    "domain": "The query is interpreted on the supplied domain, not from the expression in isolation. When symbolic parameters change the property, funcprops preserves those cases as guarded parameter strata. Assumptions are proof hypotheses: they can simplify a stratum or branch condition, but they do not justify numerical guessing.",
+    "proof": "A Weierstrass-style implication combines continuity, closedness, and level-boundedness; maxima are reduced to level-boundedness of the negated objective.",
+    "limits": "Failure to prove the structural hypotheses is reported as unresolved.",
+    "applications": "Use the executable mode existence examples to check the corresponding source, domain and branch premises before consuming the result in a larger analysis."
+  },
+  "smoothness": {
+    "title": "Smoothness",
+    "definition": "Smoothness records continuity, the certified differentiability order, C-infinity status, analyticity, and exceptional loci.",
+    "returns": "A SmoothnessResult with regularity fields and evidence.",
+    "domain": "The query is interpreted on the supplied domain, not from the expression in isolation. When symbolic parameters change the property, funcprops preserves those cases as guarded parameter strata. Assumptions are proof hypotheses: they can simplify a stratum or branch condition, but they do not justify numerical guessing.",
+    "proof": "Analytic-implies-smooth closure, structural regularity rules, branch/interface checks, and bounded derivative-order certification.",
+    "limits": "Finite-order search can understate differentiability when no structural C-infinity proof is available.",
+    "applications": "Establish the supported derivative order needed for Taylor bounds or local approximation."
+  },
+  "convexity": {
+    "title": "Convexity",
+    "definition": "Convexity classifies ordinary, strict, strong, affine, concave, log-, quasi-, and pseudo-convex/concave behavior when certifiable.",
+    "returns": "A Convexity value or a SymPy Piecewise for parameter-dependent classifications; `return_result=True` preserves the full PropertyResult and normalized ConvexityCertificate.",
+    "domain": "The query is interpreted on the supplied domain, not from the expression in isolation. When symbolic parameters change the property, funcprops preserves those cases as guarded parameter strata. Assumptions are proof hypotheses: they can simplify a stratum or branch condition, but they do not justify numerical guessing.",
+    "proof": "Second-derivative/Hessian inequalities, rational-box C2 diagonal-dominance bounds, semialgebraic certification, composition rules, strong-modulus bounds, Piecewise slope-interface checks, and theorem-backed facts.",
+    "limits": "Secondary notions are often certified by sufficient implications.",
+    "applications": "Check sufficient hypotheses for optimization and separate strict, weak and unresolved curvature."
+  },
+  "singularity_analysis": {
+    "title": "Singularity analysis",
+    "definition": "Detailed singularity analysis reports analytic obstructions together with completeness and unresolved-head information.",
+    "returns": "A SingularityAnalysis object containing singularity groups, domain exterior, completeness, unknown heads, and provenance.",
+    "domain": "The query is interpreted on the supplied domain, not from the expression in isolation. When symbolic parameters change the property, funcprops preserves those cases as guarded parameter strata. Assumptions are proof hypotheses: they can simplify a stratum or branch condition, but they do not justify numerical guessing.",
+    "proof": "Structural traversal, local singularity classification, branch analysis, discontinuity analysis, and domain comparison.",
+    "limits": "complete=False is an explicit warning that the returned inventory is not exhaustive.",
+    "applications": "Use the executable singularity analysis examples to check the corresponding source, domain and branch premises before consuming the result in a larger analysis."
+  },
+  "boundedness": {
+    "title": "Boundedness",
+    "definition": "Boundedness records whether the image is bounded above, below, both, or neither on the requested domain.",
+    "returns": "A Boundedness value or a SymPy Piecewise for parameter-dependent classifications; `return_result=True` preserves the full PropertyResult.",
+    "domain": "The query is interpreted on the supplied domain, not from the expression in isolation. When symbolic parameters change the property, funcprops preserves those cases as guarded parameter strata. Assumptions are proof hypotheses: they can simplify a stratum or branch condition, but they do not justify numerical guessing.",
+    "proof": "Cheap structural closure rules first, followed by range/extremum reasoning, limits, periodic structure, and parameter stratification.",
+    "limits": "Failure to prove a finite extremum or range enclosure can yield UNKNOWN even when the function is mathematically bounded.",
+    "applications": "Check whether global bounds can support optimization or a regularity argument on the requested domain."
+  },
+  "monotonicity": {
+    "title": "Monotonicity",
+    "definition": "Monotonicity classifies a function as strictly increasing/decreasing, weakly monotone, constant, non-monotone, or unknown on a domain.",
+    "returns": "A Monotonicity value, a SymPy Piecewise for parameter-dependent classifications, or an interval decomposition when requested; `return_result=True` preserves the full PropertyResult when one is produced.",
+    "domain": "The query is interpreted on the supplied domain, not from the expression in isolation. When symbolic parameters change the property, funcprops preserves those cases as guarded parameter strata. Assumptions are proof hypotheses: they can simplify a stratum or branch condition, but they do not justify numerical guessing.",
+    "proof": "Derivative-sign certification, shared monotone partitions, structural composition rules, theorem-backed special functions, piecewise interface checks, and parameter strata.",
+    "limits": "Disconnected domains and functions with many turning points may require interval output.",
+    "applications": "Justify ordered search or inverse uniqueness while retaining branch jumps and disconnected-domain seams."
+  },
+  "differentiability": {
+    "title": "Differentiability",
+    "definition": "Differentiability asks whether derivatives exist throughout a domain, optionally through a requested finite order.",
+    "returns": "A Differentiability value or a SymPy Piecewise for parameter-dependent classifications; `return_result=True` preserves the full PropertyResult with regularity evidence.",
+    "domain": "The query is interpreted on the supplied domain, not from the expression in isolation. When symbolic parameters change the property, funcprops preserves those cases as guarded parameter strata. Assumptions are proof hypotheses: they can simplify a stratum or branch condition, but they do not justify numerical guessing.",
+    "proof": "The smoothness engine, domain-aware exceptional-locus analysis, analytic closure rules, and certified finite-order derivative checks.",
+    "limits": "The bounded max_order search is a certification limit, not a claim that higher derivatives fail to exist.",
+    "applications": "Determine whether a derivative-based argument is valid through every active seam in the requested domain."
+  },
+  "range": {
+    "title": "Range",
+    "definition": "The range is the set of output values attained by the expression on the requested input constraints.",
+    "returns": "A SymPy condition in the output symbol, possibly wrapped in a conditional PropertyResult for parameter strata.",
+    "domain": "The query is interpreted on the supplied domain, not from the expression in isolation. When symbolic parameters change the property, funcprops preserves those cases as guarded parameter strata. Assumptions are proof hypotheses: they can simplify a stratum or branch condition, but they do not justify numerical guessing.",
+    "proof": "Semialgebraic elimination, monotone partitions, endpoint limits, extrema, structural special-function facts, and exact set reasoning.",
+    "limits": "There is no general completeness guarantee for arbitrary transcendental inputs; unsupported cases remain unresolved.",
+    "applications": "Determine reachable outputs on a restricted interval and whether a requested target can be attained."
+  },
+  "meromorphic": {
+    "title": "Meromorphicity",
+    "definition": "A meromorphic function is analytic except for isolated poles on the domain under consideration.",
+    "returns": "Meromorphicity.MEROMORPHIC, NOT_MEROMORPHIC, or UNKNOWN. Parameter-stratified results are returned as a SymPy `Piecewise` by default; `return_result=True` preserves the rich result and evidence.",
+    "domain": "The query uses the natural source domain and the supplied assumptions. This API has no domain keyword. Parameter-dependent singularity or branch conditions remain explicit in the detailed result.",
+    "proof": "Structural singularity traversal, branch-point/cut exclusion, pole classification, and known meromorphic closure rules.",
+    "limits": "Natural boundaries, unresolved singularity heads, or branch structure may prevent a complete classification.",
+    "applications": "Check whether isolated-pole methods can apply on a requested complex region."
+  },
+  "lipschitz": {
+    "title": "Lipschitz continuity",
+    "definition": "A Lipschitz bound L controls |f(x)-f(y)| <= L|x-y| for all pairs of source-defined points in the requested domain.",
+    "returns": "A certified constant when available, otherwise a TruthValue. return_result=True returns LipschitzResult with value, constant, optimal, domain, source, evidence and optional proof. Finite-domain results expose standalone verify(), complete, certified and source-binding fields. Other routes can give proved values without standalone replay. Affine interval constants are optimal when the real affine premises hold.",
+    "proof": "Exact finite-domain secant maxima, constant functions, continuity obstructions and sufficient derivative bounds on intervals.",
+    "limits": "Disconnected domains cannot inherit a global pairwise bound merely from derivative bounds on their separate components. Symbolic point collisions and unresolved bounds remain UNKNOWN.",
+    "domain": "Use variable for the real scalar coordinate, domain for its support, and assumptions for parameter guards. The public API also accepts conditional expressions and return_result=True. Natural-domain restrictions and supported branch/seam rules remain relevant. A detailed evidence record is not automatically a registered replay certificate; inspect its concrete type and result contract.",
+    "applications": "Certify a global distance bound on an interval or an exact finite source set, and inspect its optimality separately from replay support."
+  },
+  "uniformly_continuous": {
+    "title": "Uniform continuity",
+    "definition": "Uniform continuity requires one input-distance bound for every pair of domain points at a given output tolerance.",
+    "returns": "TruthValue.TRUE, FALSE or UNKNOWN; return_result=True exposes a DetailedPropertyResult.",
+    "proof": "Finite domains, continuity on compact domains, Lipschitz implications and guarded nonlinear-polynomial obstructions on the whole real line.",
+    "limits": "Failure to prove a Lipschitz constant does not disprove uniform continuity. Unsupported domains and unresolved continuity remain UNKNOWN.",
+    "domain": "Use variable for the real scalar coordinate, domain for its support, and assumptions for parameter guards. The public API also accepts conditional expressions and return_result=True. Natural-domain restrictions and supported branch/seam rules remain relevant. A detailed evidence record is not automatically a registered replay certificate; inspect its concrete type and result contract.",
+    "applications": "Check whether one continuity tolerance can control every pair in a noncompact or restricted domain."
+  },
+  "holder_regularity": {
+    "title": "H\u00f6lder regularity",
+    "definition": "A H\u00f6lder bound controls |f(x)-f(y)| by C|x-y|**alpha for a supported alpha in (0,1].",
+    "returns": "A certified exponent or None when unresolved. return_result=True gives HolderRegularityResult with exponent, constant, optimal, domain, source and evidence. optimal refers to the supported exponent claim, not a universal claim of the best constant.",
+    "proof": "Finite-domain Lipschitz implications, supported principal power cusps near zero and interval Lipschitz proofs.",
+    "limits": "Supported sufficient rules do not discover every possible H\u00f6lder exponent. The source domain and approach to a cusp must be established.",
+    "domain": "Use variable for the real scalar coordinate, domain for its support, and assumptions for parameter guards. The public API also accepts conditional expressions and return_result=True. Natural-domain restrictions and supported branch/seam rules remain relevant. A detailed evidence record is not automatically a registered replay certificate; inspect its concrete type and result contract.",
+    "applications": "Obtain a supported power-law continuity exponent near a cusp where a Lipschitz bound may fail."
+  },
+  "variation": {
+    "title": "Total variation",
+    "definition": "Total variation is the supremum of sums of absolute increments along ordered finite partitions of the requested real interval.",
+    "returns": "A certified total variation, oo when proved infinite, or None when unresolved. return_result=True returns VariationResult with bounded_variation, total_variation, domain, source, evidence and optional proof. Supported finite motion/jump proofs expose verify(), complete, certified and source binding. Other variation routes can have no standalone replay proof.",
+    "proof": "Supported monotone/smooth interval rules and exact Piecewise branch motion, one-sided jumps and owned singleton values.",
+    "limits": "Arbitrary branch/seam limits and unsupported domain geometry can remain unresolved. A singleton spike contributes both incident jumps when both sides belong to the interval.",
+    "domain": "Use variable for the real scalar coordinate, domain for its support, and assumptions for parameter guards. The public API also accepts conditional expressions and return_result=True. Natural-domain restrictions and supported branch/seam rules remain relevant. A detailed evidence record is not automatically a registered replay certificate; inspect its concrete type and result contract.",
+    "applications": "Measure all monotone motion and owned jumps before invoking bounded-variation integration results."
+  },
+  "integrability": {
+    "title": "Integrability",
+    "definition": "Integrability separates Riemann, local, absolute and improper integral notions on the declared domain.",
+    "returns": "IntegrabilityResult in both compact and detailed modes, with independent riemann, locally_integrable, absolutely_integrable and improper_integrable TruthValue fields, optional integral/absolute_integral, domain, exceptional_loci and evidence.",
+    "proof": "Continuity on compact intervals, supported source-domain checks and exact convergence/evaluation of symbolic integrals.",
+    "limits": "A successful principal-value calculation is not a proof of ordinary improper integrability. Unresolved symbolic integrals retain UNKNOWN fields; different integrability notions must not be conflated.",
+    "domain": "Use variable for the real scalar coordinate, domain for its support, and assumptions for parameter guards. The public API also accepts conditional expressions and return_result=True. Natural-domain restrictions and supported branch/seam rules remain relevant. A detailed evidence record is not automatically a registered replay certificate; inspect its concrete type and result contract.",
+    "applications": "Separate ordinary, local, absolute and improper integrability; a principal value does not establish the ordinary integral."
+  }
+}

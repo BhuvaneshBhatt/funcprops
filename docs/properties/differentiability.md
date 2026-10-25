@@ -8,11 +8,23 @@ Differentiability asks whether derivatives exist throughout a domain, optionally
 
 ## API and return values
 
-```python
-differentiability(expr, variable, *, domain=True, order=None, all_properties=False, max_order=6, assumptions=True, return_result=False)
+```text
+differentiability(expr, variable, *, domain=True, order=None, all_properties=False, max_order=6, work_budget=None, assumptions=True, return_result=False)
 ```
 
 A Differentiability value or a SymPy Piecewise for parameter-dependent classifications; `return_result=True` preserves the full PropertyResult with regularity evidence.
+
+| Parameter | Meaning |
+| --- | --- |
+| `expr` | SymPy expression whose global property is queried. |
+| `variable` | Independent scalar coordinate. Real and native complex routes have different assumption requirements; see result contracts. |
+| `domain` | Input domain or logical condition. The default depends on the property family. |
+| `order` | Requested differentiability order; omitted means the strongest certified regularity class. |
+| `all_properties` | Return the primary classification together with certified implied properties. |
+| `max_order` | Maximum finite derivative order tried when no structural smoothness proof is available. |
+| `work_budget` | Optional positive wall budget in seconds; exhaustion follows the operation-specific incomplete/unknown contract. |
+| `assumptions` | Symbolic hypotheses used while proving the property. |
+| `return_result` | Return structured metadata, certificates, or diagnostics. |
 
 ## Domains, assumptions, and parameters
 
@@ -30,7 +42,7 @@ import funcprops as fp
 
 x, y = sp.symbols("x y", real=True)
 result = fp.differentiability(sp.Abs(x), x)
-result
+assert result is fp.Differentiability.NOT_DIFFERENTIABLE
 ```
 
 Expected: ``Differentiability.NOT_DIFFERENTIABLE``.
@@ -39,7 +51,7 @@ Application: Check whether derivative-based solvers are valid on an entire domai
 
 ## Applications
 
-This property is useful whenever later mathematics depends on a global qualitative fact, not isolated samples. Typical uses include symbolic preprocessing, theorem-hypothesis verification, optimization, inverse problems, robust numerical method selection, and simplifying downstream case analysis.
+Determine whether a derivative-based argument is valid through every active seam in the requested domain.
 
 ## How funcprops proves it
 
@@ -61,4 +73,4 @@ The bounded max_order search is a certification limit, not a claim that higher d
 
 ## Source
 
-The implementation is exposed through [`funcprops.api`](https://github.com/BhuvaneshBhatt/funcprops/blob/main/src/funcprops/api.py).
+The callable is exported through funcprops; its implementation module is [`funcprops.real_analysis.differentiability`](https://github.com/BhuvaneshBhatt/funcprops/blob/main/src/funcprops/real_analysis/differentiability.py).

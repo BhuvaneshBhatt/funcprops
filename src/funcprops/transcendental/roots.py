@@ -2,13 +2,14 @@ from __future__ import annotations
 
 import contextlib
 import math
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 import sympy as sp
 from sympy import S
 
 from ..exactness import certify_identity_equal, certify_zero
 from ..exceptions import SYMBOLIC_QUERY_ERRORS
+from ..source_syntax import differentiate
 from .analytic import analytic_neighborhood
 from .periodic import PeriodicSet
 from .real_sign import robust_real_sign
@@ -17,22 +18,30 @@ from .zero_geometry import ZeroGeometryCertificate, zero_geometry
 
 @dataclass(frozen=True)
 class RootCertificate:
+    """Bind a real root count or location to a declared sufficient theorem."""
+
     domain: object
     root_count: int | None
     method: str
     proof: tuple[object, ...] = ()
     complete: bool = True
     multiplicity: int | None = None
+    expression: sp.Expr | None = None
+    variable: sp.Symbol | None = None
 
 
 @dataclass(frozen=True)
 class CertifiedRootInterval:
+    """Record an owned real root interval with multiplicity and evidence."""
+
     interval: sp.Interval
     certificate: RootCertificate
 
 
 @dataclass(frozen=True)
 class ParametricZeroFamily:
+    """Represent a guarded symbolic root family and its index domain."""
+
     count: sp.Expr
     support: sp.Set
     guard: sp.Expr = S.true
@@ -44,6 +53,8 @@ class ParametricZeroFamily:
 
 @dataclass(frozen=True)
 class RootIsolationResult:
+    """Expose real root locations, indexed families and unresolved coverage."""
+
     roots: tuple[sp.Expr, ...] = ()
     zero_intervals: tuple[sp.Interval, ...] = ()
     isolated_intervals: tuple[CertifiedRootInterval, ...] = ()
@@ -54,10 +65,90 @@ class RootIsolationResult:
     certificates: tuple[RootCertificate, ...] = ()
     parametric_families: tuple[ParametricZeroFamily, ...] = ()
     geometry: tuple[ZeroGeometryCertificate, ...] = ()
+    expression: sp.Expr | None = None
+    variable: sp.Symbol | None = None
+    domain: object = S.Reals
+    domain_record: object = None
+
+    @property
+    def scope(self):
+        return "real-root-data-on-requested-domain"
+
+    def verify(self):
+        """Return whether the record satisfies its declared replay obligations."""
+
+        try:
+            return self.certified is True
+        except (AttributeError, *SYMBOLIC_QUERY_ERRORS):
+            return False
+
+    @property
+    def evidence_certified(self):
+        """Whether recorded root evidence passes the current exact replay route.
+
+        This is independent of global completeness; unsupported numerical-only
+        payloads may contain useful certificates without exact replay support.
+        """
+        from ..verification import verify_root_certificate
+
+        certificates = self.certificates + tuple(
+            c.certificate for c in self.isolated_intervals
+        )
+        return bool(certificates) and all(
+            verify_root_certificate(c) for c in certificates
+        )
 
     @property
     def certified(self):
-        return self.complete
+        """Whether returned mathematical data agree with supported exact replay."""
+        if (
+            type(self.complete) is not bool
+            or self.expression is None
+            or self.variable is None
+            or not self.evidence_certified
+        ):
+            return False
+        try:
+            actual = transcendental_roots(
+                self.expression, self.variable, self.domain, allow_numerical=False
+            )
+            if self.domain_record is None or not self.domain_record.matches(
+                actual.domain_record
+            ):
+                return False
+            fields = (
+                "roots",
+                "zero_intervals",
+                "isolated_intervals",
+                "parametric_families",
+                "geometry",
+            )
+            if any(
+                any(item not in getattr(actual, key) for item in getattr(self, key))
+                for key in fields
+            ):
+                return False
+            if self.periodic is not None and self.periodic != actual.periodic:
+                return False
+            if self.complete:
+                return (
+                    actual.complete
+                    and all(
+                        getattr(self, key) == getattr(actual, key) for key in fields
+                    )
+                    and self.periodic == actual.periodic
+                )
+            return True
+        except SYMBOLIC_QUERY_ERRORS:
+            return False
+
+    @property
+    def has_certificate(self):
+        return bool(self.certificates or self.isolated_intervals)
+
+    @property
+    def has_local_certificates(self):
+        return bool(self.isolated_intervals)
 
 
 def _sort_unique(vals):
@@ -85,7 +176,7 @@ def _periodic(expr, var, domain):
     if ab is None:
         return None
     a, b = ab
-    if a == 0 or a.is_real is False:
+    if a.is_zero is not False or a.is_real is not True or b.is_real is not True:
         return None
     target = S.Zero if expr.func in (sp.sin, sp.tan) else sp.pi / 2
     p = sp.simplify(sp.pi / sp.Abs(a))
@@ -109,6 +200,8 @@ def _special(expr, var, domain):
         ab = _affine_data(expr.args[0], var)
         if ab:
             a, b = ab
+            if a.is_real is not True or b.is_real is not True or a.is_zero is not False:
+                return None
             r = sp.simplify(-b / a)
             rts = () if sp.Contains(r, domain) is S.false else (r,)
             c = RootCertificate(
@@ -561,7 +654,6 @@ def _certified_monotone_interval(expr, var, domain):
 
 
 def _exact_sign(value):
-    """Return -1, 0, or 1 only when the real sign is certified."""
     return robust_real_sign(value)
 
 
@@ -581,7 +673,7 @@ def _certified_multiplicity(expr, var, root, *, max_order=8):
         if sign is None:
             return None
         try:
-            current = sp.diff(current, var)
+            current = differentiate(current, var)
         except SYMBOLIC_QUERY_ERRORS:
             return None
     return None
@@ -744,7 +836,7 @@ def _certified_interval_resolution(expr, var, domain):
             )
 
     try:
-        derivative = sp.diff(expr, var)
+        derivative = differentiate(expr, var)
     except SYMBOLIC_QUERY_ERRORS:
         return None
     try:
@@ -1104,7 +1196,7 @@ def _validated_even_multiplicity_numeric(expr, var, domain, *, max_samples=96):
         b = mp.mpf(str(sp.N(domain.end, 50)))
         if not (mp.isfinite(a) and mp.isfinite(b) and a < b):
             return None
-        derivative = sp.diff(expr, var)
+        derivative = differentiate(expr, var)
         f = sp.lambdify(var, expr, "mpmath")
         df = sp.lambdify(var, derivative, "mpmath")
     except (ImportError, *SYMBOLIC_QUERY_ERRORS):
@@ -1290,7 +1382,9 @@ def _exponential_fourier_count(expr, var, domain):
     )
 
 
-def transcendental_roots(expr, var, domain=S.Reals, *, allow_numerical=True):
+def _transcendental_roots_impl(expr, var, domain=S.Reals, *, allow_numerical=True):
+    """Route supported real root problems through exact families and certified interval methods."""
+
     expr = sp.sympify(expr)
     var = sp.sympify(var)
     if expr == 0:
@@ -1300,6 +1394,10 @@ def transcendental_roots(expr, var, domain=S.Reals, *, allow_numerical=True):
             (), zi, complete=True, method="identically_zero", certificates=(c,)
         )
     if not expr.has(var):
+        if certify_zero(expr) is not False:
+            return RootIsolationResult(
+                complete=False, method="unresolved_constant", evidence=(sp.Eq(expr, 0),)
+            )
         c = RootCertificate(domain, 0, "constant", (expr,), True)
         return RootIsolationResult(
             (), complete=True, method="constant", certificates=(c,)
@@ -1379,3 +1477,29 @@ def transcendental_roots(expr, var, domain=S.Reals, *, allow_numerical=True):
         if r is not None:
             return r
     return RootIsolationResult(complete=False, method="unknown")
+
+
+def transcendental_roots(expr, var, domain=S.Reals, *, allow_numerical=True):
+    """Isolate roots and bind emitted evidence to the analyzed expression."""
+    expr, var = sp.sympify(expr), sp.sympify(var)
+    result = _transcendental_roots_impl(
+        expr, var, domain, allow_numerical=allow_numerical
+    )
+
+    def bind(cert):
+        return replace(cert, expression=expr, variable=var)
+
+    from ..domain_tracking import track_domain
+
+    return replace(
+        result,
+        domain_record=track_domain(expr, var, domain),
+        certificates=tuple(bind(c) for c in result.certificates),
+        expression=expr,
+        variable=var,
+        domain=domain,
+        isolated_intervals=tuple(
+            replace(c, certificate=bind(c.certificate))
+            for c in result.isolated_intervals
+        ),
+    )

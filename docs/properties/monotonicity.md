@@ -8,11 +8,24 @@ Monotonicity classifies a function as strictly increasing/decreasing, weakly mon
 
 ## API and return values
 
-```python
-monotonicity(expr, variable, *, domain=True, strict_inequalities=True, all_properties=False, intervals=False, partition=None, assumptions=True, return_result=False)
+```text
+monotonicity(expr, variable, *, domain=True, strict_inequalities=True, all_properties=False, intervals=False, partition=None, work_budget=None, assumptions=True, return_result=False)
 ```
 
 A Monotonicity value, a SymPy Piecewise for parameter-dependent classifications, or an interval decomposition when requested; `return_result=True` preserves the full PropertyResult when one is produced.
+
+| Parameter | Meaning |
+| --- | --- |
+| `expr` | SymPy expression whose global property is queried. |
+| `variable` | Independent scalar coordinate. Real and native complex routes have different assumption requirements; see result contracts. |
+| `domain` | Input domain or logical condition. The default depends on the property family. |
+| `strict_inequalities` | Whether strict classifications are distinguished from their weak implications. |
+| `all_properties` | Return the primary classification together with certified implied properties. |
+| `intervals` | Request an interval decomposition. |
+| `partition` | Optional precomputed monotonic partition for exact reuse. |
+| `work_budget` | Optional positive wall budget in seconds; exhaustion follows the operation-specific incomplete/unknown contract. |
+| `assumptions` | Symbolic hypotheses used while proving the property. |
+| `return_result` | Return structured metadata, certificates, or diagnostics. |
 
 ## Domains, assumptions, and parameters
 
@@ -30,7 +43,7 @@ import funcprops as fp
 
 x, y = sp.symbols("x y", real=True)
 result = fp.monotonicity(sp.exp(x), x)
-result
+assert result is fp.Monotonicity.STRICTLY_INCREASING
 ```
 
 Expected: ``Monotonicity.STRICTLY_INCREASING``.
@@ -39,7 +52,7 @@ Application: Certify uniqueness of inverse values and one-dimensional optimizati
 
 ## Applications
 
-This property is useful whenever later mathematics depends on a global qualitative fact, not isolated samples. Typical uses include symbolic preprocessing, theorem-hypothesis verification, optimization, inverse problems, robust numerical method selection, and simplifying downstream case analysis.
+Justify ordered search or inverse uniqueness while retaining branch jumps and disconnected-domain seams.
 
 ## How funcprops proves it
 
@@ -61,4 +74,4 @@ Disconnected domains and functions with many turning points may require interval
 
 ## Source
 
-The implementation is exposed through [`funcprops.api`](https://github.com/BhuvaneshBhatt/funcprops/blob/main/src/funcprops/api.py).
+The callable is exported through funcprops; its implementation module is [`funcprops.real_analysis.monotonicity`](https://github.com/BhuvaneshBhatt/funcprops/blob/main/src/funcprops/real_analysis/monotonicity.py).

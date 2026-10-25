@@ -9,12 +9,16 @@ import sympy as sp
 
 @dataclass
 class ProofBudget:
+    """Limit symbolic proof routes by effort and expression size."""
+
     max_cost: int = 100
     spent: int = 0
     attempted: list[str] = field(default_factory=list)
     skipped: list[str] = field(default_factory=list)
 
     def allow(self, route, cost):
+        """Decide whether the remaining proof budget admits the proposed work."""
+
         if cost < 0:
             raise ValueError("cost must be nonnegative")
         if self.spent + cost > self.max_cost:
@@ -26,21 +30,13 @@ class ProofBudget:
 
 
 def expression_cost(expr):
-    e = sp.sympify(expr)
-    ops = int(sp.count_ops(e, visual=False)) + 1
-    len(e.free_symbols)
-    len(e.args) if isinstance(e, sp.Piecewise) else 0
-    try:
-        syms = tuple(e.free_symbols)
-        if syms and e.is_polynomial(*syms):
-            max(0, int(sp.Poly(e, *syms).total_degree()))
-    except (sp.PolynomialError, TypeError, ValueError):
-        pass
-    sum(1 for a in sp.preorder_traversal(e) if getattr(a, "is_Function", False))
-    return ops
+    """Estimate proof-route work as one plus the symbolic operation count."""
+    return int(sp.count_ops(sp.sympify(expr), visual=False)) + 1
 
 
 def route_proofs(expr, routes, *, budget=None):
+    """Try eligible proof routes within the requested symbolic effort budget."""
+
     budget = budget or ProofBudget()
     accepted = []
     base = expression_cost(expr)

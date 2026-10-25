@@ -11,7 +11,8 @@ from funcprops import (
     surjective,
     zeros,
 )
-from funcprops.transcendental import PeriodicSet, RootIsolationResult
+from funcprops.transcendental.periodic import PeriodicSet
+from funcprops.transcendental.roots import RootIsolationResult
 
 x = sp.symbols("x", real=True)
 y = sp.symbols("y", real=True)

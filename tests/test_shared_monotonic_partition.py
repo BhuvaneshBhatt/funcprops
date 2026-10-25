@@ -78,7 +78,7 @@ def test_indexed_phase_not_guessed_without_theorem():
     p = monotonic_partition(
         sp.besselj(nu, x), x, domain=sp.Interval.open(0, sp.oo), return_result=True
     )
-    assert p.indexed is not None and p.indexed.complete
+    assert p.indexed.complete
     assert p.indexed.first_direction is None
     assert p.indexed.direction_pattern == ()
 
@@ -86,7 +86,6 @@ def test_indexed_phase_not_guessed_without_theorem():
 def test_support_completeness_is_not_domain_completeness():
     nu = sp.symbols("nu", real=True, nonnegative=True)
     p = monotonic_partition(sp.besselj(nu, x), x, domain=sp.S.Reals, return_result=True)
-    assert p.indexed is not None
     assert not p.complete
     # The contained positive indexed family is still enough to prove oscillation.
     assert (

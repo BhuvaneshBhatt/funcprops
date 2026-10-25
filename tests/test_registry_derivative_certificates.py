@@ -36,7 +36,7 @@ def test_unary_chain_rule_certificate():
     assert isinstance(cert, ChainRuleCertificate)
     assert cert.complete is True
     assert sp.expand(cert.derivative) == 4 * x**3
-    assert cert.verify() is True
+    assert cert.verify(registry=reg) is True
     assert cert.terms[0].argument_position == 0
 
 

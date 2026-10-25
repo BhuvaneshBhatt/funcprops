@@ -4,19 +4,28 @@
 
 ## Mathematical definition
 
-For a square coordinate map, determinant nonvanishing asks whether det J is nonzero everywhere on the requested domain.
+For a square real C1 map, determinant nonvanishing asks whether det J is nonzero everywhere on the requested domain.
 
 ## API and return values
 
-```python
-determinant_nonvanishing(expressions, variables, *, domain=Reals, assumptions=True, return_result=False)
+```text
+determinant_nonvanishing(expressions, variables, *, domain=Reals, assumptions=True, return_result=False, work_budget=None)
 ```
 
 TruthValue.TRUE, FALSE, or UNKNOWN by default; return_result=True returns the determinant-nonvanishing certificate and evidence.
 
+| Parameter | Meaning |
+| --- | --- |
+| `expressions` | Ordered expression sequence defining a coordinate transformation. |
+| `variables` | Independent symbol or ordered variable sequence for multivariate geometry. |
+| `domain` | Input domain or logical condition. The default depends on the property family. |
+| `assumptions` | Symbolic hypotheses used while proving the property. |
+| `return_result` | Return structured metadata, certificates, or diagnostics. |
+| `work_budget` | Optional positive wall budget in seconds; exhaustion follows the operation-specific incomplete/unknown contract. |
+
 ## Domains, assumptions, and parameters
 
-The query is interpreted on the supplied domain, not from the expression in isolation. When symbolic parameters change the property, funcprops preserves those cases as guarded parameter strata. Assumptions are proof hypotheses: they can simplify a stratum or branch condition, but they do not justify numerical guessing.
+The original map must be defined and C1 throughout nonempty, resolved real input support. Coordinate assumptions, raw source exclusions and parameter hypotheses remain premises. Empty or unresolved support and unproved regularity return UNKNOWN.
 
 ## Executable examples
 
@@ -29,8 +38,8 @@ import sympy as sp
 import funcprops as fp
 
 x, y = sp.symbols("x y", real=True)
-result = fp.determinant_nonvanishing((2*x + y, x - y), (x, y))
-result
+result = fp.determinant_nonvanishing((2 * x + y, x - y), (x, y))
+assert result is fp.TruthValue.TRUE
 ```
 
 Expected: a verified nonvanishing determinant ``-3``.
@@ -39,11 +48,11 @@ Application: Check the inverse-function-theorem rank hypothesis on an entire dom
 
 ## Applications
 
-This property is useful whenever later mathematics depends on a global qualitative fact, not isolated samples. Typical uses include symbolic preprocessing, theorem-hypothesis verification, optimization, inverse problems, robust numerical method selection, and simplifying downstream case analysis.
+Use the executable determinant nonvanishing examples to check the corresponding source, domain and branch premises before consuming the result in a larger analysis.
 
 ## How funcprops proves it
 
-Exact determinant simplification, assumptions, sign/nonzero reasoning, and semialgebraic zero-set certification where applicable.
+Source-bound domain and C1 checks, exact Jacobian reconstruction, assumptions and semialgebraic zero-set decisions. An inconclusive backend cannot establish exclusion.
 
 Successful conclusions are exact symbolic claims over the stated domain and assumptions. Detailed modes expose evidence or certificates where the property API supports them.
 
@@ -60,4 +69,4 @@ Nonsquare maps and determinant zero sets outside the supported symbolic/semialge
 
 ## Source
 
-The implementation is exposed through [`funcprops.api`](https://github.com/BhuvaneshBhatt/funcprops/blob/main/src/funcprops/api.py).
+The callable is exported through funcprops; its implementation module is [`funcprops.api`](https://github.com/BhuvaneshBhatt/funcprops/blob/main/src/funcprops/api.py).

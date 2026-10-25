@@ -47,7 +47,6 @@ def test_lambertw_optional_arity_rules_do_not_collide():
 def test_identity_rules_are_exact_but_not_automatically_recursive():
     x = sp.symbols("x")
     inst = rewrite_with_registry(sp.erfc(x))
-    assert inst is not None
     assert sp.simplify(inst.replacement - (1 - sp.erf(x))) == 0
 
 
@@ -63,7 +62,6 @@ def test_conservative_catalogue_case_adapter_on_real_catalogue_case():
     fam = registry().require("erf")
     case = fam.cases("LocallyAnalytic")[0]
     rule = adapt_catalogue_rule_case(sp.erf, "LocallyAnalytic", case)
-    assert rule is not None
     x = sp.symbols("x")
     inst = rule.instantiate(sp.erf(x))
     assert inst.subject == (x,)

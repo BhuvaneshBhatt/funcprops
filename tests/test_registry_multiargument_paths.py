@@ -54,7 +54,7 @@ def test_registered_gradient_is_certified_for_multiargument_outer():
     assert cert.gradient == (2 * u + v, u)
     assert cert.positions == (0, 1)
     assert cert.missing_positions == ()
-    assert cert.verify() is True
+    assert cert.verify(registry=reg) is True
 
 
 def test_path_derivative_is_gradient_dot_tangent():
@@ -63,10 +63,9 @@ def test_path_derivative_is_gradient_dot_tangent():
     cert = registry_derivative(G(x**2, sp.exp(x)), x, registry=reg)
     expected = (2 * x**2 + sp.exp(x)) * 2 * x + x**2 * sp.exp(x)
     assert cert.complete is True
-    assert cert.gradient_certificate is not None
     assert cert.gradient_certificate.gradient == (2 * x**2 + sp.exp(x), x**2)
     assert sp.simplify(cert.derivative - expected) == 0
-    assert cert.verify() is True
+    assert cert.verify(registry=reg) is True
 
 
 def test_joint_finite_zero_set_pulls_back_along_path():
@@ -86,7 +85,7 @@ def test_joint_finite_zero_set_pulls_back_along_path():
     assert out.result == sp.FiniteSet(1, 2)
 
 
-def test_multiargument_analyticity_requires_each_path_component_analytic():
+def test_multiargument_analyticity():
     pytest.importorskip("semialg")
     u = FunctionSlot(0, "u")
     v = FunctionSlot(1, "v")
@@ -97,7 +96,7 @@ def test_multiargument_analyticity_requires_each_path_component_analytic():
     assert out.result is Analyticity.ANALYTIC
 
 
-def test_multiargument_monotonicity_can_be_certified_from_path_derivative():
+def test_multiargument_path_derivative():
     u = FunctionSlot(0, "u")
     v = FunctionSlot(1, "v")
     reg = FunctionRegistry(
@@ -117,7 +116,7 @@ def test_multiargument_monotonicity_can_be_certified_from_path_derivative():
     assert any(item[0] == "chain-rule" for item in out.evidence)
 
 
-def test_missing_gradient_component_refuses_multiargument_monotonicity():
+def test_missing_gradient_component():
     u = FunctionSlot(0, "u")
     v = FunctionSlot(1, "v")
     reg = FunctionRegistry([], derivative_rules=[DerivativeRule(G, u, 1)])
@@ -128,7 +127,7 @@ def test_missing_gradient_component_refuses_multiargument_monotonicity():
     assert out.result is Monotonicity.UNKNOWN
 
 
-def test_multiple_analysis_variables_are_still_not_smuggled_in():
+def test_multiple_analysis_variables_are_not_smuggled_in():
     u = FunctionSlot(0, "u")
     v = FunctionSlot(1, "v")
     rule = PropertyRule(G, "sign", (u, v), result=Sign.POSITIVE)

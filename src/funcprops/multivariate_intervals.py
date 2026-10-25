@@ -6,6 +6,8 @@ from dataclasses import dataclass
 
 import sympy as sp
 
+from .exactness import certify_zero
+
 
 def _ival(expr, xs, box):
     e = sp.sympify(expr)
@@ -58,12 +60,56 @@ def _mul(A, B):
         return None
 
 
+def _polynomial_box_premises(expressions, xs, box):
+    """The interval algebra supports real polynomials with exact coefficients."""
+    if (
+        not xs
+        or len(set(xs)) != len(xs)
+        or len(expressions) != len(xs)
+        or len(box) != len(xs)
+    ):
+        return False
+    if any(not isinstance(x, sp.Symbol) or x.is_real is False for x in xs):
+        return False
+    if any(
+        not isinstance(D, sp.Interval)
+        or D.left_open
+        or D.right_open
+        or D.start.is_real is not True
+        or D.end.is_real is not True
+        or D.start.is_finite is not True
+        or D.end.is_finite is not True
+        or D.has(sp.Float)
+        for D in box
+    ):
+        return False
+    for f in expressions:
+        if f.has(sp.Float) or f.is_polynomial(*xs) is not True:
+            return False
+        if any(
+            isinstance(n, sp.Pow) and n.exp.is_negative and n.base.has(*xs)
+            for n in sp.preorder_traversal(f)
+        ):
+            return False
+        try:
+            coefficients = sp.Poly(f, *xs).coeffs()
+        except sp.PolynomialError:
+            return False
+        if any(c.is_real is not True or c.is_finite is not True for c in coefficients):
+            return False
+    return True
+
+
 def _krawczyk(expressions, xs, box):
+    if not _polynomial_box_premises(expressions, xs, box):
+        return None
     F = sp.Matrix(expressions)
     J = F.jacobian(xs)
     x0 = sp.Matrix([(interval.start + interval.end) / 2 for interval in box])
     sub = dict(zip(xs, x0, strict=False))
     J0 = J.subs(sub)
+    if certify_zero(J0.det()) is not False:
+        return None
     try:
         C = J0.inv()
     except (ValueError, ZeroDivisionError, NotImplementedError):
@@ -104,39 +150,69 @@ def _krawczyk(expressions, xs, box):
 
 @dataclass(frozen=True)
 class KrawczykBoxCertificate:
+    """Bind a multivariate polynomial root box to a checked contraction."""
+
     expressions: tuple
     variables: tuple
     box: tuple
-    root: tuple
+    center: tuple
     unique: bool
     source: str = "interval-krawczyk"
     enclosure: tuple = ()
 
     def verify(self):
-        if self.source == "affine-krawczyk":
-            F = sp.Matrix(self.expressions)
-            J = F.jacobian(self.variables)
-            if any(e.free_symbols.intersection(self.variables) for e in J):
+        """Return whether the record satisfies its declared replay obligations."""
+
+        try:
+            if self.unique is not True or not _polynomial_box_premises(
+                self.expressions, self.variables, self.box
+            ):
                 return False
-            return self.unique and all(
-                interval.contains(v) is sp.S.true
-                for interval, v in zip(self.box, self.root, strict=False)
+            if len(self.center) != len(self.variables):
+                return False
+            if self.source == "affine-krawczyk":
+                F = sp.Matrix(self.expressions)
+                J = F.jacobian(self.variables)
+                if (
+                    any(e.has(*self.variables) for e in J)
+                    or certify_zero(J.det()) is not False
+                ):
+                    return False
+                if any(sp.sympify(v).has(sp.Float) for v in self.center):
+                    return False
+                sub = dict(zip(self.variables, self.center, strict=True))
+                return all(certify_zero(e.subs(sub)) is True for e in F) and all(
+                    interval.contains(v) is sp.S.true
+                    for interval, v in zip(self.box, self.center, strict=True)
+                )
+            if self.source != "interval-krawczyk":
+                return False
+            out = _krawczyk(self.expressions, self.variables, self.box)
+            if out is None:
+                return False
+            K, x0 = out
+            return (
+                K == self.enclosure
+                and tuple(x0) == self.center
+                and all(
+                    (D.start < k[0]) is sp.S.true and (k[1] < D.end) is sp.S.true
+                    for D, k in zip(self.box, K, strict=True)
+                )
             )
-        if self.source != "interval-krawczyk" or not self.unique:
+        except (
+            AttributeError,
+            TypeError,
+            ValueError,
+            NotImplementedError,
+            ArithmeticError,
+            IndexError,
+        ):
             return False
-        out = _krawczyk(self.expressions, self.variables, self.box)
-        if out is None:
-            return False
-        K, _x0 = out
-        if K != self.enclosure:
-            return False
-        return all(
-            (interval.start < k[0]) is sp.S.true and (k[1] < interval.end) is sp.S.true
-            for interval, k in zip(self.box, K, strict=False)
-        )
 
 
 def krawczyk_box(expressions, variables, box):
+    """Prove a unique multivariate polynomial root in a supported real box."""
+
     xs = tuple(map(sp.sympify, variables))
     box = tuple(box)
     F = tuple(map(sp.sympify, expressions))

@@ -68,7 +68,7 @@ def test_registered_outer_hessian_from_partial_rules():
     assert isinstance(cert, HessianCertificate)
     assert cert.complete is True
     assert cert.hessian == sp.ImmutableMatrix([[2, 0], [0, 4]])
-    assert cert.verify() is True
+    assert cert.verify(registry=reg) is True
 
 
 def test_multivariate_chain_rule_gradient_and_hessian():
@@ -79,7 +79,7 @@ def test_multivariate_chain_rule_gradient_and_hessian():
     assert cert.complete is True
     assert cert.gradient == sp.ImmutableMatrix([6 * x - 2 * y, -2 * x + 6 * y])
     assert cert.hessian == sp.ImmutableMatrix([[6, -2], [-2, 6]])
-    assert cert.verify() is True
+    assert cert.verify(registry=reg) is True
 
 
 def test_convexity_transport_uses_composite_hessian_certificate():

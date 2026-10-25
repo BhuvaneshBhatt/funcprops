@@ -45,9 +45,9 @@ def test_structured_trig_families_verify_and_integrate():
     x = sp.symbols("x", real=True)
     for f in (sp.sin(2 * x + 1), sp.cos(3 * x - 2), sp.tan(5 * x + 4)):
         fam = affine_trig_root_family(f, x)
-        assert fam is not None and fam.verify()
+        assert fam.verify()
         g = structured_zero_geometry(f, x)
-        assert g is not None and g.complete_on_support and g.real_exhaustive
+        assert g.complete_on_support and g.real_exhaustive
 
 
 def test_unresolved_frequency_not_certified():

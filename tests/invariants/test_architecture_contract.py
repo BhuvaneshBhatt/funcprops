@@ -50,7 +50,7 @@ def test_detailed_property_result_wraps_compact_and_property_results():
     assert detailed.evidence == ("witness",)
 
 
-def test_staged_range_monotonicity_convexity_preserve_expected_results():
+def test_range_monotonicity_convexity_preserve_expected_results():
     x, y = sp.symbols("x y", real=True)
     assert range(x**2, x, y) == (y >= 0)
     assert monotonicity(x**2, x, domain=x >= 0) in {

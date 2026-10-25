@@ -6,7 +6,9 @@ import ast
 from collections import Counter
 from pathlib import Path
 
-import funcprops.api as api
+import funcprops as api
+
+PUBLIC_QUERIES = {name for name, *_ in api.properties()}
 
 ROOT = Path(__file__).resolve().parents[2]
 TESTS = ROOT / "tests"
@@ -19,7 +21,7 @@ def _direct_property_calls(path: Path) -> Counter[str]:
         if isinstance(node, ast.ImportFrom) and node.module:
             if node.module == "funcprops" or node.module.startswith("funcprops."):
                 for alias in node.names:
-                    if alias.name in api.__all__:
+                    if alias.name in PUBLIC_QUERIES:
                         imported[alias.asname or alias.name] = alias.name
 
     calls: Counter[str] = Counter()
@@ -27,7 +29,7 @@ def _direct_property_calls(path: Path) -> Counter[str]:
         if not isinstance(node, ast.Call):
             continue
         target = node.func
-        if isinstance(target, ast.Attribute) and target.attr in api.__all__:
+        if isinstance(target, ast.Attribute) and target.attr in PUBLIC_QUERIES:
             calls[target.attr] += 1
         elif isinstance(target, ast.Name) and target.id in imported:
             calls[imported[target.id]] += 1
@@ -41,5 +43,5 @@ def test_every_public_property_query_has_direct_behavioral_coverage():
             continue
         counts.update(_direct_property_calls(path))
 
-    missing = sorted(name for name in api.__all__ if counts[name] == 0)
+    missing = sorted(name for name in PUBLIC_QUERIES if counts[name] == 0)
     assert missing == []

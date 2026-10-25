@@ -82,7 +82,7 @@ def test_zeta_registry_pole_not_erased_by_failed_local_series():
     assert any(p.condition == sp.Eq(s, 1) for p in pole_records)
 
 
-def test_dlmf_audit_manifest_covers_catalogue_and_is_structurally_clean():
+def test_dlmf_catalogue_inventory():
     report = dlmf_audit_report()
     assert report["summary"]["catalogue_families"] == 233
     assert report["summary"]["dlmf_scoped"] >= 130

@@ -46,7 +46,7 @@ PROPERTY_NAMES = (
 )
 
 
-def test_root_property_signatures_use_uniform_names_and_detailed_switch():
+def test_public_property_signatures():
     for name in PROPERTY_NAMES:
         signature = inspect.signature(getattr(fp, name))
         assert "return_result" in signature.parameters, name
@@ -97,7 +97,7 @@ def test_multiple_variables_get_actionable_scalar_error():
         fp.monotonicity(x + y, (x, y))
 
 
-def test_parameterized_property_results_project_to_piecewise_by_default():
+def test_guarded_result_projection():
     a, x = sp.symbols("a x", real=True)
     compact = fp.injective(a * x, x)
     assert isinstance(compact, sp.Piecewise)

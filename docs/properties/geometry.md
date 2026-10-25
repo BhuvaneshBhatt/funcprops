@@ -8,11 +8,19 @@ Function geometry combines regularity, analyticity, convexity, singularities, bo
 
 ## API and return values
 
-```python
+```text
 geometry(expr, variables, *, domain=Reals, assumptions=True, return_result=False)
 ```
 
 A FunctionGeometry object containing the component property results and certificates.
+
+| Parameter | Meaning |
+| --- | --- |
+| `expr` | SymPy expression whose global property is queried. |
+| `variables` | Independent symbol or ordered variable sequence for multivariate geometry. |
+| `domain` | Input domain or logical condition. The default depends on the property family. |
+| `assumptions` | Symbolic hypotheses used while proving the property. |
+| `return_result` | Return structured metadata, certificates, or diagnostics. |
 
 ## Domains, assumptions, and parameters
 
@@ -30,7 +38,7 @@ import funcprops as fp
 
 x, y = sp.symbols("x y", real=True)
 result = fp.geometry(x**2, x)
-result
+assert result.c2 is fp.TruthValue.TRUE and result.minimum_exists.exists is True
 ```
 
 Expected: a combined regularity, singularity, convexity, and attainment summary.
@@ -39,7 +47,7 @@ Application: Collect structural facts for optimization and probability workflows
 
 ## Applications
 
-This property is useful whenever later mathematics depends on a global qualitative fact, not isolated samples. Typical uses include symbolic preprocessing, theorem-hypothesis verification, optimization, inverse problems, robust numerical method selection, and simplifying downstream case analysis.
+Use the executable function geometry examples to check the corresponding source, domain and branch premises before consuming the result in a larger analysis.
 
 ## How funcprops proves it
 
@@ -61,4 +69,4 @@ The summary is only as complete as its component proof engines; unresolved compo
 
 ## Source
 
-The implementation is exposed through [`funcprops.api`](https://github.com/BhuvaneshBhatt/funcprops/blob/main/src/funcprops/api.py).
+The callable is exported through funcprops; its implementation module is [`funcprops.geometry`](https://github.com/BhuvaneshBhatt/funcprops/blob/main/src/funcprops/geometry.py).

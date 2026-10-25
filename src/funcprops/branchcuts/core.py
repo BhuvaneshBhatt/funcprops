@@ -168,6 +168,8 @@ class RestrictedExpr(Expr):
         return Piecewise((self.expr, self.cond), (off_value, True))
 
     def doit(self, deep=True, **hints):
+        """Evaluate the expression while retaining its explicit restriction."""
+
         expr = (
             self.expr.doit(deep=deep, **hints)
             if hasattr(self.expr, "doit")
@@ -320,6 +322,8 @@ def apply_restrictions(func, *args):
 
 @dataclass(frozen=True)
 class ConditionalJump:
+    """Pair a branch-jump value with the condition where it applies."""
+
     expr: Expr
     cond: Boolean | BooleanTrue | BooleanFalse
     note: str = ""
@@ -332,6 +336,8 @@ class ConditionalJump:
 
 @dataclass(frozen=True)
 class JumpTerm:
+    """Represent a branch-jump contribution and its supporting condition."""
+
     expr: Expr
     cond: Boolean | BooleanTrue | BooleanFalse
     note: str = ""
@@ -342,6 +348,8 @@ class JumpTerm:
 
 @dataclass(frozen=True)
 class BranchRule:
+    """Describe branch cuts, points and jumps for a symbolic function head."""
+
     name: str
     jump_terms: tuple[JumpTerm, ...]
     remarks: str = ""
@@ -350,6 +358,8 @@ class BranchRule:
         return tuple(term.as_restricted() for term in self.jump_terms)
 
     def as_piecewise(self, default=S.Zero):
+        """Project guarded values to a first-match SymPy Piecewise expression."""
+
         return Piecewise(
             *[(term.expr, term.cond) for term in self.jump_terms], (default, True)
         )
@@ -359,42 +369,62 @@ class BranchRule:
 
 
 def real_lt(z, a):
+    """Form a strict real-axis inequality."""
+
     return Contains(z, S.Reals) & (z < a)
 
 
 def real_le(z, a):
+    """Form a non-strict real-axis inequality."""
+
     return Contains(z, S.Reals) & (z <= a)
 
 
 def real_gt(z, a):
+    """Form a strict lower real-axis bound."""
+
     return Contains(z, S.Reals) & (z > a)
 
 
 def real_ge(z, a):
+    """Form a non-strict lower real-axis bound."""
+
     return Contains(z, S.Reals) & (z >= a)
 
 
 def real_between(z, a, b):
+    """Form real-axis interval bounds with the requested endpoint ownership."""
+
     return Contains(z, S.Reals) & (z > a) & (z < b)
 
 
 def imag_axis_gt(z, a):
+    """Form an imaginary-axis lower bound."""
+
     return Eq(re(z), 0) & (im(z) > a)
 
 
 def imag_axis_lt(z, a):
+    """Form an imaginary-axis upper bound."""
+
     return Eq(re(z), 0) & (im(z) < a)
 
 
 def amplitude_vertical_seam(phi):
+    """Describe a supported vertical amplitude seam for elliptic branches."""
+
     return Eq(im(cos(phi) ** 2), 0) & (re(cos(phi) ** 2) < 0)
 
 
 def elliptic_sqrt_seam(phi, m):
+    """Describe the square-root seam in an elliptic branch rule."""
+
     return Eq(-im(m * sin(phi) ** 2), 0) & (1 - re(m * sin(phi) ** 2) < 0)
 
 
 def elliptic_pi_pole_seam(phi, n):
+    """Describe the characteristic pole seam of the elliptic integral of the third kind."""
+
     return Eq(-im(n * sin(phi) ** 2), 0) & (1 - re(n * sin(phi) ** 2) <= 0)
 
 
@@ -402,6 +432,8 @@ def elliptic_pi_pole_seam(phi, n):
 
 
 def branch_rule_log(z):
+    """Return the principal cut and jump rule for log."""
+
     return BranchRule(
         "log",
         (
@@ -415,6 +447,8 @@ def branch_rule_log(z):
 
 
 def branch_rule_sqrt(z):
+    """Return the principal cut and jump rule for sqrt."""
+
     return BranchRule(
         "sqrt",
         (
@@ -428,6 +462,8 @@ def branch_rule_sqrt(z):
 
 
 def branch_rule_power(z, a):
+    """Return the principal cut and jump rule for power."""
+
     return BranchRule(
         "power",
         (
@@ -441,6 +477,8 @@ def branch_rule_power(z, a):
 
 
 def branch_rule_acos(z):
+    """Return the principal cut and jump rule for acos."""
+
     return BranchRule(
         "acos",
         (
@@ -451,6 +489,8 @@ def branch_rule_acos(z):
 
 
 def branch_rule_asin(z):
+    """Return the principal cut and jump rule for asin."""
+
     return BranchRule(
         "asin",
         (
@@ -461,6 +501,8 @@ def branch_rule_asin(z):
 
 
 def branch_rule_atanh(z):
+    """Return the principal cut and jump rule for atanh."""
+
     return BranchRule(
         "atanh",
         (
@@ -471,6 +513,8 @@ def branch_rule_atanh(z):
 
 
 def branch_rule_acosh(z):
+    """Return the principal cut and jump rule for acosh."""
+
     return BranchRule(
         "acosh",
         (
@@ -483,6 +527,8 @@ def branch_rule_acosh(z):
 
 
 def branch_rule_atan(z):
+    """Return the principal cut and jump rule for atan."""
+
     return BranchRule(
         "atan",
         (
@@ -493,6 +539,8 @@ def branch_rule_atan(z):
 
 
 def branch_rule_asinh(z):
+    """Return the principal cut and jump rule for asinh."""
+
     return BranchRule(
         "asinh",
         (
@@ -506,6 +554,8 @@ def branch_rule_asinh(z):
 
 
 def branch_rule_acot(z):
+    """Return the principal cut and jump rule for acot."""
+
     return BranchRule(
         "acot",
         (
@@ -516,6 +566,8 @@ def branch_rule_acot(z):
 
 
 def branch_rule_acoth(z):
+    """Return the principal cut and jump rule for acoth."""
+
     return BranchRule(
         "acoth",
         (
@@ -526,6 +578,8 @@ def branch_rule_acoth(z):
 
 
 def branch_rule_asec(z):
+    """Return the principal cut and jump rule for asec."""
+
     return BranchRule(
         "asec",
         (
@@ -544,6 +598,8 @@ def branch_rule_asec(z):
 
 
 def branch_rule_acsc(z):
+    """Return the principal cut and jump rule for acsc."""
+
     return BranchRule(
         "acsc",
         (
@@ -562,6 +618,8 @@ def branch_rule_acsc(z):
 
 
 def branch_rule_asech(z):
+    """Return the principal cut and jump rule for asech."""
+
     return BranchRule(
         "asech",
         (
@@ -576,6 +634,8 @@ def branch_rule_asech(z):
 
 
 def branch_rule_acsch(z):
+    """Return the principal cut and jump rule for acsch."""
+
     return BranchRule(
         "acsch",
         (
@@ -589,6 +649,8 @@ def branch_rule_acsch(z):
 
 
 def branch_rule_expint_ei(z):
+    """Return the principal cut and jump rule for expint ei."""
+
     return BranchRule(
         "Ei",
         (
@@ -600,6 +662,8 @@ def branch_rule_expint_ei(z):
 
 
 def branch_rule_ci(z):
+    """Return the principal cut and jump rule for ci."""
+
     return BranchRule(
         "Ci",
         (
@@ -611,6 +675,8 @@ def branch_rule_ci(z):
 
 
 def branch_rule_chi(z):
+    """Return the principal cut and jump rule for chi."""
+
     return BranchRule(
         "Chi",
         (
@@ -622,6 +688,8 @@ def branch_rule_chi(z):
 
 
 def branch_rule_li(z):
+    """Return the principal cut and jump rule for li."""
+
     return BranchRule(
         "li",
         (
@@ -635,6 +703,8 @@ def branch_rule_li(z):
 
 
 def branch_rule_expint(z, nu):
+    """Return the principal cut and jump rule for expint."""
+
     return BranchRule(
         "expint",
         (
@@ -648,6 +718,8 @@ def branch_rule_expint(z, nu):
 
 
 def branch_rule_loggamma(z):
+    """Return the principal cut and jump rule for loggamma."""
+
     return BranchRule(
         "loggamma",
         (
@@ -661,6 +733,8 @@ def branch_rule_loggamma(z):
 
 
 def branch_rule_polylog(z, s):
+    """Return the principal cut and jump rule for polylog."""
+
     return BranchRule(
         "polylog",
         (
@@ -679,6 +753,8 @@ def branch_rule_polylog(z, s):
 
 
 def branch_rule_lerchphi(z, s, a):
+    """Return the principal cut and jump rule for lerchphi."""
+
     return BranchRule(
         "lerchphi",
         (
@@ -692,6 +768,8 @@ def branch_rule_lerchphi(z, s, a):
 
 
 def branch_rule_lambertw(z):
+    """Return the principal cut and jump rule for lambertw."""
+
     return BranchRule(
         "LambertW",
         (
@@ -705,6 +783,8 @@ def branch_rule_lambertw(z):
 
 
 def branch_rule_hyperu(z, a, b):
+    """Return the principal cut and jump rule for hyperu."""
+
     return BranchRule(
         "hyperu",
         (
@@ -718,6 +798,8 @@ def branch_rule_hyperu(z, a, b):
 
 
 def branch_rule_besselj(z, nu):
+    """Return the principal cut and jump rule for besselj."""
+
     return BranchRule(
         "besselj",
         (
@@ -731,6 +813,8 @@ def branch_rule_besselj(z, nu):
 
 
 def branch_rule_besseli(z, nu):
+    """Return the principal cut and jump rule for besseli."""
+
     return BranchRule(
         "besseli",
         (
@@ -744,6 +828,8 @@ def branch_rule_besseli(z, nu):
 
 
 def branch_rule_bessely(z, nu):
+    """Return the principal cut and jump rule for bessely."""
+
     return BranchRule(
         "bessely",
         (
@@ -757,6 +843,8 @@ def branch_rule_bessely(z, nu):
 
 
 def branch_rule_besselk(z, nu):
+    """Return the principal cut and jump rule for besselk."""
+
     return BranchRule(
         "besselk",
         (
@@ -770,6 +858,8 @@ def branch_rule_besselk(z, nu):
 
 
 def branch_rule_hankel1(z, nu):
+    """Return the principal cut and jump rule for hankel1."""
+
     return BranchRule(
         "hankel1",
         (
@@ -783,6 +873,8 @@ def branch_rule_hankel1(z, nu):
 
 
 def branch_rule_hankel2(z, nu):
+    """Return the principal cut and jump rule for hankel2."""
+
     return BranchRule(
         "hankel2",
         (
@@ -796,6 +888,8 @@ def branch_rule_hankel2(z, nu):
 
 
 def branch_rule_hyper(var, a_params, b_params):
+    """Return the principal cut and jump rule for hyper."""
+
     return BranchRule(
         "hyper",
         (
@@ -820,14 +914,20 @@ def branch_rule_hyper(var, a_params, b_params):
 
 
 def branch_rule_betainc(z, a, b):
+    """Return the principal cut and jump rule for betainc."""
+
     return branch_rule_betainc_endpoint(z, a, b, sign=1, regularized=False)
 
 
 def branch_rule_betainc_regularized(z, a, b):
+    """Return the principal cut and jump rule for betainc regularized."""
+
     return branch_rule_betainc_endpoint(z, a, b, sign=1, regularized=True)
 
 
 def branch_rule_elliptic_k(m):
+    """Return the principal cut and jump rule for elliptic k."""
+
     return BranchRule(
         "elliptic_k",
         (
@@ -841,6 +941,8 @@ def branch_rule_elliptic_k(m):
 
 
 def branch_rule_elliptic_e_m(m):
+    """Return the principal cut and jump rule for elliptic e m."""
+
     return BranchRule(
         "elliptic_e",
         (
@@ -854,6 +956,8 @@ def branch_rule_elliptic_e_m(m):
 
 
 def branch_rule_elliptic_pi_m(m, n):
+    """Return the principal cut and jump rule for elliptic pi m."""
+
     return BranchRule(
         "elliptic_pi",
         (
@@ -867,6 +971,8 @@ def branch_rule_elliptic_pi_m(m, n):
 
 
 def branch_rule_elliptic_pi_n(n, m):
+    """Return the principal cut and jump rule for elliptic pi n."""
+
     return BranchRule(
         "elliptic_pi",
         (
@@ -880,6 +986,8 @@ def branch_rule_elliptic_pi_n(n, m):
 
 
 def branch_rule_assoc_legendre(z, nu, mu):
+    """Return the principal cut and jump rule for assoc legendre."""
+
     return BranchRule(
         "assoc_legendre",
         (
@@ -893,6 +1001,8 @@ def branch_rule_assoc_legendre(z, nu, mu):
 
 
 def branch_rule_hyper_2f1(z, a, b, c):
+    """Return the principal cut and jump rule for hyper 2f1."""
+
     genericity = (
         (re(c) > 0) & (re(c - a) > 0) & (re(c - b) > 0) & (re(a) > 0) & (re(b) > 0)
     )
@@ -915,6 +1025,8 @@ def branch_rule_hyper_2f1(z, a, b, c):
 
 
 def branch_rule_elliptic_f_phi(phi, m):
+    """Return the principal cut and jump rule for elliptic f phi."""
+
     return BranchRule(
         "elliptic_f",
         (
@@ -928,6 +1040,8 @@ def branch_rule_elliptic_f_phi(phi, m):
 
 
 def branch_rule_elliptic_e_phi(phi, m):
+    """Return the principal cut and jump rule for elliptic e phi."""
+
     return BranchRule(
         "elliptic_e",
         (
@@ -941,6 +1055,8 @@ def branch_rule_elliptic_e_phi(phi, m):
 
 
 def branch_rule_elliptic_pi_phi(phi, n, m):
+    """Return the principal cut and jump rule for elliptic pi phi."""
+
     seam_a = (
         amplitude_vertical_seam(phi)
         & ~elliptic_pi_pole_seam(phi, n)
@@ -987,6 +1103,8 @@ def _betainc_jump_terms(var, a, b):
 
 
 def branch_rule_betainc_endpoint(var, a, b, sign=1, regularized=False):
+    """Return the principal cut and jump rule for betainc endpoint."""
+
     terms = []
     factor = 1 / beta(a, b) if regularized else 1
     for term in _betainc_jump_terms(var, a, b):

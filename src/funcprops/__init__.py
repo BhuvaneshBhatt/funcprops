@@ -1,8 +1,30 @@
 """Symbolic function properties for SymPy expressions."""
 
-from importlib.metadata import PackageNotFoundError
+from importlib.metadata import PackageNotFoundError as _PackageNotFoundError
 from importlib.metadata import version as _distribution_version
 
+from .adaptive_roots import (
+    AdaptiveRootResult,
+    CoverageState,
+    CoverageTask,
+    adaptive_root_coverage,
+    coverage_policy_stage,
+    resume_root_coverage,
+)
+from .algebraic_complex import (
+    AlgebraicComplexRootProof,
+    AlgebraicRootDecision,
+    certify_algebraic_complex_roots,
+    check_algebraic_complex_roots,
+)
+from .analytic_contours import (
+    AnalyticComplexCoverage,
+    AnalyticContourCertificate,
+    ComplexBoxWitness,
+    analytic_complex_coverage,
+    certify_analytic_contour,
+    check_analytic_contour,
+)
 from .api import (
     analytic,
     bijective,
@@ -60,7 +82,18 @@ from .assumptions import (
     normalize_assumptions,
     require_decision,
 )
+from .asymptotic_tails import TailSignCertificate, certify_tail_sign
+from .branch_atlas import (
+    GluedPowerProof,
+    LogAtlasProof,
+    LogBranchChart,
+    LogChartTransition,
+    certify_log_atlas,
+    glue_log_charts,
+)
 from .cache_control import cache_info, clear_caches
+from .certified_balls import RealBallCertificate, certified_real_ball
+from .certified_inequalities import InequalityCertificate, certify_inequality
 from .certified_operations import (
     ArgumentPrincipleResult,
     ContinuationCertificate,
@@ -84,6 +117,7 @@ from .certified_operations import (
     solve,
     winding_number,
 )
+from .certified_optimization import GlobalMinimumCertificate, certify_global_minimum
 from .complex_certification import (
     ArgumentPrincipleCertificate,
     RectangleRoucheCertificate,
@@ -92,8 +126,92 @@ from .complex_certification import (
     rouche_polynomial_circle,
     rouche_polynomial_rectangle,
 )
+from .complex_clusters import (
+    ComplexClusterCertificate,
+    certify_complex_cluster,
+    check_complex_cluster,
+)
+from .complex_cofinal import (
+    ComplexIsolationGuarantee,
+    ComplexIsolationRun,
+    adaptive_complex_isolation,
+    complex_isolation_policy_stage,
+    resume_adaptive_complex_isolation,
+)
+from .complex_coverage import (
+    ComplexRootCoverage,
+    ComplexRootRegionProof,
+    CoverageRectangle,
+    complex_root_coverage,
+)
+from .complex_isolation import (
+    ComplexIsolationProof,
+    ComplexIsolationState,
+    ComplexIsolationTask,
+    certify_complex_isolation,
+    check_complex_isolation,
+    resume_complex_isolation,
+)
+from .complex_multiplicity import (
+    ComplexExactMultiplicity,
+    ComplexLocatedRegion,
+    ComplexPowerFactorProof,
+    ComplexPowerRootRegion,
+    ComplexTaylorWitness,
+    ComplexUnitWitness,
+    certify_complex_multiple_root,
+)
+from .complex_newton import (
+    ComplexDerivativeWitness,
+    ComplexNewtonRefinement,
+    ComplexNewtonRegion,
+    certify_complex_refinement,
+    check_complex_refinement,
+)
+from .component_optimization import (
+    ComponentMinimumResult,
+    OptimizationCandidate,
+    finite_component_minimum,
+)
+from .coverage_checker import check_coverage, check_enclosure, check_leaf
+from .coverage_contract import (
+    CellDomainWitness,
+    CheckOutcome,
+    CheckResult,
+    CoverageContext,
+    CoverageLeaf,
+    CoverageProof,
+    EnclosureWitness,
+    InadmissibleProof,
+    LocatedSubsetWitness,
+    MonotoneWitness,
+    NewtonWitness,
+    PowerFactorWitness,
+    RationalWitness,
+    SourceFormulaWitness,
+    TaylorDeflationWitness,
+    TaylorWitness,
+    ZeroSubsetWitness,
+)
+from .coverage_search import export_coverage_proof, prove_root_coverage
+from .derivative_inequalities import (
+    DerivativeChainCertificate,
+    derivative_chain_positive,
+)
+from .diagnostics import Completeness, ReplayStatus, UnknownReason, replay_status
 from .dlmf import DLMFFact, dlmf_audit_report, dlmf_facts
+from .domain_tracking import DomainRecord, track_domain
+from .enclosure_policy import EnclosurePolicy
+from .enclosures import (
+    DerivativeEnclosure,
+    EnclosureResult,
+    enclose_derivative,
+    enclose_expression,
+    grammar_obligations,
+)
+from .entire_cancellation import EntireCancellationProof
 from .explanations import ResultExplanation, explain
+from .extrema_bounds import ExtremaBoundsProof, certify_extrema_bounds
 from .geometry import (
     BoundaryBehavior,
     BoundaryLimit,
@@ -101,15 +219,112 @@ from .geometry import (
     LevelBoundednessCertificate,
     ModeExistenceCertificate,
 )
-from .global_multivariate import GlobalMapCertificate, affine_global_mapping
-from .infinite_root_families import affine_trig_root_family, structured_zero_geometry
+from .global_analysis import GlobalInequalityCertificate, certify_global_positive
+from .global_multivariate import (
+    ComposedMapCertificate,
+    GlobalMapCertificate,
+    affine_global_mapping,
+    compose_global_maps,
+)
+from .guarded_affine import (
+    AffineContourCount,
+    AffineSolution,
+    GuardedAffineContourCertificate,
+    GuardedAffineEquationCertificate,
+)
+from .implicit_orders import (
+    CommonZeroProof,
+    ImplicitJetWitness,
+    ImplicitMultiplicityProof,
+    ImplicitRootValueProof,
+    certify_common_zero,
+    certify_implicit_multiplicity,
+    certify_root_value,
+)
+from .infinite_contract import (
+    CoveredRootFamily,
+    ExponentialTailWitness,
+    IndexRangeWitness,
+    IntegerEndpointWitness,
+    PeriodicDomainWitness,
+    PeriodicRootWitness,
+)
+from .infinite_root_families import (
+    IndexedRootFamily,
+    affine_sine_root_family,
+    affine_trig_root_family,
+    structured_zero_geometry,
+)
+from .infinite_roots import infinite_root_coverage
 from .integration import IntegralResult, ParametricContour, integrate
-from .parameter_cells import minimize_strata, refine_parameter_cells, specialize_cells
+from .local_branches import LocalBranchContext
+from .meromorphic_contours import (
+    MeromorphicContourCertificate,
+    meromorphic_rectangle_count,
+)
+from .multiple_roots import deflate_real_root
+from .multivariate_intervals import KrawczykBoxCertificate, krawczyk_box
+from .parameter_cells import (
+    exponential_affine_transition_cells,
+    minimize_strata,
+    quadratic_discriminant_cells,
+    refine_parameter_cells,
+    specialize_cells,
+)
+from .parameter_contract import (
+    BoxEnclosureWitness,
+    ExponentialParameterWitness,
+    MonotoneParameterWitness,
+    ParameterCoverageProof,
+    ParameterRootCell,
+    PolynomialParameterWitness,
+    PolynomialSignWitness,
+    SpecializedParameterProof,
+    UniformParameterCertificate,
+    UniformParameterCover,
+    UniformParameterWitness,
+    UniformZeroSubsetWitness,
+)
+from .parameter_coverage import (
+    certify_parameter_box,
+    parameter_root_coverage,
+    specialize_parameter_coverage,
+)
 from .parameter_discriminants import (
     ParameterTransitionLocus,
+    TranscendentalDiscriminant,
+    exp_linear_discriminant,
+    exp_linear_root_strata,
     polynomial_transition_locus,
 )
+from .piecewise_proofs import PiecewiseRegularityCertificate, certify_piecewise_regular
 from .proof_budget import ProofBudget, route_proofs
+from .proof_explanations import ProofExplanation, explain_proof
+from .proof_inventory import proof_api_manifest
+from .proof_telemetry import ProofTelemetry, RouteObservation
+from .property_composition import CompositionFact, compose_property
+from .property_contract import PropertyConclusion, PropertyCoverageProof, PropertyPiece
+from .property_coverage import certify_property_coverage
+from .quotient_cofinal import (
+    QuotientIsolationGuarantee,
+    QuotientIsolationRun,
+    adaptive_quotient_isolation,
+    resume_adaptive_quotient_isolation,
+)
+from .quotient_isolation import (
+    DenominatorExclusionProof,
+    ExactLocalZeroProof,
+    QuotientCellProof,
+    QuotientContourCertificate,
+    QuotientIsolationProof,
+    QuotientIsolationState,
+    QuotientRegionProof,
+    QuotientSourceProof,
+    certify_quotient_isolation,
+    check_quotient_isolation,
+    resume_quotient_isolation,
+)
+from .quotient_refinement import QuotientNewtonRefinement, certify_quotient_refinement
 from .real_analysis.advanced_convexity import ConvexityCertificate
 from .real_analysis.complete_monotonicity import CompleteMonotonicityCertificate
 from .real_analysis.integrability import IntegrabilityResult
@@ -146,12 +361,14 @@ from .real_analysis.structural_properties import (
 )
 from .real_analysis.variation import VariationResult
 from .registry import (
+    ArgumentPattern,
     Family,
     FunctionRegistry,
     FunctionSlot,
     InstantiatedPropertyRule,
     PropertyRule,
     RuleCase,
+    RuleSignature,
     registry,
 )
 from .registry_derivatives import (
@@ -202,6 +419,20 @@ from .results import (
     as_detailed_result,
     explain_result,
 )
+from .root_coverage import (
+    RootCoverageCertificate,
+    RootRegionProof,
+    SpecializedRootCoverage,
+    root_coverage,
+    specialize_root_coverage,
+)
+from .seam_regularity import SeamRegularityProof
+from .shared_zeros import (
+    ComplexZeroSubsetProof,
+    SharedZeroImplication,
+    SharedZeroOrderProof,
+    SharedZeroRegion,
+)
 from .singularities import SingularityAnalysis
 from .special_theorems import GuardedTheorem, executable_special_theorems
 from .statistical_special_functions import (
@@ -210,62 +441,79 @@ from .statistical_special_functions import (
     RegularizedGammaP,
     RegularizedGammaQ,
 )
+from .taylor_models import TaylorModel, taylor_model
 from .theorem_closure import TheoremFact, close_theorems
-from .transcendental import (
-    AlgebraizationResult,
+from .theorem_registry import (
+    THEOREMS,
+    TheoremRecord,
+    generated_adversarial_cases,
+    validate_registry,
+)
+from .transcendental.algebraize import AlgebraizationResult, algebraize
+from .transcendental.analytic import (
     AnalyticNeighborhoodCertificate,
+    analytic_neighborhood,
+    holomorphic_on_rectangle,
+)
+from .transcendental.complex_roots import (
+    ArgumentPrincipleCertificate as TranscendentalArgumentPrincipleCertificate,
+)
+from .transcendental.complex_roots import (
     CertifiedComplexRootRectangle,
-    CertifiedIntegerBracket,
-    CertifiedRootInterval,
     ComplexRectangle,
     ComplexRootIsolationResult,
+    argument_principle_count,
+    isolate_complex_roots,
+)
+from .transcendental.exp_fourier import (
     ExponentialFourierCount,
+    exponential_fourier_count,
+    exponential_polynomial_terms,
+)
+from .transcendental.extrema import (
     ExtremumEnvelope,
     ExtremumFamilyCertificate,
     ExtremumOrderingTheorem,
     ExtremumRange,
     IndexedExtremumValue,
+    extremum_geometry,
+    extremum_ordering_theorems,
+    simplify_extremum_range,
+    symbolic_extremum_range,
+)
+from .transcendental.periodic import PeriodicCondition, PeriodicSet
+from .transcendental.real_sign import robust_real_sign
+from .transcendental.reduce import (
+    UnivariateReductionResult,
+    reduce_univariate_condition,
+)
+from .transcendental.root_geometry import MonotoneRootCount, derivative_cell_root_count
+from .transcendental.roots import (
+    CertifiedRootInterval,
+    ParametricZeroFamily,
+    RootCertificate,
+    RootIsolationResult,
+    transcendental_roots,
+)
+from .transcendental.unified_real import (
+    UnifiedRealAnalysis,
+    analyze_transcendental_real,
+)
+from .transcendental.zero_geometry import (
+    CertifiedIntegerBracket,
     IndexedTailIndex,
     IndexedTailInversionCertificate,
     IndexedZero,
     IntervalPropertyCell,
-    ParametricZeroFamily,
-    PeriodicCondition,
-    PeriodicSet,
     PropertyIntervalDecomposition,
-    RootCertificate,
-    RootIsolationResult,
-    UnivariateReductionResult,
     ZeroGeometryCertificate,
     ZeroInterlacing,
     ZeroOrdering,
-    algebraize,
-    analytic_neighborhood,
-    argument_principle_count,
-    exponential_fourier_count,
-    exponential_polynomial_terms,
-    extremum_geometry,
-    extremum_ordering_theorems,
-    holomorphic_on_rectangle,
     indexed_tail_integer_bracket,
     indexed_tail_inversion,
-    isolate_complex_roots,
     property_interval_decomposition,
-    reduce_univariate_condition,
-    robust_real_sign,
-    simplify_extremum_range,
-    symbolic_extremum_range,
-    transcendental_roots,
     zero_geometry,
     zero_ordering_bounds,
-)
-from .transcendental import (
-    ArgumentPrincipleCertificate as TranscendentalArgumentPrincipleCertificate,
-)
-from .transcendental.root_geometry import MonotoneRootCount, derivative_cell_root_count
-from .transcendental.unified_real import (
-    UnifiedRealAnalysis,
-    analyze_transcendental_real,
 )
 from .transformation import (
     ChangeOfVariablesCertificate,
@@ -286,65 +534,274 @@ from .verification import (
     verify_root_certificate,
     verify_zero_geometry,
 )
+from .verified_roots import RealRootInterval, verify_real_root_interval
 
 try:
     __version__ = _distribution_version("funcprops")
-except PackageNotFoundError:
-    __version__ = "0.3.0"
+except _PackageNotFoundError:
+    __version__ = "0.4.0"
+
+
+from .algebraic_coefficients import (
+    AlgebraicCoefficientEncoding,
+    encode_algebraic_coefficients,
+)
+from .branch_gluing import (
+    BranchGluingProof,
+    BranchOverlapProof,
+    HolomorphicBranchChart,
+    certify_branch_chart,
+    glue_branch_charts,
+)
+from .metric_proofs import (
+    FiniteLipschitzProof,
+    JumpVariationProof,
+    VariationMotion,
+    certify_finite_lipschitz,
+    certify_jump_variation,
+)
+from .parameter_geometry import (
+    ParameterGeometryCell,
+    ParameterGeometryProof,
+    ParameterGeometryRegion,
+    certify_parameter_geometry,
+    resume_parameter_geometry,
+)
 
 __all__ = [
+    "THEOREMS",
+    "AdaptiveRootResult",
+    "AffineContourCount",
+    "AffineSolution",
+    "AlgebraicCoefficientEncoding",
+    "AlgebraicComplexRootProof",
+    "AlgebraicRootDecision",
+    "AlgebraizationResult",
+    "AnalysisSubject",
+    "AnalyticComplexCoverage",
+    "AnalyticContourCertificate",
+    "AnalyticNeighborhoodCertificate",
     "Analyticity",
+    "ArgumentPattern",
     "ArgumentPrincipleCertificate",
     "ArgumentPrincipleResult",
     "AssumptionClosure",
     "BoundaryBehavior",
     "BoundaryLimit",
     "Boundedness",
+    "BoxEnclosureWitness",
+    "BranchGluingProof",
+    "BranchOverlapProof",
+    "CellDomainWitness",
+    "CertifiedComplexRootRectangle",
+    "CertifiedIntegerBracket",
+    "CertifiedRootInterval",
+    "ChainRuleCertificate",
+    "ChainRuleTerm",
     "ChangeOfVariablesCertificate",
+    "CheckOutcome",
+    "CheckResult",
+    "CommonZeroProof",
     "CompleteMonotonicityCertificate",
+    "Completeness",
+    "ComplexBoxWitness",
+    "ComplexClusterCertificate",
+    "ComplexDerivativeWitness",
+    "ComplexExactMultiplicity",
+    "ComplexIsolationGuarantee",
+    "ComplexIsolationProof",
+    "ComplexIsolationRun",
+    "ComplexIsolationState",
+    "ComplexIsolationTask",
+    "ComplexLocatedRegion",
+    "ComplexNewtonRefinement",
+    "ComplexNewtonRegion",
+    "ComplexPowerFactorProof",
+    "ComplexPowerRootRegion",
+    "ComplexRectangle",
+    "ComplexRootCoverage",
+    "ComplexRootIsolationResult",
+    "ComplexRootRegionProof",
+    "ComplexTaylorWitness",
+    "ComplexUnitWitness",
+    "ComplexZeroSubsetProof",
+    "ComponentMinimumResult",
+    "ComposedMapCertificate",
+    "CompositionFact",
     "ConditionalExpression",
     "ContinuationCertificate",
     "Continuity",
     "ContourDeformationCertificate",
     "Convexity",
     "ConvexityCertificate",
+    "CoverageContext",
+    "CoverageLeaf",
+    "CoverageProof",
+    "CoverageRectangle",
+    "CoverageState",
+    "CoverageTask",
+    "CoveredRootFamily",
+    "DLMFFact",
+    "DenominatorExclusionProof",
+    "DerivativeChainCertificate",
+    "DerivativeEnclosure",
+    "DerivativeRule",
     "DetailedPropertyResult",
     "DeterminantNonvanishingCertificate",
     "Differentiability",
+    "DomainRecord",
+    "EnclosurePolicy",
+    "EnclosureResult",
+    "EnclosureWitness",
+    "EntireCancellationProof",
     "EquationSolutionCertificate",
+    "ExactLocalZeroProof",
+    "ExponentialFourierCount",
+    "ExponentialParameterWitness",
+    "ExponentialTailWitness",
+    "ExtremaBoundsProof",
+    "ExtremumEnvelope",
+    "ExtremumFamilyCertificate",
+    "ExtremumOrderingTheorem",
+    "ExtremumRange",
+    "Family",
+    "FiniteLipschitzProof",
     "FunctionGeometry",
+    "FunctionRegistry",
+    "FunctionSlot",
+    "GlobalInequalityCertificate",
     "GlobalMapCertificate",
+    "GlobalMinimumCertificate",
+    "GluedPowerProof",
+    "GradientCertificate",
+    "GradientComponent",
+    "GuardedAffineContourCertificate",
+    "GuardedAffineEquationCertificate",
     "GuardedTheorem",
+    "HessianCertificate",
     "HolderRegularityResult",
+    "HolomorphicBranchChart",
     "Homogeneity",
     "HomogeneityResult",
     "HomotopyCertificate",
+    "IdentityRule",
+    "ImplicitJetWitness",
+    "ImplicitMultiplicityProof",
+    "ImplicitRootValueProof",
+    "InadmissibleProof",
+    "IndexRangeWitness",
+    "IndexedExtremumValue",
+    "IndexedMonotonicPartition",
+    "IndexedRootFamily",
+    "IndexedTailIndex",
+    "IndexedTailInversionCertificate",
+    "IndexedZero",
+    "InequalityCertificate",
+    "InstantiatedDerivativeRule",
+    "InstantiatedIdentityRule",
+    "InstantiatedPropertyRule",
+    "IntegerEndpointWitness",
     "IntegrabilityResult",
     "IntegralResult",
+    "IntervalPropertyCell",
     "InverseCertificate",
+    "InverseSolutionCertificate",
+    "JacobianCertificate",
+    "JumpVariationProof",
+    "KrawczykBoxCertificate",
     "LaurentCertificate",
     "LevelBoundednessCertificate",
     "LipschitzResult",
+    "LocalBranchContext",
     "LocalInvertibilityCertificate",
+    "LocatedSubsetWitness",
+    "LogAtlasProof",
+    "LogBranchChart",
+    "LogChartTransition",
+    "MeromorphicContourCertificate",
     "Meromorphicity",
+    "MittagLefflerE",
     "ModeExistenceCertificate",
+    "MonotoneParameterWitness",
     "MonotoneRootCount",
+    "MonotoneWitness",
+    "MonotonicDecomposition",
+    "MonotonicInterval",
+    "MonotonicPartition",
     "Monotonicity",
+    "MultivariateChainRuleCertificate",
+    "NewtonWitness",
+    "NonMonotonicityWitness",
+    "OptimizationCandidate",
     "Oscillation",
     "OscillationCertificate",
+    "OwenT",
+    "ParameterCoverageProof",
+    "ParameterGeometryCell",
+    "ParameterGeometryProof",
+    "ParameterGeometryRegion",
+    "ParameterRootCell",
     "ParameterTransitionLocus",
     "ParametricContour",
+    "ParametricZeroFamily",
+    "PartitionRange",
+    "PeriodicCondition",
+    "PeriodicDomainWitness",
+    "PeriodicRootWitness",
+    "PeriodicSet",
     "Periodicity",
     "PeriodicityResult",
+    "PiecewiseBoundary",
+    "PiecewiseBoundaryCertificate",
+    "PiecewiseBranch",
+    "PiecewiseDecomposition",
+    "PiecewiseRegularityCertificate",
+    "PolynomialParameterWitness",
+    "PolynomialSignWitness",
+    "PowerFactorWitness",
     "ProofBudget",
+    "ProofExplanation",
+    "ProofTelemetry",
+    "PropertyConclusion",
+    "PropertyCoverageProof",
     "PropertyDecision",
+    "PropertyEnforcementError",
+    "PropertyIntervalDecomposition",
     "PropertyKnowledge",
+    "PropertyPiece",
     "PropertyProvenance",
     "PropertyResult",
+    "PropertyRule",
+    "QuotientCellProof",
+    "QuotientContourCertificate",
+    "QuotientIsolationGuarantee",
+    "QuotientIsolationProof",
+    "QuotientIsolationRun",
+    "QuotientIsolationState",
+    "QuotientNewtonRefinement",
+    "QuotientRegionProof",
+    "QuotientSourceProof",
+    "RationalWitness",
+    "RealBallCertificate",
+    "RealRootInterval",
     "RectangleRoucheCertificate",
+    "RegularizedGammaP",
+    "RegularizedGammaQ",
+    "ReplayStatus",
     "ResidueCertificate",
     "ResultExplanation",
+    "RootCertificate",
+    "RootCoverageCertificate",
+    "RootIsolationResult",
+    "RootRegionProof",
     "RoucheCertificate",
+    "RouteObservation",
+    "RuleCase",
+    "RuleSignature",
+    "SeamRegularityProof",
+    "SharedZeroImplication",
+    "SharedZeroOrderProof",
+    "SharedZeroRegion",
     "Sign",
     "Singularity",
     "SingularityAnalysis",
@@ -352,21 +809,51 @@ __all__ = [
     "SingularityKind",
     "SingularityResult",
     "SmoothnessResult",
+    "SourceFormulaWitness",
+    "SpecializedParameterProof",
+    "SpecializedRootCoverage",
+    "SubjectMap",
     "Symmetry",
     "SymmetryResult",
+    "TailSignCertificate",
+    "TaylorDeflationWitness",
+    "TaylorModel",
+    "TaylorWitness",
     "TheoremFact",
+    "TheoremRecord",
     "TranscendentalArgumentPrincipleCertificate",
+    "TranscendentalDiscriminant",
     "TransformationGeometry",
+    "TransportedPropertyRule",
     "TruthValue",
     "UnifiedRealAnalysis",
+    "UniformParameterCertificate",
+    "UniformParameterCover",
+    "UniformParameterWitness",
+    "UniformZeroSubsetWitness",
+    "UnivariateReductionResult",
+    "UnknownReason",
+    "VariationMotion",
     "VariationResult",
     "WindingCertificate",
+    "ZeroGeometryCertificate",
+    "ZeroInterlacing",
+    "ZeroOrdering",
+    "ZeroSubsetWitness",
+    "adaptive_complex_isolation",
+    "adaptive_quotient_isolation",
+    "adaptive_root_coverage",
     "affine_global_mapping",
+    "affine_sine_root_family",
     "affine_trig_root_family",
+    "algebraize",
     "analytic",
+    "analytic_complex_coverage",
     "analytic_continue",
+    "analytic_neighborhood",
     "analyze_transcendental_real",
     "argument_principle",
+    "argument_principle_count",
     "argument_principle_rectangle",
     "as_detailed_result",
     "bijective",
@@ -375,111 +862,191 @@ __all__ = [
     "branch_cuts",
     "branch_points",
     "cache_info",
+    "certified_monotonic_inverse",
+    "certified_real_ball",
+    "certify_algebraic_complex_roots",
+    "certify_analytic_contour",
+    "certify_branch_chart",
+    "certify_common_zero",
+    "certify_complex_cluster",
+    "certify_complex_isolation",
+    "certify_complex_multiple_root",
+    "certify_complex_refinement",
+    "certify_extrema_bounds",
+    "certify_finite_lipschitz",
+    "certify_global_minimum",
+    "certify_global_positive",
+    "certify_implicit_multiplicity",
+    "certify_inequality",
+    "certify_jump_variation",
+    "certify_log_atlas",
+    "certify_parameter_box",
+    "certify_parameter_geometry",
+    "certify_piecewise_boundaries",
+    "certify_piecewise_regular",
+    "certify_property_coverage",
+    "certify_quotient_isolation",
+    "certify_quotient_refinement",
+    "certify_root_value",
+    "certify_tail_sign",
     "change_of_variables",
+    "check_algebraic_complex_roots",
+    "check_analytic_contour",
+    "check_complex_cluster",
+    "check_complex_isolation",
+    "check_complex_refinement",
+    "check_coverage",
+    "check_enclosure",
+    "check_leaf",
+    "check_quotient_isolation",
     "classify_singularity",
     "clear_caches",
+    "clear_entailment_cache",
+    "clear_monotonic_partition_cache",
     "close_assumptions",
     "close_theorems",
     "complete_monotonicity",
+    "complex_isolation_policy_stage",
+    "complex_root_coverage",
     "complex_zeros",
+    "compose_global_maps",
+    "compose_property",
     "continuous",
     "convexity",
+    "coverage_policy_stage",
     "decide",
+    "deflate_real_root",
     "deform_contour",
     "derivative_cell_root_count",
+    "derivative_chain_positive",
     "determinant_nonvanishing",
     "differentiability",
     "discontinuities",
+    "dlmf_audit_report",
+    "dlmf_facts",
     "domain",
+    "enclose_derivative",
+    "enclose_expression",
+    "encode_algebraic_coefficients",
     "entails",
     "executable_special_theorems",
+    "exp_linear_discriminant",
+    "exp_linear_root_strata",
     "explain",
+    "explain_proof",
     "explain_result",
+    "exponential_affine_transition_cells",
+    "exponential_fourier_count",
+    "exponential_polynomial_terms",
+    "export_coverage_proof",
+    "extremum_geometry",
+    "extremum_ordering_theorems",
+    "finite_component_minimum",
+    "generated_adversarial_cases",
     "geometry",
+    "glue_branch_charts",
+    "glue_log_charts",
+    "grammar_obligations",
     "holder_regularity",
+    "holomorphic_on_rectangle",
     "homogeneity",
     "homotopic",
+    "indexed_tail_integer_bracket",
+    "indexed_tail_inversion",
+    "infinite_root_coverage",
     "injective",
+    "injectivity_from_partition",
     "integrability",
     "integrate",
     "inverse",
+    "isolate_complex_roots",
     "jacobian",
+    "krawczyk_box",
     "laurent_series",
     "level_boundedness",
     "lipschitz",
     "local_invertibility",
     "meromorphic",
+    "meromorphic_rectangle_count",
     "minimize_strata",
     "mode_existence",
     "monodromy",
+    "monotonic_decomposition",
+    "monotonic_partition",
     "monotonicity",
+    "normalize_assumptions",
     "oscillation",
+    "parameter_root_coverage",
     "periodicity",
+    "piecewise_decomposition",
     "poles",
     "polynomial_transition_locus",
+    "proof_api_manifest",
     "properties",
+    "property_interval_decomposition",
+    "prove_root_coverage",
+    "quadratic_discriminant_cells",
     "range",
+    "range_from_monotonic_partition",
+    "reduce_univariate_condition",
     "refine_parameter_cells",
     "registry",
+    "registry_chain_rule",
+    "registry_derivative",
+    "registry_gradient",
+    "registry_hessian",
+    "registry_jacobian",
+    "replay_status",
+    "require_decision",
     "residue",
+    "resume_adaptive_complex_isolation",
+    "resume_adaptive_quotient_isolation",
+    "resume_complex_isolation",
+    "resume_parameter_geometry",
+    "resume_quotient_isolation",
+    "resume_root_coverage",
+    "rewrite_with_registry",
+    "robust_real_sign",
+    "root_coverage",
     "rouche_polynomial_circle",
     "rouche_polynomial_rectangle",
     "route_proofs",
     "sign",
+    "simplify_extremum_range",
     "singularities",
     "singularity_analysis",
     "smooth",
     "smoothness",
     "solve",
     "specialize_cells",
+    "specialize_parameter_coverage",
+    "specialize_root_coverage",
     "structured_zero_geometry",
     "surjective",
+    "symbolic_extremum_range",
     "symmetry",
+    "taylor_model",
+    "track_domain",
+    "transcendental_roots",
     "transformation_geometry",
+    "transport_instantiated_rule",
     "uniformly_continuous",
+    "validate_registry",
     "variation",
     "verify_certificate",
+    "verify_convexity_certificate",
+    "verify_extremum_family",
+    "verify_extremum_ordering",
+    "verify_extremum_range",
+    "verify_indexed_tail_inversion",
+    "verify_integer_bracket",
+    "verify_monotonic_decomposition",
+    "verify_monotonic_partition",
+    "verify_real_root_interval",
+    "verify_root_certificate",
+    "verify_zero_geometry",
     "winding_number",
+    "zero_geometry",
+    "zero_ordering_bounds",
     "zeros",
 ]
-
-# Consolidated proof/certification infrastructure.
-from .asymptotic_tails import TailSignCertificate, certify_tail_sign
-from .certified_balls import RealBallCertificate, certified_real_ball
-from .certified_inequalities import InequalityCertificate, certify_inequality
-from .certified_optimization import GlobalMinimumCertificate, certify_global_minimum
-from .derivative_inequalities import (
-    DerivativeChainCertificate,
-    derivative_chain_positive,
-)
-from .diagnostics import Completeness, UnknownReason
-from .global_analysis import GlobalInequalityCertificate, certify_global_positive
-from .global_multivariate import ComposedMapCertificate, compose_global_maps
-from .infinite_root_families import IndexedRootFamily, affine_sine_root_family
-from .meromorphic_contours import (
-    MeromorphicContourCertificate,
-    meromorphic_rectangle_count,
-)
-from .multivariate_intervals import KrawczykBoxCertificate, krawczyk_box
-from .parameter_cells import (
-    exponential_affine_transition_cells,
-    quadratic_discriminant_cells,
-)
-from .parameter_discriminants import (
-    TranscendentalDiscriminant,
-    exp_linear_discriminant,
-    exp_linear_root_strata,
-)
-from .proof_explanations import ProofExplanation, explain_proof
-from .proof_telemetry import ProofTelemetry, RouteObservation
-
-# Compositional/certified analysis extensions.
-from .property_composition import CompositionFact, compose_property
-from .taylor_models import TaylorModel, taylor_model
-from .theorem_registry import (
-    THEOREMS,
-    TheoremRecord,
-    generated_adversarial_cases,
-    validate_registry,
-)
-from .verified_roots import RealRootInterval, verify_real_root_interval

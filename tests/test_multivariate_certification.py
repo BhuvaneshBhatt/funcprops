@@ -14,7 +14,7 @@ def test_true_nonlinear_krawczyk_diagonal_system():
             sp.Interval(sp.Rational(17, 10), sp.Rational(9, 5)),
         ),
     )
-    assert c is not None and c.source == "interval-krawczyk" and c.verify()
+    assert c.source == "interval-krawczyk" and c.verify()
 
 
 def test_krawczyk_refuses_singular_or_wide_box():
@@ -28,4 +28,4 @@ def test_krawczyk_refuses_singular_or_wide_box():
 def test_rectangle_rouche_count():
     z = sp.symbols("z")
     c = rouche_polynomial_rectangle(z**3 + sp.Rational(1, 100), z, -1 - sp.I, 1 + sp.I)
-    assert c is not None and c.count == 3 and c.verify()
+    assert c.count == 3 and c.verify()

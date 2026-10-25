@@ -8,15 +8,23 @@ The Jacobian is the matrix of first partial derivatives of an explicit coordinat
 
 ## API and return values
 
-```python
-jacobian(expressions, variables, *, assumptions=True, return_result=False)
+```text
+jacobian(expressions, variables, *, assumptions=True, return_result=False, work_budget=None)
 ```
 
 The exact SymPy Jacobian matrix by default; return_result=True returns a replayable JacobianCertificate with derivative evidence.
 
+| Parameter | Meaning |
+| --- | --- |
+| `expressions` | Ordered expression sequence defining a coordinate transformation. |
+| `variables` | Independent symbol or ordered variable sequence for multivariate geometry. |
+| `assumptions` | Symbolic hypotheses used while proving the property. |
+| `return_result` | Return structured metadata, certificates, or diagnostics. |
+| `work_budget` | Optional positive wall budget in seconds; exhaustion follows the operation-specific incomplete/unknown contract. |
+
 ## Domains, assumptions, and parameters
 
-The query is interpreted on the supplied domain, not from the expression in isolation. When symbolic parameters change the property, funcprops preserves those cases as guarded parameter strata. Assumptions are proof hypotheses: they can simplify a stratum or branch condition, but they do not justify numerical guessing.
+Differentiate the supplied map with respect to the declared coordinates. Assumptions can refine symbolic coefficients; this API has no domain keyword. A Jacobian alone does not certify a local or global inverse.
 
 ## Executable examples
 
@@ -29,8 +37,8 @@ import sympy as sp
 import funcprops as fp
 
 x, y = sp.symbols("x y", real=True)
-result = fp.jacobian((2*x + y, x - y), (x, y))
-result
+result = fp.jacobian((2 * x + y, x - y), (x, y))
+assert result == sp.ImmutableMatrix([[2, 1], [1, -1]])
 ```
 
 Expected: the exact matrix ``[[2, 1], [1, -1]]``.
@@ -39,7 +47,7 @@ Application: Compute a replayable derivative matrix for a coordinate transformat
 
 ## Applications
 
-This property is useful whenever later mathematics depends on a global qualitative fact, not isolated samples. Typical uses include symbolic preprocessing, theorem-hypothesis verification, optimization, inverse problems, robust numerical method selection, and simplifying downstream case analysis.
+Use the executable jacobian examples to check the corresponding source, domain and branch premises before consuming the result in a larger analysis.
 
 ## How funcprops proves it
 
@@ -60,4 +68,4 @@ The Jacobian matrix alone does not establish injectivity, global invertibility, 
 
 ## Source
 
-The implementation is exposed through [`funcprops.api`](https://github.com/BhuvaneshBhatt/funcprops/blob/main/src/funcprops/api.py).
+The callable is exported through funcprops; its implementation module is [`funcprops.api`](https://github.com/BhuvaneshBhatt/funcprops/blob/main/src/funcprops/api.py).

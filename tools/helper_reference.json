@@ -1,0 +1,62 @@
+{
+  "certify_finite_lipschitz": {
+    "inputs": "An exact real finite requested set (or EmptySet), a scalar Symbol compatible with every retained point, and a real-valued source on its defined points.",
+    "returns": "FiniteLipschitzProof or None; a wall timeout returns an uncertified BudgetedResult.",
+    "replay": "The proof checks all defined values and all pairwise secants. Its nonnegative optimal constant is zero on at most one effective point. Undefined requested points are retained as exclusions, not assigned values.",
+    "failure": "Unresolved point collisions, inexact inputs or nonreal values decline. This constructor returns None for unsupported exact data."
+  },
+  "certify_jump_variation": {
+    "inputs": "A bounded exact real interval, a compatible scalar Symbol and a source defined throughout that interval, with a supported finite monotone branch decomposition.",
+    "returns": "JumpVariationProof or None; a wall timeout returns an uncertified BudgetedResult.",
+    "replay": "Motion on open cells and every owned cut value determine the total. Replay checks source coverage, derivatives, signs, one-sided limits and all point excursions without the variation/partition proposers.",
+    "failure": "Unsupported domains, unproved signs, unbounded one-sided limits and source holes decline with None."
+  },
+  "encode_algebraic_coefficients": {
+    "inputs": "A tuple of source expressions/conditions and declared query coordinates. All remaining constants must be finite exact real algebraic values. Up to four nonrational constants, field degree at most four, and total input operation count at most 80 are supported.",
+    "returns": "AlgebraicCoefficientEncoding or None; a wall timeout returns an uncertified BudgetedResult.",
+    "replay": "The minimal polynomial, unique rational isolating interval, exact representations and source-preserving replacements replay without number-field discovery.",
+    "failure": "Larger fields, extra symbolic coefficient parameters, nonreal/inexact/transcendental constants and unsupported embeddings decline with None."
+  },
+  "certify_parameter_geometry": {
+    "inputs": "A raw rational polynomial of degree at most four in one real root coordinate, one to four real parameters, a rational-endpoint interval and rational polynomial parameter guards. Intrinsic parameter assumptions remain premises.",
+    "returns": "ParameterGeometryProof; a wall timeout returns an uncertified BudgetedResult.",
+    "replay": "Counts are distinct real roots, including repeated-root and degree-loss strata. Exact sign-prefix coverage is checked. Unresolved prefixes prevent completeness.",
+    "failure": "ValueError rejects invalid source, guards, coordinates, intervals and negative/noninteger cell budgets; NotImplementedError rejects the degree or coefficient-complexity limit."
+  },
+  "resume_parameter_geometry": {
+    "inputs": "A checked ParameterGeometryProof and an additional nonnegative integer cell budget.",
+    "returns": "A refined proof, or the original object if already complete; a wall timeout returns an uncertified BudgetedResult.",
+    "replay": "Established cells are retained, and only the checked unresolved frontier is refined. Source and parameter domain cannot be replaced.",
+    "failure": "ValueError rejects an invalid proof or cell budget. An unresolved-guard frontier can remain partial after more work."
+  },
+  "certify_branch_chart": {
+    "inputs": "An entire parameter-free implicit relation in two unconstrained Symbols, a valid rational CoverageRectangle and a supplied local formula. Selected logarithms use checked LogBranchChart values; supported denominators need nonzero ComplexBoxWitness records.",
+    "returns": "HolomorphicBranchChart; a wall timeout returns an uncertified BudgetedResult.",
+    "replay": "Replay checks local holomorphy, every source denominator, chart compatibility and the exact implicit identity. The formula denotes a selected local solution.",
+    "failure": "ValueError rejects an unproved recipe, missing denominator witness, mismatched log chart or narrowed coordinate."
+  },
+  "glue_branch_charts": {
+    "inputs": "Checked HolomorphicBranchChart records for one relation, requested rational rectangles and optional explicitly unresolved rectangles.",
+    "returns": "BranchGluingProof; a wall timeout returns an uncertified BudgetedResult.",
+    "replay": "Every touching chart pair is represented exactly once. Equality needs log-sheet transfer or a derivative identity plus anchor. Coverage and compatible gluing have separate fields.",
+    "failure": "ValueError rejects invalid assemblies, omitted overlaps, incompatible families or incorrect coverage. Valid disagreement/unresolved evidence returns a partial proof, not an exception."
+  },
+  "monotonic_partition": {
+    "inputs": "A scalar real function and a supported exact requested domain; use return_result=True to retain the structured record.",
+    "returns": "A compact tuple-compatible partition or MonotonicPartition.",
+    "replay": "Coverage and local cell order do not imply global monotonicity. Owned singleton values, seams and gaps enter the global order check; derivative critical-point completeness is separate. Replay uses the bound cached construction.",
+    "failure": "Unresolved domain, derivative or seam premises produce an incomplete record. Source-changing/foreign supplied partitions cannot establish a consumer result."
+  },
+  "verify_certificate": {
+    "inputs": "A registered concrete proof/summary object; optional source and coordinate restrictions must match its bound theorem.",
+    "returns": "Python bool.",
+    "replay": "True validates the supplied evidence under its declared replay route. It does not imply complete coverage. False can mean unsupported or rejected evidence and never proves the mathematical negation.",
+    "failure": "Unregistered self-attesting objects and subclasses do not select a checker. Use replay_status for diagnostic status and scope."
+  },
+  "replay_status": {
+    "inputs": "A supplied proof/summary and optional binding arguments supported by verification.",
+    "returns": "ReplayStatus with supported, certified, complete, scope, reason, outcome, schema_version and factory_replay.",
+    "replay": "Inspect completion only after successful replay, under the concrete theorem contract. Factory/backend replay dependencies differ from native premise checking.",
+    "failure": "Unsupported replay reports certified=None. Rejected or exhausted evidence reports certified=False; this is not a mathematical counterexample."
+  }
+}

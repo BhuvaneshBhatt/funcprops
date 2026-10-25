@@ -57,7 +57,7 @@ def test_piecewise_zero_interval_set():
     )
 
 
-def test_interval_range_exclusion_resolves_transcendental_zero_free_cell():
+def test_range_root_exclusion():
     x = sp.symbols("x", real=True)
     expr = x + sp.sin(x) + 4
     domain = sp.Interval(-1, 1)

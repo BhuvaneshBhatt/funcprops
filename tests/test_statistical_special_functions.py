@@ -114,7 +114,7 @@ def test_marcum_q_probability_range_on_positive_threshold():
     assert sp.simplify_logic(result ^ sp.And(y > 0, y < 1)) is sp.false
 
 
-def test_mittag_leffler_complete_monotonicity_is_parameter_conditioned():
+def test_mittag_leffler_parameter_guard():
     alpha = sp.symbols("alpha", real=True)
     x = sp.symbols("x", nonnegative=True)
     expr = fp.MittagLefflerE(alpha, -x)

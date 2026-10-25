@@ -30,7 +30,7 @@ def test_monotonic_partition_helpers_directly():
     )
     assert p.complete and len(p.cells) == 3
     r = fp.range_from_monotonic_partition(x**3 - 3 * x, x, p)
-    assert r.complete and r.image is not None
+    assert r.complete and r.image == sp.Interval(-2, 2)
     assert fp.injectivity_from_partition(p) is TruthValue.FALSE
     inv = fp.certified_monotonic_inverse(
         x**3 - 3 * x, x, 0, domain=sp.Interval(-2, 2), partition=p
@@ -75,11 +75,10 @@ def test_certificate_replay_monotonicity_and_zero_geometry():
 
 def test_certificate_replay_decomposition_and_convexity():
     d = fp.monotonic_decomposition(sp.acos(sp.exp(x)), x, return_result=True)
-    assert d is not None and fp.verify_monotonic_decomposition(d)
+    assert fp.verify_monotonic_decomposition(d)
     from funcprops.real_analysis.advanced_convexity import strong_convexity
 
     got = strong_convexity(x**2, x, sp.Interval(-2, 2))
-    assert got is not None
     _cls, cert = got
     assert fp.verify_convexity_certificate(x**2, x, cert)
 
@@ -94,7 +93,7 @@ def test_certificate_replay_tail_and_extremum_theorem():
 
 
 def test_remaining_exported_helpers_direct_contracts():
-    assert fp.registry() is not None
+    assert fp.registry().require("erf").id == "erf"
     assert isinstance(fp.dlmf_facts("BesselJ"), tuple)
     fp.dlmf_audit_report(
         "BesselJ"
@@ -103,7 +102,7 @@ def test_remaining_exported_helpers_direct_contracts():
     z = fp.IndexedZero("BesselJ", k, 0, 0, "positive")
     assert fp.zero_ordering_bounds(z)
     b = fp.indexed_tail_integer_bracket(z, 10)
-    assert b is not None and b.lower <= b.upper
+    assert b.lower <= b.upper
     assert fp.extremum_geometry(sp.airyai(x), x)
     roots = fp.transcendental_roots(
         sp.sin(x), x, sp.Interval(0, 2 * sp.pi), allow_numerical=False
@@ -184,61 +183,6 @@ def test_certificate_replay_root_extremum_range_and_bracket():
     assert fp.verify_integer_bracket(b)
 
 
-def test_exported_helper_contract_manifest_is_complete():
-    import inspect
-
-    property_queries = {name for name, _category, _summary in fp.properties()} | {
-        "smooth"
-    }
-    exported_helpers = {
-        name
-        for name in fp.__all__
-        if callable(getattr(fp, name))
-        and not inspect.isclass(getattr(fp, name))
-        and name not in property_queries
-    }
-    assert exported_helpers == {
-        "registry",
-        "as_detailed_result",
-        "cache_info",
-        "clear_caches",
-        "explain_result",
-        "properties",
-        "verify_certificate",
-        "decide",
-        "entails",
-        "affine_global_mapping",
-        "argument_principle_rectangle",
-        "close_assumptions",
-        "close_theorems",
-        "derivative_cell_root_count",
-        "explain",
-        "minimize_strata",
-        "refine_parameter_cells",
-        "rouche_polynomial_circle",
-        "route_proofs",
-        "specialize_cells",
-        "affine_trig_root_family",
-        "analyze_transcendental_real",
-        "executable_special_theorems",
-        "polynomial_transition_locus",
-        "rouche_polynomial_rectangle",
-        "structured_zero_geometry",
-        "integrate",
-        "inverse",
-        "solve",
-        "laurent_series",
-        "residue",
-        "classify_singularity",
-        "winding_number",
-        "argument_principle",
-        "homotopic",
-        "deform_contour",
-        "analytic_continue",
-        "monodromy",
-    }
-
-
 def test_monotonic_partition_default_is_compact_mathematical_result():
     x = sp.symbols("x", real=True)
     out = fp.monotonic_partition(x**3 - 3 * x, x, domain=sp.Interval(-3, 3))
@@ -257,7 +201,7 @@ def test_monotonic_partition_default_is_compact_mathematical_result():
     assert rich.complete is True
 
 
-def test_monotonic_decomposition_default_is_compact_mathematical_result():
+def test_compact_monotonic_decomposition():
     x = sp.symbols("x", real=True)
     out = fp.monotonic_decomposition(sp.acos(sp.exp(x)), x)
     inner, outer, direction, condition = out

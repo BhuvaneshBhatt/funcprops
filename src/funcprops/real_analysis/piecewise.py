@@ -229,7 +229,19 @@ def _side_limit(branch, var, point, direction, derivative_order=0):
             value = cached_derivative(value, var, order=derivative_order)
         except SYMBOLIC_QUERY_ERRORS:
             return None
-    return cached_endpoint_limit(value, var, point, direction=direction, attained=False)
+    result = cached_endpoint_limit(
+        value, var, point, direction=direction, attained=False
+    )
+    # A range of accumulation values or an unevaluated limit is not a unique
+    # finite derivative/value at the seam.
+    if (
+        result is None
+        or isinstance(result, sp.AccumBounds)
+        or result.has(sp.Limit)
+        or result is sp.nan
+    ):
+        return None
+    return result
 
 
 def certify_piecewise_boundaries(decomposition, *, max_order=1):
@@ -350,6 +362,8 @@ def _scalar_value(result):
 
 
 def combine_piecewise_sign(values):
+    """Combine owned Piecewise branch signs into a whole-domain classification."""
+
     vals = tuple(_scalar_value(v) for v in values)
     if not vals or any(v is None or v is Sign.UNKNOWN for v in vals):
         return Sign.UNKNOWN
@@ -365,14 +379,14 @@ def combine_piecewise_sign(values):
         return Sign.NONNEGATIVE
     if all(v in nonpos for v in vals):
         return Sign.NONPOSITIVE
-    if any(v in {Sign.POSITIVE, Sign.NONNEGATIVE} for v in vals) and any(
-        v in {Sign.NEGATIVE, Sign.NONPOSITIVE} for v in vals
-    ):
+    if Sign.POSITIVE in vals and Sign.NEGATIVE in vals:
         return Sign.SIGN_CHANGING
     return Sign.UNKNOWN
 
 
 def combine_piecewise_boundedness(values):
+    """Combine owned Piecewise branch bounds into a whole-domain classification."""
+
     vals = tuple(_scalar_value(v) for v in values)
     if not vals or any(v is None or v is Boundedness.UNKNOWN for v in vals):
         return Boundedness.UNKNOWN
@@ -389,6 +403,8 @@ def combine_piecewise_boundedness(values):
 
 
 def combine_piecewise_monotonicity(values):
+    """Combine branch directions and seam ordering into a global monotonicity result."""
+
     vals = tuple(_scalar_value(v) for v in values)
     if not vals or any(v is None for v in vals):
         return Monotonicity.UNKNOWN

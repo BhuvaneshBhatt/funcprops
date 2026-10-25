@@ -1,7 +1,7 @@
 """Public routing layer for function-property queries.
 
-The wrappers in this module also normalize ``ConditionalExpression`` inputs.  The
-underlying property engines remain ordinary SymPy-expression analyzers.
+The wrappers in this module also normalize ``ConditionalExpression`` inputs.
+The underlying property engines remain ordinary SymPy-expression analysers.
 """
 
 from __future__ import annotations
@@ -126,9 +126,10 @@ from .transformation import (
 from .transformation import (
     transformation_geometry as _function_transformation_geometry,
 )
+from .work_budget import PROPERTY_BUDGET_OPERATIONS, budgeted_operation
 
 
-def _public_signature(sig):
+def _public_signature(sig, *, supports_budget=False):
     """Return the uniform root-API signature for an internal property engine."""
     params = []
     for param in sig.parameters.values():
@@ -139,6 +140,21 @@ def _public_signature(sig):
             continue
         params.append(param.replace(name=name))
 
+    if supports_budget:
+        insertion = next(
+            (
+                i
+                for i, param in enumerate(params)
+                if param.kind is inspect.Parameter.VAR_KEYWORD
+            ),
+            len(params),
+        )
+        params.insert(
+            insertion,
+            inspect.Parameter(
+                "work_budget", inspect.Parameter.KEYWORD_ONLY, default=None
+            ),
+        )
     insertion = len(params)
     for i, param in enumerate(params):
         if param.kind is inspect.Parameter.VAR_KEYWORD:
@@ -163,12 +179,24 @@ def _public_signature(sig):
 
 
 def _conditional_wrapper(fn, *, domain_mode="ordinary"):
+    """Adapt a property engine to conditional inputs and uniform result projection.
+
+    Source restrictions and assumptions are combined before domain-sensitive
+    simplification. Detailed results retain the original domain record."""
+
     sig = inspect.signature(fn)
     has_native_assumptions = "assumptions" in sig.parameters
     has_native_return_result = "return_result" in sig.parameters
 
     @functools.wraps(fn)
     def wrapped(expr, *args, **kwargs):
+        budget = kwargs.pop("work_budget", None)
+        if budget is not None:
+            if fn.__name__ not in PROPERTY_BUDGET_OPERATIONS:
+                raise TypeError(f"work_budget is not supported for {fn.__name__}")
+            from .work_budget import bounded_query
+
+            return bounded_query(fn.__name__, expr, args, kwargs, budget)
         private = [name for name in kwargs if name.startswith("_")]
         if private:
             raise TypeError(
@@ -209,9 +237,9 @@ def _conditional_wrapper(fn, *, domain_mode="ordinary"):
             }
             if scalar_parameter and not tuple_capable and isinstance(var, sp.Tuple):
                 raise TypeError(
-                    "expected one analysis variable, but received multiple variables; "
+                    "expected one analysis variable, but received multiple vars; "
                     "use a multivariate property such as jacobian(), geometry(), or "
-                    "homogeneity() when analyzing several variables"
+                    "homogeneity() when analysing several variables"
                 )
             if (
                 scalar_parameter
@@ -240,9 +268,117 @@ def _conditional_wrapper(fn, *, domain_mode="ordinary"):
 
         if has_native_return_result:
             kwargs["return_result"] = return_result
-        result = fn(normalized.expr, *args, **kwargs)
-        result = resolve_result_assumptions(result, combined)
+        call = sig.bind_partial(normalized.expr, *args, **kwargs)
+        query_domain_record = None
+        if fn.__name__ in (
+            "range",
+            "sign",
+            "monotonicity",
+            "convexity",
+            "lipschitz",
+            "uniformly_continuous",
+            "holder_regularity",
+            "variation",
+        ) and isinstance(var, sp.Symbol):
+            from .real_analysis.restricted_simplify import simplify_on_domain
+
+            if fn.__name__ == "range":
+                from .real_analysis.common import (
+                    combine_domain_condition,
+                    normalize_domain_condition,
+                )
+
+                requested = combine_domain_condition(
+                    normalize_domain_condition(
+                        call.arguments.get("constraints", True), var
+                    ),
+                    call.arguments.get("domain"),
+                    var,
+                )
+                if return_result:
+                    from .proof_cache import cached_domain_record
+                    from .real_analysis.common import (
+                        combine_domain_condition,
+                        normalize_domain_condition,
+                    )
+
+                    recorded_restriction = combine_domain_condition(
+                        normalize_domain_condition(requested, var), combined, var
+                    )
+                    query_domain_record = cached_domain_record(
+                        normalized.expr, var, recorded_restriction
+                    )
+                if requested not in (True, None, S.true):
+                    from .domain_tracking import coordinate_domain_compatible
+                    from .real_analysis.common import condition_to_set
+
+                    requested_set = condition_to_set(requested, var)
+                    if isinstance(
+                        requested_set, sp.Set
+                    ) and not coordinate_domain_compatible(var, requested_set):
+                        raise ValueError(
+                            "requested domain conflicts with analysis Symbol assumptions"
+                        )
+                replacement, restriction = simplify_on_domain(
+                    normalized.expr, var, requested
+                )
+                if replacement != normalized.expr:
+                    call.arguments["expr"] = replacement
+                    call.arguments["constraints"] = restriction
+                    call.arguments["domain"] = None
+            else:
+                requested = call.arguments.get(
+                    "domain", sig.parameters["domain"].default
+                )
+                if return_result:
+                    from .proof_cache import cached_domain_record
+                    from .real_analysis.common import (
+                        combine_domain_condition,
+                        normalize_domain_condition,
+                    )
+
+                    recorded_restriction = combine_domain_condition(
+                        normalize_domain_condition(requested, var), combined, var
+                    )
+                    query_domain_record = cached_domain_record(
+                        normalized.expr, var, recorded_restriction
+                    )
+                if requested not in (True, None, S.true):
+                    from .domain_tracking import coordinate_domain_compatible
+                    from .real_analysis.common import condition_to_set
+
+                    requested_set = condition_to_set(requested, var)
+                    if isinstance(
+                        requested_set, sp.Set
+                    ) and not coordinate_domain_compatible(var, requested_set):
+                        raise ValueError(
+                            "requested domain conflicts with analysis Symbol assumptions"
+                        )
+                from .real_analysis.common import condition_to_set
+
+                preserve_source = (
+                    fn.__name__ == "variation" and normalized.expr.has(sp.Piecewise)
+                ) or (
+                    fn.__name__ == "lipschitz"
+                    and isinstance(condition_to_set(requested, var), sp.FiniteSet)
+                )
+                replacement, restriction = (
+                    (normalized.expr, requested)
+                    if preserve_source
+                    else simplify_on_domain(normalized.expr, var, requested)
+                )
+                if replacement != normalized.expr:
+                    call.arguments["expr"] = replacement
+                    call.arguments["domain"] = restriction
+        result = fn(*call.args, **call.kwargs)
+        result = resolve_result_assumptions(
+            result, combined, preserve_result=return_result
+        )
         if isinstance(result, PropertyResult):
+            if return_result and query_domain_record is not None:
+                from dataclasses import replace
+
+                result = replace(result, domain_record=query_domain_record)
             if return_result:
                 return result
             result = result.as_piecewise()
@@ -260,10 +396,18 @@ def _conditional_wrapper(fn, *, domain_mode="ordinary"):
                 result = sp.And(result, restriction)
         if return_result and not has_native_return_result:
             domain = bound.arguments.get("domain")
-            return as_detailed_result(result, domain=domain, source=fn.__name__)
+            return as_detailed_result(
+                result,
+                domain=domain,
+                source=fn.__name__,
+                domain_record=query_domain_record,
+            )
         return result
 
-    wrapped.__signature__ = _public_signature(sig)
+    wrapped.__signature__ = _public_signature(
+        sig,
+        supports_budget=fn.__name__ in PROPERTY_BUDGET_OPERATIONS,
+    )
     return wrapped
 
 
@@ -294,26 +438,26 @@ analytic = _conditional_wrapper(_function_analytic)
 
 
 def _restrict_condition_locus(locus, condition, var):
+    from .singularities.records import _restrict_boolean_locus
+
     combined = sp.And(sp.sympify(locus), sp.sympify(condition))
     # Branch-cut conditions commonly carry Contains(var, Reals).  Under that
     # guard, refine re(var)/im(var) before reducing inequalities.
     if var is not None and combined.has(sp.Contains(var, S.Reals)):
         combined = sp.refine(combined, sp.Q.real(var))
         combined = combined.xreplace({sp.re(var): var, sp.im(var): S.Zero})
-    try:
-        reduced = (
-            sp.reduce_inequalities(combined, var)
-            if var is not None
-            else sp.simplify(combined)
-        )
-    except (NotImplementedError, TypeError, ValueError):
-        reduced = sp.simplify(combined)
-    return reduced
+    return (
+        _restrict_boolean_locus(combined, condition, var)
+        if var is not None
+        else sp.simplify(combined)
+    )
 
 
 def branch_cuts(
     expr, variable, *, assumptions=True, mode="conditions", return_result=False
 ):
+    """Return branch-cut loci and jumps for the original expression and its restrictions."""
+
     var = variable
     normalized = normalize_conditional_input(expr)
     assumptions = normalize_assumptions(
@@ -425,11 +569,13 @@ mode_existence = _conditional_wrapper(_function_mode_existence)
 geometry = _conditional_wrapper(_function_geometry)
 
 
+@budgeted_operation
 def jacobian(expressions, variables, *, assumptions=True, return_result=False):
     """Return a transformation Jacobian matrix or its detailed certificate."""
     return _function_jacobian(expressions, variables, return_result=return_result)
 
 
+@budgeted_operation
 def determinant_nonvanishing(
     expressions, variables, *, domain=S.Reals, assumptions=True, return_result=False
 ):
@@ -443,6 +589,7 @@ def determinant_nonvanishing(
     )
 
 
+@budgeted_operation
 def local_invertibility(
     expressions, variables, *, domain=S.Reals, assumptions=True, return_result=False
 ):
@@ -456,37 +603,65 @@ def local_invertibility(
     )
 
 
+@budgeted_operation
 def change_of_variables(
     expressions, variables, *, domain=S.Reals, assumptions=True, return_result=False
 ):
+    """Return the substitution's Jacobian geometry and certified orientation data."""
+
     return _function_change_of_variables(
         expressions, variables, domain=domain, assumptions=assumptions
     )
 
 
+@budgeted_operation
 def transformation_geometry(
     expressions, variables, *, domain=S.Reals, assumptions=True, return_result=False
 ):
+    """Combine derivative, local-invertibility and change-of-variables information."""
+
     return _function_transformation_geometry(
         expressions, variables, domain=domain, assumptions=assumptions
     )
 
 
-# Complex rectangle isolation cannot in general intersect an arbitrary Boolean
-# condition with a rectangle without a certified planar-set decomposition.  We
-# nevertheless accept unconditional ConditionalExpression wrappers and reject only
-# genuinely restricted inputs explicitly.
+# Algebraic finite-root enumeration permits exact candidate-wise restrictions.
+# Preserve raw guard syntax: simplifying a held guard can erase a source hole.
 def complex_zeros(expr, *args, assumptions=True, return_result=False, **kwargs):
-    normalized = normalize_conditional_input(expr)
-    assumptions = normalize_assumptions(
-        combine_assumptions(assumptions, normalized.condition)
+    """Return complex zero regions, or detailed source-bound proof data when requested."""
+
+    from .algebraic_complex import _condition_supported, algebraic_source
+    from .results import ConditionalExpression
+
+    guards = [
+        sp.sympify(True if assumptions is None else assumptions),
+        sp.sympify(kwargs.pop("condition", S.true)),
+    ]
+    while isinstance(expr, ConditionalExpression):
+        guards.append(sp.sympify(expr.condition))
+        expr = expr.value
+    guards = [c for c in guards if c is not S.true]
+    condition = (
+        S.true
+        if not guards
+        else guards[0]
+        if len(guards) == 1
+        else sp.And(*guards, evaluate=False)
     )
-    if assumptions is not S.true:
+    variable = args[0] if args else kwargs.get("variable", kwargs.get("var"))
+    if "variable" in kwargs:
+        kwargs["var"] = kwargs.pop("variable")
+    if condition is not S.true and (
+        not isinstance(variable, sp.Symbol)
+        or not algebraic_source(sp.sympify(expr), variable)
+        or not _condition_supported(condition, variable)
+    ):
         raise NotImplementedError(
-            "assumption-restricted complex rectangle root isolation requires "
-            "certified planar-domain transport"
+            "restricted complex rectangle isolation supports exact algebraic Eq/Ne guards; other restrictions require certified planar-domain transport"
         )
-    return _function_complex_zeros(normalized.expr, *args, **kwargs)
+    return _function_complex_zeros(
+        expr, *args, return_result=return_result, condition=condition, **kwargs
+    )
 
 
 _PROPERTY_CATALOG = {

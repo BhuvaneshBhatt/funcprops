@@ -4,15 +4,24 @@
 
 ## Mathematical definition
 
-A square differentiable map is locally invertible where its Jacobian determinant is nonzero, as certified by the inverse function theorem.
+A square real C1 map is locally invertible where its Jacobian determinant is nonzero, as certified by the inverse function theorem.
 
 ## API and return values
 
-```python
-local_invertibility(expressions, variables, *, domain=Reals, assumptions=True, return_result=False)
+```text
+local_invertibility(expressions, variables, *, domain=Reals, assumptions=True, return_result=False, work_budget=None)
 ```
 
 TruthValue.TRUE, FALSE, or UNKNOWN by default; return_result=True returns the local-invertibility certificate and determinant evidence.
+
+| Parameter | Meaning |
+| --- | --- |
+| `expressions` | Ordered expression sequence defining a coordinate transformation. |
+| `variables` | Independent symbol or ordered variable sequence for multivariate geometry. |
+| `domain` | Input domain or logical condition. The default depends on the property family. |
+| `assumptions` | Symbolic hypotheses used while proving the property. |
+| `return_result` | Return structured metadata, certificates, or diagnostics. |
+| `work_budget` | Optional positive wall budget in seconds; exhaustion follows the operation-specific incomplete/unknown contract. |
 
 ## Domains, assumptions, and parameters
 
@@ -29,8 +38,8 @@ import sympy as sp
 import funcprops as fp
 
 x, y = sp.symbols("x y", real=True)
-result = fp.local_invertibility((2*x + y, x - y), (x, y))
-result
+result = fp.local_invertibility((2 * x + y, x - y), (x, y))
+assert result is fp.TruthValue.TRUE
 ```
 
 Expected: a verified local-invertibility certificate.
@@ -39,7 +48,7 @@ Application: Certify local coordinate validity without claiming global injectivi
 
 ## Applications
 
-This property is useful whenever later mathematics depends on a global qualitative fact, not isolated samples. Typical uses include symbolic preprocessing, theorem-hypothesis verification, optimization, inverse problems, robust numerical method selection, and simplifying downstream case analysis.
+Use the executable local invertibility examples to check the corresponding source, domain and branch premises before consuming the result in a larger analysis.
 
 ## How funcprops proves it
 
@@ -60,4 +69,4 @@ Local invertibility is not global injectivity; nonsquare maps and unresolved det
 
 ## Source
 
-The implementation is exposed through [`funcprops.api`](https://github.com/BhuvaneshBhatt/funcprops/blob/main/src/funcprops/api.py).
+The callable is exported through funcprops; its implementation module is [`funcprops.api`](https://github.com/BhuvaneshBhatt/funcprops/blob/main/src/funcprops/api.py).

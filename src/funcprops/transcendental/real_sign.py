@@ -7,6 +7,11 @@ import sympy as sp
 
 from ..exactness import certify_zero
 from ..exceptions import SYMBOLIC_QUERY_ERRORS
+from ..source_syntax import (
+    _logarithm_formula,
+    finite_constant_source,
+    logarithm_quotient,
+)
 
 
 def _exact_sign(expr):
@@ -38,8 +43,8 @@ def _iv_rational(q):
 def _interval_eval(expr):
     """Evaluate a numeric exp/log elementary expression with interval arithmetic.
 
-    This intentionally supports a small audited vocabulary. Unsupported heads raise
-    ``ValueError`` so callers remain conservative
+    This supports a small audited vocabulary. Unsupported heads raise
+    ``ValueError`` so callers leave unsupported claims unresolved
     to ordinary floating-point evaluation.
     """
     expr = sp.sympify(expr)
@@ -73,6 +78,8 @@ def _interval_eval(expr):
     if expr.func is sp.exp:
         return mp.iv.exp(_interval_eval(expr.args[0]))
     if expr.func is sp.log:
+        if len(expr.args) == 2:
+            return _interval_eval(logarithm_quotient(expr))
         x = _interval_eval(expr.args[0])
         if float(x.a) <= 0:
             raise ValueError
@@ -99,6 +106,9 @@ def robust_real_sign(expr, *, interval_fallback=True):
     interval containing zero is *not* converted into a sign.
     """
     expr = sp.sympify(expr)
+    if not expr.free_symbols and not finite_constant_source(expr):
+        return None
+    expr = _logarithm_formula(expr)
     sign = _exact_sign(expr)
     if sign is not None or not interval_fallback:
         return sign

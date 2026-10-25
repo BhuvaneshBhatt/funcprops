@@ -8,11 +8,20 @@ Mode-existence analysis certifies structural attainment of a global minimum or m
 
 ## API and return values
 
-```python
+```text
 mode_existence(expr, variables, *, domain=Reals, sense='max', assumptions=True, return_result=False)
 ```
 
 TruthValue.TRUE, FALSE, or UNKNOWN by default; return_result=True returns the attainment certificate and evidence.
+
+| Parameter | Meaning |
+| --- | --- |
+| `expr` | SymPy expression whose global property is queried. |
+| `variables` | Independent symbol or ordered variable sequence for multivariate geometry. |
+| `domain` | Input domain or logical condition. The default depends on the property family. |
+| `sense` | Optimization sense, either ``min`` or ``max`` for structural attainment analysis. |
+| `assumptions` | Symbolic hypotheses used while proving the property. |
+| `return_result` | Return structured metadata, certificates, or diagnostics. |
 
 ## Domains, assumptions, and parameters
 
@@ -29,8 +38,8 @@ import sympy as sp
 import funcprops as fp
 
 x, y = sp.symbols("x y", real=True)
-result = fp.mode_existence(-x**2/2, x, sense='max')
-result
+result = fp.mode_existence(-(x**2) / 2, x, sense="max")
+assert result is fp.TruthValue.TRUE
 ```
 
 Expected: a verified global-maximum existence certificate.
@@ -39,7 +48,7 @@ Application: Establish existence of a mode from continuity, closedness, and coer
 
 ## Applications
 
-This property is useful whenever later mathematics depends on a global qualitative fact, not isolated samples. Typical uses include symbolic preprocessing, theorem-hypothesis verification, optimization, inverse problems, robust numerical method selection, and simplifying downstream case analysis.
+Use the executable mode existence examples to check the corresponding source, domain and branch premises before consuming the result in a larger analysis.
 
 ## How funcprops proves it
 
@@ -60,4 +69,4 @@ Failure to prove the structural hypotheses is reported as unresolved.
 
 ## Source
 
-The implementation is exposed through [`funcprops.api`](https://github.com/BhuvaneshBhatt/funcprops/blob/main/src/funcprops/api.py).
+The callable is exported through funcprops; its implementation module is [`funcprops.geometry`](https://github.com/BhuvaneshBhatt/funcprops/blob/main/src/funcprops/geometry.py).

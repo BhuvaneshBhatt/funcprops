@@ -8,15 +8,24 @@ A function is homogeneous when a common scaling of its variables produces a fixe
 
 ## API and return values
 
-```python
+```text
 homogeneity(expr, variables, *, degree=None, weights=None, assumptions=True, return_result=False)
 ```
 
 A Homogeneity value by default; return_result=True exposes degree, weights, and parameter conditions.
 
+| Parameter | Meaning |
+| --- | --- |
+| `expr` | SymPy expression whose global property is queried. |
+| `variables` | Independent symbol or ordered variable sequence for multivariate geometry. |
+| `degree` | Requested homogeneity degree, when one is prescribed. |
+| `weights` | Optional variable weights for weighted homogeneity. |
+| `assumptions` | Symbolic hypotheses used while proving the property. |
+| `return_result` | Return structured metadata, certificates, or diagnostics. |
+
 ## Domains, assumptions, and parameters
 
-The query is interpreted on the supplied domain, not from the expression in isolation. When symbolic parameters change the property, funcprops preserves those cases as guarded parameter strata. Assumptions are proof hypotheses: they can simplify a stratum or branch condition, but they do not justify numerical guessing.
+The scaling identity is checked on the natural source domain under its scaling premises, intrinsic coordinate assumptions and supplied assumptions. This API has no domain keyword. Weighted homogeneity assigns one weight per coordinate; parameter-dependent conclusions retain their guards.
 
 ## Executable examples
 
@@ -30,7 +39,7 @@ import funcprops as fp
 
 x, y = sp.symbols("x y", real=True)
 result = fp.homogeneity(x**2 + y**2, (x, y), return_result=True)
-result
+assert result.classification is fp.Homogeneity.HOMOGENEOUS and result.degree == 2
 ```
 
 Expected: homogeneous of degree ``2``.
@@ -39,7 +48,7 @@ Application: Exploit scaling laws in dimensional analysis and optimization.
 
 ## Applications
 
-This property is useful whenever later mathematics depends on a global qualitative fact, not isolated samples. Typical uses include symbolic preprocessing, theorem-hypothesis verification, optimization, inverse problems, robust numerical method selection, and simplifying downstream case analysis.
+Check exact scaling laws before reducing variables or rescaling an optimization problem.
 
 ## How funcprops proves it
 
@@ -60,4 +69,4 @@ General nonpolynomial quasi-homogeneous identities may require simplification or
 
 ## Source
 
-The implementation is exposed through [`funcprops.api`](https://github.com/BhuvaneshBhatt/funcprops/blob/main/src/funcprops/api.py).
+The callable is exported through funcprops; its implementation module is [`funcprops.real_analysis.structural_properties`](https://github.com/BhuvaneshBhatt/funcprops/blob/main/src/funcprops/real_analysis/structural_properties.py).

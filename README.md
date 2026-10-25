@@ -1,6 +1,6 @@
 # funcprops
 
-`funcprops` is a SymPy-backed package for global mathematical properties of real, complex, and multivariate functions — including domains, ranges, zeros, monotonicity, convexity, regularity, singularities, extrema, mapping properties, and transformation geometry —while supporting assumptions, parameter-dependent answers, and replayable proof certificates. It combines a conditional function property registry, exact semialgebraic reasoning from the semialgebraic geometry package `semialg`, transcendental interval analysis, special-function zero geometry, and branch-cut/singularity analysis.
+`funcprops` is a SymPy-backed package for global mathematical properties of real, complex, and multivariate functions — including domains, ranges, zeros, monotonicity, convexity, regularity, singularities, extrema, mapping properties, and transformation geometry —while supporting assumptions, parameter-dependent answers, and replayable proof certificates. It combines a conditional function property registry, exact semialgebraic reasoning from the semialgebraic geometry package `semialg`, exact algebraic geometry from `algroots`, transcendental interval analysis, special-function zero geometry, and branch-cut/singularity analysis.
 
 When a result cannot be established by the available symbolic, semialgebraic, theorem-based, or validated numerical methods, `funcprops` preserves unresolved conditions or returns "unknown" for the result.
 
@@ -10,7 +10,7 @@ When a result cannot be established by the available symbolic, semialgebraic, th
 pip install funcprops
 ```
 
-The runtime requires Python 3.11+, SymPy 1.14+, mpmath 1.3+, semialg 1.3+ and exprtest 0.1.0+.
+The runtime requires Python 3.11+, SymPy 1.14+, mpmath 1.3+, semialg 1.3.2+, algroots 0.3.0+ and exprtest 0.1.0+.
 
 ## Quick start
 
@@ -78,7 +78,7 @@ Root-level property queries return exact classifications when the available proo
 
 ## Result conventions
 
-Mathematical values are the default.  Boolean-style properties use `TruthValue.TRUE`, `TruthValue.FALSE`, and `TruthValue.UNKNOWN`; categorical properties use their corresponding enum with an `UNKNOWN` member.  Parameter dependence is represented explicitly by `PropertyResult` rather than guessed away.
+Mathematical values are the default.  Boolean-style properties use `TruthValue.TRUE`, `TruthValue.FALSE`, and `TruthValue.UNKNOWN`; categorical properties use their corresponding enum with an `UNKNOWN` member. Parameter dependence is represented by `PropertyResult`.
 
 Detailed results are opt-in (via the option return_result=True) and consistent across the root API:
 
@@ -92,7 +92,7 @@ In notebooks, conditional and detailed results render as compact tables so the m
 
 ## Real-domain analysis
 
-`funcprops` owns the public property vocabulary. For semialgebraic functions on semialgebraic real domains it delegates exact domain, range, sign, monotonicity, convexity, smoothness, and mapping problems to `semialg`, while retaining stronger `funcprops` certificates when they are already available.
+`funcprops` owns the public property vocabulary. For semialgebraic functions on semalgebraic real domains it delegates exact domain, range, sign, monotonicity, convexity, smoothness, and mapping problems to `semialg`, while retaining stronger `funcprops` certificates when they are already available.
 
 The main real-analysis queries are:
 
@@ -152,6 +152,12 @@ For an explicit coordinate map, `funcprops` can compute and certify:
 
 A nonzero Jacobian determinant proves local invertibility, not global injectivity. The API keeps those claims separate so change-of-variables reasoning does not silently overstate a local theorem.
 
+## Special-function registry and provenance
+
+The conditional registry stores audited special-function metadata and exact parameter guards in deterministic SymPy constructor syntax. Concrete overloads are matched before guards are instantiated, and more-specific rules take precedence over generic ones.
+
+Selected identities and real-variable facts are cross-checked against the NIST Digital Library of Mathematical Functions (DLMF). The machine-readable audit manifest is `src/funcprops/data/dlmf_audit.json`; see [the DLMF audit methodology](https://github.com/BhuvaneshBhatt/funcprops/blob/main/docs/dlmf-coverage.md).
+
 ## Statistical special functions
 
 The theorem registry includes probability- and statistics-oriented facts for `loggamma`, digamma/polygamma, incomplete and regularized Gamma/Beta functions, `erf`/`erfc`, modified Bessel families, and generalized Marcum Q.
@@ -164,13 +170,7 @@ For statistical functions not represented by the supported SymPy release, `funcp
 
 These heads are simply symbolic theorem carriers, not replacements for numerical libraries. Parameter-sensitive statements are guarded: outside a certified parameter/domain stratum the property engine returns a conditional or unknown result. Complete-monotonicity support includes elementary exponential kernels, Pollard-type Mittag-Leffler results, and supported Bessel-K regimes.
 
-See [Statistical special functions](https://github.com/BhuvaneshBhatt/funcprops/blob/main/docs/statistical_special_functions.md) for the current theorem coverage and provenance notes.
-
-## Special-function registry and provenance
-
-The conditional registry stores audited special-function metadata and exact parameter guards in deterministic SymPy constructor syntax. Concrete overloads are matched before guards are instantiated, and more-specific rules take precedence over generic ones.
-
-Selected identities and real-variable facts are cross-checked against the NIST Digital Library of Mathematical Functions (DLMF). The machine-readable audit manifest is `src/funcprops/data/dlmf_audit.json`; see [the DLMF audit methodology](https://github.com/BhuvaneshBhatt/funcprops/blob/main/docs/dlmf_audit.md).
+See [Statistical special functions](https://github.com/BhuvaneshBhatt/funcprops/blob/main/docs/statistical-special-functions.md) for the current theorem coverage and provenance notes.
 
 ## Proof cache and certificate replay
 
@@ -178,20 +178,43 @@ Reusable proof primitives are coordinated through lazy `PropertyProofContext` ob
 
 Proof objects can be "replayed" with `verify_certificate()` and specialized verifiers. For replay, an undecidable comparison never counts as a successful verification.
 
+## Capabilities and limits
+
+| Task | Supported scope | Completion boundary |
+| --- | --- | --- |
+| Domains, range and sign | Structural rules, exact restriction transfer, selected semialgebraic and elementary families | Source definition and every requested restriction remain premises |
+| Shape and regularity | Monotonicity, convexity, symmetry, periodicity, finite metric constants, variation and supported Piecewise seams | Cell coverage, global order and replay support are separate |
+| Exact coefficients | Up to four real algebraic constants in a field of degree at most four | Larger fields and coefficient parameters can decline the lift |
+| Parameter roots | Selected uniform families and rational polynomial geometry of degree at most four with up to four real parameters | Every parameter region needs a count or an explicit unresolved status |
+| Real roots and extrema | Compact covers, selected multiple roots, periodic families, tails and outward extrema bounds | Every source region needs a root or exclusion proof |
+| Complex roots and poles | Algebraic enumeration, supported entire/quotient contours, subdivision and Newton refinement | Declared grammar, rational rectangles, source guards and clear boundaries |
+| Branches and local analysis | Finite atlases, supplied holomorphic recipes, implicit orders, residues, selected essential-series/classification rules and continuation | Selected local values do not redefine global principal expressions; essential-singularity isolation is unsupported |
+| Certified operations | Supported equations, inverses, integration, winding and homotopy | Each operation has its own premises and replay contract |
+
+General transcendental parameter geometry, automatic discovery of arbitrary implicit branches, unrestricted branch-surface gluing, arbitrary analytic common-factor discovery and essential-singularity isolation remain capability gaps. Bounded work can leave supported problems partial. See the [full matrix](https://github.com/BhuvaneshBhatt/funcprops/blob/main/docs/capabilities.md), [result contracts](https://github.com/BhuvaneshBhatt/funcprops/blob/main/docs/reference/result-contracts.md) and [troubleshooting](https://github.com/BhuvaneshBhatt/funcprops/blob/main/docs/troubleshooting.md).
+
 ## Documentation and examples
 
-- [Function property reference](https://github.com/BhuvaneshBhatt/funcprops/blob/main/docs/properties/index.md) —  canonical page for every public function property query.
-- [Working with results, assumptions, certificates, and caches](https://github.com/BhuvaneshBhatt/funcprops/blob/main/docs/using-results.md).
-- [Executable tutorial notebook](https://github.com/BhuvaneshBhatt/funcprops/blob/main/docs/notebooks/function-properties-tour.ipynb) — generated from the same canonical example corpus used by the reference pages.
-- [Statistical special functions](https://github.com/BhuvaneshBhatt/funcprops/blob/main/docs/statistical_special_functions.md).
-- [Architecture](https://github.com/BhuvaneshBhatt/funcprops/blob/main/docs/architecture.md).
-- [Mathematical conventions](https://github.com/BhuvaneshBhatt/funcprops/blob/main/docs/mathematical_conventions.md).
+- [Documentation index](https://github.com/BhuvaneshBhatt/funcprops/blob/main/docs/index.md)
+- [Function property reference](https://github.com/BhuvaneshBhatt/funcprops/blob/main/docs/properties/index.md) — canonical reference pages for every public function property
+- [Working with results, assumptions, certificates, and caches](https://github.com/BhuvaneshBhatt/funcprops/blob/main/docs/using-results.md)
+- [Executable tutorial notebook](https://github.com/BhuvaneshBhatt/funcprops/blob/main/docs/notebooks/function-properties-tour.ipynb) — generated from the same canonical example corpus used by the reference pages
+- [Task tutorials by level](https://github.com/BhuvaneshBhatt/funcprops/blob/main/docs/tutorials/index.md)
+- [Runnable examples](https://github.com/BhuvaneshBhatt/funcprops/blob/main/examples/README.md)
+- [Workflow notebook](https://github.com/BhuvaneshBhatt/funcprops/blob/main/docs/notebooks/certified-workflows.ipynb)
+- [Statistical special functions](https://github.com/BhuvaneshBhatt/funcprops/blob/main/docs/statistical-special-functions.md)
+- [Mathematical conventions](https://github.com/BhuvaneshBhatt/funcprops/blob/main/docs/mathematical-conventions.md)
+- [Complex analysis](https://github.com/BhuvaneshBhatt/funcprops/blob/main/docs/complex-analysis.md)
+- [Homotopy and contour deformation](https://github.com/BhuvaneshBhatt/funcprops/blob/main/docs/homotopy.md)
+- [Capability matrix and limitations](https://github.com/BhuvaneshBhatt/funcprops/blob/main/docs/capabilities.md)
+- [Architecture](https://github.com/BhuvaneshBhatt/funcprops/blob/main/docs/architecture.md)
+- [Proof design](https://github.com/BhuvaneshBhatt/funcprops/blob/main/docs/design/index.md)
+- [Testing](https://github.com/BhuvaneshBhatt/funcprops/blob/main/docs/guides/testing.md)
+- [DLMF property-table audit](https://github.com/BhuvaneshBhatt/funcprops/blob/main/docs/dlmf-coverage.md)
+- [Source semantics](https://github.com/BhuvaneshBhatt/funcprops/blob/main/docs/source-semantics.md)
+- [Domains and branches](https://github.com/BhuvaneshBhatt/funcprops/blob/main/docs/guides/domains-and-branches.md)
+- [Budgets](https://github.com/BhuvaneshBhatt/funcprops/blob/main/docs/guides/budgets-and-resume.md)
 - [Certification model](https://github.com/BhuvaneshBhatt/funcprops/blob/main/docs/certification.md)
-- [Certified complex analysis](https://github.com/BhuvaneshBhatt/funcprops/blob/main/docs/complex_analysis.md).
-- [Homotopy and contour deformation](https://github.com/BhuvaneshBhatt/funcprops/blob/main/docs/homotopy.md).
-- [Capability matrix and limitations](https://github.com/BhuvaneshBhatt/funcprops/blob/main/docs/capabilities.md).
-- [Worked examples](https://github.com/BhuvaneshBhatt/funcprops/blob/main/docs/examples.md).
-- [DLMF audit methodology](https://github.com/BhuvaneshBhatt/funcprops/blob/main/docs/dlmf_audit.md).
 
 The canonical examples live in `examples/property_examples.py`. Documentation specification tests execute those examples and verify that the reference and notebook stay synchronized with the public API.
 

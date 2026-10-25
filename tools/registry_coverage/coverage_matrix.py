@@ -8,6 +8,8 @@ import json
 from collections import Counter, defaultdict
 from pathlib import Path
 
+from tools.markdown import normalize_markdown
+
 ROOT = Path(__file__).resolve().parents[2]
 CATALOGUE = ROOT / "src/funcprops/data/catalogue.json"
 CAPABILITIES = ROOT / "src/funcprops/data/registry_capabilities.json"
@@ -100,7 +102,7 @@ def markdown(data):
         ]
         for layer, values in sorted(piecewise.items()):
             lines.append(f"| {layer} | {', '.join(values)} |")
-    return "\n".join(lines) + "\n"
+    return normalize_markdown("\n".join(lines))
 
 
 def regressions(old, new):
