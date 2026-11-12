@@ -7,6 +7,7 @@ import funcprops as fp
 x = sp.symbols("x", real=True)
 y = sp.symbols("y", real=True)
 
+
 def check(name, computation):
     """Run one smoke check and print its result."""
     try:
