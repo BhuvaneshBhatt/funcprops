@@ -4,7 +4,6 @@ import sympy as sp
 
 import funcprops as fp
 
-
 x = sp.symbols("x", real=True)
 y = sp.symbols("y", real=True)
 
