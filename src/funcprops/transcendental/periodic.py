@@ -56,6 +56,7 @@ class PeriodicSet:
 
     @property
     def fundamental_interval(self):
+        """One source period used by the indexed family."""
         return sp.Interval.Ropen(self.origin, self.origin + self.period)
 
     def normalize_point(self, value):
@@ -217,10 +218,10 @@ def common_period_values(*periods):
     ps = [_canonical_period(p) for p in periods]
     if not ps:
         return None
-    p0 = ps[0]
+    base_period = ps[0]
     ratios = []
     for p in ps:
-        r = sp.simplify(p / p0)
+        r = sp.simplify(p / base_period)
         if r.is_Rational is not True:
             return None
         ratios.append(sp.Rational(r))
@@ -232,7 +233,7 @@ def common_period_values(*periods):
     den = dens[0]
     for d in dens[1:]:
         den = gcd(den, d)
-    return sp.simplify(p0 * sp.Rational(num, den))
+    return sp.simplify(base_period * sp.Rational(num, den))
 
 
 def common_positive_period(expressions, var):

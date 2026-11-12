@@ -14,7 +14,7 @@ No unused Taylor model is advertised as evidence for an inequality. A negative w
 
 DerivativeChainCertificate binds the base proof to the claimed derivative, variable, domain and strict-positive relation. Its induction endpoint must be the finite left endpoint. The original function must have the required smooth real extension through that endpoint.
 
-The result proves nonnegativity on domain and positivity on strict_domain. If f(left)=0 at an included endpoint, relation is >= and strict_domain omits that endpoint. For example exp(x)-1-x on [0,1] has a valid induction certificate, but the strict-positive claim applies to (0,1]. This preserves the intended earlier boundary behavior without labeling the zero endpoint strictly positive.
+The result proves nonnegativity on domain and positivity on strict_domain. If f(left)=0 at an included endpoint, relation is >= and strict_domain omits that endpoint. For example exp(x)-1-x on [0,1] has a valid induction certificate, but the strict-positive claim applies to (0,1]. The owned zero endpoint is excluded from the strict-positive conclusion.
 
 ## Core plus tails
 

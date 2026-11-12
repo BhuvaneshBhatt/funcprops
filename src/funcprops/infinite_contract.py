@@ -38,18 +38,22 @@ class PeriodicDomainWitness:
 
     @property
     def complete(self):
+        """Completion status for this record's stated scope; replay validity is separate."""
         return True
 
     @property
     def natural_complete(self):
+        """Whether the entire natural domain has been established."""
         return True
 
     @property
     def reason(self):
+        """Diagnostic reason for the returned status."""
         return None
 
     @property
     def scope(self):
+        """Scope identifier: ``exhaustive-periodic-definition-domain``."""
         return "exhaustive-periodic-definition-domain"
 
     def verify(self):

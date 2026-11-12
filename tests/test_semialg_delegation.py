@@ -57,16 +57,16 @@ def test_project_requires_semialg_public_api_release():
     with project_path.open("rb") as stream:
         project = tomllib.load(stream)
 
-    assert "semialg>=1.3.2" in project["project"]["dependencies"]
+    assert "semialg>=1.5.0" in project["project"]["dependencies"]
 
 
-def test_monotonicity_delegates_semialgebraic_domain_to_semialg():
+def test_monotonicity_delegates_domain_semialg():
     x = sp.Symbol("x", real=True)
     result = monotonicity(sp.Abs(x), x, domain=x >= 0, return_result=True)
     assert result.primary is Monotonicity.STRICTLY_INCREASING
 
 
-def test_smoothness_uses_semialg_for_semialgebraic_breakpoint():
+def test_smoothness_semialg_semialgebraic_breakpoint():
     x = sp.Symbol("x", real=True)
     result = smoothness(sp.Abs(x), x, return_result=True)
     assert result.smooth is False
@@ -82,7 +82,7 @@ def test_backend_preserves_stronger_domain_proof():
     assert result.evidence == ("analytic-implies-smooth",)
 
 
-def test_mapping_properties_delegate_on_semialgebraic_domain():
+def test_mapping_properties_semialgebraic_domain():
     x = sp.Symbol("x", real=True)
     nonnegative = sp.Interval(0, sp.oo)
     assert injective(x**2, x, domain=x >= 0) is TruthValue.TRUE

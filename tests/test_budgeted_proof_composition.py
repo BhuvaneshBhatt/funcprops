@@ -41,7 +41,7 @@ def test_power_domain_real_loci(base, expected):
         assert result.complete and result.effective == expected and result.verify()
 
 
-def test_power_domain_retains_source_holes_and_unknown_exponents():
+def test_power_domain_source_holes_unknown_exponents():
     hole = s.Mul(x, s.Pow(x, -1, evaluate=False), evaluate=False)
     e = s.Pow(hole, s.pi, evaluate=False)
     result = track_domain(e, x, s.Interval(-1, 1))
@@ -66,7 +66,7 @@ def test_exact_essential_laurent_family(k, m, a, expected):
     assert not replace(r, residue=r.residue + 1).verify()
 
 
-def test_essential_linear_combinations_and_unsupported_compositions():
+def test_essential_linear_combinations_compositions():
     e = s.exp(1 / z) + 2 * z * s.exp(3 / z)
     c = fp.residue(e, z, 0, return_certificate=True)
     assert c.residue == 10 and c.verify()
@@ -79,14 +79,14 @@ def test_essential_linear_combinations_and_unsupported_compositions():
 @pytest.mark.parametrize(
     "guard,expected", [(s.Ne(z, 0), s.FiniteSet(0)), (s.Eq(z, 0), s.S.EmptySet)]
 )
-def test_complex_piecewise_first_match_domain_and_roots(guard, expected):
+def test_complex_piecewise_first_domain_roots(guard, expected):
     e = s.Piecewise((1 / z, guard), (z, True))
     c = fp.solve(e, z, return_certificate=True)
     assert c.complete and c.verify() and c.solutions == expected
     assert not replace(c, solutions=s.FiniteSet(7)).verify()
 
 
-def test_complex_piecewise_finite_roots_and_nested_arithmetic():
+def test_complex_piecewise_finite_roots_arithmetic():
     e = s.Piecewise((z - 1, s.Eq(z, 1)), (z - 2, True))
     c = fp.solve(e, z, return_certificate=True)
     assert c.complete and c.verify() and c.solutions == s.FiniteSet(1, 2)
@@ -116,7 +116,7 @@ def test_interval_newton_proof_boundaries(function, interval, count):
     assert interval_newton_count(function, x, interval) == count
 
 
-def test_root_coverage_taylor_exclusion_and_incomplete_budget():
+def test_root_coverage_taylor_incomplete_budget():
     e = s.exp(x) - 1 - x + s.Rational(1, 100)
     c = fp.root_coverage(e, x, s.Interval(-1, 1), max_depth=0)
     assert c.complete and c.root_count == 0 and c.verify()
@@ -135,14 +135,14 @@ def test_root_coverage_taylor_exclusion_and_incomplete_budget():
         lambda: fp.solve(x - 1, x, domain=s.S.Reals, return_certificate=True),
     ],
 )
-def test_operation_replay_binds_caller_expression_and_coordinate(make):
+def test_operation_replay_caller_expression_coordinate(make):
     c = make()
     assert fp.verify_certificate(c, expr=c.expression, var=c.variable)
     assert not fp.verify_certificate(c, expr=c.expression + 1, var=c.variable)
     assert not fp.verify_certificate(c, expr=c.expression, var=s.Symbol("wrong"))
 
 
-def test_isolated_replay_budget_has_distinct_unresolved_status():
+def test_isolated_replay_budget_distinct_unresolved():
     c = fp.residue(1 / z, z, 0, return_certificate=True)
     assert fp.verify_certificate(c, work_budget=1e-6) is None
     status = fp.replay_status(c, work_budget=1e-6)
@@ -155,7 +155,7 @@ def test_isolated_replay_budget_has_distinct_unresolved_status():
         fp.verify_certificate(c, work_budget=True)
 
 
-def test_interval_newton_completes_a_rounding_limited_cell():
+def test_interval_newton_rounding_limited_cell():
     cutoff = s.Rational(str(s.E.evalf(60))) - s.Rational(1, 10) ** 59
     e = (s.E - cutoff) * (x - s.Rational(1, 3))
     c = fp.root_coverage(e, x, s.Interval(0, 1), max_depth=0)
@@ -164,7 +164,7 @@ def test_interval_newton_completes_a_rounding_limited_cell():
     assert not replace(c.regions[0], region=s.Interval(1, 2)).verify()
 
 
-def test_shared_germ_cache_is_bounded_and_lifecycle_managed():
+def test_shared_germ_cache_bounded_lifecycle_managed():
     fp.clear_caches()
     assert complex_meromorphic_germ(1 / z, z, 0)
     assert complex_meromorphic_germ(1 / z, z, 0)
@@ -175,7 +175,7 @@ def test_shared_germ_cache_is_bounded_and_lifecycle_managed():
 
 
 @pytest.mark.parametrize("base", [s.im(z), s.sin(1 / z), s.exp(1 / z) - 1])
-def test_raw_local_source_holes_survive_rebasing_and_cancellation(base):
+def test_raw_local_source_holes_rebasing_cancellation(base):
     held = s.Mul(base, s.Pow(base, -1, evaluate=False), evaluate=False)
     assert fp.laurent_series(held, z, 0, return_certificate=True) is None
     assert fp.residue(held, z, 0, return_certificate=True) is None
@@ -193,13 +193,13 @@ def test_raw_local_source_holes_survive_rebasing_and_cancellation(base):
         lambda a: 1 / (a * x),
     ],
 )
-def test_equation_parameter_degeneracy_remains_unresolved(form):
+def test_equation_parameter_degeneracy_unresolved(form):
     a = s.Symbol("a", real=True)
     c = fp.solve(form(a), x, domain=s.S.Reals, return_certificate=True)
     assert not c.complete and c.verify()
 
 
-def test_safe_parameter_affine_and_nonzero_factors_remain_supported():
+def test_safe_parameter_affine_nonzero_supported():
     a = s.Symbol("a", real=True)
     c = fp.solve(x - a, x, domain=s.S.Reals, return_certificate=True)
     assert c.complete and c.verify() and c.solutions == s.FiniteSet(a)
@@ -208,7 +208,7 @@ def test_safe_parameter_affine_and_nonzero_factors_remain_supported():
     assert c.complete and c.verify() and c.solutions == s.FiniteSet(-1, 1)
 
 
-def test_parameter_domain_exclusions_do_not_ignore_zero_slope():
+def test_zero_slope_parameter_domain():
     a = s.Symbol("a", real=True)
     assert not track_domain(1 / (a * x), x, s.Interval(1, 2)).complete
     assert not track_domain(

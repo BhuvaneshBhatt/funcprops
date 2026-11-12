@@ -81,7 +81,7 @@ def _subset(a, b):
 
 
 def _formula_equal(a, b):
-    # No heuristic zero sampling is used by the versioned kernel.
+    # No heuristic zero sampling is used by the proof kernel.
     return a == b or sp.cancel(sp.expand(a - b)).is_zero is True
 
 
@@ -643,7 +643,7 @@ def _check_leaf(leaf, *, _checked_context=None):
             or type(leaf.schema_version) is not int
             or leaf.schema_version != 1
         ):
-            return _unsupported("unsupported-leaf-version")
+            return _unsupported("unsupported-leaf-schema")
         status = (
             None if _checked_context == leaf.context else _context_status(leaf.context)
         )
@@ -699,7 +699,7 @@ def check_coverage(proof):
             or type(proof.schema_version) is not int
             or proof.schema_version != 1
         ):
-            return _unsupported("unsupported-coverage-version")
+            return _unsupported("unsupported-coverage-schema")
         status = _context_status(proof.context)
         if status is not None:
             return status
@@ -786,7 +786,7 @@ def check_inadmissible(proof):
             or proof.schema_version != 1
             or type(proof.schema_version) is not int
         ):
-            return _unsupported("unsupported-inadmissibility-version")
+            return _unsupported("unsupported-inadmissibility-schema")
         f = proof.expression
         if (
             proof.reason != "nonreal-constant-source"

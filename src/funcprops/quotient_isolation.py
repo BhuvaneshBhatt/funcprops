@@ -128,6 +128,7 @@ class QuotientSourceProof:
 
     @property
     def scope(self):
+        """Scope identifier: ``exact-entire-quotient-with-original-source-exclusions``."""
         return "exact-entire-quotient-with-original-source-exclusions"
 
     def verify(self):
@@ -195,6 +196,7 @@ class DenominatorExclusionProof:
 
     @property
     def scope(self):
+        """Scope identifier: ``entire-denominator-nonzero-on-closed-rectangle``."""
         return "entire-denominator-nonzero-on-closed-rectangle"
 
     def verify(self):
@@ -234,14 +236,17 @@ class ExactLocalZeroProof:
 
     @property
     def expression(self):
+        """Expression to which the stored evidence applies."""
         return self.region.expression
 
     @property
     def variable(self):
+        """Coordinate used by the source and its evidence."""
         return self.region.variable
 
     @property
     def scope(self):
+        """Scope identifier: ``exact-local-zero-from-jets-and-exhaustive-count``."""
         return "exact-local-zero-from-jets-and-exhaustive-count"
 
     def verify(self):
@@ -296,6 +301,7 @@ class QuotientCellProof:
 
     @property
     def rectangle(self):
+        """Rectangle on which this record makes its geometric claim."""
         return self.numerator.rectangle
 
 
@@ -334,44 +340,54 @@ class QuotientRegionProof:
 
     @property
     def expression(self):
+        """Expression to which the stored evidence applies."""
         return self.source.expression
 
     @property
     def variable(self):
+        """Coordinate used by the source and its evidence."""
         return self.source.variable
 
     @property
     def rectangle(self):
+        """Rectangle on which this record makes its geometric claim."""
         return self.cell.rectangle
 
     @property
     def multiplicity_count(self):
+        """Root count with multiplicity, or None when unresolved."""
         data = _cell_data(self.source, self.cell)
         return None if data is None else data[0 if self.kind == "zero" else 1]
 
     @property
     def zero_count(self):
+        """Zero count in this record's counting convention."""
         return self.multiplicity_count if self.kind == "zero" else 0
 
     @property
     def known_distinct(self):
+        """Distinct-root count established by this region's evidence."""
         data = _cell_data(self.source, self.cell)
         return None if data is None else data[3 if self.kind == "zero" else 4]
 
     @property
     def exclusions(self):
+        """Original source restrictions that remain excluded."""
         return self.cell.exclusions
 
     @property
     def distinct_root_count(self):
+        """Distinct-root count supplied by the record, or None when unresolved."""
         return self.known_distinct if self.kind == "zero" else 0
 
     @property
     def distinct_pole_count(self):
+        """Distinct-pole count established by the quotient evidence."""
         return self.known_distinct if self.kind == "pole" else 0
 
     @property
     def scope(self):
+        """Mathematical scope for interpreting this record and its evidence."""
         return "quotient-" + self.kind + "-region"
 
     def verify(self):
@@ -503,10 +519,12 @@ class QuotientIsolationProof:
 
     @property
     def scope(self):
+        """Scope identifier: ``source-defined-quotient-zeros-and-meromorphic-poles``."""
         return "source-defined-quotient-zeros-and-meromorphic-poles"
 
     @property
     def coverage_complete(self):
+        """Whether the evidence covers the entire requested region."""
         return (
             bool(self.outer)
             and not self.unresolved
@@ -515,12 +533,14 @@ class QuotientIsolationProof:
 
     @property
     def isolation_complete(self):
+        """Whether every covered root is individually isolated."""
         return self.coverage_complete and all(
             None not in _cell_data(self.source, c)[3:] for c in self.cells
         )
 
     @property
     def accuracy_complete(self):
+        """Whether the requested enclosure accuracy has been reached."""
         return self.isolation_complete and all(
             _accurate(c, self.max_box_width, self.max_box_diameter)
             for c in self.cells
@@ -529,6 +549,7 @@ class QuotientIsolationProof:
 
     @property
     def complete(self):
+        """Completion status for this record's stated scope; replay validity is separate."""
         return (
             self.coverage_complete
             and self.isolation_complete
@@ -537,6 +558,7 @@ class QuotientIsolationProof:
 
     @property
     def multiplicity_count(self):
+        """Root count with multiplicity, or None when unresolved."""
         return (
             sum(_cell_data(self.source, c)[0] for c in self.cells)
             if self.coverage_complete
@@ -545,10 +567,12 @@ class QuotientIsolationProof:
 
     @property
     def total_count(self):
+        """Total count established by the coverage evidence."""
         return self.multiplicity_count
 
     @property
     def root_count(self):
+        """Distinct-root count supplied by the record, or None when unresolved."""
         return (
             sum(_cell_data(self.source, c)[3] for c in self.cells)
             if self.isolation_complete
@@ -557,10 +581,12 @@ class QuotientIsolationProof:
 
     @property
     def distinct_root_count(self):
+        """Distinct-root count supplied by the record, or None when unresolved."""
         return self.root_count
 
     @property
     def pole_multiplicity_count(self):
+        """Pole count with multiplicity, or None when unresolved."""
         return (
             sum(_cell_data(self.source, c)[1] for c in self.cells)
             if self.coverage_complete
@@ -569,6 +595,7 @@ class QuotientIsolationProof:
 
     @property
     def distinct_pole_count(self):
+        """Distinct-pole count established by the quotient evidence."""
         return (
             sum(_cell_data(self.source, c)[4] for c in self.cells)
             if self.isolation_complete
@@ -577,6 +604,7 @@ class QuotientIsolationProof:
 
     @property
     def extension_zero_count(self):
+        """Zero count for the meromorphic extension used by the ledger."""
         return (
             sum(_cell_data(self.source, c)[2] for c in self.cells)
             if self.coverage_complete
@@ -585,6 +613,7 @@ class QuotientIsolationProof:
 
     @property
     def excluded_zero_multiplicity(self):
+        """Zero multiplicity removed by original source exclusions."""
         return (
             self.extension_zero_count - self.multiplicity_count
             if self.coverage_complete
@@ -594,16 +623,19 @@ class QuotientIsolationProof:
     @property
     def winding_count(self):
         # This counts the meromorphic extension; excluded source zeros are separate.
+        """Winding count established on the zero-free boundary."""
         return (
             self.outer[0].zero_count - self.outer[1].zero_count if self.outer else None
         )
 
     @property
     def holomorphic_on_rectangle(self):
+        """Whether the source is proved holomorphic on the rectangle."""
         return bool(self.outer) and all(c.zero_count == 0 for c in self.outer[1:])
 
     @property
     def root_regions(self):
+        """Regions carrying the retained root-count evidence."""
         return tuple(
             QuotientRegionProof(self.source, c)
             for c in self.cells
@@ -614,6 +646,7 @@ class QuotientIsolationProof:
 
     @property
     def pole_regions(self):
+        """Regions carrying the retained pole-count evidence."""
         return tuple(
             QuotientRegionProof(self.source, c, "pole", guard_contours=self.outer[2:])
             for c in self.cells
@@ -624,6 +657,7 @@ class QuotientIsolationProof:
 
     @property
     def denominator_exclusions(self):
+        """Denominator-zero restrictions retained from the raw source."""
         return tuple(
             DenominatorExclusionProof(g, self.variable, self.rectangle, c)
             for g, c in zip(self.source.guards, self.outer[2:], strict=False)
@@ -632,6 +666,7 @@ class QuotientIsolationProof:
 
     @property
     def clusters(self):
+        """Covered root clusters that have not been separated individually."""
         regions = []
         for c in self.cells:
             v = _cell_data(self.source, c)
@@ -648,10 +683,12 @@ class QuotientIsolationProof:
 
     @property
     def isolating_boxes(self):
+        """Enclosures retained for the individually isolated roots."""
         return tuple(c.rectangle for c in self.root_regions)
 
     @property
     def individual_multiplicities(self):
+        """Per-root multiplicities when individually established."""
         return (
             tuple(c.multiplicity_count for c in self.root_regions)
             if self.isolation_complete
@@ -660,6 +697,7 @@ class QuotientIsolationProof:
 
     @property
     def obligations(self):
+        """Unresolved premises that prevent the stated completion claim."""
         return tuple(
             s
             for test, s in (
@@ -680,6 +718,7 @@ class QuotientIsolationProof:
 
     @property
     def certified(self):
+        """Replay acceptance; a valid partial record need not be complete."""
         return self.verify()
 
     def check(self):
@@ -797,46 +836,57 @@ class QuotientContourCertificate:
 
     @property
     def expression(self):
+        """Expression to which the stored evidence applies."""
         return self.proof.expression
 
     @property
     def variable(self):
+        """Coordinate used by the source and its evidence."""
         return self.proof.variable
 
     @property
     def lower_left(self):
+        """Lower-left corner of the complex rectangle."""
         return self.proof.rectangle.lower_left
 
     @property
     def upper_right(self):
+        """Upper-right corner of the complex rectangle."""
         return self.proof.rectangle.upper_right
 
     @property
     def zeros(self):
+        """Zeros represented by the result."""
         return self.proof.extension_zero_count
 
     @property
     def poles(self):
+        """Poles represented by the result."""
         return self.proof.pole_multiplicity_count
 
     @property
     def winding(self):
+        """Winding information retained by the contour computation."""
         return self.proof.winding_count
 
     @property
     def source_zero_count(self):
+        """Zero count after applying the original source restrictions."""
         return self.proof.total_count
 
     @property
     def complete(self):
+        """Completion status for this record's stated scope; replay validity is separate."""
         return self.proof.coverage_complete
 
     @property
     def scope(self):
+        """Scope identifier: ``meromorphic-extension-divisor-count-on-source-defined-boundary``."""
         return "meromorphic-extension-divisor-count-on-source-defined-boundary"
 
     @property
     def certified(self):
+        """Replay acceptance; a valid partial record need not be complete."""
         return self.verify()
 
     def check(self):
@@ -890,78 +940,97 @@ class QuotientIsolationState:
 
     @property
     def state(self):
+        """Resumable search state, when one is retained."""
         return self
 
     @property
     def expression(self):
+        """Expression to which the stored evidence applies."""
         return self.proof.expression
 
     @property
     def variable(self):
+        """Coordinate used by the source and its evidence."""
         return self.proof.variable
 
     @property
     def complete(self):
+        """Completion status for this record's stated scope; replay validity is separate."""
         return self.proof.complete
 
     @property
     def scope(self):
+        """Scope identifier: ``resumable-quotient-root-and-pole-isolation``."""
         return "resumable-quotient-root-and-pole-isolation"
 
     @property
     def coverage_complete(self):
+        """Whether the evidence covers the entire requested region."""
         return self.proof.coverage_complete
 
     @property
     def isolation_complete(self):
+        """Whether every covered root is individually isolated."""
         return self.proof.isolation_complete
 
     @property
     def accuracy_complete(self):
+        """Whether the requested enclosure accuracy has been reached."""
         return self.proof.accuracy_complete
 
     @property
     def root_count(self):
+        """Distinct-root count supplied by the record, or None when unresolved."""
         return self.proof.root_count
 
     @property
     def total_count(self):
+        """Total count established by the coverage evidence."""
         return self.proof.total_count
 
     @property
     def multiplicity_count(self):
+        """Root count with multiplicity, or None when unresolved."""
         return self.proof.multiplicity_count
 
     @property
     def distinct_root_count(self):
+        """Distinct-root count supplied by the record, or None when unresolved."""
         return self.proof.distinct_root_count
 
     @property
     def pole_multiplicity_count(self):
+        """Pole count with multiplicity, or None when unresolved."""
         return self.proof.pole_multiplicity_count
 
     @property
     def distinct_pole_count(self):
+        """Distinct-pole count established by the quotient evidence."""
         return self.proof.distinct_pole_count
 
     @property
     def isolating_boxes(self):
+        """Enclosures retained for the individually isolated roots."""
         return self.proof.isolating_boxes
 
     @property
     def clusters(self):
+        """Covered root clusters that have not been separated individually."""
         return self.proof.clusters
 
     @property
     def unresolved(self):
+        """Requested regions whose proof obligations remain open."""
         return self.proof.unresolved
 
     @property
     def refinements(self):
+        """Refinement records retained by the search or proof."""
         return self.proof.refinements
 
     @property
     def exhaustion(self):
+        """Resource limit that stopped the search, if any."""
         return self.proof.exhaustion
 
     def check(self):

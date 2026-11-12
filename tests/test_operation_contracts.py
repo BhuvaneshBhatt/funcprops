@@ -18,13 +18,13 @@ def test_trig_contour_through_pole_is_not_certified():
     assert not r.certified and not r.complete and r.value is None
 
 
-def test_argument_principle_rejects_essential_singularity():
+def test_essential_argument_principle():
     z, t = sp.symbols("z t")
     c = fp.ParametricContour(sp.exp(sp.I * t), (t, 0, 2 * sp.pi))
     assert fp.argument_principle(sp.exp(1 / z), z, c) is None
 
 
-def test_multipuncture_homotopy_uses_nonabelian_free_word_certificate():
+def test_multipuncture_homotopy_nonabelian_certificate():
     t = sp.symbols("t", real=True)
     c1 = fp.ParametricContour(3 * sp.exp(sp.I * t), (t, 0, 2 * sp.pi))
     c2 = fp.ParametricContour(3 * (sp.cos(t) + sp.I * sp.sin(t)), (t, 0, 2 * sp.pi))
@@ -33,14 +33,14 @@ def test_multipuncture_homotopy_uses_nonabelian_free_word_certificate():
     assert len(cert.reduced_word) == 2
 
 
-def test_free_group_reduction_retains_commutator_order():
+def test_free_group_reduction_commutator_order():
     from funcprops.certified_operations import _free_reduce
 
     assert _free_reduce((1, 2, -1, -2)) == (1, 2, -1, -2)
     assert _free_reduce((1, 2, -2, -1)) == ()
 
 
-def test_log_pole_is_branch_point_but_integral_local_power_is_not():
+def test_log_pole_branch_point_but_local_power():
     z = sp.symbols("z")
     assert fp.classify_singularity(sp.log(1 / z), z, 0) == "branch_point"
     e = sp.Pow(z**2, sp.Rational(1, 2), evaluate=False)

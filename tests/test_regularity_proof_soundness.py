@@ -27,7 +27,7 @@ z = sp.Symbol("z")
         sp.sin(sp.re(z)),
     ],
 )
-def test_no_global_meromorphic_claim_from_local_or_outer_primitive(f):
+def test_meromorphic_outer_primitive(f):
     assert fp.meromorphic(f, z) is Meromorphicity.UNKNOWN
 
 
@@ -41,7 +41,7 @@ def test_no_global_meromorphic_claim_from_local_or_outer_primitive(f):
         sp.besselj(sp.Symbol("n", integer=True), z),
     ],
 )
-def test_global_entire_inner_map_and_known_primitive_theorems_survive(f):
+def test_global_entire_inner_map_primitive_theorems(f):
     assert fp.meromorphic(f, z) is Meromorphicity.MEROMORPHIC
 
 
@@ -67,7 +67,7 @@ def test_meromorphic_branch_cancellation(f):
         sp.exp(sp.conjugate(z)),
     ],
 )
-def test_outer_entire_or_meromorphic_head_needs_holomorphic_argument(f):
+def test_outer_entire_meromorphic_holomorphic_argument(f):
     assert fp.analytic(f, z, domain=sp.S.Complexes) is Analyticity.UNKNOWN
 
 
@@ -79,7 +79,7 @@ def test_outer_entire_or_meromorphic_head_needs_holomorphic_argument(f):
         z * sp.conjugate(z) - sp.Abs(z) ** 2,
     ],
 )
-def test_exact_complex_identities_are_checked_on_whole_defined_source(f):
+def test_exact_complex_identities_defined_source(f):
     assert fp.analytic(f, z, domain=sp.S.Complexes) is Analyticity.ANALYTIC
     assert fp.meromorphic(f, z) is Meromorphicity.MEROMORPHIC
 
@@ -87,7 +87,7 @@ def test_exact_complex_identities_are_checked_on_whole_defined_source(f):
 @pytest.mark.parametrize(
     "D", [x < 0, sp.Interval(-2, -1), sp.Union(sp.Interval(-2, -1), sp.Interval(1, 2))]
 )
-def test_recursive_analyticity_preserves_requested_domain(D):
+def test_recursive_analyticity_requested_domain(D):
     assert fp.analytic(-sp.Abs(x), x, domain=D) is Analyticity.ANALYTIC
     assert fp.continuous(-sp.Abs(x), x, domain=D) is Continuity.CONTINUOUS
     assert fp.smoothness(-sp.Abs(x), x, domain=D) == sp.oo
@@ -102,7 +102,7 @@ def test_recursive_analyticity_preserves_requested_domain(D):
         sp.Piecewise((x, sp.Ne(x, 0)), (0, True)),
     ],
 )
-def test_analytic_whole_function_despite_nonsmooth_children_or_seams(f):
+def test_analytic_whole_function_children_seams(f):
     assert fp.analytic(f, x) is Analyticity.ANALYTIC
     assert fp.continuous(f, x) is Continuity.CONTINUOUS
     result = fp.smoothness(f, x, return_result=True)
@@ -124,7 +124,7 @@ def test_unresolved_discontinuity_candidates():
     assert discontinuity_at(f, x, sp.S.Zero) is False
 
 
-def test_joint_variable_power_at_zero_has_no_continuity_theorem():
+def test_joint_power_continuity():
     f = (x + y) ** (x - y)
     t = sp.Symbol("t", positive=True)
     assert f.subs({x: t, y: t}, simultaneous=True) == 1
@@ -136,7 +136,7 @@ def test_joint_variable_power_at_zero_has_no_continuity_theorem():
     assert fp.continuous(sp.sqrt(x * x + y * y), (x, y)) is Continuity.CONTINUOUS
 
 
-def test_unproved_piecewise_derivative_limit_is_not_a_failure_witness():
+def test_unproved_derivative_limit():
     from funcprops.real_analysis.piecewise import (
         PiecewiseBoundary,
         PiecewiseBoundaryCertificate,
@@ -150,13 +150,13 @@ def test_unproved_piecewise_derivative_limit_is_not_a_failure_witness():
 
 
 @pytest.mark.parametrize("f", [sp.oo, -sp.oo, sp.zoo, sp.nan])
-def test_nonfinite_constants_are_not_regular_functions(f):
+def test_nonfinite_function_regularity(f):
     assert fp.analytic(f, x) is Analyticity.UNKNOWN
     assert fp.continuous(f, x) is Continuity.UNKNOWN
     assert fp.meromorphic(f, z) is Meromorphicity.UNKNOWN
 
 
-def test_definition_holes_and_genuine_negative_evidence_are_retained():
+def test_definition_holes_genuine_negative_retained():
     raw = sp.Mul(sp.S.Zero, sp.Pow(x, -1, evaluate=False), sp.Abs(x), evaluate=False)
     assert regularity_normal_form(raw, x, sp.S.Reals) == raw
     assert fp.analytic(sp.Abs(x), x) is Analyticity.NOT_ANALYTIC
@@ -168,7 +168,7 @@ def test_definition_holes_and_genuine_negative_evidence_are_retained():
     assert fp.analytic(kink, x) is Analyticity.NOT_ANALYTIC
 
 
-def test_regularization_cache_obeys_public_cache_lifecycle():
+def test_regularization_cache_obeys_public_lifecycle():
     fp.clear_caches()
     assert fp.cache_info()["regularity_normal_form"].currsize == 0
     fp.analytic(sp.sin(sp.Abs(x)) ** 2, x)
@@ -185,7 +185,7 @@ def test_nonfinite_source_factors(variables):
     assert fp.meromorphic(raw, x) is Meromorphicity.UNKNOWN
 
 
-def test_accumulation_bounds_do_not_certify_a_piecewise_limit_or_jet():
+def test_accumulation_jets():
     from funcprops.real_analysis.piecewise import (
         certify_piecewise_boundaries,
         piecewise_decomposition,

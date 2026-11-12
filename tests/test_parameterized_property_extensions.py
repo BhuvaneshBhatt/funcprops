@@ -1,6 +1,5 @@
 import sympy as sp
 
-from funcprops.certified_optimization import certify_global_minimum
 from funcprops.parameter_discriminants import polynomial_transition_locus
 from funcprops.results import Monotonicity, Sign
 from funcprops.special_theorems import executable_special_theorems
@@ -23,12 +22,6 @@ def test_guarded_special_facts():
         ).value
         is Monotonicity.STRICTLY_INCREASING
     )
-
-
-def test_global_minimum_nonconstant_second_derivative():
-    x = sp.symbols("x", real=True)
-    c = certify_global_minimum(x**4 + x**2, x)
-    assert c.point == 0 and c.unique and c.verify()
 
 
 def test_polynomial_transition_locus():

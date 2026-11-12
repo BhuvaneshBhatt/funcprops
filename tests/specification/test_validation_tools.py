@@ -6,12 +6,13 @@ from pathlib import Path
 import pytest
 
 from tools.check_docs import execute_document, headings, link_errors, python_blocks
+from tools.check_style import style_errors
 from tools.check_test_matrix import matrix_text
 
 ROOT = Path(__file__).resolve().parents[2]
 
 
-def test_page_sessions_share_state_but_pages_start_fresh(tmp_path):
+def test_page_sessions_share_state_pages_start_fresh(tmp_path):
     first = tmp_path / "first.md"
     first.write_text(
         "# Example\n\n```python\nvalue=3\n```\n\n```python\nassert value==3\n```\n"
@@ -38,7 +39,7 @@ def test_python_fences_cannot_be_silently_skipped(tmp_path, text):
         list(python_blocks(path))
 
 
-def test_long_closing_fence_and_indented_tilde_python(tmp_path):
+def test_long_closing_fence_indented_tilde_python(tmp_path):
     path = tmp_path / "valid.md"
     path.write_text(
         "   ~~~python\nassert True\n   ~~~~\n\n```text\nsignature(expr)\n```\n"
@@ -76,3 +77,41 @@ def test_repository_readme_links(tmp_path):
     ]
     (tmp_path / "docs/guide.md").write_text("# Scope\n")
     assert link_errors(tmp_path) == []
+
+
+def test_public_member_documentation(tmp_path):
+    (tmp_path / "README.md").write_text("# Example\n")
+    source = tmp_path / "src/example.py"
+    source.parent.mkdir()
+    source.write_text(
+        'class Result:\n    """An analysis result."""\n'
+        "    @property\n    def count(self):\n        return 2\n"
+        "    def _key(self):\n        return 0\n"
+    )
+    errors = style_errors(tmp_path)
+    assert len(errors) == 1 and "Result.count" in errors[0]
+    source.write_text(
+        source.read_text().replace(
+            "def count(self):\n",
+            'def count(self):\n        """Distinct-root count."""\n',
+        )
+    )
+    assert style_errors(tmp_path) == []
+
+
+def test_source_validation_conventions(tmp_path):
+    (tmp_path / "README.md").write_text("# Example\n")
+    source = tmp_path / "src/example.py"
+    source.parent.mkdir()
+    numbered_name = "_".join(("test", "p" + str(3), "image"))
+    source.write_text(
+        'def evaluate(x):\n    """Evaluate a positive input."""\n'
+        "    assert x > 0\n    return x\n"
+        'def evaluate(x):\n    """Evaluate an input."""\n    return x\n'
+        f'def {numbered_name}():\n    """An image example."""\n    return 0\n'
+    )
+    errors = style_errors(tmp_path)
+    assert len(errors) == 3
+    assert any("explicit validation" in error for error in errors)
+    assert any("overridden definition evaluate" in error for error in errors)
+    assert any("mathematical task name" in error for error in errors)

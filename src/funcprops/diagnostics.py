@@ -6,7 +6,6 @@ from enum import Enum
 import sympy as sp
 
 _NATIVE_REPLAY_MODULES = (
-    "extrema_bounds",
     "branch_atlas",
     "implicit_orders",
     "coverage_contract",
@@ -179,7 +178,6 @@ def replay_status(record, *, expr=None, var=None, work_budget=None):
         from .branch_atlas import GluedPowerProof, LogAtlasProof, LogBranchChart
         from .coverage_checker import check_leaf
         from .enclosures import DerivativeEnclosure, EnclosureResult
-        from .extrema_bounds import ExtremaBoundsProof
         from .implicit_orders import (
             CommonZeroProof,
             ImplicitMultiplicityProof,
@@ -253,7 +251,6 @@ def replay_status(record, *, expr=None, var=None, work_budget=None):
         if isinstance(
             record,
             (
-                ExtremaBoundsProof,
                 LogBranchChart,
                 LogAtlasProof,
                 GluedPowerProof,

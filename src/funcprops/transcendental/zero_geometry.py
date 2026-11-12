@@ -29,22 +29,27 @@ class IndexedZero(sp.Expr):
 
     @property
     def family(self):
+        """Special-function family specifying the indexed data."""
         return str(self.args[0])
 
     @property
     def index(self):
+        """Index selecting a member of the represented family."""
         return self.args[1]
 
     @property
     def order(self):
+        """Vanishing or derivative order represented by the record."""
         return None if self.args[2] is S.NaN else self.args[2]
 
     @property
     def derivative_order(self):
+        """Derivative order used to define the indexed family."""
         return int(self.args[3])
 
     @property
     def branch(self):
+        """Selected branch identifier for the indexed or local formula."""
         return str(self.args[4])
 
     def _sympystr(self, printer):
@@ -886,6 +891,7 @@ class CertifiedIntegerBracket:
 
     @property
     def exact(self):
+        """Whether the represented transformation is exact."""
         return certify_identity_equal(self.lower, self.upper) is True
 
     def as_interval(self):
@@ -1032,33 +1038,41 @@ class IndexedTailIndex(sp.Expr):
 
     @property
     def family(self):
+        """Special-function family specifying the indexed data."""
         return str(self.args[0])
 
     @property
     def cutoff(self):
+        """Finite source cutoff of the tail statement."""
         return self.args[1]
 
     @property
     def order(self):
+        """Vanishing or derivative order represented by the record."""
         return None if self.args[2] is S.NaN else self.args[2]
 
     @property
     def derivative_order(self):
+        """Derivative order used to define the indexed family."""
         return int(self.args[3])
 
     @property
     def direction(self):
+        """Source direction or comparison direction used by the record."""
         return str(self.args[4])
 
     @property
     def inclusive(self):
+        """Whether the cutoff belongs to the represented region."""
         return self.args[5] is S.true
 
     @property
     def branch(self):
+        """Selected branch identifier for the indexed or local formula."""
         return str(self.args[6])
 
     def indexed_zero(self):
+        """Build the indexed zero selected by this tail index."""
         return IndexedZero(
             self.family, self, self.args[2], self.derivative_order, self.branch
         )
@@ -1094,6 +1108,7 @@ class IndexedTailInversionCertificate:
 
     @property
     def first_zero(self):
+        """First indexed zero selected by the tail description."""
         return IndexedZero(
             self.family,
             self.first_index,

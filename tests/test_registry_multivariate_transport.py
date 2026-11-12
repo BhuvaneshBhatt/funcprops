@@ -35,7 +35,7 @@ def _quadratic_registry():
     )
 
 
-def test_analysis_subject_validates_multivariate_variables():
+def test_analysis_subject_multivariate_variables():
     x, y = sp.symbols("x y", real=True)
     subject = AnalysisSubject((x, y), domain=sp.And(x > 0, y > 0))
     assert subject.variables == (x, y)
@@ -71,7 +71,7 @@ def test_registered_outer_hessian_from_partial_rules():
     assert cert.verify(registry=reg) is True
 
 
-def test_multivariate_chain_rule_gradient_and_hessian():
+def test_multivariate_chain_rule_gradient_hessian():
     reg = _quadratic_registry()
     x, y = sp.symbols("x y", real=True)
     cert = registry_chain_rule(G(x + y, x - y), (x, y), registry=reg, second_order=True)
@@ -82,7 +82,7 @@ def test_multivariate_chain_rule_gradient_and_hessian():
     assert cert.verify(registry=reg) is True
 
 
-def test_convexity_transport_uses_composite_hessian_certificate():
+def test_convexity_transport_composite_certificate():
     reg = _quadratic_registry()
     u = FunctionSlot(0, "u")
     v = FunctionSlot(1, "v")
@@ -96,7 +96,7 @@ def test_convexity_transport_uses_composite_hessian_certificate():
     assert out.subject_map.jacobian == sp.ImmutableMatrix([[1, 1], [1, -1]])
 
 
-def test_missing_outer_partial_refuses_second_order_transport():
+def test_missing_outer_partial_second_order_transport():
     u = FunctionSlot(0, "u")
     reg = FunctionRegistry([], derivative_rules=[DerivativeRule(G, u, 2 * u)])
     x, y = sp.symbols("x y", real=True)
@@ -105,7 +105,7 @@ def test_missing_outer_partial_refuses_second_order_transport():
     assert cert.hessian is None
 
 
-def test_multivariate_pointwise_sign_transport_is_direct():
+def test_multivariate_pointwise_sign_transport_direct():
     u = FunctionSlot(0, "u")
     v = FunctionSlot(1, "v")
     x, y = sp.symbols("x y", real=True)

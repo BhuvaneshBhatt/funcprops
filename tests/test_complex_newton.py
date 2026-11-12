@@ -78,7 +78,7 @@ def test_structural_derivative_reference(expr):
 @pytest.mark.parametrize(
     "expr", [sp.sin(z * z + z) * sp.exp(z), sp.erf(z + z * z), sp.erfc(sp.sin(z))]
 )
-def test_derivative_on_a_box_encloses_interior_and_corner_references(expr):
+def test_derivative_box_encloses_corner_references(expr):
     result = complex_box_jet(expr, z, (-R, -R, R, R))
     a, b, c, d = result[1]
     derivative = sp.diff(expr, z)
@@ -99,11 +99,11 @@ def test_derivative_on_a_box_encloses_interior_and_corner_references(expr):
         sp.Mul(z, sp.Pow(z, -1, evaluate=False), evaluate=False),
     ],
 )
-def test_derivative_does_not_expand_the_source_grammar(expr):
+def test_derivative_source_grammar(expr):
     assert complex_box_jet(expr, z, (-R, -R, R, R)) is None
 
 
-def test_strict_contraction_child_and_all_complements(refinement):
+def test_strict_contraction_child_complements(refinement):
     c = refinement
     assert 0 <= c.contraction < 1 and c.root_count == c.multiplicity_count == 1
     assert cn._inside(c.image, c.child_rectangle.bounds())
@@ -149,7 +149,7 @@ def test_strict_contraction_child_and_all_complements(refinement):
         lambda c: replace(c, tested=True),
     ],
 )
-def test_false_derivatives_inverses_and_enclosures_rejected(refinement, mutation):
+def test_false_derivatives_inverses_enclosures(refinement, mutation):
     assert mutation(refinement).check().certified is False
 
 
@@ -181,7 +181,7 @@ def test_self_attesting_nested_witnesses_rejected(refinement):
     assert fp.replay_status(region).certified is False
 
 
-def test_malformed_regions_decline_instead_of_raising(refinement):
+def test_malformed_regions_decline_instead_raising(refinement):
     for r in (
         fp.ComplexNewtonRegion(object(), 0),
         fp.ComplexNewtonRegion(refinement, -1),
@@ -191,7 +191,7 @@ def test_malformed_regions_decline_instead_of_raising(refinement):
         assert r.check().certified is False and not r.verify()
 
 
-def test_nonvanishing_derivative_alone_does_not_accept_newton():
+def test_newton_contraction_premises():
     p = fp.certify_analytic_contour(sp.exp(z) - 1, z, -1 - sp.I, 1 + sp.I)
     assert p.verify() and p.zero_count == 1
     assert fp.certify_complex_refinement(p) is None
@@ -226,7 +226,7 @@ def test_requested_diameter_and_error_enclosures(isolated):
 
 
 @pytest.mark.parametrize("kind", ["omit", "duplicate", "change", "overlap"])
-def test_transferred_complements_are_required_for_coverage(isolated, kind):
+def test_transferred_complements_required_coverage(isolated, kind):
     p = isolated.proof
     if kind == "omit":
         bad = ci._assembled(p, zeros=p.zero_regions[1:])
@@ -241,7 +241,7 @@ def test_transferred_complements_are_required_for_coverage(isolated, kind):
     assert not bad.verify()
 
 
-def test_native_replay_never_calls_refinement_proposals(isolated, monkeypatch):
+def test_native_replay_independence(isolated, monkeypatch):
     def disabled(*args, **kwargs):
         raise AssertionError("producer called during replay")
 
@@ -263,7 +263,7 @@ def test_native_replay_never_calls_refinement_proposals(isolated, monkeypatch):
         assert fp.replay_status(record, expr=sp.sin(z), var=z).certified is False
 
 
-def test_newton_checkpoint_resume_and_wall_preservation():
+def test_newton_checkpoint_resume_wall_preservation():
     checkpoints = []
     with capture_checkpoints(checkpoints.append):
         p = fp.certify_complex_isolation(
@@ -285,7 +285,7 @@ def test_newton_checkpoint_resume_and_wall_preservation():
 
 
 @pytest.mark.parametrize("limit", [0, 1, 2, 4, 5, 6, 7, 8, 9, 10, 12])
-def test_failed_and_successful_refinement_charged_to_one_budget(limit):
+def test_failed_successful_refinement_one_budget(limit):
     q = fp.certify_complex_isolation(
         sp.exp(z) - 1,
         z,
@@ -321,7 +321,7 @@ def test_direct_refinement_budgets_and_precision(parent, monkeypatch):
     assert 2 in calls and 4 in calls
 
 
-def test_public_integration_exposes_refinement_certificates():
+def test_public_integration_exposes_certificates():
     q = fp.complex_zeros(
         sp.exp(z) - 1,
         z,
@@ -388,9 +388,7 @@ def test_native_newton_inventory():
         (sp.erfc(z) - 1, RECT, 1),
     ],
 )
-def test_complete_refinement_for_multiple_boxes_and_entire_primitives(
-    expr, rectangle, count
-):
+def test_complete_refinement_multiple_primitives(expr, rectangle, count):
     q = fp.certify_complex_isolation(
         expr,
         z,
@@ -402,7 +400,7 @@ def test_complete_refinement_for_multiple_boxes_and_entire_primitives(
     assert q.refinements
 
 
-def test_nonreal_rational_inverse_and_exact_linear_root():
+def test_nonreal_rational_inverse_exact_linear_root():
     for expr, center in ((z * z + 1, sp.I), (z - 1, sp.S.One)):
         p = fp.certify_analytic_contour(
             expr, z, center - R - sp.I * R, center + R + sp.I * R

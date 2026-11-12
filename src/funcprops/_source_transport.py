@@ -18,6 +18,7 @@ class _SourcePickler(pickle.Pickler):
     """
 
     def reducer_override(self, value):
+        """Preserve raw SymPy arithmetic and exact polynomial domains in transport."""
         if isinstance(value, sp.Poly):
             domain = value.domain
             if domain.is_AlgebraicField:

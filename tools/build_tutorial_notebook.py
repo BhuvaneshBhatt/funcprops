@@ -93,6 +93,11 @@ GROUPS = [
 ]
 
 
+def identify_cells(cells):
+    """Assign stable unique notebook IDs so execution preserves generated files."""
+    return [{**cell, "id": f"cell-{index}"} for index, cell in enumerate(cells)]
+
+
 def md(text: str) -> dict:
     return {
         "cell_type": "markdown",
@@ -117,7 +122,7 @@ def main() -> None:
     args = parser.parse_args()
     cells = [
         md(
-            "# A tour of function properties\n\nThis notebook is a guided introduction to `funcprops`. Every property example below is drawn from the same executable example corpus used by the specification tests, so the tutorial and reference documentation cannot silently drift apart.\n\nThe package answers symbolic global questions over explicit domains and assumptions. `UNKNOWN` means that no available proof route certified a conclusion; it does not mean the property is false."
+            "# A tour of function properties\n\nThis notebook is a guided introduction to `funcprops`. Every property example below is drawn from the same executable example corpus used by the specification tests, to keep the tutorial and reference synchronized.\n\nThe package answers symbolic global questions over explicit domains and assumptions. `UNKNOWN` means that no available proof route certified a conclusion; it does not mean the property is false."
         ),
         code(
             'import sympy as sp\n\nimport funcprops as fp\n\nx, y = sp.symbols("x y", real=True)'
@@ -165,7 +170,7 @@ def main() -> None:
         )
     )
     notebook = {
-        "cells": cells,
+        "cells": identify_cells(cells),
         "metadata": {
             "kernelspec": {
                 "display_name": "Python 3",
@@ -177,7 +182,7 @@ def main() -> None:
         "nbformat": 4,
         "nbformat_minor": 5,
     }
-    text = json.dumps(notebook, indent=1) + "\n"
+    text = json.dumps(notebook, indent=1, sort_keys=True) + "\n"
     if args.check:
         if not OUT.exists() or OUT.read_text() != text:
             raise SystemExit(

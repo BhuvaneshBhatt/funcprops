@@ -4,7 +4,7 @@
 
 ## Mathematical definition
 
-Function geometry combines regularity, analyticity, convexity, singularities, boundary escape, level-boundedness, and attainment information in one structural summary.
+Function geometry combines regularity, analyticity, convexity, singularities, boundary escape, level-boundedness, and attainement information in one structural summary.
 
 ## API and return values
 

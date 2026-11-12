@@ -34,6 +34,12 @@ def normalize_arithmetic(node):
     from the original source tree. Rebuilding also avoids querying inconsistent
     cached integer-parity assumptions on held zero products in SymPy.
     """
+    from .analytic_roots import CriticalValue, ImplicitRealRoot
+
+    # These are fixed numbers; rebuilding their bound definitions would discard
+    # the selected-root evidence and can trigger unrelated discovery.
+    if type(node) in (ImplicitRealRoot, CriticalValue):
+        return node
     if not node.args:
         return node
     args = tuple(normalize_arithmetic(arg) for arg in node.args)

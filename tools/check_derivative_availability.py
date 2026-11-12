@@ -3,7 +3,7 @@
 Run from the project root with PYTHONPATH=src and PYTHONHASHSEED=3.
 On the affected baseline the failure is intermittent. A failure reports the
 exact held source and any InconsistentAssumptions exception seen during replay.
-Exits unsuccessfully when proof availability is lost.
+The check fails when a required derivative proof is unavailable.
 """
 
 import json

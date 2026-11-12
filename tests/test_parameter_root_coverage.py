@@ -22,7 +22,7 @@ def test_quadratic_three_strata_include_double_root():
 @pytest.mark.parametrize(
     "value,count,mult", [(0, 1, 1), (sp.Rational(1, 4), 1, 2), (-1, 2, 2), (1, 0, 0)]
 )
-def test_leading_coefficient_zero_and_discriminant_cases(value, count, mult):
+def test_leading_coefficient_zero_discriminant_cases(value, count, mult):
     r = fp.parameter_root_coverage(a * x * x + x + 1, x, a)
     q = fp.specialize_parameter_coverage(r, value)
     assert r.complete and r.verify()
@@ -73,7 +73,7 @@ def test_affine_zero_and_constant_degeneracy():
 @pytest.mark.parametrize(
     "left,right", [(False, False), (True, False), (False, True), (True, True)]
 )
-def test_exponential_parameter_endpoints_have_exact_ownership(left, right):
+def test_exponential_parameter_endpoints_ownership(left, right):
     D = sp.Interval(0, 1, left, right)
     r = fp.parameter_root_coverage(sp.exp(x) - a, x, a, D)
     assert r.complete and r.verify() and len(r.cells) == 5
@@ -88,7 +88,7 @@ def test_exponential_parameter_endpoints_have_exact_ownership(left, right):
         assert q.verify() and q.root_count == count
 
 
-def test_decreasing_translation_and_restricted_parameter_components():
+def test_decreasing_translation_parameter_components():
     P = sp.Union(sp.Interval(0, sp.Rational(1, 2)), sp.FiniteSet(1))
     r = fp.parameter_root_coverage(
         sp.exp(-x) - a, x, a, sp.Interval.open(0, 1), parameter_domain=P
@@ -118,7 +118,7 @@ def test_parameter_partition_tampering():
     assert not replace(r, source_syntax="changed").verify()
 
 
-def test_budget_does_not_omit_unprocessed_parameter_strata():
+def test_unprocessed_parameter_strata():
     for n in (0, 1, 2):
         r = fp.parameter_root_coverage(
             x * x - a, x, a, policy=fp.EnclosurePolicy(max_cells=n)
@@ -144,7 +144,7 @@ def test_parameter_proof_replay_does_not_call_search(monkeypatch):
     assert r.verify() and t.verify()
 
 
-def test_source_holes_and_float_specialization_never_disappear():
+def test_source_holes_float_specialization():
     held = sp.Mul(a, sp.Pow(a, -1, evaluate=False), evaluate=False)
     f = sp.Add(sp.exp(x), -a, sp.Mul(0, held, evaluate=False), evaluate=False)
     r = fp.parameter_root_coverage(
@@ -157,7 +157,7 @@ def test_source_holes_and_float_specialization_never_disappear():
         fp.parameter_root_coverage(x * x, x, x)
 
 
-def test_hard_timeout_preserves_all_parameter_obligations():
+def test_hard_timeout_parameter_obligations():
     r = fp.parameter_root_coverage(
         x * x - a, x, a, policy=fp.EnclosurePolicy(seconds=0.001)
     )

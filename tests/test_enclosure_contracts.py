@@ -38,7 +38,7 @@ def test_sqrt_derivative_regularity():
     assert not fp.enclose_derivative(sp.sqrt(x), x, sp.Interval(0, 1)).verify()
 
 
-def test_enclosures_honor_zero_cell_budget_and_status():
+def test_enclosures_honor_zero_cell_budget_status():
     for query in (fp.enclose_expression, fp.enclose_derivative):
         r = query(
             sp.exp(x), x, sp.Interval(0, 1), policy=fp.EnclosurePolicy(max_cells=0)
@@ -57,7 +57,7 @@ def test_fixed_sign_abs_uses_checked_cell_derivative():
     assert leaf.verify() and leaf.root_count == 1
 
 
-def test_piecewise_branch_multiplicity_mutation_is_rejected():
+def test_piecewise_branch_multiplicity_mutation():
     f = sp.Piecewise((-x, x < 0), (2 * x, True))
     proof = fp.prove_root_coverage(f, x, sp.Interval(-1, 1))
     leaf = next(a for a in proof.leaves if a.root_count)

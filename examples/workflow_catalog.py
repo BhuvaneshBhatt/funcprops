@@ -13,6 +13,12 @@ class Workflow:
 
 WORKFLOWS = (
     Workflow(
+        "range-analysis",
+        "range_analysis.py",
+        "Exact and partial real images",
+        "Keep implicit critical values, refine partial images and transfer supported parameter families through real inverse branches.",
+    ),
+    Workflow(
         "piecewise-partitions",
         "piecewise_partitions.py",
         "Piecewise partitions",
@@ -41,12 +47,6 @@ WORKFLOWS = (
         "branch_recipes.py",
         "Gluing local branch recipes",
         "Assemble supplied holomorphic recipes, check every overlap and distinguish disagreement from a global obstruction.",
-    ),
-    Workflow(
-        "certified-extrema-bounds",
-        "certified_extrema_bounds.py",
-        "Certified extrema bounds",
-        "Finite real components, implicit critical points, and separate coverage/value accuracy.",
     ),
     Workflow(
         "branch-chart-gluing",

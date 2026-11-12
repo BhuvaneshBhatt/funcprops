@@ -9,14 +9,14 @@ ROOT = Path(__file__).resolve().parents[2]
 NOTEBOOK = ROOT / "docs" / "notebooks" / "function-properties-tour.ipynb"
 
 
-def test_notebook_contains_every_executable_documentation_example():
+def test_notebook_contains_every_documentation_example():
     data = json.loads(NOTEBOOK.read_text())
     text = "\n".join("".join(cell["source"]) for cell in data["cells"])
     for case in (*EXAMPLES, *STATISTICAL_SPECIAL_FUNCTION_EXAMPLES):
         assert f"<!-- example-id: {case.example_id} -->" in text
 
 
-def test_notebook_links_each_property_to_reference_page():
+def test_notebook_links_property_reference_page():
     text = NOTEBOOK.read_text()
     for case in EXAMPLES:
         page = case.property_name.removeprefix("function_")

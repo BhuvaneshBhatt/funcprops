@@ -39,7 +39,10 @@ import funcprops as fp
 
 x, y = sp.symbols("x y", real=True)
 result = fp.transformation_geometry((x + y, x - y), (x, y))
-assert result.determinant == -2 and result.local_invertibility.classification is fp.TruthValue.TRUE
+assert (
+    result.determinant == -2
+    and result.local_invertibility.classification is fp.TruthValue.TRUE
+)
 ```
 
 Expected: a combined Jacobian, determinant, local-invertibility, and change-of-variables summary.

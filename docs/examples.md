@@ -1,5 +1,7 @@
 # Worked examples and certification failures
 
+Python blocks on this page form one ordered session, executed from a fresh namespace.
+
 ## Winding is not multi-puncture homotopy
 
 The winding vector forgets generator order. The reduced free-group word retains it, so commutators remain visible even when every winding number is zero. See [Homotopy and contour deformation](https://github.com/BhuvaneshBhatt/funcprops/blob/main/docs/homotopy.md) for the geometric construction.
@@ -13,7 +15,9 @@ import funcprops as fp
 t, z = sp.symbols("t z", real=True)
 first = fp.ParametricContour(3 * sp.exp(sp.I * t), (t, 0, 2 * sp.pi))
 second = fp.ParametricContour(3 * (sp.cos(t) + sp.I * sp.sin(t)), (t, 0, 2 * sp.pi))
-certificate = fp.deform_contour(1 / ((z - 1) * (z + 1)), z, first, second, return_certificate=True)
+certificate = fp.deform_contour(
+    1 / ((z - 1) * (z + 1)), z, first, second, return_certificate=True
+)
 assert certificate.verify()
 assert set(certificate.punctures) == {-1, 1}
 ```

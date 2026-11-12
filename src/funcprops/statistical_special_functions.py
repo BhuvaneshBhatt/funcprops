@@ -1,7 +1,7 @@
 """Statistical special-function heads missing from the supported SymPy release.
 
-The classes implement only identities that are exact and useful to
-funcprops.  Property theorems live in :mod:`funcprops.real_analysis.special_functions`.
+The classes implement only identities that are exact and useful to funcprops.
+Property theorems live in :mod:`funcprops.real_analysis.special_functions`.
 """
 
 from __future__ import annotations

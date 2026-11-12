@@ -12,10 +12,10 @@
     "failure": "Unsupported domains, unproved signs, unbounded one-sided limits and source holes decline with None."
   },
   "encode_algebraic_coefficients": {
-    "inputs": "A tuple of source expressions/conditions and declared query coordinates. All remaining constants must be finite exact real algebraic values. Up to four nonrational constants, field degree at most four, and total input operation count at most 80 are supported.",
+    "inputs": "Source expressions/conditions and declared query coordinates. CoefficientFieldPolicy defaults to four constants, degree four and 80 input operations; larger discovery caps are opt-in. All constants must be finite exact real algebraic values.",
     "returns": "AlgebraicCoefficientEncoding or None; a wall timeout returns an uncertified BudgetedResult.",
     "replay": "The minimal polynomial, unique rational isolating interval, exact representations and source-preserving replacements replay without number-field discovery.",
-    "failure": "Larger fields, extra symbolic coefficient parameters, nonreal/inexact/transcendental constants and unsupported embeddings decline with None."
+    "failure": "Fields exceeding the selected policy, extra symbolic coefficient parameters, nonreal/inexact/transcendental constants and unsupported embeddings decline with None."
   },
   "certify_parameter_geometry": {
     "inputs": "A raw rational polynomial of degree at most four in one real root coordinate, one to four real parameters, a rational-endpoint interval and rational polynomial parameter guards. Intrinsic parameter assumptions remain premises.",
@@ -58,5 +58,29 @@
     "returns": "ReplayStatus with supported, certified, complete, scope, reason, outcome, schema_version and factory_replay.",
     "replay": "Inspect completion only after successful replay, under the concrete theorem contract. Factory/backend replay dependencies differ from native premise checking.",
     "failure": "Unsupported replay reports certified=None. Rejected or exhausted evidence reports certified=False; this is not a mathematical counterexample."
+  },
+  "analyze_range": {
+    "inputs": "A fixed exact scalar real source and requested real set/condition. Optional source-bound tail_facts augment internal tail analysis. EnclosurePolicy controls per-cell search, jets, enclosures and isolated elapsed time. certified defaults to False.",
+    "returns": "RangeAnalysis with image, inner, outer and unresolved sets; a wall timeout returns an uncertified BudgetedResult.",
+    "replay": "Exact intervals or ConditionSets, checked native root leaves and outward values, real-interior/one-sided backend records, and source-bound transfers. An exact Boolean image does not require canonical value ordering; partial evidence may verify without completion. Oscillatory escape, selected dense trig images and finite rational-amplitude tail enclosures avoid exhaustive tail critical-root search.",
+    "failure": "Unsupported continuity, limits, geometry, roots or tail facts remain explicit; malformed or source-mismatched supplied facts raise ValueError."
+  },
+  "analyze_parameter_range": {
+    "inputs": "A rational polynomial of degree at most three in one real coordinate, real parameter Symbols, a fixed finite rational interval/point union and an optional parameter guard. One supported invertible elementary outer head is allowed. certified defaults to False.",
+    "returns": "ParameterRangeAnalysis containing a quantifier-free output condition and candidate transition events; unsupported families remain incomplete.",
+    "replay": "Exact polynomial image identities retain degree loss, guarded real critical points, endpoint ties, coefficient poles and ownership. Inactive branches remain real and defined. Specialization respects intrinsic Symbol assumptions.",
+    "failure": "Moving source cells and general transcendental critical-point families are unsupported. Invalid coordinates and guards raise ValueError; unsupported source geometry gives an incomplete record."
+  },
+  "critical_value_regions": {
+    "inputs": "A fixed finite continuous real cell and a source-bound derivative-root cover of its interior, or no cover for partial/constant analysis.",
+    "returns": "Endpoint, critical and unresolved region/kind pairs; raises for a mismatched cover or unsupported cell.",
+    "replay": "The source and exact coverage context are checked. Regions contain every possible extremum; no optimizer or attainment decision is selected.",
+    "failure": "Unbounded cells, unproved C1 closure extensions and inconsistent covers raise ValueError."
+  },
+  "bound_range_tail": {
+    "inputs": "A fixed exact real function on one rational-cutoff tail, optionally with a proposed limit and certified=False.",
+    "returns": "TailValueBound or None; supports a rational polynomial trend and structurally bounded oscillatory remainder.",
+    "replay": "Whole-tail source continuity, remainder interval bounds, shifted polynomial signs and infinite limit are reconstructed. A provider flag is not a premise.",
+    "failure": "Unsupported trends/remainders, finite-limit or parameter-dependent tails decline. Invalid certification controls raise TypeError."
   }
 }

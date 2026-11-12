@@ -49,7 +49,7 @@ def test_redundant_log_real_positive_interval():
     assert simp == ((z > 1) & (z < 2))
 
 
-def test_impossible_shifted_log_real_on_positive_interval():
+def test_impossible_shifted_log_real_positive_interval():
     z = Symbol("z", complex=True)
     cond = (
         Contains(z, S.Reals)

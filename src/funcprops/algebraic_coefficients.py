@@ -21,6 +21,25 @@ _ERRORS = (
 )
 
 
+@dataclass(frozen=True)
+class CoefficientFieldPolicy:
+    """Bound coefficient-field discovery without limiting mathematical replay.
+
+    Larger degrees are opt-in. max_operations limits the supplied syntax;
+    process-isolated work_budget remains available on the encoding query.
+    """
+
+    max_degree: int = 4
+    max_constants: int = 4
+    max_operations: int = 80
+
+    def __post_init__(self):
+        for name in ("max_degree", "max_constants", "max_operations"):
+            value = getattr(self, name)
+            if type(value) is not int or value < 1:
+                raise ValueError(name + " must be a positive integer")
+
+
 def _constants(nodes):
     values = set()
 
@@ -63,6 +82,7 @@ class AlgebraicCoefficientEncoding:
 
     @property
     def guard(self):
+        """Boolean conditions required by this formula or theorem."""
         lo, hi = self.interval
         return sp.And(
             sp.Eq(self.polynomial, 0), self.generator > lo, self.generator < hi
@@ -70,15 +90,18 @@ class AlgebraicCoefficientEncoding:
 
     @property
     def complete(self):
+        """Completion status for this record's stated scope; replay validity is separate."""
         return True
 
     @property
     def certified(self):
+        """Replay acceptance; a valid partial record need not be complete."""
         return self.verify()
 
     @property
     def scope(self):
-        return "real-algebraic-coefficients-in-field-of-degree-at-most-four"
+        """Scope identifier: ``isolated-real-algebraic-coefficient-field``."""
+        return "isolated-real-algebraic-coefficient-field"
 
     def verify(self):
         """Check the unique real generator and every original coefficient representation."""
@@ -107,7 +130,7 @@ class AlgebraicCoefficientEncoding:
             p = sp.Poly(self.polynomial, self.generator, domain=sp.QQ)
             lo, hi = self.interval
             if not (
-                1 < p.degree() <= 4
+                1 < p.degree()
                 and all(v.is_Rational for v in (lo, hi))
                 and lo < hi
                 and p.is_irreducible
@@ -122,10 +145,7 @@ class AlgebraicCoefficientEncoding:
             ):
                 return False
             constants = _constants(self.inputs)
-            if (
-                not (0 < len(constants) <= 4)
-                or tuple(c for c, _ in self.representations) != constants
-            ):
+            if not constants or tuple(c for c, _ in self.representations) != constants:
                 return False
             for constant, formula in self.representations:
                 poly = sp.Poly(formula, self.generator, domain=sp.QQ)
@@ -146,18 +166,18 @@ class AlgebraicCoefficientEncoding:
 
 
 @lru_cache(maxsize=128)
-def _encoding(inputs, variables):
+def _encoding(inputs, variables, policy):
     if (
         any(n.free_symbols - set(variables) for n in inputs)
-        or sum(sp.count_ops(n) for n in inputs) > 80
+        or sum(sp.count_ops(n) for n in inputs) > policy.max_operations
     ):
         return None
     try:
         constants = _constants(inputs)
-        if not (0 < len(constants) <= 4):
+        if not (0 < len(constants) <= policy.max_constants):
             return None
         field = to_number_field(constants)
-        if not (1 < field.minpoly.degree() <= 4):
+        if not (1 < field.minpoly.degree() <= policy.max_degree):
             return None
         generator = sp.Dummy("coefficient", real=True)
         polynomial = field.minpoly.as_expr().subs(field.minpoly.gen, generator)
@@ -193,10 +213,16 @@ def _encoding(inputs, variables):
 
 
 @budgeted_operation
-def encode_algebraic_coefficients(inputs, variables):
-    """Encode up to four real algebraic constants in one field of degree at most four.
+def encode_algebraic_coefficients(inputs, variables, *, policy=None):
+    """Encode exact real coefficients by an isolated algebraic generator.
 
-    All remaining symbols must be declared query coordinates. Inexact, nonreal,
-    transcendental and larger fields decline before a rational backend is loaded.
+    The default policy allows degree four. An explicit CoefficientFieldPolicy
+    can increase discovery caps while preserving source guards and exact replay.
+    Inexact, nonreal and transcendental fields are unsupported.
     """
-    return _encoding(tuple(map(sp.sympify, inputs)), tuple(map(sp.sympify, variables)))
+    policy = CoefficientFieldPolicy() if policy is None else policy
+    if type(policy) is not CoefficientFieldPolicy:
+        raise TypeError("policy must be a CoefficientFieldPolicy")
+    return _encoding(
+        tuple(map(sp.sympify, inputs)), tuple(map(sp.sympify, variables)), policy
+    )

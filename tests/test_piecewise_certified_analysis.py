@@ -5,7 +5,7 @@ import funcprops as fp
 x, y = sp.symbols("x y", real=True)
 
 
-def test_effective_conditions_respect_first_true_piecewise_semantics():
+def test_effective_conditions_respect_semantics():
     expr = sp.Piecewise((x, x < 1), (2 * x, x < 3), (3 * x, True))
     dec = fp.piecewise_decomposition(expr, x)
     assert dec.complete
@@ -17,7 +17,7 @@ def test_effective_conditions_respect_first_true_piecewise_semantics():
     assert tuple(b.source_index for b in dec.branches) == (0, 1, 2)
 
 
-def test_boundary_ownership_captures_isolated_piecewise_value():
+def test_boundary_ownership_captures_isolated_value():
     expr = sp.Piecewise((x, x < 0), (100, sp.Eq(x, 0)), (x, True))
     dec = fp.piecewise_decomposition(expr, x)
     assert dec.boundaries == (fp.PiecewiseBoundary(0, 0, 2, 1),)
@@ -29,7 +29,7 @@ def test_boundary_ownership_captures_isolated_piecewise_value():
     assert fp.monotonicity(expr, x) is fp.Monotonicity.NOT_MONOTONE
 
 
-def test_piecewise_derivative_seam_certifies_nondifferentiability():
+def test_piecewise_derivative_seam_certifies():
     expr = sp.Piecewise((-x, x < 0), (x, True))
     (cert,) = fp.certify_piecewise_boundaries(
         fp.piecewise_decomposition(expr, x), max_order=2
@@ -43,26 +43,26 @@ def test_piecewise_derivative_seam_certifies_nondifferentiability():
     assert detailed.differentiability_order == 0
 
 
-def test_artificial_piecewise_seam_does_not_reduce_smoothness():
+def test_seam_smoothness():
     expr = sp.Piecewise((x**2, x < 0), (x**2, True), evaluate=False)
     detailed = fp.smoothness(expr, x, return_result=True)
     assert detailed.smooth is True
     assert detailed.differentiability_order is sp.oo
 
 
-def test_piecewise_zero_sets_are_merged_on_effective_branch_domains():
+def test_piecewise_zero_sets_merged_branch_domains():
     expr = sp.Piecewise((x + 1, x < 0), (x - 2, True))
     assert fp.zeros(expr, x) == sp.FiniteSet(-1, 2)
 
 
-def test_piecewise_range_merges_branch_images_and_endpoint_ownership():
+def test_piecewise_range_images_endpoint_ownership():
     expr = sp.Piecewise((x, x < 0), (100, sp.Eq(x, 0)), (x + 2, True))
     result = fp.range(expr, x, y)
     expected = (y < 0) | sp.Eq(y, 100) | (y > 2)
     assert sp.simplify_logic(sp.Equivalent(result, expected)) is sp.S.true
 
 
-def test_piecewise_convexity_checks_selected_boundary_value_and_slope():
+def test_piecewise_convexity_checks_boundary_slope():
     upward = sp.Piecewise((x, x < 0), (2 * x, True))
     bad_value = sp.Piecewise((x, x < 0), (100, sp.Eq(x, 0)), (2 * x, True))
     bad_slope = sp.Piecewise((2 * x, x < 0), (x, True))
@@ -71,7 +71,7 @@ def test_piecewise_convexity_checks_selected_boundary_value_and_slope():
     assert fp.convexity(bad_slope, x) is fp.Convexity.NEITHER
 
 
-def test_cached_derivative_of_analysis_variable_is_not_zero():
+def test_cached_derivative_coordinate():
     from funcprops.proof_cache import cached_derivative
 
     assert cached_derivative(x, x) == 1

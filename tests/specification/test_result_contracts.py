@@ -43,7 +43,7 @@ def test_native_three_way_completion_contract(case):
     assert status.certified is True and status.complete is result.complete
 
 
-def test_algebraic_locations_do_not_imply_source_multiplicity():
+def test_algebraic_source_multiplicity():
     proof = fp.certify_algebraic_complex_roots(
         sp.sqrt(z), z, (-2 - 2 * sp.I, 2 + 2 * sp.I)
     )
@@ -65,7 +65,7 @@ def test_partial_property_replay_status():
     assert fp.replay_status(object()).certified is None
 
 
-def test_conditional_contract_does_not_claim_finite_completion():
+def test_conditional_finite_completion():
     run = fp.adaptive_quotient_isolation(1 / (sp.exp(z) - 2), z, *RECTANGLE, stages=0)
     theorem = run.termination_contract
     assert run.verify() and not run.complete
@@ -73,7 +73,7 @@ def test_conditional_contract_does_not_claim_finite_completion():
     assert theorem.applicable is None
 
 
-def test_s0_s3_records_keep_native_replay_status_and_schema_checks():
+def test_s0_s3_records_native_replay_schema_checks():
     from dataclasses import fields, is_dataclass
 
     from funcprops.quotient_cofinal import (
@@ -155,7 +155,7 @@ def test_s0_s3_records_keep_native_replay_status_and_schema_checks():
         assert rejected.certified is False and rejected.factory_replay is False
 
 
-def test_shared_zero_implication_is_local_even_when_other_zeros_exist():
+def test_shared_zero_implication_local_zeros_exist():
     from funcprops.shared_zeros import SharedZeroImplication
 
     g = sp.exp(z) - 2
@@ -204,7 +204,7 @@ def test_unregistered_status_callbacks():
         (None, False),
     ],
 )
-def test_public_replay_accepts_only_literal_exact_truth(monkeypatch, result, expected):
+def test_public_replay_only_literal_exact_truth(monkeypatch, result, expected):
     import funcprops.verification as verification
 
     class Record:

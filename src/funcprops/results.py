@@ -175,6 +175,7 @@ class Singularity:
 
     @property
     def locus(self):
+        """Set of points satisfying the represented geometric condition."""
         return self.condition
 
 
@@ -212,14 +213,17 @@ class SingularityResult:
 
     @property
     def primary(self):
+        """Primary mathematical answer or classification."""
         return self.singularities
 
     @property
     def classification(self):
+        """Property classification represented by the result."""
         return self.singularities
 
     @property
     def evidence(self):
+        """Premises retained for checking the result."""
         return self.records
 
 
@@ -321,6 +325,7 @@ class DetailedPropertyResult:
 
     @property
     def has_certificate(self):
+        """Whether the result carries a certificate object."""
         return self.certificate is not None
 
     @property

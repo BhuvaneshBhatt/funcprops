@@ -12,7 +12,7 @@ from funcprops import (
 )
 
 
-def test_exact_jacobian_and_affine_local_invertibility():
+def test_exact_jacobian_affine_local_invertibility():
     x, y = sp.symbols("x y", real=True)
     exprs = (2 * x + y, x - y)
     jac = jacobian(exprs, (x, y))
@@ -30,7 +30,7 @@ def test_exact_jacobian_and_affine_local_invertibility():
     assert verify_certificate(local)
 
 
-def test_singular_jacobian_is_not_nonvanishing_on_whole_domain():
+def test_singular_jacobian_domain():
     x, y = sp.symbols("x y", real=True)
     exprs = (x**2, y)
     assert determinant_nonvanishing(exprs, (x, y)) is TruthValue.FALSE
@@ -41,7 +41,7 @@ def test_singular_jacobian_is_not_nonvanishing_on_whole_domain():
     assert local_invertibility(exprs, (x, y)) is TruthValue.FALSE
 
 
-def test_domain_restriction_certifies_polar_map_away_from_origin():
+def test_domain_restriction_certifies_away_origin():
     r, theta = sp.symbols("r theta", real=True)
     exprs = (r * sp.cos(theta), r * sp.sin(theta))
     cert = determinant_nonvanishing(exprs, (r, theta), domain=r > 0, return_result=True)
@@ -69,7 +69,7 @@ def test_substitution_orientation():
     assert verify_certificate(cert)
 
 
-def test_nonsquare_map_stays_unknown_for_inverse_function_theorem():
+def test_nonsquare_map_unknown_inverse_theorem():
     x, y = sp.symbols("x y", real=True)
     local = local_invertibility((x + y,), (x, y), return_result=True)
     assert local.classification is TruthValue.UNKNOWN
@@ -89,14 +89,14 @@ def test_transformation_geometry():
     assert result.change_of_variables.absolute_determinant == 2
 
 
-def test_nonlinear_jacobian_is_exact_before_invertibility_analysis():
+def test_nonlinear_jacobian_exact_analysis():
     x, y = sp.symbols("x y", real=True)
     jac = jacobian((x**2 + y, sp.sin(x) + y**2), (x, y))
     assert jac == sp.ImmutableMatrix([[2 * x, 1], [sp.cos(x), 2 * y]])
     assert jacobian((x**2 + y, sp.sin(x) + y**2), (x, y), return_result=True).verify()
 
 
-def test_transformation_geometry_preserves_unknown_for_nonsquare_map():
+def test_transformation_geometry_unknown_nonsquare_map():
     x, y = sp.symbols("x y", real=True)
     result = transformation_geometry((x + y,), (x, y))
     assert result.determinant is sp.S.NaN
@@ -104,7 +104,7 @@ def test_transformation_geometry_preserves_unknown_for_nonsquare_map():
     assert result.change_of_variables.classification is TruthValue.UNKNOWN
 
 
-def test_singular_change_of_variables_replays_negative_certificate():
+def test_singular_variables_negative_certificate():
     x, y = sp.symbols("x y", real=True)
     cert = change_of_variables((x, 0), (x, y))
     assert cert.classification is TruthValue.FALSE

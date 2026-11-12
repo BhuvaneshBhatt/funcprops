@@ -321,14 +321,17 @@ class AlgebraicComplexRootProof:
 
     @property
     def root_count(self):
+        """Distinct-root count supplied by the record, or None when unresolved."""
         return len(self.roots) if self.complete else None
 
     @property
     def distinct_root_count(self):
+        """Distinct-root count supplied by the record, or None when unresolved."""
         return self.root_count
 
     @property
     def multiplicity_count(self):
+        """Root count with multiplicity, or None when unresolved."""
         return (
             sum(self.multiplicities)
             if self.complete and all(type(m) is int for m in self.multiplicities)
@@ -337,22 +340,27 @@ class AlgebraicComplexRootProof:
 
     @property
     def total_count(self):
+        """Total count established by the coverage evidence."""
         return self.multiplicity_count
 
     @property
     def isolation_complete(self):
+        """Whether every covered root is individually isolated."""
         return self.complete
 
     @property
     def coverage_complete(self):
+        """Whether the evidence covers the entire requested region."""
         return self.complete
 
     @property
     def scope(self):
+        """Scope identifier: ``algroots-backed-algebraic-roots-on-restricted-closed-rectangle``."""
         return "algroots-backed-algebraic-roots-on-restricted-closed-rectangle"
 
     @property
     def certified(self):
+        """Replay acceptance; a valid partial record need not be complete."""
         return self.verify()
 
     def check(self):

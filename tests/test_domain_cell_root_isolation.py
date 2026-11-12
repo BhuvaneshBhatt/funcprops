@@ -18,7 +18,7 @@ def test_domain_cells_exclude_undefined_candidate_root():
     assert "domain_cell_isolation" in result.method
 
 
-def test_domain_cells_preserve_roots_on_valid_components():
+def test_domain_cells_roots_valid_components():
     x = sp.symbols("x", real=True)
     expr = (x - 3) / (x - 2)
 
@@ -29,7 +29,7 @@ def test_domain_cells_preserve_roots_on_valid_components():
     assert zeros(expr, x, domain=sp.Interval(-10, 10)) == sp.FiniteSet(3)
 
 
-def test_disconnected_radical_domain_keeps_attained_boundary_roots():
+def test_disconnected_radical_domain_boundary_roots():
     x = sp.symbols("x", real=True)
     expr = sp.sqrt((x - 1) * (x - 3))
 
@@ -70,7 +70,7 @@ def test_range_root_exclusion():
     assert result.certificates[0].method == "certified_interval_range_exclusion"
 
 
-def test_derivative_range_resolves_unique_transcendental_root():
+def test_derivative_range_unique_transcendental_root():
     x = sp.symbols("x", real=True)
     expr = x + sp.exp(x) - 3
     domain = sp.Interval(-1, 1)

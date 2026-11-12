@@ -62,7 +62,7 @@ def test_components_endpoints_singletons(D, expected, owners):
     assert c.conclusion("minimum").value[1] == owners
 
 
-def test_piecewise_jump_and_singleton_value_are_not_dropped():
+def test_piecewise_singleton_jump():
     f = sp.Piecewise((x, x < 0), (100, sp.Eq(x, 0)), (x + 10, True))
     c = fp.certify_property_coverage(f, x, sp.Interval(-1, 1), policy=P)
     assert c.complete and c.verify()
@@ -94,7 +94,7 @@ def test_constant_and_empty_domains(f, D):
         assert c.conclusion("range").value is sp.S.EmptySet
 
 
-def test_unresolved_critical_cover_keeps_range_incomplete():
+def test_unresolved_critical_cover_range_incomplete():
     f = sp.exp(x) - x
     D = sp.Interval(-1, 2)
     pending = fp.adaptive_root_coverage(
@@ -109,7 +109,7 @@ def test_unresolved_critical_cover_keeps_range_incomplete():
     ).verify()
 
 
-def test_forged_critical_locations_and_value_orders_rejected():
+def test_forged_critical_locations_value_orders():
     c = fp.certify_property_coverage(sp.exp(x) - x, x, sp.Interval(-1, 2), policy=P)
     p = c.pieces[0]
     assert not replace(c, pieces=(replace(p, critical_points=()),)).verify()
@@ -156,7 +156,7 @@ def test_property_budget_and_missing_exact_locations():
         assert c.conclusion("range").value is None
 
 
-def test_wall_timeout_and_unbounded_domains_are_explicit():
+def test_wall_timeout_unbounded_domains_explicit():
     c = fp.certify_property_coverage(
         sp.exp(x) - x, x, sp.Interval(-1, 2), policy=replace(P, seconds=0.000001)
     )
@@ -179,7 +179,7 @@ def test_partition_seam_ownership():
     assert c.conclusion("minimum").value == (-5, sp.FiniteSet(0))
 
 
-def test_endpoint_witnesses_use_kernel_replay_not_self_attestation(monkeypatch):
+def test_endpoint_witness_replay(monkeypatch):
     from types import SimpleNamespace
 
     from funcprops.property_checker import _AUX

@@ -27,7 +27,7 @@ def test_unknown_is_not_a_false_inequality_proof():
     assert not replay_status(c).certified
 
 
-def test_subdivision_proof_replays_without_global_enclosure():
+def test_subdivision_enclosure():
     f = sp.exp(x) - 2 * x + sp.Rational(1, 2)
     c = certify_inequality(f, 0, x, D)
     assert c.classification is TruthValue.TRUE and c.source == "interval-subdivision"
@@ -47,13 +47,13 @@ def test_subdivision_proof_replays_without_global_enclosure():
         ("classification", TruthValue.FALSE),
     ],
 )
-def test_inequality_nested_source_and_context_bindings(field, value):
+def test_inequality_nested_source_context_bindings(field, value):
     c = certify_inequality(sp.exp(x), 0, x, D)
     assert c.verify()
     assert not replace(c, **{field: value}).verify()
 
 
-def test_original_cancellation_hole_cannot_receive_inequality_proof():
+def test_inequality_cancellation_hole():
     f = sp.Mul(x, sp.Pow(x, -1, evaluate=False), evaluate=False)
     c = certify_inequality(f, 0, x, sp.Interval(-1, 1))
     assert c.classification is TruthValue.UNKNOWN and not c.verify()
@@ -76,7 +76,7 @@ def test_source_subdivision_preserves_open_endpoints():
     assert sp.Union(*(child.domain for child in c.evidence)) == c.domain
 
 
-def test_global_proof_cannot_change_source_or_relation():
+def test_global_source_relation():
     c = certify_global_positive(x * x + 1, x)
     assert c.complete and c.verify()
     assert not replace(c, expression=-x * x - 1).verify()
@@ -86,7 +86,7 @@ def test_global_proof_cannot_change_source_or_relation():
     assert not verify_certificate(c, expr=x * x - 1, var=x)
 
 
-def test_valid_tails_do_not_cover_a_gap_around_negative_values():
+def test_tail_coverage_gap():
     f = (x - 2) ** 2 - 1
     core = sp.Interval(-sp.Rational(1, 2), sp.Rational(1, 2))
     cc = certify_inequality(f, 0, x, core)
@@ -102,7 +102,7 @@ def test_global_core_unknown_is_not_a_positive_proof():
     assert not c.complete and not c.verify()
 
 
-def test_global_source_hole_cannot_disappear_between_core_and_tails():
+def test_global_tail_source_hole():
     f = sp.Mul(x, sp.Pow(x, -1, evaluate=False), evaluate=False)
     c = certify_global_positive(f, x)
     assert not c.complete and not c.verify()
@@ -116,26 +116,21 @@ def test_derivative_chain_binds_actual_derivative():
     assert not replace(c, depth=2).verify()
 
 
-def test_derivative_chain_endpoint_cannot_move_outside_domain():
+def test_derivative_chain_endpoints():
     c = derivative_chain_positive(x, x, D)
     bad = replace(c, expression=x - 1, endpoint=sp.Integer(2))
     assert not bad.verify()
 
 
-def test_chain_retains_weak_boundary_and_reports_strict_scope():
+def test_chain_boundary_ownership():
     c = derivative_chain_positive(sp.exp(x) - 1 - x, x, D)
     assert c.verify() and c.relation == ">="
     assert c.strict_domain == sp.Interval.Lopen(0, 1)
     d = derivative_chain_positive(x, x, sp.Interval.Lopen(0, 1))
-    assert (
-        d is not None
-        and d.verify()
-        and d.relation == ">"
-        and d.strict_domain == d.domain
-    )
+    assert d.verify() and d.relation == ">" and d.strict_domain == d.domain
 
 
-def test_derivative_chain_rejects_jump_and_canceled_source_pole():
+def test_derivative_chain_jump_canceled_source_pole():
     for f in [
         sp.Piecewise((0, x < 0), (1, True)),
         sp.Mul(x, sp.Pow(x, -1, evaluate=False), evaluate=False),
@@ -149,14 +144,14 @@ def test_chain_base_domain_cannot_be_replaced():
     assert base.verify() and not replace(c, base_certificate=base).verify()
 
 
-def test_piecewise_constant_jacobian_does_not_prove_affine_bijection():
+def test_piecewise_constant_jacobian():
     f = sp.Piecewise((x, x < 0), (x + 1, True))
     assert sp.diff(f, x) == 1
     c = affine_global_mapping((f,), (x,))
     assert c.classification is TruthValue.UNKNOWN and not c.verify()
 
 
-def test_real_affine_helper_requires_real_offsets_and_coefficients():
+def test_real_affine_helper_offsets_coefficients():
     for f in [x + sp.I, sp.I * x]:
         c = affine_global_mapping((f,), (x,))
         assert c.classification is TruthValue.UNKNOWN and not c.verify()
@@ -171,13 +166,13 @@ def test_parameter_rank_is_not_assumed_generic():
     assert known.classification is TruthValue.TRUE and known.verify()
 
 
-def test_helper_does_not_restore_source_definition_after_cancellation():
+def test_helper_cancellation_domain():
     f = sp.Mul(x, x, sp.Pow(x, -1, evaluate=False), evaluate=False)
     c = affine_global_mapping((f,), (x,))
     assert c.classification is TruthValue.UNKNOWN and not c.verify()
 
 
-def test_bound_affine_map_replays_true_and_false_rank_claims():
+def test_bound_affine_map_true_false_rank():
     a = affine_global_mapping((x + y, x - y), (x, y))
     assert a.verify() and verify_certificate(a, expr=(x + y, x - y), var=(x, y))
     assert not replace(a, expressions=(-x + y, x - y)).verify()
@@ -187,7 +182,7 @@ def test_bound_affine_map_replays_true_and_false_rank_claims():
     assert not replace(b, classification=TruthValue.TRUE).verify()
 
 
-def test_incompatible_composition_is_unknown_not_bijective():
+def test_incompatible_bijection_composition():
     a = affine_global_mapping((x, y), (x, y))
     b = affine_global_mapping((x, y, z), (x, y, z))
     c = compose_global_maps((a, b))
@@ -205,7 +200,7 @@ def test_rectangular_injection_composition():
     assert not compose_global_maps((b, a), kind="injective").verify()
 
 
-def test_failed_component_does_not_disprove_composite_injectivity():
+def test_component_injectivity_status():
     outer = affine_global_mapping((x,), (x, y), kind="injective")
     inner = affine_global_mapping((x, sp.S.Zero), (x,), kind="injective")
     c = compose_global_maps((inner, outer), kind="injective")
@@ -223,7 +218,7 @@ def test_invalid_radius_and_depth_fail_early():
         derivative_chain_positive(x, x, D, max_depth=True)
 
 
-def test_rounded_float_determinant_is_not_an_exact_rank_proof():
+def test_rounded_determinant_rank():
     from funcprops import bijective, injective, surjective
 
     a = sp.Float("0.1")
@@ -241,7 +236,7 @@ def test_rounded_float_determinant_is_not_an_exact_rank_proof():
     )
 
 
-def test_krawczyk_cannot_invent_root_across_piecewise_jump():
+def test_krawczyk_jump_premise():
     from funcprops.multivariate_intervals import krawczyk_box
 
     f = sp.Piecewise((x - 1, x < 0), (x + 1, True))
@@ -249,7 +244,7 @@ def test_krawczyk_cannot_invent_root_across_piecewise_jump():
     assert krawczyk_box((f,), (x,), (sp.Interval(-2, 2),)) is None
 
 
-def test_krawczyk_symbolic_inverse_requires_nonzero_center_jacobian():
+def test_krawczyk_symbolic_inverse_nonzero_jacobian():
     from funcprops.multivariate_intervals import krawczyk_box
 
     a = sp.Symbol("a", real=True)
@@ -259,7 +254,7 @@ def test_krawczyk_symbolic_inverse_requires_nonzero_center_jacobian():
     assert c.verify()
 
 
-def test_factory_affine_krawczyk_requires_actual_zero_and_unique_rank():
+def test_factory_affine_krawczyk_zero_unique_rank():
     from funcprops.multivariate_intervals import KrawczykBoxCertificate
 
     for f, point in [(x + 5, sp.S.Zero), (sp.S.Zero, sp.S.Zero)]:
@@ -286,7 +281,7 @@ def test_krawczyk_source_and_center():
         assert krawczyk_box((f,), (x,), (sp.Interval(-1, 1),)) is None
 
 
-def test_float_determinant_does_not_disprove_inverse_theorem():
+def test_inexact_inverse_determinant():
     from funcprops import determinant_nonvanishing, local_invertibility
 
     a = sp.Float(".1")
@@ -297,7 +292,7 @@ def test_float_determinant_does_not_disprove_inverse_theorem():
     assert not replace(c, classification=TruthValue.FALSE).verify()
 
 
-def test_nested_unresolved_solution_set_does_not_claim_completeness():
+def test_nested_solution_completeness():
     from funcprops.certified_operations import solve
 
     c = solve(x * (sp.cos(x) - x), x, domain=sp.S.Reals, return_certificate=True)

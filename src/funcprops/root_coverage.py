@@ -239,22 +239,27 @@ class RootCoverageCertificate:
 
     @property
     def domain(self):
+        """Source region on which the record makes its claim."""
         return self.domain_record.effective
 
     @property
     def scope(self):
+        """Scope identifier: ``real-root-coverage-on-effective-domain``."""
         return "real-root-coverage-on-effective-domain"
 
     @property
     def certified(self):
+        """Replay acceptance; a valid partial record need not be complete."""
         return self.verify()
 
     @property
     def certificate(self):
+        """Evidence retained for this result's declared replay route."""
         return self
 
     @property
     def known_root_count(self):
+        """Distinct-root count established by the retained evidence."""
         return sum((r.root_count for r in self.regions), sp.S.Zero)
 
     def verify(self):
@@ -455,18 +460,22 @@ class SpecializedRootCoverage:
 
     @property
     def guard(self):
+        """Boolean conditions required by this formula or theorem."""
         return sp.And(*(sp.Eq(k, v) for k, v in self.substitutions))
 
     @property
     def complete(self):
+        """Completion status for this record's stated scope; replay validity is separate."""
         return self.coverage.complete if self.verify() else False
 
     @property
     def certified(self):
+        """Replay acceptance; a valid partial record need not be complete."""
         return self.verify()
 
     @property
     def scope(self):
+        """Scope identifier: ``root-coverage-under-explicit-parameter-equalities``."""
         return "root-coverage-under-explicit-parameter-equalities"
 
     def verify(self):

@@ -26,14 +26,14 @@ def test_sign_strata_specialize_to_direct_queries():
         assert _active_value(stratified, value) is expected
 
 
-def test_monotonicity_strata_specialize_to_direct_queries():
+def test_monotonicity_strata_specialize_direct_queries():
     stratified = fp.monotonicity(a * x, x, return_result=True)
     for value in (-2, 0, 3):
         expected = fp.monotonicity((a * x).subs(a, value), x)
         assert _active_value(stratified, value) is expected
 
 
-def test_convexity_strata_specialize_to_direct_queries():
+def test_convexity_strata_specialize_direct_queries():
     stratified = fp.convexity(a * x**2, x, return_result=True)
     for value in (-2, 0, 3):
         expected = fp.convexity((a * x**2).subs(a, value), x)

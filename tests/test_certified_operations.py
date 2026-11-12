@@ -62,7 +62,7 @@ def test_singularity_classification_and_deformation():
     assert cert and fp.verify_certificate(cert)
 
 
-def test_closed_contour_does_not_erase_log_antiderivative_monodromy():
+def test_closed_logarithm_monodromy():
     t, z = sp.symbols("t z")
     c = fp.ParametricContour(sp.exp(sp.I * t), (t, 0, 2 * sp.pi))
     e = (z - sp.Rational(1, 2)) / (z - 2)
@@ -71,14 +71,14 @@ def test_closed_contour_does_not_erase_log_antiderivative_monodromy():
     assert not (r.complete and r.value == 0)
 
 
-def test_open_paths_are_not_certified_by_closed_loop_windings():
+def test_open_path_winding():
     t = sp.symbols("t", real=True)
-    p1 = fp.ParametricContour(t, (t, 0, 1))
-    p2 = fp.ParametricContour(t**2, (t, 0, 1))
-    assert fp.homotopic(p1, p2, punctures=(2,)) is None
+    first = fp.ParametricContour(t, (t, 0, 1))
+    second = fp.ParametricContour(t**2, (t, 0, 1))
+    assert fp.homotopic(first, second, punctures=(2,)) is None
 
 
-def test_log_of_rational_power_preserves_fractional_divisor_winding():
+def test_log_rational_power_fractional_divisor_winding():
     t, z = sp.symbols("t z")
     c = fp.ParametricContour(sp.exp(sp.I * t), (t, 0, 2 * sp.pi))
     root = sp.Pow(z, sp.Rational(1, 2), evaluate=False)
@@ -110,7 +110,7 @@ def test_integral_field_binding():
     assert not badw.verify()
 
 
-def test_multipuncture_homotopy_orientation_and_deformation():
+def test_multipuncture_homotopy_deformation():
     t, z = sp.symbols("t z", real=True)
     c1 = fp.ParametricContour(3 * sp.exp(sp.I * t), (t, 0, 2 * sp.pi))
     c2 = fp.ParametricContour(3 * (sp.cos(t) + sp.I * sp.sin(t)), (t, 0, 2 * sp.pi))

@@ -137,14 +137,17 @@ class ComplexDerivativeWitness:
 
     @property
     def certified(self):
+        """Replay acceptance; a valid partial record need not be complete."""
         return self.verify()
 
     @property
     def complete(self):
+        """Completion status for this record's stated scope; replay validity is separate."""
         return self.verify()
 
     @property
     def scope(self):
+        """Scope identifier: ``entire-complex-first-derivative-enclosure``."""
         return "entire-complex-first-derivative-enclosure"
 
 
@@ -172,34 +175,42 @@ class ComplexNewtonRefinement:
 
     @property
     def complete(self):
+        """Completion status for this record's stated scope; replay validity is separate."""
         return True
 
     @property
     def zero_count(self):
+        """Zero count in this record's counting convention."""
         return 1
 
     @property
     def root_count(self):
+        """Distinct-root count supplied by the record, or None when unresolved."""
         return 1
 
     @property
     def multiplicity_count(self):
+        """Root count with multiplicity, or None when unresolved."""
         return 1
 
     @property
     def scope(self):
+        """Scope identifier: ``complex-krawczyk-count-one-refinement``."""
         return "complex-krawczyk-count-one-refinement"
 
     @property
     def regions(self):
+        """Geometric regions to which the stored evidence applies."""
         return tuple(ComplexNewtonRegion(self, index) for index in range(5))
 
     @property
     def root_region(self):
+        """Region whose root claim is carried by the stored evidence."""
         return self.regions[0]
 
     @property
     def zero_regions(self):
+        """Regions carrying the retained zero-count evidence."""
         return self.regions[1:]
 
     def check(self):
@@ -214,6 +225,7 @@ class ComplexNewtonRefinement:
 
     @property
     def certified(self):
+        """Replay acceptance; a valid partial record need not be complete."""
         return self.verify()
 
 
@@ -227,36 +239,44 @@ class ComplexNewtonRegion:
 
     @property
     def expression(self):
+        """Expression to which the stored evidence applies."""
         return self.refinement.expression
 
     @property
     def variable(self):
+        """Coordinate used by the source and its evidence."""
         return self.refinement.variable
 
     @property
     def rectangle(self):
+        """Rectangle on which this record makes its geometric claim."""
         return _layout(self.refinement.rectangle, self.refinement.child_rectangle)[
             self.index
         ]
 
     @property
     def zero_count(self):
+        """Zero count in this record's counting convention."""
         return int(self.index == 0)
 
     @property
     def root_count(self):
+        """Distinct-root count supplied by the record, or None when unresolved."""
         return self.zero_count
 
     @property
     def multiplicity_count(self):
+        """Root count with multiplicity, or None when unresolved."""
         return self.zero_count
 
     @property
     def complete(self):
+        """Completion status for this record's stated scope; replay validity is separate."""
         return True
 
     @property
     def scope(self):
+        """Scope identifier: ``complex-krawczyk-transferred-region-count``."""
         return "complex-krawczyk-transferred-region-count"
 
     def check(self):
@@ -284,6 +304,7 @@ class ComplexNewtonRegion:
 
     @property
     def certified(self):
+        """Replay acceptance; a valid partial record need not be complete."""
         return self.verify()
 
 

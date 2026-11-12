@@ -14,7 +14,7 @@ from funcprops.results import (
 x, y = sp.symbols("x y", real=True)
 
 
-def test_analytic_implies_continuous_and_smooth_for_entire_examples():
+def test_analytic_continuous_smooth_entire_examples():
     for f in (sp.exp(x), sp.sin(x), x**4 + 2 * x):
         assert fp.analytic(f, x) is Analyticity.ANALYTIC
         assert fp.continuous(f, x) is Continuity.CONTINUOUS
@@ -52,7 +52,7 @@ def test_equivalent_expression_invariance():
     assert len(set(cvs)) == 1
 
 
-def test_domain_sensitive_non_equivalence_is_preserved():
+def test_domain_sensitive_non_equivalence_preserved():
     f = (x**2 - 1) / (x - 1)
     g = x + 1
     assert fp.domain(f, x) != fp.domain(g, x)
@@ -74,7 +74,7 @@ def test_cache_order_invariance():
     assert a == (b2, b1, b0)
 
 
-def test_cache_assumption_normalization_is_order_insensitive():
+def test_cache_assumption_normalization_order():
     from funcprops.proof_cache import proof_key
 
     a, b = sp.symbols("a b", real=True)
@@ -83,7 +83,7 @@ def test_cache_assumption_normalization_is_order_insensitive():
     assert k1 == k2
 
 
-def test_semialg_delegation_parity_for_semialgebraic_range():
+def test_semialg_delegation_parity_semialgebraic_range():
     from funcprops import _semialg
 
     expected = _semialg.range(x**2, x, y)

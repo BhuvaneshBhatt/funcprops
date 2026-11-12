@@ -21,14 +21,17 @@ class BoxEnclosureWitness:
 
     @property
     def scope(self):
+        """Scope identifier: ``outward-value-enclosure-on-real-box``."""
         return "outward-value-enclosure-on-real-box"
 
     @property
     def complete(self):
+        """Completion status for this record's stated scope; replay validity is separate."""
         return self.verify()
 
     @property
     def certified(self):
+        """Replay acceptance; a valid partial record need not be complete."""
         return self.verify()
 
     def verify(self):
@@ -74,10 +77,12 @@ class UniformParameterCertificate:
 
     @property
     def complete(self):
+        """Completion status for this record's stated scope; replay validity is separate."""
         return self.root_count is not None and not self.obligations
 
     @property
     def scope(self):
+        """Scope identifier: ``uniform-root-count-on-real-parameter-box``."""
         return "uniform-root-count-on-real-parameter-box"
 
     def check(self):
@@ -89,6 +94,7 @@ class UniformParameterCertificate:
 
     @property
     def certified(self):
+        """Replay acceptance; a valid partial record need not be complete."""
         return self.verify()
 
     def verify(self):
@@ -118,6 +124,7 @@ class UniformParameterCover:
 
     @property
     def scope(self):
+        """Scope identifier: ``uniform-parameter-root-count-with-full-variable-cover``."""
         return "uniform-parameter-root-count-with-full-variable-cover"
 
     def check(self):
@@ -129,6 +136,7 @@ class UniformParameterCover:
 
     @property
     def certified(self):
+        """Replay acceptance; a valid partial record need not be complete."""
         return self.verify()
 
     def verify(self):
@@ -174,6 +182,18 @@ class ExponentialParameterWitness:
 
 
 @dataclass(frozen=True)
+class ConvexLevelWitness:
+    """A strictly convex level family with one exact interior critical point."""
+
+    base: sp.Expr
+    center: sp.Expr
+    minimum: sp.Expr
+    left_value: sp.Expr
+    right_value: sp.Expr
+    curvature: object
+
+
+@dataclass(frozen=True)
 class ParameterRootCell:
     """Record one guarded parameter cell and its root count witness."""
 
@@ -203,6 +223,7 @@ class ParameterCoverageProof:
 
     @property
     def scope(self):
+        """Scope identifier: ``exact-one-real-parameter-root-coverage``."""
         return "exact-one-real-parameter-root-coverage"
 
     def check(self):
@@ -214,6 +235,7 @@ class ParameterCoverageProof:
 
     @property
     def certified(self):
+        """Replay acceptance; a valid partial record need not be complete."""
         return self.verify()
 
     def verify(self):
@@ -232,6 +254,7 @@ class SpecializedParameterProof:
 
     @property
     def expression(self):
+        """Expression to which the stored evidence applies."""
         from .enclosures import preserve_replace
 
         return preserve_replace(
@@ -240,14 +263,17 @@ class SpecializedParameterProof:
 
     @property
     def variable(self):
+        """Coordinate used by the source and its evidence."""
         return self.parent.variable
 
     @property
     def parameter_guard(self):
+        """Parameter condition required by this specialization."""
         return sp.Eq(self.parent.parameter, self.value)
 
     @property
     def cell(self):
+        """Unique parameter cell containing the selected value, or None."""
         if (
             not isinstance(self.value, sp.Expr)
             or self.value.has(sp.Float)
@@ -263,18 +289,22 @@ class SpecializedParameterProof:
 
     @property
     def root_count(self):
+        """Distinct-root count supplied by the record, or None when unresolved."""
         return self.cell.root_count if self.cell else None
 
     @property
     def multiplicity_count(self):
+        """Root count with multiplicity, or None when unresolved."""
         return self.cell.multiplicity_count if self.cell else None
 
     @property
     def complete(self):
+        """Completion status for this record's stated scope; replay validity is separate."""
         return self.cell is not None
 
     @property
     def scope(self):
+        """Scope identifier: ``exact-parameter-specialization-of-checked-stratum``."""
         return "exact-parameter-specialization-of-checked-stratum"
 
     def check(self):
@@ -309,6 +339,7 @@ class SpecializedParameterProof:
 
     @property
     def certified(self):
+        """Replay acceptance; a valid partial record need not be complete."""
         return self.verify()
 
     def verify(self):

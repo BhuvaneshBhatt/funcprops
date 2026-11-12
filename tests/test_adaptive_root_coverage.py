@@ -42,7 +42,7 @@ def test_compact_examples_and_owned_boundaries(f, D, count):
     assert fp.replay_status(result).outcome == "complete-coverage"
 
 
-def test_contraction_retains_both_excluded_complements():
+def test_contraction_excluded_complements():
     result = fp.adaptive_root_coverage(
         sp.exp(x) - 2, x, sp.Interval(0, 1), policy=POLICY
     )
@@ -115,7 +115,7 @@ def test_checkpoint_is_a_replayable_partition():
     assert all(a in result.proof.leaves for a in saved.leaves)
 
 
-def test_hard_wall_timeout_keeps_query_and_can_resume():
+def test_hard_wall_timeout_query_resume():
     result = fp.adaptive_root_coverage(
         sp.exp(x) - 2, x, sp.Interval(0, 1), policy=replace(POLICY, seconds=0.001)
     )
@@ -142,6 +142,7 @@ def test_stage_caps_are_cofinal():
         "max_depth",
         "max_cells",
         "max_taylor_order",
+        "max_root_order",
         "max_series_terms",
     ):
         assert getattr(b, name) > getattr(a, name)
@@ -149,7 +150,7 @@ def test_stage_caps_are_cofinal():
         fp.coverage_policy_stage(True)
 
 
-def test_piecewise_corner_has_count_but_no_global_multiplicity():
+def test_corner_count_multiplicity():
     f = sp.Piecewise((-x, x < 0), (2 * x, True))
     for producer in (fp.prove_root_coverage, fp.adaptive_root_coverage):
         result = producer(f, x, sp.Interval(-1, 1), policy=POLICY)

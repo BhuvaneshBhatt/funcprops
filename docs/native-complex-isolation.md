@@ -8,15 +8,16 @@ Python blocks on this page form one ordered session, executed from a fresh names
 import sympy as s
 import funcprops as fp
 
-z = s.Symbol('z')             # unconstrained complex coordinate
-state = fp.certify_complex_isolation(s.sin(z), z, -4-s.I, 4+s.I)
+z = s.Symbol("z")  # unconstrained complex coordinate
+state = fp.certify_complex_isolation(s.sin(z), z, -4 - s.I, 4 + s.I)
 assert state.complete and state.verify()
 assert state.root_count == state.multiplicity_count == 3
 assert len(state.isolating_boxes) == 3
 assert fp.check_complex_isolation(state.proof).certified is True
 
-result = fp.complex_zeros(s.exp(z)+1, z,
-    rectangle=(-1-4*s.I, 1+4*s.I), return_result=True)
+result = fp.complex_zeros(
+    s.exp(z) + 1, z, rectangle=(-1 - 4 * s.I, 1 + 4 * s.I), return_result=True
+)
 assert result.complete and result.root_count == 2
 assert result.isolation_certificate.verify()
 assert result.state.verify()
@@ -46,8 +47,14 @@ An accepted contour count is the number of zeros with multiplicity. Count zero e
 Use `coverage_complete` when only an exhaustive multiplicity count is required.
 
 ```python
-q = fp.certify_complex_isolation(s.sin(z)**2, z, -1-s.I, 1+s.I,
-    policy=fp.EnclosurePolicy(max_depth=0), use_multiple=False)
+q = fp.certify_complex_isolation(
+    s.sin(z) ** 2,
+    z,
+    -1 - s.I,
+    1 + s.I,
+    policy=fp.EnclosurePolicy(max_depth=0),
+    use_multiple=False,
+)
 assert q.verify() and q.coverage_complete
 assert q.multiplicity_count == 2 and q.root_count is None
 assert not q.complete and len(q.clusters) == 1
@@ -77,17 +84,23 @@ For finitely many isolated zeros, only finitely many projected coordinates are f
 
 ## Budgets and resume
 
-`EnclosurePolicy.max_cells` is one query-wide search budget. It charges all boundary attempts, including failed child counts, plus one outward midpoint probe per split. Replay arithmetic, source setup, serialization and queue bookkeeping are not cell units. additionally charges two outward jet evaluations per attempted precision, including failed Newton attempts. The cumulative `state.tested` records charged work across resumes. Per-task contour quotas grow with its retained attempt number; uses the policy's bounded precision portfolio and series allowance.
+`EnclosurePolicy.max_cells` is one query-wide search budget. It charges all boundary attempts, including failed child counts, plus one outward midpoint probe per split. Replay arithmetic, source setup, serialization and queue bookkeeping are not cell units. Newton refinement additionally charges two outward jet evaluations per attempted precision, including failed Newton attempts. The cumulative `state.tested` records charged work across resumes. Per-task contour quotas grow with its retained attempt number; refinement uses the policy's bounded precision portfolio and series allowance.
 
 `policy.max_depth` limits isolation split depth. A Newton contraction charges four split levels: its exact child path cuts off four complement strips. `max_boundary_depth` separately limits boundary subdivision. Depth-blocked tasks remain pending. `policy.seconds` adds a process-isolated wall budget covering worker setup, validation, search and worker replay. It returns the last fully serialized checkpoint on expiry; without one, a supported native query returns an unresolved source-bound seed. Parent-side serialization, timeout recovery and process setup/shutdown add overhead outside the worker timeout. For an unsupported public query, timeout can return an uncertified incomplete result with the original query in its evidence instead of a native checkpoint.
 
 ```python
-q = fp.certify_complex_isolation(s.exp(z)-1, z, -1-s.I, 1+s.I,
+q = fp.certify_complex_isolation(
+    s.exp(z) - 1,
+    z,
+    -1 - s.I,
+    1 + s.I,
     max_box_width=s.Rational(1, 2),
-    policy=fp.EnclosurePolicy(max_depth=0))
+    policy=fp.EnclosurePolicy(max_depth=0),
+)
 assert q.coverage_complete and q.isolation_complete and not q.accuracy_complete
-q = fp.resume_complex_isolation(q,
-    policy=fp.EnclosurePolicy(max_depth=12, max_cells=2048, seconds=10))
+q = fp.resume_complex_isolation(
+    q, policy=fp.EnclosurePolicy(max_depth=12, max_cells=2048, seconds=10)
+)
 assert q.complete and q.verify()
 ```
 

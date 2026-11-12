@@ -13,15 +13,17 @@ from funcprops.real_analysis.common import condition_to_set
 
 x, y = sp.symbols("x y", real=True)
 source = sp.Interval.Lopen(-sp.Rational(5, 2), sp.Rational(3, 2))
-image = fp.range(-3*x**2 - 3*x - 5, x, y, domain=source)
-assert condition_to_set(image, y) == sp.Interval(-sp.Rational(65, 4), -sp.Rational(17, 4))
+image = fp.range(-3 * x**2 - 3 * x - 5, x, y, domain=source)
+assert condition_to_set(image, y) == sp.Interval(
+    -sp.Rational(65, 4), -sp.Rational(17, 4)
+)
 assert image.subs(y, -sp.Rational(65, 4)) is sp.S.true
 ```
 
 The rule maps disconnected components separately, including isolated rational points, then takes their exact union. Input holes come from the original source before any arithmetic cancellation. For example, canceling a factor at the vertex can remove the only input attaining the minimum.
 
 ```python
-q = x*x + 2*x + 3
+q = x * x + 2 * x + 3
 held = sp.Mul(q, x + 1, sp.Pow(x + 1, -1, evaluate=False), evaluate=False)
 image = fp.range(held, x, y, domain=sp.Interval(-2, 0))
 assert condition_to_set(image, y) == sp.Interval.Lopen(2, 3)
@@ -34,10 +36,16 @@ Dispatch accepts at most 64 source nodes, 16 components, and 16 points in each f
 The scalar sign engine tries exact rational rules before registry analysis and general elimination. Exact Sturm counts distinguish absent zeros, odd interior crossings and attained even or endpoint zeros. Rational denominator exclusions and canceled source holes stay in the effective domain. Connected components are checked separately.
 
 ```python
-polynomial = sp.expand((x*x - x + 1)**3)
+polynomial = sp.expand((x * x - x + 1) ** 3)
 assert fp.sign(polynomial, x, domain=sp.Interval(0, 1)) is fp.Sign.POSITIVE
-assert fp.sign((x - 1)**3 / (x + 2), x, domain=sp.Interval(0, 2)) is fp.Sign.SIGN_CHANGING
-assert fp.sign(sp.log(x*x + 1) - sp.log(2), x, domain=sp.Interval.open(-1, 1)) is fp.Sign.NEGATIVE
+assert (
+    fp.sign((x - 1) ** 3 / (x + 2), x, domain=sp.Interval(0, 2))
+    is fp.Sign.SIGN_CHANGING
+)
+assert (
+    fp.sign(sp.log(x * x + 1) - sp.log(2), x, domain=sp.Interval.open(-1, 1))
+    is fp.Sign.NEGATIVE
+)
 ```
 
 For a real polynomial inner expression and c > 0, comparing exp(g(x)) with c is equivalent to comparing g(x) with log(c). Comparing log(g(x)) with a real c uses g(x) versus exp(c), with the original positive-logarithm domain retained. Exact affine/quadratic images preserve endpoint ownership. Nonrational thresholds use outward enclosures; an unresolved comparison declines the rule. Rational central sine/cosine charts also avoid root search, using the exact bounds 3 < pi < 4.
@@ -49,9 +57,11 @@ These sign rules accept a bounded rational grammar of at most 96 nodes, numerato
 Scalar Jacobian analysis uses the same bounded sign rules after proving real source definition, coordinate compatibility and C1 regularity. A strict sign proves nonvanishing. Positive and negative values on disconnected components do not establish a zero between those components. The general zero search also retains supplied assumptions in its query.
 
 ```python
-proof = fp.determinant_nonvanishing(sp.sin(x), x, domain=sp.Interval(-1, 1), return_result=True)
+proof = fp.determinant_nonvanishing(
+    sp.sin(x), x, domain=sp.Interval(-1, 1), return_result=True
+)
 assert proof.classification is fp.TruthValue.TRUE and proof.verify()
-guarded = fp.determinant_nonvanishing(x**3/3 - x*x/2, x, assumptions=x > 2)
+guarded = fp.determinant_nonvanishing(x**3 / 3 - x * x / 2, x, assumptions=x > 2)
 assert guarded is fp.TruthValue.TRUE
 ```
 
@@ -63,7 +73,7 @@ The source C2 check establishes equality of mixed partials before the proof shar
 
 ```python
 u, v = sp.symbols("u v", real=True)
-expression = u**4 + v**4 + 2*u*u + 2*v*v + u*v
+expression = u**4 + v**4 + 2 * u * u + 2 * v * v + u * v
 box = sp.ProductSet(sp.Interval(-1, 1), sp.Interval(-1, 1))
 result = fp.convexity(expression, (u, v), domain=box, return_result=True)
 certificate = result.evidence[0]

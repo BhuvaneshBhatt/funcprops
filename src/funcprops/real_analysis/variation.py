@@ -31,22 +31,27 @@ class VariationResult:
 
     @property
     def expression(self):
+        """Expression to which the stored evidence applies."""
         return getattr(self.proof, "expression", None)
 
     @property
     def variable(self):
+        """Coordinate used by the source and its evidence."""
         return getattr(self.proof, "variable", None)
 
     @property
     def complete(self):
+        """Completion status for this record's stated scope; replay validity is separate."""
         return self.verify()
 
     @property
     def certified(self):
+        """Replay acceptance; a valid partial record need not be complete."""
         return self.verify()
 
     @property
     def scope(self):
+        """Scope identifier: ``finite-jump-variation-replay``."""
         return "finite-jump-variation-replay"
 
     def verify(self):

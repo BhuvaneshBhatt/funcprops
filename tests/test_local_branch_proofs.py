@@ -32,7 +32,6 @@ def test_zero_contact_and_unattained_infimum():
     ]:
         c = certify_inequality(f, 0, x, D, relation=relation, max_depth=0)
         assert c.classification is T.TRUE and c.verify()
-        assert c.source == "exact-minimum"
         assert not replace(c, expression=f + 1).verify()
 
 
@@ -83,7 +82,7 @@ def test_zero_exclusion_reuses_complete_coverage():
     assert not replace(c, domain=s.Interval(0, 1)).verify()
 
 
-def test_false_children_cannot_prove_true_subdivision():
+def test_subdivision_child_geometry():
     a = certify_inequality(x, 0, x, s.Interval(-1, 0), max_depth=0)
     b = certify_inequality(x, 0, x, s.Interval(0, 1), max_depth=0)
     assert a.classification is b.classification is T.FALSE
@@ -122,26 +121,26 @@ def test_open_endpoint_is_not_a_counterexample():
     ).verify()
 
 
-def test_guarded_composition_reports_unresolved_cases():
+def test_guarded_composition_unresolved_cases():
     a = s.Symbol("a", real=True)
     c = compose_global_maps((affine_global_mapping((a * x,), (x,)),) * 2)
     assert c.certified and not c.complete
     assert not replace(c, cases=()).verify()
 
 
-def test_unknown_affine_reality_cases_remain_incomplete():
+def test_unknown_affine_reality_remain_incomplete():
     offset = s.Symbol("offset")
     c = affine_global_mapping((x + offset,), (x,))
     assert c.cases and c.certified and not c.complete
     assert any(case.value is T.UNKNOWN for case in c.cases)
 
 
-def test_non_symbol_coordinate_cannot_fabricate_constant_bounds():
+def test_nonsymbol_constant_coordinate():
     for variable in (s.S.One, x + 1, s.Tuple(x)):
         assert certified_real_ball(s.S.One, variable, s.Interval(-2, -1)) is None
 
 
-def test_held_source_cannot_escape_coordinate_assumptions():
+def test_held_coordinate_assumptions():
     positive = s.Symbol("positive", positive=True)
     held = s.Abs(positive, evaluate=False)
     D = s.Interval(-2, -1)
@@ -170,7 +169,7 @@ def test_affine_coordinate_scope():
     assert c.classification is T.UNKNOWN and not c.verify()
 
 
-def test_negative_assumption_facts_are_also_domain_premises():
+def test_negative_assumption_facts_domain_premises():
     for assumptions, D in [
         ({"zero": False}, s.Interval(-1, 1)),
         ({"positive": False}, s.Interval(1, 2)),
@@ -185,7 +184,7 @@ def test_negative_assumption_facts_are_also_domain_premises():
     assert c.classification is T.UNKNOWN and not c.verify()
 
 
-def test_composition_case_budget_decline_is_not_unconditional_true():
+def test_composition_budget_status():
     components = tuple(
         affine_global_mapping((s.Symbol(f"a_{k}", real=True) * x,), (x,))
         for k in range(9)

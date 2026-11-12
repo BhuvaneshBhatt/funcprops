@@ -46,14 +46,17 @@ class TaylorModel:
 
     @property
     def certified(self):
+        """Replay acceptance; a valid partial record need not be complete."""
         return self.verify()
 
     @property
     def complete(self):
+        """Completion status for this record's stated scope; replay validity is separate."""
         return self.verify()
 
     @property
     def scope(self):
+        """Scope identifier: ``taylor-enclosure-on-domain``."""
         return "taylor-enclosure-on-domain"
 
     def verify(self):

@@ -20,10 +20,12 @@ from .source_syntax import differentiate
 class _Replay:
     @property
     def complete(self):
+        """Completion status for this record's stated scope; replay validity is separate."""
         return self.verify()
 
     @property
     def certified(self):
+        """Replay acceptance; a valid partial record need not be complete."""
         return self.verify()
 
     def check(self):
@@ -55,15 +57,18 @@ class SharedZeroImplication(_Replay):
 
     @property
     def rectangle(self):
+        """Rectangle on which this record makes its geometric claim."""
         return self.base_region.rectangle
 
     @property
     def scope(self):
+        """Scope identifier: ``entire-zero-implication-at-one-implicit-simple-root``."""
         return "entire-zero-implication-at-one-implicit-simple-root"
 
     @property
     def complete(self):
         # A minimum order at the base zero does not exclude other zeros of F.
+        """Completion status for this record's stated scope; replay validity is separate."""
         return False
 
     def check(self):
@@ -149,38 +154,47 @@ class SharedZeroOrderProof(_Replay):
 
     @property
     def expression(self):
+        """Expression to which the stored evidence applies."""
         return self.parent.expression
 
     @property
     def variable(self):
+        """Coordinate used by the source and its evidence."""
         return self.parent.variable
 
     @property
     def rectangle(self):
+        """Rectangle on which this record makes its geometric claim."""
         return self.parent.rectangle
 
     @property
     def base_region(self):
+        """Root-containing region from which this local record is derived."""
         return self.implication.base_region
 
     @property
     def zero_count(self):
+        """Zero count in this record's counting convention."""
         return self.parent.zero_count
 
     @property
     def known_distinct(self):
+        """Distinct-root count established by this region's evidence."""
         return 1
 
     @property
     def multiplicity_count(self):
+        """Root count with multiplicity, or None when unresolved."""
         return self.zero_count
 
     @property
     def root_count(self):
+        """Distinct-root count supplied by the record, or None when unresolved."""
         return 1
 
     @property
     def scope(self):
+        """Scope identifier: ``exhaustive-order-at-one-implicit-simple-root``."""
         return "exhaustive-order-at-one-implicit-simple-root"
 
     def verify(self):
@@ -199,34 +213,42 @@ class SharedZeroRegion(_Replay):
 
     @property
     def expression(self):
+        """Expression to which the stored evidence applies."""
         return self.order_proof.expression
 
     @property
     def variable(self):
+        """Coordinate used by the source and its evidence."""
         return self.order_proof.variable
 
     @property
     def rectangle(self):
+        """Rectangle on which this record makes its geometric claim."""
         return self.base_region.rectangle
 
     @property
     def zero_count(self):
+        """Zero count in this record's counting convention."""
         return self.order_proof.zero_count * self.base_region.zero_count
 
     @property
     def known_distinct(self):
+        """Distinct-root count established by this region's evidence."""
         return self.base_region.zero_count
 
     @property
     def root_count(self):
+        """Distinct-root count supplied by the record, or None when unresolved."""
         return self.known_distinct
 
     @property
     def multiplicity_count(self):
+        """Root count with multiplicity, or None when unresolved."""
         return self.zero_count
 
     @property
     def scope(self):
+        """Scope identifier: ``implicit-shared-zero-transferred-region-count``."""
         return "implicit-shared-zero-transferred-region-count"
 
     def verify(self):
@@ -245,30 +267,37 @@ class ComplexZeroSubsetProof(_Replay):
 
     @property
     def expression(self):
+        """Expression to which the stored evidence applies."""
         return self.parent.expression
 
     @property
     def variable(self):
+        """Coordinate used by the source and its evidence."""
         return self.parent.variable
 
     @property
     def zero_count(self):
+        """Zero count in this record's counting convention."""
         return 0
 
     @property
     def known_distinct(self):
+        """Distinct-root count established by this region's evidence."""
         return 0
 
     @property
     def root_count(self):
+        """Distinct-root count supplied by the record, or None when unresolved."""
         return 0
 
     @property
     def multiplicity_count(self):
+        """Root count with multiplicity, or None when unresolved."""
         return 0
 
     @property
     def scope(self):
+        """Scope identifier: ``entire-zero-free-closed-rectangle-subset``."""
         return "entire-zero-free-closed-rectangle-subset"
 
     def verify(self):

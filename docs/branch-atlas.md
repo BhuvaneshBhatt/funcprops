@@ -6,7 +6,7 @@ See the [executable workflow](tutorials/branch-chart-gluing.md).
 
 ## Local charts and overlap theorem
 
-A `LogBranchChart` contains an outward image box for F and a phase `a` chosen from 1, I, -1, -I. Replay establishes `Re(F/a)>0` throughout its rectangle. Strict separation gives a neighborhood where F is nonzero and `L=log(F/a)+log(a)+2*pi*I*sheet` is holomorphic. This can cross the old principal cut of `log(F)` while preserving the selected branch.
+A `LogBranchChart` contains an outward image box for F and a phase `a` chosen from 1, I, -1, -I. Replay establishes `Re(F/a)>0` throughout its rectangle. Strict separation gives a neighborhood where F is nonzero and `L=log(F/a)+log(a)+2*pi*I*sheet` is holomorphic. This can cross the principal cut of `log(F)` while preserving the selected branch.
 
 For the branch conventions see [DLMF 4.2](https://dlmf.nist.gov/4.2). The overlap argument below is the implementation's theorem specialization.
 

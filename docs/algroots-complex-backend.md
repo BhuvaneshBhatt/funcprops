@@ -11,12 +11,13 @@ The algebraic route uses algroots for exact enumeration and funcprops for source
 ```python
 import sympy as s
 import funcprops as fp
-z = s.Symbol('z')
-rectangle = (-2-2*s.I, 2+2*s.I)
-r = fp.complex_zeros((z-1)**3, z, rectangle=rectangle, return_result=True)
+
+z = s.Symbol("z")
+rectangle = (-2 - 2 * s.I, 2 + 2 * s.I)
+r = fp.complex_zeros((z - 1) ** 3, z, rectangle=rectangle, return_result=True)
 assert r.complete and r.isolation_complete
 assert r.distinct_root_count == 1 and r.multiplicity_count == 3
-assert r.verify() and fp.verify_certificate(r, expr=(z-1)**3, var=z)
+assert r.verify() and fp.verify_certificate(r, expr=(z - 1) ** 3, var=z)
 p = r.algebraic_certificate
 assert fp.replay_status(p).complete is True
 ```

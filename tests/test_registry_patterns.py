@@ -1,3 +1,4 @@
+import ast
 import json
 from importlib.resources import files
 
@@ -65,6 +66,13 @@ def test_catalogue_rule_schema():
     for family in data["families"]:
         for name, prop in family["properties"].items():
             for index, case in enumerate(prop["cases"]):
+                assert set(case) == {
+                    "value_source",
+                    "condition_source",
+                    "rule_id",
+                    "signature",
+                    "source_property_type",
+                }
                 assert case["rule_id"] == f"{family['family_id']}:{name}:{index}"
                 assert set(case["signature"]) == {
                     "arguments",
@@ -72,3 +80,12 @@ def test_catalogue_rule_schema():
                     "coordinate",
                     "priority",
                 }
+                expressions = [case["value_source"], case["condition_source"]]
+                for argument in case["signature"]["arguments"]:
+                    expressions.extend(argument.get("choices", ()))
+                for expression in expressions:
+                    tree = ast.parse(expression, mode="eval")
+                    # Catalogue constructors use calls; lists remain valid data.
+                    assert not any(
+                        isinstance(node, ast.Subscript) for node in ast.walk(tree)
+                    ), (case["rule_id"], expression)

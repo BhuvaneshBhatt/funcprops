@@ -98,7 +98,7 @@ def test_source_hole_enclosures(f, region):
     assert not r.certified and r.obligations
 
 
-def test_source_holes_and_log_boundary_split_effective_domain():
+def test_source_holes_log_boundary_effective_domain():
     raw = s.Mul(x, s.Pow(x, -1, evaluate=False), evaluate=False)
     p = fp.prove_root_coverage(raw, x, s.Interval(-1, 1))
     assert p.verify() and p.root_count == 0 and p.complete
@@ -116,7 +116,7 @@ def test_source_holes_and_log_boundary_split_effective_domain():
     assert not q.complete and q.unresolved.contains(0) is s.S.false
 
 
-def test_owned_piecewise_singleton_is_a_separate_cell():
+def test_owned_piecewise_singleton_cell():
     f = s.Piecewise((s.exp(x), x < 0), (0, s.Eq(x, 0)), (x * x + 1, True))
     p = fp.prove_root_coverage(f, x, s.Interval(-1, 1))
     assert p.verify() and p.complete and p.root_count == 1
@@ -142,7 +142,7 @@ def test_piecewise_hole_ownership():
     )
 
 
-def test_grammar_reports_float_parameters_and_unsupported_primitives():
+def test_grammar_float_parameters_primitives():
     for f in [s.Float(".1") * x, s.besselj(0, x), x**x, s.Symbol("a") + x]:
         r = fp.enclose_expression(f, x, D)
         assert not r.certified and r.obligations
@@ -221,13 +221,13 @@ def test_source_bound_derivative_enclosures(f, region, expected):
 @pytest.mark.parametrize(
     "f", [s.Abs(x), s.sqrt(x), s.Mul(x, s.Pow(x, -1, evaluate=False), evaluate=False)]
 )
-def test_derivative_sources_cannot_lose_corners_or_holes(f):
+def test_derivative_corners_and_holes(f):
     result = fp.enclose_derivative(f, x, s.Interval(-1, 1))
     assert not result.verify() and result.obligations
     assert fp.replay_status(result).outcome == "unsupported-replay"
 
 
-def test_composed_log_erf_branch_uses_checked_local_domain_evidence():
+def test_composed_log_erf_branch_local_domain_evidence():
     f = s.log(s.erf(x)) - s.log(s.Rational(9, 10))
     region = s.Interval(1, 2)
     p = fp.prove_root_coverage(f, x, region)
@@ -244,6 +244,6 @@ def test_composed_log_erf_branch_uses_checked_local_domain_evidence():
 @pytest.mark.parametrize(
     "f", [s.exp(x) - 2, s.erf(x) - s.Rational(1, 2), s.erfc(x) - s.Rational(1, 2)]
 )
-def test_compact_acceptance_examples_have_checked_counts(f):
+def test_compact_acceptance_examples_checked_counts(f):
     p = fp.prove_root_coverage(f, x, D)
     assert p.verify() and p.complete and p.root_count == 1

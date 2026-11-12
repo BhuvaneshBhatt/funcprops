@@ -18,16 +18,16 @@ x, y = sp.symbols("x y", real=True)
 
 
 def test_partition_cache_is_shared_identity():
-    p1 = monotonic_partition(
+    first = monotonic_partition(
         x**3 - 3 * x, x, domain=sp.Interval(-2, 2), return_result=True
     )
-    p2 = monotonic_partition(
+    second = monotonic_partition(
         x**3 - 3 * x, x, domain=sp.Interval(-2, 2), return_result=True
     )
-    assert p1 is p2
+    assert first is second
 
 
-def test_range_reuses_finite_partition_with_open_attainment():
+def test_range_reuses_finite_partition_open_attainment():
     p = monotonic_partition(x**2, x, domain=sp.Interval.open(-1, 1), return_result=True)
     pr = range_from_monotonic_partition(x**2, x, p)
     assert pr.complete
@@ -35,7 +35,7 @@ def test_range_reuses_finite_partition_with_open_attainment():
     assert range(x**2, x, y, constraints=(x > -1) & (x < 1)) == ((y >= 0) & (y < 1))
 
 
-def test_endpoint_derivative_zero_does_not_make_empty_cell():
+def test_endpoint_derivative_zero():
     p = monotonic_partition(x**2, x, domain=sp.Interval(0, 1), return_result=True)
     assert p.complete
     assert len(p.cells) == 1
@@ -43,7 +43,7 @@ def test_endpoint_derivative_zero_does_not_make_empty_cell():
     assert p.cells[0].direction is Monotonicity.STRICTLY_INCREASING
 
 
-def test_stationary_inflection_shared_partition_proves_injective():
+def test_stationary_inflection_shared_injective():
     p = monotonic_partition(x**3, x, domain=sp.Interval(-2, 2), return_result=True)
     assert p.complete and len(p.cells) == 2
     assert all(c.direction is Monotonicity.STRICTLY_INCREASING for c in p.cells)
@@ -64,7 +64,7 @@ def test_inverse_solver_uses_partition_cells():
     assert r.solutions == sp.FiniteSet(-sp.sqrt(3), 0, sp.sqrt(3))
 
 
-def test_finite_and_indexed_oscillation_from_partition():
+def test_finite_indexed_oscillation_partition():
     assert (
         oscillation(x**3 - 3 * x, x, domain=(x >= -2) & (x <= 2))
         is Oscillation.FINITELY_OSCILLATORY
@@ -83,7 +83,7 @@ def test_indexed_phase_not_guessed_without_theorem():
     assert p.indexed.direction_pattern == ()
 
 
-def test_support_completeness_is_not_domain_completeness():
+def test_support_domain_completeness():
     nu = sp.symbols("nu", real=True, nonnegative=True)
     p = monotonic_partition(sp.besselj(nu, x), x, domain=sp.S.Reals, return_result=True)
     assert not p.complete
@@ -93,10 +93,9 @@ def test_support_completeness_is_not_domain_completeness():
     )
 
 
-def test_unknown_natural_domain_is_not_sympified_as_boolean():
+def test_unresolved_natural_domain():
     e = sp.Max(x, 0)
-    # This used to be able to raise SympifyError when domain returned
-    # a PropertyResult.  The explicit/global domain now remains usable.
+    # An unresolved natural-domain record must preserve the requested real domain.
     assert monotonicity(e, x) is Monotonicity.NONDECREASING
 
 

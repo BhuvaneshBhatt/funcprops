@@ -19,7 +19,7 @@ def test_powers_of_certified_simple_roots(m):
     assert r.complete and r.root_count == 1 and r.multiplicity_count == m and r.verify()
 
 
-def test_nearby_simple_root_is_not_absorbed_into_multiple_root():
+def test_nearby_multiple_root_separation():
     f = (sp.exp(x) - 2) ** 2 * (sp.exp(x) - sp.Rational(17, 8))
     D = sp.Interval(0, 1)
     # A putative unit vanishes elsewhere in the full initial cell.
@@ -61,7 +61,7 @@ def test_excluded_endpoint_root_is_not_counted():
         (sp.Abs(x), 0),
     ],
 )
-def test_failed_jets_or_regularity_are_not_multiplicity_proofs(f, center):
+def test_failed_jet_evidence(f, center):
     assert fp.deflate_real_root(f, x, sp.Interval(-1, 1), center, 2, policy=P) is None
 
 
@@ -99,14 +99,14 @@ def test_parameter_collision_requires_specialization():
     assert r.complete and r.root_count == 1 and r.multiplicity_count == 3 and r.verify()
 
 
-def test_low_effort_retains_multiple_root_obligations():
+def test_low_effort_multiple_root_obligations():
     r = fp.adaptive_root_coverage(
         (sp.exp(x) - 2) ** 2, x, sp.Interval(0, 1), policy=replace(P, max_cells=0)
     )
     assert not r.complete and r.multiplicity_count is None and r.verify()
 
 
-def test_float_jet_center_cannot_create_a_spurious_multiple_root():
+def test_inexact_multiple_root_center():
     f = (x - sp.Rational(1, 10)) ** 2
     leaf = fp.deflate_real_root(
         f, x, sp.Interval(0, 1), sp.Rational(1, 10), 2, policy=P

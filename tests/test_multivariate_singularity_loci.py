@@ -11,7 +11,7 @@ def test_multivariate_rational_pole_is_hypersurface():
     assert result.poles == expected
 
 
-def test_multivariate_log_cut_is_preimage_of_nonpositive_real_axis():
+def test_multivariate_log_cut_nonpositive_real_axis():
     x, y = sp.symbols("x y")
     result = fp.singularities(sp.log(x + y), (x, y), return_result=True)
     point = sp.Eq(sp.re(x) + sp.re(y), 0) & sp.Eq(sp.im(x) + sp.im(y), 0)
@@ -42,7 +42,7 @@ def test_closed_support_keeps_boundary_singularity():
     assert result.boundary_singularities is not sp.S.false
 
 
-def test_unrestricted_domain_has_only_interior_singularities():
+def test_unrestricted_domain_only_singularities():
     x, y = sp.symbols("x y", real=True)
     result = fp.singularities(1 / (x + y), (x, y), sp.S.Reals, return_result=True)
     assert result.interior_singularities == result.unrestricted_singularities
@@ -50,7 +50,7 @@ def test_unrestricted_domain_has_only_interior_singularities():
     assert result.exterior_singularities is sp.S.false
 
 
-def test_multivariate_classification_coverage_is_complete():
+def test_multivariate_classification_coverage_complete():
     x, y = sp.symbols("x y")
     u = x + y
 
@@ -129,7 +129,7 @@ def test_multivariate_pullback_classification():
     )
 
 
-def test_joint_registry_transport_preserves_two_argument_geometry():
+def test_joint_registry_transport_argument_geometry():
     x, y = sp.symbols("x y")
     result = fp.singularities(sp.elliptic_e(x, y), (x, y), return_result=True)
 
@@ -177,7 +177,7 @@ def test_joint_definition_cut_guards():
     assert result.definition_cuts is not sp.S.false
 
 
-def test_joint_registry_transport_is_invariant_under_alpha_renaming():
+def test_joint_registry_transport_alpha_renaming():
     x, y, u, v = sp.symbols("x y u v")
     first = fp.singularities(sp.elliptic_e(x, y), (x, y), return_result=True)
     second = fp.singularities(sp.elliptic_e(u, v), (u, v), return_result=True)

@@ -6,12 +6,14 @@ from __future__ import annotations
 def _cache_registry():
     from ._semialg import _coefficient_profile
     from .algebraic_coefficients import _encoding
+    from .analytic_roots import _refined_root, _root_cover
     from .assumptions import _entails_cached
     from .branchcuts.computation import _mpmath_numeric_callable
     from .conditions import parse_catalogue_expression
     from .dlmf import _manifest
     from .enclosures import _enclosure_leaf
     from .local_analyticity import complex_meromorphic_germ
+    from .multiple_roots import _first_nonzero_jet
     from .parameter_geometry import _events
     from .proof_cache import (
         _derivative_cached,
@@ -36,10 +38,13 @@ def _cache_registry():
     from .verification import _certificate_verifiers
 
     return {
-        "v1_enclosure_leaves": _enclosure_leaf,
+        "real_enclosure_leaves": _enclosure_leaf,
         "assumption_entailment": _entails_cached,
         "coefficient_profiles": _coefficient_profile,
         "algebraic_coefficients": _encoding,
+        "real_root_jets": _first_nonzero_jet,
+        "implicit_real_roots": _root_cover,
+        "implicit_real_refinements": _refined_root,
         "parameter_geometry_events": _events,
         "branch_numeric_callable": _mpmath_numeric_callable,
         "catalogue_parse": parse_catalogue_expression,

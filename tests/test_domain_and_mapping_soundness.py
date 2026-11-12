@@ -55,7 +55,7 @@ def test_guarded_polynomial_uniform_continuity():
 @pytest.mark.parametrize(
     "expr", [sp.besselk(x, x), sp.besselk(x * x, x), MittagLefflerE(x, -x)]
 )
-def test_complete_monotonicity_requires_fixed_shape_parameter(expr):
+def test_complete_monotonicity_fixed_shape_parameter(expr):
     assert fp.complete_monotonicity(expr, x, domain=x > 0) is TruthValue.UNKNOWN
 
 
@@ -72,7 +72,7 @@ def test_fixed_shape_complete_monotonicity_survives():
 
 
 @pytest.mark.parametrize("expr", [sp.Piecewise((x, x < 0), (x + 1, True)), sp.I * x])
-def test_nonzero_jacobian_is_insufficient_for_real_inverse_theorem(expr):
+def test_nonzero_jacobian_insufficient_real_theorem(expr):
     c = fp.local_invertibility(expr, x, return_result=True)
     assert c.classification is TruthValue.UNKNOWN
     assert c.verify()
@@ -88,7 +88,7 @@ def test_piecewise_map_restricted_to_smooth_region():
     )
 
 
-def test_transformation_replay_binds_all_nested_inputs():
+def test_transformation_replay_nested_inputs():
     c = fp.local_invertibility(2 * x, x, return_result=True)
     assert c.verify()
     assert not replace(c, expressions=(3 * x,)).verify()
@@ -102,7 +102,7 @@ def test_transformation_replay_binds_all_nested_inputs():
     assert not replace(c, domain=sp.Interval(0, 1)).verify()
 
 
-def test_piecewise_euler_identity_is_not_global_homogeneity():
+def test_piecewise_euler_identity():
     expr = sp.Piecewise((1, x < 1), (2, True))
     assert fp.homogeneity(expr, x) is Homogeneity.UNKNOWN
     assert fp.homogeneity(x**2, x) is Homogeneity.HOMOGENEOUS
@@ -116,9 +116,7 @@ def test_piecewise_euler_identity_is_not_global_homogeneity():
         (sp.Ne(a, 0), Homogeneity.NOT_HOMOGENEOUS),
     ],
 )
-def test_requested_polynomial_degree_retains_zero_coefficient_stratum(
-    assumptions, expected
-):
+def test_requested_polynomial_degree_zero_stratum(assumptions, expected):
     c = fp.homogeneity(
         a * x * x, x, degree=1, assumptions=assumptions, return_result=True
     )
@@ -127,7 +125,7 @@ def test_requested_polynomial_degree_retains_zero_coefficient_stratum(
         assert fp.verify_certificate(c, expr=a * x * x)
 
 
-def test_fabricated_nonhomogeneity_cases_cannot_verify():
+def test_fabricated_nonhomogeneity():
     c = HomogeneityResult(
         Homogeneity.NOT_HOMOGENEOUS,
         variables=(x,),
@@ -145,7 +143,7 @@ def test_pole_local_integrability():
     )
 
 
-def test_derivatives_do_not_erase_piecewise_jump_variation():
+def test_piecewise_jump_variation():
     expr = sp.Piecewise((0, x < 0), (1, x < 1), (0, True))
     result = fp.variation(expr, x, domain=sp.Interval(-1, 2), return_result=True)
     assert result.total_variation != 0
@@ -165,7 +163,7 @@ def test_separable_coercivity_premises():
     assert fp.level_boundedness(x**4 + y**6, (x, y)) is TruthValue.TRUE
 
 
-def test_weierstrass_requires_function_defined_on_the_closed_domain():
+def test_weierstrass_function_defined_closed_domain():
     assert fp.mode_existence(x * x - 1 / x**2, x, sense="min") is not TruthValue.TRUE
     c = fp.mode_existence(x * x, x, sense="min", return_result=True)
     assert c.verify()
@@ -175,7 +173,7 @@ def test_weierstrass_requires_function_defined_on_the_closed_domain():
     assert not replace(c, expression=-x * x).verify()
 
 
-def test_parameter_limit_is_not_a_definite_escape_counterexample():
+def test_parameter_limit_counterexample():
     assert fp.level_boundedness(a * x * x, x) is TruthValue.UNKNOWN
     pos = sp.Symbol("pos", positive=True)
     neg = sp.Symbol("neg", negative=True)

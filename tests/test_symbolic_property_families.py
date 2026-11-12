@@ -17,14 +17,14 @@ from funcprops.theorem_closure import TheoremFact, close_theorems
 from funcprops.transcendental.root_geometry import derivative_cell_root_count
 
 
-def test_assumption_closure_positive_implies_real_nonzero():
+def test_assumption_closure_positive_real_nonzero():
     a = sp.symbols("a")
     c = close_assumptions(a > 0)
     assert c.entails(sp.Contains(a, S.Reals)) is True
     assert c.entails(sp.Ne(a, 0)) is True
 
 
-def test_theorem_closure_strict_monotone_implies_injective():
+def test_theorem_closure_strict_monotone_injective():
     facts = close_theorems(
         [TheoremFact("monotonicity", Monotonicity.STRICTLY_INCREASING)]
     )
@@ -110,7 +110,7 @@ def test_parameter_cell_refinement_preserves_values():
     assert {c.value for c in q.cases} == {TruthValue.TRUE, TruthValue.FALSE}
 
 
-def test_argument_principle_rectangle_exact_polynomial_count():
+def test_argument_principle_rectangle_polynomial_count():
     from funcprops.complex_certification import argument_principle_rectangle
 
     z = sp.symbols("z")

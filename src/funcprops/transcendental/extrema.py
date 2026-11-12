@@ -35,22 +35,27 @@ class IndexedExtremumValue(sp.Expr):
 
     @property
     def family(self):
+        """Special-function family specifying the indexed data."""
         return str(self.args[0])
 
     @property
     def index(self):
+        """Index selecting a member of the represented family."""
         return self.args[1]
 
     @property
     def point(self):
+        """Point or parameter value represented by the record."""
         return self.args[2]
 
     @property
     def value(self):
+        """Value represented or selected by this record."""
         return self.args[3]
 
     @property
     def kind(self):
+        """Kind of singularity, extremum or geometric record."""
         return str(self.args[4])
 
     def _sympystr(self, printer):
@@ -75,18 +80,22 @@ class ExtremumEnvelope(sp.Expr):
 
     @property
     def direction(self):
+        """Source direction or comparison direction used by the record."""
         return str(self.args[0])
 
     @property
     def template(self):
+        """Expression template for the indexed family."""
         return self.args[1]
 
     @property
     def index(self):
+        """Index selecting a member of the represented family."""
         return self.args[2]
 
     @property
     def index_guard(self):
+        """Conditions under which the family index is admissible."""
         return self.args[3]
 
     def _sympystr(self, printer):
@@ -472,7 +481,7 @@ def _simplify_indexed_tail(expr, var, domain, certs, end_candidates):
         hi = sp.Max(vmax, *(v for v, _ in vals)) if vals else vmax
         # If the finite endpoint belongs to the interval, every candidate in
         # the Min/Max is attained.  For an open cutoff, whether its limiting
-        # value dominates is left unresolved.
+        # value dominates is intentionally left unresolved.
         if domain.right_open:
             la = ua = None
         else:
@@ -658,6 +667,8 @@ def simplify_extremum_range(expr, var, result):
     certs = tuple(
         e for e in result.evidence if isinstance(e, ExtremumFamilyCertificate)
     )
+    # Existing result evidence generally stores certificates directly, while
+    # Accept the compact tuple form returned by extremum_geometry.
     if not certs:
         certs = extremum_geometry(expr, var, domain=result.domain)
     ends = tuple(
@@ -739,7 +750,7 @@ def _symbolic_extremum_range_impl(expr, var, domain=S.Reals, *, partition=None):
         except SYMBOLIC_QUERY_ERRORS:
             partition = None
 
-    # Critical points are owned by the shared monotonic partition. Sign-cell
+    # Critical points are owned by the shared monotonic partition.  Sign-cell
     # completeness is not required for extrema: the separate flag certifies
     # that the derivative-root set itself is exhaustive.
     pts = None
@@ -779,7 +790,7 @@ def _symbolic_extremum_range_impl(expr, var, domain=S.Reals, *, partition=None):
         hi = sp.Max(*(v for v, _ in values))
 
         def attainment(bound, want_min):
-            # First try to prove that an attained candidate realises the bound.
+            # First try to prove that an attained candidate realizes the bound.
             for v, att in values:
                 if not att:
                     continue

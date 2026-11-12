@@ -62,10 +62,12 @@ class _Local:
     @property
     def complete(self):
         # This record alone does not exclude any other source zeros.
+        """Completion status for this record's stated scope; replay validity is separate."""
         return False
 
     @property
     def coverage_complete(self):
+        """Whether the evidence covers the entire requested region."""
         return False
 
     def verify(self):
@@ -75,6 +77,7 @@ class _Local:
 
     @property
     def certified(self):
+        """Replay acceptance; a valid partial record need not be complete."""
         return self.verify()
 
     def check(self):
@@ -127,10 +130,12 @@ class ImplicitJetWitness:
 
     @property
     def complete(self):
+        """Completion status for this record's stated scope; replay validity is separate."""
         return self.verify()
 
     @property
     def scope(self):
+        """Scope identifier: ``normalized-entire-jets-on-closed-complex-box``."""
         return "normalized-entire-jets-on-closed-complex-box"
 
 
@@ -149,14 +154,17 @@ class ImplicitRootValueProof(_Local):
 
     @property
     def rectangle(self):
+        """Rectangle on which this record makes its geometric claim."""
         return self.base_region.rectangle
 
     @property
     def minimum_order(self):
+        """Lower bound on vanishing order established by the zero jets."""
         return int(self.value == 0)
 
     @property
     def scope(self):
+        """Scope identifier: ``exact-value-at-one-certified-implicit-root``."""
         return "exact-value-at-one-certified-implicit-root"
 
 
@@ -176,18 +184,22 @@ class ImplicitMultiplicityProof(_Local):
 
     @property
     def rectangle(self):
+        """Rectangle on which this record makes its geometric claim."""
         return self.base_region.rectangle
 
     @property
     def minimum_order(self):
+        """Lower bound on vanishing order established by the zero jets."""
         return len(self.zero_jets)
 
     @property
     def order_complete(self):
+        """Whether the exact local order has been established."""
         return self.order is not None
 
     @property
     def scope(self):
+        """Scope identifier: ``local-zero-order-at-one-certified-implicit-root``."""
         return "local-zero-order-at-one-certified-implicit-root"
 
 
@@ -202,30 +214,37 @@ class CommonZeroProof(_Local):
 
     @property
     def expression(self):
+        """Expression to which the stored evidence applies."""
         return sp.Tuple(*self.expressions)
 
     @property
     def variable(self):
+        """Coordinate used by the source and its evidence."""
         return self.base_region.variable
 
     @property
     def rectangle(self):
+        """Rectangle on which this record makes its geometric claim."""
         return self.base_region.rectangle
 
     @property
     def common_zero_certified(self):
+        """Whether the evidence establishes a common zero."""
         return bool(self.orders) and all(p.minimum_order >= 1 for p in self.orders)
 
     @property
     def orders_complete(self):
+        """Whether every requested local order has been established."""
         return bool(self.orders) and all(p.order_complete for p in self.orders)
 
     @property
     def common_zero_excluded(self):
+        """Whether the evidence excludes a common zero."""
         return any(p.order == 0 for p in self.orders)
 
     @property
     def common_zero_status(self):
+        """Three-valued common-zero conclusion from the retained evidence."""
         return (
             TruthValue.FALSE
             if self.common_zero_excluded
@@ -236,10 +255,12 @@ class CommonZeroProof(_Local):
 
     @property
     def multiplicities(self):
+        """Local multiplicities established for the supplied expressions."""
         return tuple(p.order for p in self.orders)
 
     @property
     def scope(self):
+        """Scope identifier: ``common-zero-and-local-orders-at-one-implicit-root``."""
         return "common-zero-and-local-orders-at-one-implicit-root"
 
 

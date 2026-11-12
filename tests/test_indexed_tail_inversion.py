@@ -11,7 +11,7 @@ from funcprops.transcendental.extrema import ExtremumRange, symbolic_extremum_ra
 x = sp.symbols("x", real=True)
 
 
-def test_same_family_bessel_tail_inversion_is_integer_exact():
+def test_family_bessel_tail_inversion_integer_exact():
     k = sp.symbols("k", integer=True, positive=True)
     tmpl = IndexedZero("BesselJ", k, 1, 1, "positive")
     cut = IndexedZero("BesselJ", 4, 1, 1, "positive")
@@ -22,7 +22,7 @@ def test_same_family_bessel_tail_inversion_is_integer_exact():
     assert strict.first_index == 5
 
 
-def test_bessel_function_zero_to_derivative_zero_uses_interlacing():
+def test_bessel_function_zero_derivative_interlacing():
     k = sp.symbols("k", integer=True, positive=True)
     tmpl = IndexedZero("BesselJ", k, 2, 1, "positive")
     cut = IndexedZero("BesselJ", 3, 2, 0, "positive")
@@ -31,7 +31,7 @@ def test_bessel_function_zero_to_derivative_zero_uses_interlacing():
     assert "10.21.E3" in cert.source
 
 
-def test_airy_function_zero_to_left_derivative_zero_uses_interlacing():
+def test_airy_function_zero_derivative_interlacing():
     k = sp.symbols("k", integer=True, positive=True)
     tmpl = IndexedZero("AiryAi", k, sp.S.NaN, 1, "negative")
     cut = IndexedZero("AiryAi", 3, sp.S.NaN, 0, "negative")
@@ -39,7 +39,7 @@ def test_airy_function_zero_to_left_derivative_zero_uses_interlacing():
     assert cert.first_index == 4
 
 
-def test_general_cutoff_returns_exact_symbolic_inverse_index():
+def test_general_cutoff_exact_symbolic_inverse_index():
     A = sp.symbols("A", positive=True)
     k = sp.symbols("k", integer=True, positive=True)
     tmpl = IndexedZero("BesselJ", k, 1, 1, "positive")
@@ -50,7 +50,7 @@ def test_general_cutoff_returns_exact_symbolic_inverse_index():
     assert cert.first_index.is_positive is True
 
 
-def test_bessel_tail_range_eliminates_infinite_envelope():
+def test_bessel_tail_range_infinite_envelope():
     A = sp.symbols("A", positive=True)
     r = symbolic_extremum_range(sp.besselj(1, x), x, sp.Interval(A, sp.oo))
     assert isinstance(r, ExtremumRange)
@@ -62,7 +62,7 @@ def test_bessel_tail_range_eliminates_infinite_envelope():
     assert r.lower.has(sp.besselj(1, A)) or r.upper.has(sp.besselj(1, A))
 
 
-def test_bessel_tail_at_indexed_critical_point_resolves_selector():
+def test_bessel_tail_at_indexed_point_selector():
     A = IndexedZero("BesselJ", 5, 1, 1, "positive")
     r = symbolic_extremum_range(sp.besselj(1, x), x, sp.Interval(A, sp.oo))
     cert = next(e for e in r.evidence if isinstance(e, IndexedTailInversionCertificate))
@@ -72,7 +72,7 @@ def test_bessel_tail_at_indexed_critical_point_resolves_selector():
     assert r.lower.has(IndexedZero("BesselJ", 6, 1, 1, "positive"))
 
 
-def test_airy_left_tail_inversion_reduces_infinite_envelope():
+def test_airy_left_tail_inversion_infinite_envelope():
     B = sp.symbols("B", negative=True)
     r = symbolic_extremum_range(sp.airyai(x), x, sp.Interval(-sp.oo, B))
     assert isinstance(r, ExtremumRange)
@@ -91,7 +91,7 @@ def test_bessel_tail_endpoint_attainment():
     assert r.upper_attained is None
 
 
-def test_public_range_uses_parameterized_tail_interval():
+def test_public_range_parameterized_tail_interval():
     from funcprops import range
 
     y = sp.symbols("y", real=True)

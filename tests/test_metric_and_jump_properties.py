@@ -39,7 +39,7 @@ def test_finite_parameter_point_collisions_decline():
     )
 
 
-def test_finite_metric_consumers_override_continuity_at_ambient_seams():
+def test_finite_metric_consumers_continuity_seams():
     e = sp.Piecewise((0, x < 0), (1, True))
     assert fp.uniformly_continuous(e, x, domain=sp.FiniteSet(0, 1)) is TruthValue.TRUE
     assert fp.holder_regularity(sp.sqrt(x), x, domain=sp.FiniteSet(0, 1)) == 1
@@ -57,15 +57,13 @@ def test_finite_metric_consumers_override_continuity_at_ambient_seams():
         (sp.Piecewise((0, x < 0), (a, True)), sp.Interval(-1, 1), sp.Abs(a)),
     ],
 )
-def test_piecewise_variation_counts_jumps_points_and_branch_motion(
-    expr, support, total
-):
+def test_piecewise_variation_counts_jumps_motion(expr, support, total):
     result = fp.variation(expr, x, domain=support, return_result=True)
     assert result.bounded_variation is TruthValue.TRUE
     assert result.total_variation == total
 
 
-def test_missing_piecewise_coverage_does_not_invent_variation():
+def test_incomplete_piecewise_variation():
     result = fp.variation(
         sp.Piecewise((x, x < 0)), x, domain=sp.Interval(-1, 1), return_result=True
     )
@@ -168,7 +166,7 @@ def test_basic_abs_positive_scaling_homogeneity(expr, variables, weights, degree
         (sp.Ne(a, 0), Homogeneity.NOT_HOMOGENEOUS),
     ],
 )
-def test_abs_requested_degree_retains_zero_coefficient_case(assumptions, expected):
+def test_abs_requested_degree_zero_coefficient_case(assumptions, expected):
     result = fp.homogeneity(
         sp.Abs(a * x), x, degree=2, assumptions=assumptions, return_result=True
     )
@@ -177,7 +175,7 @@ def test_abs_requested_degree_retains_zero_coefficient_case(assumptions, expecte
         assert fp.verify_certificate(result, expr=sp.Abs(a * x))
 
 
-def test_isolated_cusp_does_not_prove_optimal_holder_exponent():
+def test_isolated_cusp_holder_exponent():
     d = sp.Union(sp.FiniteSet(0), sp.Interval(1, 2))
     r = fp.holder_regularity(sp.sqrt(x), x, domain=d, return_result=True)
     assert r.exponent != sp.Rational(1, 2) or r.optimal is not TruthValue.TRUE
@@ -190,18 +188,18 @@ def test_isolated_cusp_does_not_prove_optimal_holder_exponent():
     ) == sp.Rational(1, 2)
 
 
-def test_finite_real_outputs_with_complex_intermediates():
+def test_finite_real_outputs_complex_intermediates():
     result = fp.lipschitz(
         sp.exp(sp.I * sp.pi * x), x, domain=sp.FiniteSet(0, 1), return_result=True
     )
     assert result.constant == 2 and result.optimal is TruthValue.TRUE
 
 
-def test_metric_and_variation_consumers_use_restricted_simplification():
+def test_metric_variation_consumers_simplification():
     assert fp.lipschitz(sp.Max(0, x), x, domain=sp.Interval(2, 3)) == 1
     assert fp.variation(sp.Max(0, x), x, domain=sp.Interval(2, 3)) == 1
 
 
-def test_cusp_optimality_on_open_and_unbounded_domains():
+def test_cusp_optimality_open_unbounded_domains():
     for support in (sp.Interval.open(0, 1), sp.Interval(0, sp.oo), sp.S.Reals):
         assert fp.holder_regularity(sp.sqrt(x), x, domain=support) == sp.Rational(1, 2)

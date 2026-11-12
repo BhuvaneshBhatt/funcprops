@@ -64,7 +64,7 @@ def test_negative_exponent_reverses_output_endpoints():
     assert condition_to_set(result, y) == sp.Interval(sp.exp(-1), 1)
 
 
-def test_transformed_auxiliary_domain_carries_input_restriction():
+def test_transformed_auxiliary_domain_restriction():
     domain = sp.Interval.open(0, 1)
     transformed = algebraize(sp.exp(2 * x) - 3 * sp.exp(x) + 2, x, domain=domain)
     assert transformed.changed and transformed.exact
@@ -74,7 +74,7 @@ def test_transformed_auxiliary_domain_carries_input_restriction():
     assert transformed.source_domain == domain
 
 
-def test_integer_domain_is_not_broadened_to_positive_reals():
+def test_integer_domain_restriction():
     result = function_range(sp.exp(x), x, y, constraints=sp.S.Integers)
     assert result != (y > 0)
 
@@ -100,7 +100,7 @@ def test_pole_excluded_by_natural_domain():
     assert condition_to_set(result, y) == expected
 
 
-def test_unmappable_domains_decline_exact_algebraization():
+def test_unmappable_domains_decline_algebraization():
     noninterval = sp.ConditionSet(x, sp.sin(x) > 0, sp.S.Reals)
     transformed = algebraize(sp.exp(x), x, domain=noninterval)
     assert not transformed.changed
@@ -145,7 +145,7 @@ def test_exponential_of_periodic_composition():
     assert condition_to_set(result, y) == sp.Interval(1, sp.E)
 
 
-def test_hyperbolic_disconnected_domain_keeps_closed_endpoints():
+def test_hyperbolic_disconnected_domain_endpoints():
     domain = sp.Union(sp.Interval(-2, -1), sp.Interval(1, 2))
     result = function_range(sp.cosh(x), x, y, constraints=domain)
     for value in (sp.cosh(1), sp.cosh(2)):

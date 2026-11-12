@@ -32,6 +32,7 @@ class PeriodicityResult:
 
     @property
     def certificate(self):
+        """Evidence retained for this result's declared replay route."""
         return self
 
 
@@ -55,6 +56,7 @@ class SymmetryResult:
 
     @property
     def certificate(self):
+        """Evidence retained for this result's declared replay route."""
         return self
 
 
@@ -87,7 +89,6 @@ def _zero(expr):
 
 
 def _period_from_frequency(arg, var):
-    """Return exact positive period for sin/cos-like affine arguments."""
     try:
         a = sp.simplify(differentiate(arg, var))
         if a.has(var) or a == 0:

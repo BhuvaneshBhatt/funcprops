@@ -32,7 +32,7 @@ def _gradient_registry():
     )
 
 
-def test_subject_map_tracks_multiargument_scalar_path_and_tangent():
+def test_subject_map_tracks_multiargument_path_tangent():
     u = FunctionSlot(0, "u")
     v = FunctionSlot(1, "v")
     rule = PropertyRule(G, "sign", (u, v), result=Sign.POSITIVE)
@@ -46,7 +46,7 @@ def test_subject_map_tracks_multiargument_scalar_path_and_tangent():
     assert out.complete is True
 
 
-def test_registered_gradient_is_certified_for_multiargument_outer():
+def test_registered_gradient_certified_outer():
     reg = _gradient_registry()
     u, v = sp.symbols("u v")
     cert = registry_gradient(G(u, v), registry=reg)
@@ -127,7 +127,7 @@ def test_missing_gradient_component():
     assert out.result is Monotonicity.UNKNOWN
 
 
-def test_multiple_analysis_variables_are_not_smuggled_in():
+def test_analysis_coordinate_arity():
     u = FunctionSlot(0, "u")
     v = FunctionSlot(1, "v")
     rule = PropertyRule(G, "sign", (u, v), result=Sign.POSITIVE)

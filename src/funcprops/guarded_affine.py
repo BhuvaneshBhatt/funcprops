@@ -30,6 +30,7 @@ class GuardedAffineEquationCertificate:
 
     @property
     def solutions(self):
+        """Solutions represented by the retained equation evidence."""
         values = tuple(
             case.value.solutions for case in self.cases if case.condition is sp.S.true
         )
@@ -37,6 +38,7 @@ class GuardedAffineEquationCertificate:
 
     @property
     def root_count(self):
+        """Distinct-root count supplied by the record, or None when unresolved."""
         values = tuple(
             case.value.root_count for case in self.cases if case.condition is sp.S.true
         )
@@ -44,14 +46,17 @@ class GuardedAffineEquationCertificate:
 
     @property
     def certified(self):
+        """Replay acceptance; a valid partial record need not be complete."""
         return self.verify()
 
     @property
     def complete(self):
+        """Completion status for this record's stated scope; replay validity is separate."""
         return self.verify()
 
     @property
     def scope(self):
+        """Scope identifier: ``exhaustive-affine-equation-cases-on-full-domain-under-assumptions``."""
         return "exhaustive-affine-equation-cases-on-full-domain-under-assumptions"
 
     def specialize(self, assumptions):
@@ -202,6 +207,7 @@ class GuardedAffineContourCertificate:
 
     @property
     def admissible(self):
+        """Whether the source satisfies the record's domain premises."""
         known = tuple(c.value for c in self.cases if c.condition is sp.S.true)
         if len(known) == 1:
             return known[0].admissible
@@ -211,19 +217,23 @@ class GuardedAffineContourCertificate:
 
     @property
     def zeros_minus_poles(self):
+        """Contour zero count minus pole count, with multiplicity."""
         known = tuple(c.value for c in self.cases if c.condition is sp.S.true)
         return known[0].count if len(known) == 1 and known[0].admissible else None
 
     @property
     def complete(self):
+        """Completion status for this record's stated scope; replay validity is separate."""
         return self.verify()
 
     @property
     def certified(self):
+        """Replay acceptance; a valid partial record need not be complete."""
         return self.verify()
 
     @property
     def scope(self):
+        """Scope identifier: ``guarded-affine-circle-count-and-explicit-inadmissible-strata``."""
         return "guarded-affine-circle-count-and-explicit-inadmissible-strata"
 
     def verify(self):

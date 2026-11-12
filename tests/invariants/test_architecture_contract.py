@@ -30,7 +30,7 @@ def test_semialg_guard_removes_contradictions():
     assert all(semialg.is_satisfiable(c.condition, (a,)) for c in result.cases)
 
 
-def test_detailed_property_result_wraps_compact_and_property_results():
+def test_detailed_property_result_compact_results():
     compact = as_detailed_result(Convexity.CONVEX, domain=sp.S.Reals, source="test")
     assert isinstance(compact, DetailedPropertyResult)
     assert compact.primary is Convexity.CONVEX
@@ -50,7 +50,7 @@ def test_detailed_property_result_wraps_compact_and_property_results():
     assert detailed.evidence == ("witness",)
 
 
-def test_range_monotonicity_convexity_preserve_expected_results():
+def test_range_monotonicity_convexity_expected_results():
     x, y = sp.symbols("x y", real=True)
     assert range(x**2, x, y) == (y >= 0)
     assert monotonicity(x**2, x, domain=x >= 0) in {

@@ -1,4 +1,4 @@
-"""Independent, conservative replay checks for exact property certificates.
+"""Independent replay checks for exact property certificates.
 
 Verifiers return True only when the certificate's stated conclusion can be
 re-established from its payload and current proof primitives. False means the
@@ -21,7 +21,7 @@ from .source_syntax import differentiate, same_data
 
 
 class _MissingReplayContext(ValueError):
-    """A legacy verifier needs source arguments absent from its record."""
+    """Replay needs source arguments absent from the supplied record."""
 
 
 def _matches_source_context(record, expr=None, var=None):
@@ -391,6 +391,7 @@ def _certificate_verifiers():
         AnalyticContourCertificate,
         ComplexBoxWitness,
     )
+    from .analytic_roots import ImplicitRealRoot
     from .asymptotic_tails import TailSignCertificate
     from .branch_atlas import GluedPowerProof, LogAtlasProof, LogBranchChart
     from .branch_gluing import BranchGluingProof, HolomorphicBranchChart
@@ -408,7 +409,6 @@ def _certificate_verifiers():
         SingularityClassificationCertificate,
         WindingCertificate,
     )
-    from .certified_optimization import GlobalMinimumCertificate
     from .complex_certification import (
         ArgumentPrincipleCertificate,
         RectangleRoucheCertificate,
@@ -431,7 +431,6 @@ def _certificate_verifiers():
         ComplexNewtonRefinement,
         ComplexNewtonRegion,
     )
-    from .component_optimization import ComponentMinimumResult
     from .coverage_contract import (
         CellDomainWitness,
         CoverageLeaf,
@@ -443,7 +442,6 @@ def _certificate_verifiers():
     from .domain_tracking import DomainRecord
     from .enclosures import DerivativeEnclosure, EnclosureResult
     from .entire_cancellation import EntireCancellationProof
-    from .extrema_bounds import ExtremaBoundsProof
     from .geometry import LevelBoundednessCertificate, ModeExistenceCertificate
     from .global_analysis import GlobalInequalityCertificate
     from .global_multivariate import ComposedMapCertificate, GlobalMapCertificate
@@ -495,6 +493,14 @@ def _certificate_verifiers():
         SymmetryResult,
     )
     from .real_analysis.variation import VariationResult
+    from .real_images.analysis import CriticalValueCover, RangeAnalysis
+    from .real_images.critical_values import CriticalValueEnclosure
+    from .real_images.interior import InteriorCriticalCover, InteriorRootCover
+    from .real_images.oscillatory import OscillatoryEscape
+    from .real_images.parameters import ParameterRangeAnalysis
+    from .real_images.tails import FiniteTailBound, TailValueBound
+    from .real_images.transfers import MonotoneTail
+    from .real_images.trigonometric import DenseTrigImage
     from .root_coverage import (
         RootCoverageCertificate,
         RootRegionProof,
@@ -621,6 +627,18 @@ def _certificate_verifiers():
         return verify_homogeneity_result(expr, cert)
 
     return (
+        (ParameterRangeAnalysis, self_verifying),
+        (ImplicitRealRoot, self_verifying),
+        (InteriorCriticalCover, self_verifying),
+        (InteriorRootCover, self_verifying),
+        (OscillatoryEscape, self_verifying),
+        (DenseTrigImage, self_verifying),
+        (FiniteTailBound, self_verifying),
+        (CriticalValueCover, self_verifying),
+        (RangeAnalysis, self_verifying),
+        (CriticalValueEnclosure, self_verifying),
+        (TailValueBound, self_verifying),
+        (MonotoneTail, self_verifying),
         (ParameterGeometryProof, self_verifying),
         (BranchGluingProof, self_verifying),
         (HolomorphicBranchChart, self_verifying),
@@ -631,7 +649,6 @@ def _certificate_verifiers():
         (JumpVariationProof, self_verifying),
         (LipschitzResult, self_verifying),
         (VariationResult, self_verifying),
-        (ExtremaBoundsProof, self_verifying),
         (LogBranchChart, self_verifying),
         (LogAtlasProof, self_verifying),
         (GluedPowerProof, self_verifying),
@@ -722,8 +739,6 @@ def _certificate_verifiers():
         (ComplexRootRegionProof, source_bound),
         (ComplexRootCoverage, source_bound),
         (DomainRecord, source_bound),
-        (ComponentMinimumResult, source_bound),
-        (GlobalMinimumCertificate, source_bound),
         (RootIsolationResult, source_bound),
         (RealRootInterval, source_bound),
         (TaylorModel, source_bound),

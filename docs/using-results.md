@@ -1,5 +1,7 @@
 # Working with results, assumptions, certificates, and caches
 
+Python blocks on this page form one ordered session, executed from a fresh namespace.
+
 ## Why would I use this?
 
 Many symbolic questions have more than one mathematically valid answer because a parameter has not been fixed. `funcprops` keeps those cases explicit instead of choosing one without evidence. It also exposes replayable certificates for proofs that need to be inspected, logged, or rechecked later.
@@ -13,16 +15,18 @@ import sympy as sp
 import funcprops as fp
 
 a, x = sp.symbols("a x", real=True)
-assert fp.monotonicity(a*x, x, assumptions=a > 0) is fp.Monotonicity.STRICTLY_INCREASING
+assert (
+    fp.monotonicity(a * x, x, assumptions=a > 0) is fp.Monotonicity.STRICTLY_INCREASING
+)
 ```
 
 Without sufficient assumptions, a property query may have several guarded cases. The root API projects a fully or partially stratified `PropertyResult` to a SymPy `Piecewise` by default. Any uncovered region receives an explicit symbolic `unknown` fallback instead of being interpreted as false.
 
 ```python
-fp.injective(a*x, x)
+fp.injective(a * x, x)
 # Piecewise((True, Ne(a, 0)), (False, True))
 
-result = fp.injective(a*x, x, return_result=True)
+result = fp.injective(a * x, x, return_result=True)
 result.cases
 # certified guarded cases with evidence/provenance retained
 ```
@@ -34,7 +38,7 @@ For a rich `PropertyResult`, `.resolved` returns an unconditional compact value 
 `as_detailed_result()` projects compact enums, sets, conditional results, and certificate objects onto `DetailedPropertyResult` without changing the default return types of the public APIs.
 
 ```python
-result = fp.change_of_variables((2*x,), x)
+result = fp.change_of_variables((2 * x,), x)
 detail = fp.as_detailed_result(result)
 print(detail.primary)
 print(detail.certificate)

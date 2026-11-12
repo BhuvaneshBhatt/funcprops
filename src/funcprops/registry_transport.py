@@ -78,16 +78,19 @@ class SubjectMap:
 
     @property
     def is_scalar_path(self) -> bool:
+        """Whether the supplied path has one scalar parameter."""
         return len(self.analysis_variables) == 1
 
     @property
     def tangent(self) -> tuple[Any, ...]:
+        """Derivative of the path with respect to its parameter."""
         if not self.is_scalar_path:
             raise ValueError("tangent is defined only for a scalar analysis path")
         return tuple(self.jacobian[:, 0])
 
     @property
     def varying_positions(self) -> tuple[int, ...]:
+        """Argument positions that vary along the supplied path."""
         return tuple(
             slot.position
             for row, slot in enumerate(self.source_slots)

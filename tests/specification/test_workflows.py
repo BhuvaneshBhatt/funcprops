@@ -17,7 +17,7 @@ def test_standalone_workflow(case):
     runpy.run_path(str(ROOT / "examples" / case.filename), run_name="__main__")
 
 
-def test_workflow_docs_and_helper_signatures_are_current():
+def test_workflow_docs_helper_signatures_current():
     files = generated_files()
     assert {path.name for path in (ROOT / "docs/tutorials").glob("*.md")} == {
         Path(name).name for name in files if name.startswith("docs/tutorials/")

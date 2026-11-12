@@ -17,7 +17,7 @@ from funcprops import (
 )
 
 
-def test_public_symbolic_property_queries_expose_neutral_assumptions():
+def test_public_symbolic_property_neutral_assumptions():
     exempt = {"jacobian"}
     for name, _category, _description in funcprops.properties():
         if name in exempt:
@@ -30,7 +30,7 @@ def test_public_symbolic_property_queries_expose_neutral_assumptions():
         assert parameter.default in (True, sp.S.true), name
 
 
-def test_assumption_normalization_is_canonical_and_idempotent():
+def test_assumption_normalization_canonical_idempotent():
     a, b = sp.symbols("a b", real=True)
     first = normalize_assumptions(sp.And(b > 0, a > 0, a > 0))
     second = normalize_assumptions(first)
@@ -39,7 +39,7 @@ def test_assumption_normalization_is_canonical_and_idempotent():
     assert normalize_assumptions(False) is sp.S.false
 
 
-def test_same_determinant_query_becomes_decisive_with_assumptions():
+def test_determinant_query_decisive_assumptions():
     x, a = sp.symbols("x a", real=True)
     unresolved = determinant_nonvanishing((a * x,), (x,), return_result=True)
     resolved = determinant_nonvanishing(
@@ -49,7 +49,7 @@ def test_same_determinant_query_becomes_decisive_with_assumptions():
     assert resolved.classification is TruthValue.TRUE
 
 
-def test_affine_boolean_partition_is_proved_without_false_pruning():
+def test_affine_partition_pruning():
     a = sp.symbols("a", real=True)
     partition = sp.Or(
         sp.Eq(a, -1),
@@ -60,13 +60,13 @@ def test_affine_boolean_partition_is_proved_without_false_pruning():
     assert entails(sp.Not(sp.And(sp.Eq(a, -1), sp.Eq(a, -2)))) is True
 
 
-def test_dummy_singularity_query_does_not_leak_proxy_symbols():
+def test_singularity_proxy_symbols():
     dummy = sp.Dummy("z")
     locus = singularities(sp.log(dummy), dummy, sp.S.Complexes)
     assert locus.free_symbols <= {dummy}
 
 
-def test_exported_assumption_decision_helpers_have_direct_contracts():
+def test_exported_assumption_decision_contracts():
     a = sp.symbols("a", positive=True)
     decision = decide(a > 0)
     assert decision.verdict is True
@@ -75,7 +75,7 @@ def test_exported_assumption_decision_helpers_have_direct_contracts():
     assert entails(a > 0) is True
 
 
-def test_affine_equalities_do_not_create_false_contradictions():
+def test_affine_equality_consistency():
     x, a, b = sp.symbols("x a b", real=True)
     assumptions = sp.And(sp.Eq(x, a), sp.Eq(x, b))
     assert entails(sp.Eq(a, b), assumptions) is True
@@ -83,6 +83,6 @@ def test_affine_equalities_do_not_create_false_contradictions():
     assert entails(a > 0, assumptions) is None
 
 
-def test_parameter_assumptions_do_not_change_domain_output():
+def test_parameter_output_roles():
     x, a = sp.symbols("x a", real=True)
     assert funcprops.domain(sp.log(x), x, assumptions=a > 0) == (x > 0)

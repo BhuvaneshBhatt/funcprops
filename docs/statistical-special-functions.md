@@ -41,6 +41,7 @@ Application: Reason symbolically about Gamma-family CDFs without numerical sampl
 ```python
 import sympy as sp
 import funcprops as fp
+
 x = sp.Symbol("x", real=True)
 a = sp.symbols("a", positive=True)
 result = fp.monotonicity(fp.RegularizedGammaP(a, x), x, domain=x > 0)
@@ -58,10 +59,11 @@ Application: Certify monotonicity used in skew-normal and Gaussian probability c
 ```python
 import sympy as sp
 import funcprops as fp
+
 x = sp.Symbol("x", real=True)
 h, a = sp.symbols("h a", real=True)
 result = sp.diff(fp.OwenT(h, a), a)
-assert result == sp.exp(-h**2 * (1 + a**2) / 2) / (2 * sp.pi * (1 + a**2))
+assert result == sp.exp(-(h**2) * (1 + a**2) / 2) / (2 * sp.pi * (1 + a**2))
 ```
 
 Expected: the exact positive derivative with respect to the second argument.
@@ -75,6 +77,7 @@ Application: Analyze noncentral-tail probabilities and detection thresholds stru
 ```python
 import sympy as sp
 import funcprops as fp
+
 x = sp.Symbol("x", real=True)
 m, a, b = sp.symbols("m a b", positive=True)
 result = fp.monotonicity(sp.marcumq(m, a, b), b, domain=b > 0)
@@ -92,6 +95,7 @@ Application: Certify Laplace-transform geometry in fractional stochastic and rel
 ```python
 import sympy as sp
 import funcprops as fp
+
 x = sp.Symbol("x", real=True)
 alpha = sp.symbols("alpha", positive=True)
 t = sp.symbols("t", nonnegative=True)
@@ -112,6 +116,7 @@ Application: Support directional-statistics and noncentral-distribution paramete
 ```python
 import sympy as sp
 import funcprops as fp
+
 x = sp.Symbol("x", real=True)
 nu = sp.symbols("nu", nonnegative=True)
 t = sp.symbols("t", positive=True)

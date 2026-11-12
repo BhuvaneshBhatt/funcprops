@@ -116,30 +116,37 @@ class QuotientNewtonRefinement:
 
     @property
     def expression(self):
+        """Expression to which the stored evidence applies."""
         return self.source.expression
 
     @property
     def variable(self):
+        """Coordinate used by the source and its evidence."""
         return self.source.variable
 
     @property
     def rectangle(self):
+        """Rectangle on which this record makes its geometric claim."""
         return self.parent.rectangle
 
     @property
     def child_rectangle(self):
+        """Rectangle retained by the contraction witness."""
         return self.refinement.child_rectangle
 
     @property
     def scope(self):
+        """Scope identifier: ``joint-quotient-Krawczyk-divisor-and-source-transfer``."""
         return "joint-quotient-Krawczyk-divisor-and-source-transfer"
 
     @property
     def complete(self):
+        """Completion status for this record's stated scope; replay validity is separate."""
         return self.verify()
 
     @property
     def certified(self):
+        """Replay acceptance; a valid partial record need not be complete."""
         return self.verify()
 
     def check(self):

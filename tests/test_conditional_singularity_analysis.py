@@ -18,7 +18,7 @@ from funcprops import (
 from funcprops.results import SingularityKind
 
 
-def test_integer_bessel_order_shadows_generic_branch_rule():
+def test_integer_bessel_order_shadows_branch_rule():
     z = sp.Symbol("z")
     n = sp.Symbol("n", integer=True)
     assert branch_cuts(sp.besselj(n, z), z) == ()
@@ -26,7 +26,7 @@ def test_integer_bessel_order_shadows_generic_branch_rule():
     assert meromorphic(sp.besselj(n, z), z) == Meromorphicity.MEROMORPHIC
 
 
-def test_generic_bessel_order_retains_parameter_guard():
+def test_bessel_order_parameter_guard():
     z, n = sp.symbols("z n")
     points = branch_points(sp.besselj(n, z), z, return_result=True)
     assert len(points) == 1
@@ -51,7 +51,7 @@ def test_local_order_cancels_denominator_multiplicity():
     assert records[0].condition == sp.Eq(x, 0)
 
 
-def test_removable_singularity_is_separate_from_poles():
+def test_removable_singularity_poles():
     x = sp.Symbol("x")
     expr = sp.sin(x) / x
     assert poles(expr, x) == []
@@ -64,14 +64,14 @@ def test_removable_singularity_is_separate_from_poles():
     )
 
 
-def test_generic_reciprocal_keeps_unsolved_zero_condition():
+def test_reciprocal_unsolved_zero_condition():
     x = sp.Symbol("x")
     f = sp.Function("f")
     pole_values = poles(1 / f(x), x)
     assert pole_values == [(sp.Eq(f(x), 0), None)]
 
 
-def test_branchcut_composition_is_pulled_back_without_solving():
+def test_branchcut_pullback():
     z = sp.Symbol("z")
     cuts = branch_cuts(sp.log(1 - z), z)
     assert cuts == (z > 1,)
@@ -91,7 +91,7 @@ def test_principal_log_domain():
     assert meromorphic(sp.log(z), z) == Meromorphicity.NOT_MEROMORPHIC
 
 
-def test_gamma_is_analytic_on_natural_domain_and_meromorphic():
+def test_gamma_analytic_natural_domain_meromorphic():
     z = sp.Symbol("z")
     assert analytic(sp.gamma(z), z, domain=sp.S.Complexes) == Analyticity.ANALYTIC
     assert meromorphic(sp.gamma(z), z) == Meromorphicity.MEROMORPHIC
@@ -108,7 +108,7 @@ def test_essential_composition_is_not_meromorphic():
     assert any(s.kind == SingularityKind.ESSENTIAL for s in singular.records)
 
 
-def test_sqrt_is_continuous_but_not_real_analytic_at_zero():
+def test_square_root_endpoint_regularity():
     x = sp.Symbol("x", real=True)
     assert analytic(sp.sqrt(x), x) == Analyticity.NOT_ANALYTIC
     assert continuous(sp.sqrt(x), x) == Continuity.CONTINUOUS
@@ -133,7 +133,7 @@ def test_acos_endpoint_regularity():
     assert continuous(sp.acos(x), x) == Continuity.CONTINUOUS
 
 
-def test_gamma_is_continuous_on_its_natural_real_domain():
+def test_gamma_continuous_natural_real_domain():
     x = sp.Symbol("x", real=True)
     assert continuous(sp.gamma(x), x) == Continuity.CONTINUOUS
 
@@ -153,7 +153,7 @@ def test_continuous_piecewise_seam():
     assert continuous(expr, x) == Continuity.CONTINUOUS
 
 
-def test_multivariate_condition_preserves_domain_dimension():
+def test_multivariate_condition_domain_dimension():
     x, y = sp.symbols("x y", real=True)
     expr = ConditionalExpression(x**2 + y**2, sp.And(x > 0, y > 0))
     result = geometry(expr, (x, y))
@@ -170,7 +170,7 @@ def test_unresolved_seam_equality():
     assert _piecewise_discontinuous_at(expr, x, sp.Eq(x, 0)) is None
 
 
-def test_piecewise_boundaries_include_a_conditional_final_branch():
+def test_piecewise_boundaries_include_final_branch():
     from funcprops.singularities import _piecewise_boundaries
 
     x = sp.Symbol("x", real=True)

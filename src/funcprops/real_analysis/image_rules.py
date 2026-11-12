@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from itertools import pairwise
+
 import sympy as sp
 from sympy import S
 
@@ -179,18 +181,132 @@ def _interval_power(interval, exponent):
     )
 
 
+# The direction applies on the entire real definition interval of each head.
+_MONOTONE_HEADS = {
+    sp.exp: (S.Reals, 1),
+    sp.log: (sp.Interval.open(0, sp.oo), 1),
+    sp.sinh: (S.Reals, 1),
+    sp.tanh: (S.Reals, 1),
+    sp.atan: (S.Reals, 1),
+    sp.asinh: (S.Reals, 1),
+    sp.asin: (sp.Interval(-1, 1), 1),
+    sp.acos: (sp.Interval(-1, 1), -1),
+    sp.acosh: (sp.Interval(1, sp.oo), 1),
+    sp.atanh: (sp.Interval.open(-1, 1), 1),
+    sp.erf: (S.Reals, 1),
+    sp.erfc: (S.Reals, -1),
+    sp.erfi: (S.Reals, 1),
+}
+
+
+def _monotone_head_image(outer, variable, source, direction):
+    """Map owned endpoints or one-sided limits through a continuous monotone head."""
+    values = []
+    for point, opened, side in (
+        (source.start, source.left_open, "+"),
+        (source.end, source.right_open, "-"),
+    ):
+        value = (
+            sp.limit(outer, variable, point, dir=side)
+            if opened
+            else outer.subs(variable, point)
+        )
+        if value.is_extended_real is not True:
+            return None
+        values.append((value, opened or value in (-sp.oo, sp.oo)))
+    if direction < 0:
+        values.reverse()
+    return sp.Interval(
+        values[0][0], values[1][0], left_open=values[0][1], right_open=values[1][1]
+    )
+
+
+def _periodic_monotone_image(outer, variable, source):
+    """Split tangent/cotangent at every pole in an interval of at most one period."""
+    if (source.end - source.start > sp.pi) is S.true:
+        return S.Reals
+    offset = sp.pi / 2 if outer.func is sp.tan else S.Zero
+    lower = sp.ceiling((source.start - offset) / sp.pi)
+    upper = sp.floor((source.end - offset) / sp.pi)
+    if not lower.is_Integer or not upper.is_Integer:
+        return None
+    poles = [offset + k * sp.pi for k in range(int(lower), int(upper) + 1)]
+    source = sp.Complement(source, sp.FiniteSet(*poles))
+    pieces = source.args if isinstance(source, sp.Union) else (source,)
+    result = []
+    for piece in pieces:
+        if isinstance(piece, sp.Interval):
+            image = _monotone_head_image(
+                outer, variable, piece, 1 if outer.func is sp.tan else -1
+            )
+            if image is None:
+                return None
+            result.append(image)
+        elif piece is not S.EmptySet:
+            return None
+    return sp.Union(*result)
+
+
+def _trigonometric_image(outer, variable, source):
+    """Map sine/cosine cells by their explicit owned stationary lattice."""
+    if (source.end - source.start > 2 * sp.pi) is S.true:
+        return sp.Interval(-1, 1)
+    offset = sp.pi / 2 if outer.func is sp.sin else S.Zero
+    lower = sp.ceiling((source.start - offset) / sp.pi)
+    upper = sp.floor((source.end - offset) / sp.pi)
+    if not lower.is_Integer or not upper.is_Integer:
+        return None
+    critical = [offset + k * sp.pi for k in range(int(lower), int(upper) + 1)]
+    cuts = [
+        source.start,
+        *(p for p in critical if source.start < p < source.end),
+        source.end,
+    ]
+    images = []
+    for a, b in pairwise(cuts):
+        phase = sp.floor(((a + b) / 2 - offset) / sp.pi)
+        if not phase.is_Integer:
+            return None
+        direction = -1 if int(phase) % 2 == 0 else 1
+        image = _monotone_head_image(outer, variable, sp.Interval.open(a, b), direction)
+        if image is None:
+            return None
+        images.append(image)
+    points = [
+        p for p in (source.start, *critical, source.end) if source.contains(p) is S.true
+    ]
+    images.append(sp.FiniteSet(*(sp.simplify(outer.subs(variable, p)) for p in points)))
+    return sp.Union(*images)
+
+
 def exact_image(outer, variable, source):
     """Return an exact image set, or None when any part is unsupported."""
     if source is S.EmptySet:
         return S.EmptySet
+    if outer == variable:
+        return source
+    if source is S.Reals:
+        pieces = [
+            exact_image(outer, variable, part)
+            for part in (
+                sp.Interval.open(-sp.oo, 0),
+                sp.FiniteSet(0),
+                sp.Interval.open(0, sp.oo),
+            )
+        ]
+        return None if any(p is None for p in pieces) else sp.Union(*pieces)
     if isinstance(source, sp.Union):
         parts = [exact_image(outer, variable, part) for part in source.args]
         if any(part is None for part in parts):
             return None
-        return sp.Union(*parts, evaluate=False)
+        return sp.Union(*parts)
     if isinstance(source, sp.FiniteSet):
         values = []
         for point in source:
+            if point.is_real is False or point.is_finite is False:
+                continue
+            if point.is_real is not True or point.is_finite is not True:
+                return None
             value = sp.simplify(outer.subs(variable, point))
             if value.is_real is False or value.is_finite is False:
                 continue
@@ -245,26 +361,32 @@ def exact_image(outer, variable, source):
                     hi -= 1
             return sp.Intersection(S.Integers, sp.Interval(lo, hi))
         if outer.func in (sp.sin, sp.cos) and outer.args == (variable,):
-            width = source.end - source.start
-            # On an open interval of exactly one period, both occurrences of
-            # an extremum can be excluded endpoints. Wider intervals contain
-            # an interior occurrence of each extremum.
-            if width is S.Infinity or (width - 2 * sp.pi).is_positive is True:
-                return sp.Interval(-1, 1)
-            return attainment_preserving_range(outer, variable, source)
-        if outer.func in (
-            sp.exp,
-            sp.log,
-            sp.sinh,
-            sp.cosh,
-            sp.tanh,
-            sp.atan,
-        ) and outer.args == (variable,):
-            if outer.func is sp.log:
-                source = sp.Intersection(source, sp.Interval.open(0, sp.oo))
-                if source is S.EmptySet:
-                    return source
-            return attainment_preserving_range(outer, variable, source)
+            return _trigonometric_image(outer, variable, source)
+        if outer.func in _MONOTONE_HEADS and outer.args == (variable,):
+            allowed, direction = _MONOTONE_HEADS[outer.func]
+            restricted = sp.Intersection(source, allowed)
+            if restricted is S.EmptySet:
+                return restricted
+            if not isinstance(restricted, sp.Interval):
+                return exact_image(outer, variable, restricted)
+            return _monotone_head_image(outer, variable, restricted, direction)
+        if outer.func in (sp.tan, sp.cot) and outer.args == (variable,):
+            return _periodic_monotone_image(outer, variable, source)
+        if outer.func in (sp.Abs, sp.cosh, sp.sech) and outer.args == (variable,):
+            parts = []
+            for region, direction in (
+                (sp.Interval(-sp.oo, 0), -1),
+                (sp.Interval(0, sp.oo), 1),
+            ):
+                part = sp.Intersection(source, region)
+                if isinstance(part, sp.FiniteSet):
+                    parts.append(exact_image(outer, variable, part))
+                elif isinstance(part, sp.Interval):
+                    sign = -direction if outer.func is sp.sech else direction
+                    parts.append(_monotone_head_image(outer, variable, part, sign))
+                elif part is not S.EmptySet:
+                    return None
+            return None if any(p is None for p in parts) else sp.Union(*parts)
     except SYMBOLIC_QUERY_ERRORS:
         return None
-    return None
+    return _quadratic_image(outer, variable, source)

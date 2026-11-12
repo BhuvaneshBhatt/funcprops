@@ -21,17 +21,17 @@ ROOT = Path(__file__).resolve().parents[1]
 CASES = {
     "omitted-domain": (
         "coverage_checker.py",
-        "tests/certificates/test_kernel_obligations.py::test_omitted_domain_is_rejected_even_with_recomputed_totals",
+        "tests/certificates/test_kernel_obligations.py::test_omitted_domain_even_recomputed_totals",
         "omitted-domain-cells",
     ),
     "overlapping-domain": (
         "coverage_checker.py",
-        "tests/certificates/test_kernel_obligations.py::test_duplicate_domain_is_rejected_even_with_recomputed_totals",
+        "tests/certificates/test_kernel_obligations.py::test_duplicate_domain_even_recomputed_totals",
         "overlapping-or-duplicated-cells",
     ),
     "source-context": (
         "coverage_checker.py",
-        "tests/certificates/test_kernel_obligations.py::test_changed_source_syntax_cannot_rebind_every_leaf",
+        "tests/certificates/test_kernel_obligations.py::test_source_syntax_binding",
         None,
     ),
     "coefficient-embedding": (

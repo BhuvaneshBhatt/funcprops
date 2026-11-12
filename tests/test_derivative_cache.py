@@ -18,7 +18,7 @@ def test_raw_derivative_does_not_factor_eagerly():
     assert info["factored_derivative"].misses == 0
 
 
-def test_factored_derivative_has_separate_lazy_slot_and_reuses_raw():
+def test_factored_derivative_lazy_slot_reuses_raw():
     x = sp.symbols("x")
     f = x**4 - x**2
     clear_property_proof_cache()
@@ -68,7 +68,7 @@ def test_invalid_derivative_order_rejected():
         raise AssertionError("negative derivative order should be rejected")
 
 
-def test_differentiability_uses_raw_derivative_without_factorization():
+def test_raw_derivative_regularity():
     from funcprops import differentiability
 
     x = sp.symbols("x")
@@ -80,7 +80,7 @@ def test_differentiability_uses_raw_derivative_without_factorization():
     assert info["factored_derivative"].misses == 0
 
 
-def test_monotonic_partition_can_reuse_factored_derivative():
+def test_monotonic_partition_reuse_factored_derivative():
     from funcprops import monotonic_partition
 
     x = sp.symbols("x")
@@ -96,7 +96,7 @@ def test_monotonic_partition_can_reuse_factored_derivative():
     assert second["factored_derivative"].misses == first["factored_derivative"].misses
 
 
-def test_fractional_derivative_order_is_not_truncated():
+def test_fractional_derivative_order():
     x = sp.symbols("x")
     for bad_order in (1.5, sp.Rational(3, 2), True):
         try:

@@ -20,7 +20,7 @@ def test_piecewise_zero_interval_ownership():
     assert "domain_cell_isolation" in result.method
 
 
-def test_domain_cells_do_not_cross_log_or_pole_boundaries():
+def test_logarithmic_cell_boundaries():
     expr = sp.log(x - 1) / (x - 2)
     result = zeros(expr, x, domain=sp.Interval(-10, 10), return_result=True)
     assert result.complete
@@ -31,14 +31,14 @@ def test_domain_cells_do_not_cross_log_or_pole_boundaries():
     assert sp.Interval.Lopen(2, 10) in domains
 
 
-def test_interval_arithmetic_can_prove_root_free_cell():
+def test_interval_arithmetic_root_free_cell():
     expr = sp.exp(x) + x**2 + 10
     enclosure = certified_real_interval_evaluate(expr, x, sp.Interval(-1, 1))
     assert enclosure.excludes_zero
     assert enclosure.strict_sign == 1
 
 
-def test_interval_arithmetic_derivative_can_certify_unique_root():
+def test_interval_arithmetic_derivative_certify_root():
     expr = x + sp.exp(x) - 3
     result = zeros(expr, x, domain=sp.Interval(-1, 1), return_result=True)
     assert result.complete
@@ -52,7 +52,7 @@ def test_interval_arithmetic_derivative_can_certify_unique_root():
     )
 
 
-def test_certified_monotonic_inverse_returns_isolating_interval():
+def test_certified_monotonic_inverse_interval():
     cert = certified_monotonic_inverse(x + sp.exp(x), x, 3, domain=sp.Interval(-1, 2))
     assert cert.complete
     assert len(cert.isolated_intervals) == 1
@@ -67,7 +67,7 @@ def test_robust_exp_log_sign_avoids_overflow():
     assert robust_real_sign(sp.log(sp.Rational(3, 2))) == 1
 
 
-def test_exponential_fourier_derivative_sequence_counts_roots():
+def test_exponential_fourier_derivative_counts_roots():
     expr = sp.exp(2 * x) - 3 * sp.exp(x) + 2
     count = exponential_fourier_count(expr, x, sp.Interval(-10, 10))
     assert count.complete
@@ -75,7 +75,7 @@ def test_exponential_fourier_derivative_sequence_counts_roots():
     assert len(count.sequence) == 3
 
 
-def test_exponential_fourier_respects_open_endpoint_roots():
+def test_exponential_fourier_respects_endpoint_roots():
     expr = sp.exp(2 * x) - 3 * sp.exp(x) + 2
     count = exponential_fourier_count(expr, x, sp.Interval.open(0, sp.log(2)))
     assert count.complete

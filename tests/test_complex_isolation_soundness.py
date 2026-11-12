@@ -20,7 +20,7 @@ def test_exact_solver_retains_raw_source_hole(power):
     assert result.distinct_root_count == 0 and result.isolation_complete
 
 
-def test_source_hole_does_not_remove_a_different_defined_root():
+def test_source_hole_root_separation():
     raw = sp.Mul(z, z - 1, sp.Pow(z, -1, evaluate=False), evaluate=False)
     result = fp.isolate_complex_roots(raw, z, RECT)
     assert result.complete and result.roots == (1,)
@@ -31,9 +31,7 @@ def test_source_hole_does_not_remove_a_different_defined_root():
     "expression,distinct,total",
     [(z**4, 1, 4), ((z - 1) ** 3 * (z + 1) ** 2, 2, 5), (z**2 + 1, 2, 2)],
 )
-def test_exact_and_contour_counts_use_multiplicity_consistently(
-    expression, distinct, total
-):
+def test_exact_contour_counts_multiplicity(expression, distinct, total):
     exact = fp.isolate_complex_roots(expression, z, RECT)
     contour = fp.argument_principle_count(expression, z, RECT, precision=30)
     assert exact.complete and exact.isolation_complete
@@ -42,7 +40,7 @@ def test_exact_and_contour_counts_use_multiplicity_consistently(
     assert exact.total_count == exact.multiplicity_count == contour.zero_count == total
 
 
-def test_unknown_exact_multiplicity_does_not_fabricate_a_simple_root():
+def test_unknown_multiplicity_status():
     result = fp.isolate_complex_roots(sp.log(z) ** 2, z, RECT)
     assert result.complete and result.roots == (1,)
     assert result.distinct_root_count == 1 and result.isolation_complete
@@ -57,13 +55,13 @@ def test_unresolved_parameter_degeneracy():
 
 
 @pytest.mark.parametrize("value", [sp.oo, -sp.oo, sp.zoo, sp.nan])
-def test_nonfinite_constant_has_no_holomorphic_neighborhood(value):
+def test_nonfinite_holomorphic_constant(value):
     assert fp.holomorphic_on_rectangle(value, z, RECT).holomorphic is None
     raw = sp.Mul(0, value, z, evaluate=False)
     assert fp.holomorphic_on_rectangle(raw, z, RECT).holomorphic is None
 
 
-def test_unresolved_constant_parameter_does_not_imply_finiteness():
+def test_unresolved_constant_finiteness():
     a = sp.Symbol("a")
     assert fp.holomorphic_on_rectangle(sp.exp(z + a), z, RECT).holomorphic is None
     finite = sp.Symbol("finite", complex=True)
@@ -80,7 +78,7 @@ def test_composite_branch_cancellation():
 
 
 @pytest.mark.parametrize("root", [0, 1, sp.I, 1 + sp.I, sp.Rational(1, 2)])
-def test_polynomial_argument_principle_requires_zero_free_boundary(root):
+def test_polynomial_argument_zero_free_boundary(root):
     assert fp.argument_principle_rectangle(z - root, z, 0, 1 + sp.I) is None
     invalid = fp.ArgumentPrincipleCertificate(z - root, z, 0, 1 + sp.I, 1)
     assert not invalid.verify()
@@ -130,7 +128,7 @@ def test_canceled_contour_source_pole():
     assert not c.certified and c.zero_count is None
 
 
-def test_cluster_coverage_is_not_individual_isolation():
+def test_cluster_isolation_status():
     f = (sp.exp(z) - 1) ** 2
     c = fp.isolate_complex_roots(
         f, z, (-1 - sp.I, 1 + sp.I), max_isolation_depth=0, use_multiple=False
@@ -141,7 +139,7 @@ def test_cluster_coverage_is_not_individual_isolation():
     assert len(c.rectangles) == 1 and c.rectangles[0].root_count == 2
 
 
-def test_uncertain_boundary_never_reports_isolation_complete():
+def test_uncertain_boundary_isolation():
     c = fp.isolate_complex_roots(
         sp.exp(z) - 1, z, (-sp.I, 1 + sp.I), max_boundary_depth=2
     )

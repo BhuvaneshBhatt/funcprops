@@ -72,6 +72,8 @@ def condition_to_set(condition, var):
     ``x >= A`` even though the set is exactly ``[A, oo)`` with respect to x.
     Handle those one-variable affine endpoint relations structurally first.
     """
+    if condition is None:
+        return None
     condition = sp.sympify(condition)
     var = sp.sympify(var)
     if isinstance(condition, sp.Set):
@@ -91,6 +93,19 @@ def condition_to_set(condition, var):
     ):
         return sp.Intersection(condition.args[1], S.Reals)
     if isinstance(condition, sp.And):
+        if condition.has(sp.Piecewise):
+            # Within a conjunction, an explicit branch guard fixes that
+            # Piecewise value. Retain the guard while exposing its active
+            # expression to the ordinary set converter.
+            guards = set(condition.args)
+            substitutions = {}
+            for piece in condition.atoms(sp.Piecewise):
+                value, guard = piece.args[0]
+                required = set(guard.args) if isinstance(guard, sp.And) else {guard}
+                if required <= guards:
+                    substitutions[piece] = value
+            if substitutions:
+                return condition_to_set(condition.xreplace(substitutions), var)
         pieces = [condition_to_set(a, var) for a in condition.args]
         if all(isinstance(q, sp.Set) for q in pieces):
             return sp.Intersection(*pieces)
@@ -175,6 +190,10 @@ def set_to_condition(set_, y):
         return S.true
     if set_ == S.EmptySet:
         return S.false
+    if isinstance(set_, sp.ConditionSet):
+        return sp.And(
+            set_.condition.xreplace({set_.sym: y}), set_to_condition(set_.base_set, y)
+        )
     if isinstance(set_, sp.Interval):
         pieces = []
         if set_.start is not S.NegativeInfinity:

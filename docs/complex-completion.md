@@ -8,8 +8,8 @@ Python blocks on this page form one ordered session, executed from a fresh names
 import sympy as s
 import funcprops as fp
 
-z = s.Symbol('z')
-run = fp.adaptive_complex_isolation(s.sin(z), z, -4-s.I, 4+s.I, stages=0)
+z = s.Symbol("z")
+run = fp.adaptive_complex_isolation(s.sin(z), z, -4 - s.I, 4 + s.I, stages=0)
 assert run.verify() and not run.complete
 run = fp.resume_adaptive_complex_isolation(run, stages=4)
 assert run.verify() and run.complete and run.root_count == 3
@@ -67,14 +67,19 @@ No assumption here asserts a computable a priori stage/time bound. A boundary ze
 ## two selected multiplicity theorems
 
 ```python
-parent = fp.certify_analytic_contour(s.cosh(z)-1, z, -1-s.I, 1+s.I)
+parent = fp.certify_analytic_contour(s.cosh(z) - 1, z, -1 - s.I, 1 + s.I)
 exact = fp.certify_complex_multiple_root(parent, center=s.S.Zero)
 assert exact.verify() and exact.center == 0
 assert exact.root_count == 1 and exact.multiplicity_count == 2
 
-multiple = fp.certify_complex_isolation(s.exp(z)*(s.exp(z)-1)**2,
-    z, -1-s.I, 1+s.I, max_box_diameter=s.Rational(1, 100),
-    policy=fp.EnclosurePolicy(max_depth=40, max_cells=4096))
+multiple = fp.certify_complex_isolation(
+    s.exp(z) * (s.exp(z) - 1) ** 2,
+    z,
+    -1 - s.I,
+    1 + s.I,
+    max_box_diameter=s.Rational(1, 100),
+    policy=fp.EnclosurePolicy(max_depth=40, max_cells=4096),
+)
 assert multiple.verify() and multiple.complete
 assert multiple.root_count == 1 and multiple.total_count == 2
 assert multiple.proof.individual_multiplicities == (2,)

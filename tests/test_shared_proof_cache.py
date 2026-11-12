@@ -26,7 +26,7 @@ def test_domain_cache_reused_across_property_calls():
     assert after.hits > before.hits
 
 
-def test_zero_geometry_shared_between_partition_and_direct_query():
+def test_zero_geometry_shared_between_direct_query():
     x = sp.symbols("x", positive=True)
     clear_property_proof_cache()
     p = monotonic_partition(
@@ -81,7 +81,7 @@ def test_cache_is_lazy():
     assert info["singularity"].misses == 0
 
 
-def test_cached_domain_preserves_invalid_domain_error():
+def test_cached_domain_invalid_error():
     x = sp.symbols("x")
     import pytest
 

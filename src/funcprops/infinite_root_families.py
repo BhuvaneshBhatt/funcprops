@@ -44,6 +44,7 @@ class IndexedRootFamily:
         return True
 
     def to_zero_geometry(self):
+        """Project a valid indexed family to root-geometry evidence."""
         if not self.verify():
             return None
         from .transcendental.zero_geometry import ZeroGeometryCertificate

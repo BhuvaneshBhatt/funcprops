@@ -15,7 +15,7 @@ def test_function_slot_is_local_sympy_placeholder():
     assert (left > -1).has(left)
 
 
-def test_make_function_slots_assign_positions_in_order():
+def test_function_slots_assign_positions_order():
     nu, z = make_function_slots("nu", "z")
 
     assert nu.position == 0
@@ -23,7 +23,7 @@ def test_make_function_slots_assign_positions_in_order():
     assert nu != z
 
 
-def test_property_rule_instantiates_conditions_result_and_subject():
+def test_property_rule_instantiates_result_subject():
     nu, z = make_function_slots("nu", "z")
     rule = PropertyRule(
         head=sp.besselj,
@@ -44,7 +44,7 @@ def test_property_rule_instantiates_conditions_result_and_subject():
     assert instantiated.substitution_map[z] == x**2
 
 
-def test_property_rule_does_not_capture_same_named_user_symbols():
+def test_property_rule_symbol_capture():
     user_nu = sp.Symbol("nu")
     user_z = sp.Symbol("z")
     nu, z = make_function_slots("nu", "z")
@@ -65,7 +65,7 @@ def test_property_rule_does_not_capture_same_named_user_symbols():
     assert not instantiated.conditions.has(nu)
 
 
-def test_property_rule_handles_same_actual_symbol_in_multiple_slots():
+def test_property_rule_actual_symbol_multiple_slots():
     a, b = make_function_slots("a", "b")
     x = sp.Symbol("x")
     rule = PropertyRule(
@@ -83,7 +83,7 @@ def test_property_rule_handles_same_actual_symbol_in_multiple_slots():
     assert instantiated.result == 0
 
 
-def test_property_rule_matching_is_by_function_head_and_slot_arity():
+def test_property_rule_matching_function_slot_arity():
     nu, z = make_function_slots("nu", "z")
     rule = PropertyRule(
         head=sp.besselj,
@@ -146,7 +146,7 @@ def test_registry_native_rule_lifecycle():
     assert native.match_property_rules(sp.bessely(a, x)) == ()
 
 
-def test_function_registry_rejects_non_property_rule_registration():
+def test_function_registry_non_rule_registration():
     from funcprops import FunctionRegistry
 
     native = FunctionRegistry([])

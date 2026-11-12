@@ -41,7 +41,7 @@ def test_composition_convex_and_lipschitz():
     assert q.bound == 12
 
 
-def test_structured_trig_families_verify_and_integrate():
+def test_structured_trig_families_verify_integrate():
     x = sp.symbols("x", real=True)
     for f in (sp.sin(2 * x + 1), sp.cos(3 * x - 2), sp.tan(5 * x + 4)):
         fam = affine_trig_root_family(f, x)

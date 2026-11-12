@@ -28,10 +28,12 @@ class GlobalInequalityCertificate:
 
     @property
     def certified(self):
+        """Replay acceptance; a valid partial record need not be complete."""
         return self.verify()
 
     @property
     def scope(self):
+        """Mathematical scope for interpreting this record and its evidence."""
         return (
             "global-real-positivity"
             if self.complete

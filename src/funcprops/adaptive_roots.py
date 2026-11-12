@@ -61,24 +61,29 @@ class CoverageState:
 
     @property
     def expression(self):
+        """Expression to which the stored evidence applies."""
         return self.context.expression
 
     @property
     def variable(self):
+        """Coordinate used by the source and its evidence."""
         return self.context.variable
 
     @property
     def proof(self):
+        """Coverage evidence retained by the result."""
         return _assemble(
             self.context, self.leaves, [a.region for a in self.pending], self.exhaustion
         )
 
     @property
     def complete(self):
+        """Completion status for this record's stated scope; replay validity is separate."""
         return self.proof.complete
 
     @property
     def scope(self):
+        """Scope identifier: ``resumable-finite-real-root-coverage``."""
         return "resumable-finite-real-root-coverage"
 
     def check(self):
@@ -93,7 +98,7 @@ class CoverageState:
                 or self.schema_version != 1
             ):
                 return CheckResult(
-                    CheckOutcome.UNSUPPORTED, None, False, "unsupported-state-version"
+                    CheckOutcome.UNSUPPORTED, None, False, "unsupported-state-schema"
                 )
             if (
                 not isinstance(self.pending, tuple)
@@ -132,6 +137,7 @@ class CoverageState:
 
     @property
     def certified(self):
+        """Replay acceptance; a valid partial record need not be complete."""
         return self.verify()
 
     def verify(self):
@@ -149,38 +155,47 @@ class AdaptiveRootResult:
 
     @property
     def proof(self):
+        """Coverage evidence retained by the result."""
         return self.state.proof
 
     @property
     def expression(self):
+        """Expression to which the stored evidence applies."""
         return self.state.expression
 
     @property
     def variable(self):
+        """Coordinate used by the source and its evidence."""
         return self.state.variable
 
     @property
     def complete(self):
+        """Completion status for this record's stated scope; replay validity is separate."""
         return self.proof.complete
 
     @property
     def root_count(self):
+        """Distinct-root count supplied by the record, or None when unresolved."""
         return self.proof.root_count
 
     @property
     def multiplicity_count(self):
+        """Root count with multiplicity, or None when unresolved."""
         return self.proof.multiplicity_count
 
     @property
     def unresolved(self):
+        """Requested regions whose proof obligations remain open."""
         return self.proof.unresolved
 
     @property
     def scope(self):
+        """Mathematical scope for interpreting this record and its evidence."""
         return self.state.scope
 
     @property
     def obligations(self):
+        """Unresolved premises that prevent the stated completion claim."""
         return self.proof.obligations
 
     def check(self):
@@ -192,7 +207,7 @@ class AdaptiveRootResult:
             or self.schema_version != 1
         ):
             return CheckResult(
-                CheckOutcome.UNSUPPORTED, None, False, "unsupported-result-version"
+                CheckOutcome.UNSUPPORTED, None, False, "unsupported-result-schema"
             )
         if type(self.state) is not CoverageState:
             return CheckResult(CheckOutcome.REJECTED, False, False, "invalid-state")
@@ -200,6 +215,7 @@ class AdaptiveRootResult:
 
     @property
     def certified(self):
+        """Replay acceptance; a valid partial record need not be complete."""
         return self.verify()
 
     def verify(self):
@@ -222,6 +238,7 @@ def coverage_policy_stage(stage, *, base=None):
         max_depth=base.max_depth + stage,
         max_cells=max(1, base.max_cells) * 2**stage,
         max_taylor_order=base.max_taylor_order + stage,
+        max_root_order=base.max_root_order + stage,
         max_series_terms=max(1, base.max_series_terms) * 2**stage,
     )
 

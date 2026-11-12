@@ -11,7 +11,7 @@ from funcprops.results import Monotonicity, TruthValue
 x = sp.symbols("x", real=True)
 
 
-def test_property_proof_context_is_lazy_and_canonical():
+def test_property_proof_context_lazy_canonical():
     clear_property_proof_cache()
     ctx = property_proof_context(x**2, x, domain=sp.Interval(-1, 1))
     info = property_proof_cache_info()
@@ -63,7 +63,7 @@ def test_cache_clear_helper_directly():
     assert info["derivative"].currsize == 0 and info["zero_geometry"].currsize == 0
 
 
-def test_certificate_replay_monotonicity_and_zero_geometry():
+def test_certificate_replay_monotonicity_zero_geometry():
     p = fp.monotonic_partition(
         x**3 - 3 * x, x, domain=sp.Interval(-2, 2), return_result=True
     )
@@ -73,7 +73,7 @@ def test_certificate_replay_monotonicity_and_zero_geometry():
     assert g and all(fp.verify_zero_geometry(c) for c in g)
 
 
-def test_certificate_replay_decomposition_and_convexity():
+def test_certificate_replay_decomposition_convexity():
     d = fp.monotonic_decomposition(sp.acos(sp.exp(x)), x, return_result=True)
     assert fp.verify_monotonic_decomposition(d)
     from funcprops.real_analysis.advanced_convexity import strong_convexity
@@ -83,7 +83,7 @@ def test_certificate_replay_decomposition_and_convexity():
     assert fp.verify_convexity_certificate(x**2, x, cert)
 
 
-def test_certificate_replay_tail_and_extremum_theorem():
+def test_certificate_replay_tail_extremum_theorem():
     k = sp.Symbol("k", integer=True, positive=True)
     z = fp.IndexedZero("BesselJ", k, 0, 0, "positive")
     cert = fp.indexed_tail_inversion(z, fp.IndexedZero("BesselJ", 3, 0, 0, "positive"))
@@ -118,7 +118,7 @@ def test_remaining_exported_helpers_direct_contracts():
     )
 
 
-def test_exported_function_api_contract_manifest_is_complete():
+def test_exported_function_api_manifest_complete():
     tested = {
         "domain",
         "range",
@@ -166,7 +166,7 @@ def test_exported_function_api_contract_manifest_is_complete():
     assert exported == tested
 
 
-def test_certificate_replay_root_extremum_range_and_bracket():
+def test_certificate_replay_root_extremum_bracket():
     roots = fp.transcendental_roots(
         sp.sin(x), x, sp.Interval(0, 2 * sp.pi), allow_numerical=False
     )
@@ -183,7 +183,7 @@ def test_certificate_replay_root_extremum_range_and_bracket():
     assert fp.verify_integer_bracket(b)
 
 
-def test_monotonic_partition_default_is_compact_mathematical_result():
+def test_monotonic_partition_default_result():
     x = sp.symbols("x", real=True)
     out = fp.monotonic_partition(x**3 - 3 * x, x, domain=sp.Interval(-3, 3))
     assert out == (
@@ -213,7 +213,7 @@ def test_compact_monotonic_decomposition():
     assert isinstance(rich, fp.MonotonicDecomposition)
 
 
-def test_compact_monotonic_partition_composes_with_public_helpers():
+def test_compact_monotonic_partition_public_helpers():
     x = sp.symbols("x", real=True)
     compact = fp.monotonic_partition(x**3, x, domain=sp.Interval(-2, 2))
     assert fp.injectivity_from_partition(compact) is TruthValue.TRUE

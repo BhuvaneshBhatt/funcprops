@@ -1,5 +1,7 @@
 """Bounded proposals for explicit real multiplicity witnesses."""
 
+from functools import lru_cache
+
 import sympy as sp
 
 from .coverage_checker import derivative_formula_on_cell
@@ -8,6 +10,21 @@ from .coverage_search import _accepted, coverage_context, propose_leaf
 from .enclosure_policy import EnclosurePolicy
 from .enclosures import enclosure_witness
 from .source_syntax import differentiate, normalize_arithmetic
+
+
+@lru_cache(maxsize=1024)
+def _first_nonzero_jet(function, center, maximum):
+    """Inspect exact jets once per candidate, stopping at the first nonzero jet.
+
+    Inconclusive symbolic zeros are not accepted as vanishing jets. The cached
+    symbolic work is shared by nested cells; enclosure evidence remains local.
+    """
+    f, x = function.expr, function.variables[0]
+    for order in range(maximum + 1):
+        if f.subs(x, center) != 0:
+            return order
+        f = differentiate(f, x)
+    return None
 
 
 def _deflation(context, region, center, order, policy):
@@ -80,8 +97,8 @@ def deflate_real_root(expr, var, domain, center, order, *, policy=None):
     A small derivative or a numerical zero is never an exact jet witness.
     """
     policy = EnclosurePolicy() if policy is None else policy
-    if type(order) is not int or not 2 <= order <= policy.max_taylor_order + 1:
-        raise ValueError("order must be between 2 and max_taylor_order + 1")
+    if type(order) is not int or not 2 <= order <= policy.max_root_order:
+        raise ValueError("order must be between 2 and max_root_order")
     if policy.seconds is not None:
         from dataclasses import replace
 
@@ -148,7 +165,12 @@ def propose_multiple_leaf(context, region, policy):
         for center in dict.fromkeys(
             (sp.S.Zero, (region.start + region.end) / 2, region.start, region.end)
         ):
-            for order in range(2, policy.max_taylor_order + 2):
+            if region.closure.contains(center) is not sp.true:
+                continue
+            order = _first_nonzero_jet(
+                sp.Lambda(x, formula), center, policy.max_root_order
+            )
+            if order is not None and 2 <= order <= policy.max_root_order:
                 leaf = _deflation(context, region, center, order, policy)
                 if leaf is not None:
                     return leaf

@@ -26,6 +26,7 @@ class DerivativeChainCertificate:
 
     @property
     def strict_domain(self):
+        """Subset on which the strict conclusion is established."""
         if (
             self.depth == 0
             or self.expression.subs(self.variable, self.endpoint).is_positive is True
@@ -37,18 +38,22 @@ class DerivativeChainCertificate:
 
     @property
     def relation(self):
+        """Comparison relation established on the stated domain."""
         return ">" if self.strict_domain == self.domain else ">="
 
     @property
     def certified(self):
+        """Replay acceptance; a valid partial record need not be complete."""
         return self.verify()
 
     @property
     def complete(self):
+        """Completion status for this record's stated scope; replay validity is separate."""
         return self.verify()
 
     @property
     def scope(self):
+        """Scope identifier: ``nonnegative-on-domain-positive-on-strict-domain``."""
         return "nonnegative-on-domain-positive-on-strict-domain"
 
     def verify(self):

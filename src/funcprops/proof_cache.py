@@ -250,6 +250,7 @@ class PropertyProofContext:
     assumptions: sp.Basic = S.true
 
     def derivative(self, order=1, *, factored=False):
+        """Return the cached source derivative of the requested order."""
         return cached_derivative(
             self.expression, self.variable, order=order, factored=factored
         )
@@ -279,6 +280,7 @@ class PropertyProofContext:
         )
 
     def sign(self, *, domain=None, strict_inequalities=True):
+        """Query the cached sign under the supplied or retained restriction."""
         return cached_sign(
             self.expression,
             self.variable,

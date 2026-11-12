@@ -49,7 +49,7 @@ def test_transcendental_compact_simple_root():
     assert any(p.method == "interval" for p in r.regions)
 
 
-def test_adaptive_transcendental_partition_and_endpoint_ownership():
+def test_adaptive_transcendental_endpoint_ownership():
     r = root_coverage(sp.sin(x), x, sp.Interval(-4, 4), max_depth=6)
     assert r.complete and r.root_count == 3 and r.verify()
     for i, a in enumerate(r.regions):
@@ -69,7 +69,7 @@ def test_budget_exhaustion_retains_unresolved(kwargs):
     assert status.certified and status.complete is False
 
 
-def test_tangent_transcendental_root_remains_unresolved():
+def test_tangent_transcendental_remains_unresolved():
     r = root_coverage(sp.sin(x) ** 2, x, sp.Interval(-1, 1), max_depth=3, max_cells=20)
     assert not r.complete and r.unresolved.contains(0) is sp.S.true
     assert r.verify()
@@ -146,7 +146,7 @@ def test_leaf_proof_is_bound_to_source_and_region():
     assert not verify_certificate(r, expr=x + 1, var=x)
 
 
-def test_source_hole_is_excluded_not_an_invented_zero():
+def test_source_hole_zero_status():
     f = sp.Mul(x**2, sp.Pow(x, -1, evaluate=False), evaluate=False)
     r = root_coverage(f, x, sp.Interval(-1, 1))
     assert r.complete and r.root_count == 0 and r.verify()
@@ -154,14 +154,14 @@ def test_source_hole_is_excluded_not_an_invented_zero():
     assert not replace(r, domain_record=track_domain(x, x, sp.Interval(-1, 1))).verify()
 
 
-def test_periodic_exhaustive_family_covers_infinite_domain():
+def test_periodic_exhaustive_family_infinite_domain():
     r = root_coverage(sp.sin(x), x)
     assert r.complete and r.root_count is sp.oo and r.verify()
     assert r.regions[0].method == "periodic-family"
     assert not replace(r, regions=(replace(r.regions[0], witness=None),)).verify()
 
 
-def test_periodic_search_cannot_replace_unknown_infinite_coverage():
+def test_unresolved_periodic_coverage():
     r = root_coverage(sp.sin(x), x, use_families=False)
     assert not r.complete and r.unresolved is sp.S.Reals and r.verify()
 
@@ -188,7 +188,7 @@ def test_empty_effective_domain_is_complete():
     assert r.complete and r.root_count == 0 and r.verify()
 
 
-def test_unsupported_definition_domain_is_not_complete():
+def test_unsupported_definition_domain():
     r = root_coverage(sp.gamma(x), x, sp.Interval(1, 2))
     assert not r.complete and r.reason and not r.certified
 
@@ -210,7 +210,7 @@ def test_parameter_specialization_cannot_hide_pole():
     assert not r.complete and not r.certified
 
 
-def test_unresolved_parameter_root_count_stays_partial():
+def test_unresolved_parameter_root_count_partial():
     a = sp.Symbol("a", real=True)
     r = root_coverage(x * x - a, x, sp.Interval(-2, 2), max_depth=1, max_cells=3)
     assert not r.complete and r.root_count is None
@@ -244,7 +244,7 @@ def test_complex_boundary_root_is_unresolved():
     assert not replace(r, complete=True).verify()
 
 
-def test_complex_tiling_count_additivity_and_gap_rejection():
+def test_complex_tiling_count_additivity_gap_rejection():
     target = complex_root_coverage(z * z + 1, z, -2 - 2 * sp.I, 2 + 2 * sp.I)
     left = complex_root_coverage(z * z + 1, z, -2 - 2 * sp.I, -1 + 2 * sp.I)
     right = complex_root_coverage(z * z + 1, z, -1 - 2 * sp.I, 2 + 2 * sp.I)
@@ -256,7 +256,7 @@ def test_complex_tiling_count_additivity_and_gap_rejection():
     ).verify()
 
 
-def test_complex_source_hole_not_canceled_into_polynomial():
+def test_canceled_complex_source_hole():
     f = sp.Mul(z**2, sp.Pow(z, -1, evaluate=False), evaluate=False)
     r = complex_root_coverage(f, z, -2 - 2 * sp.I, 2 + 2 * sp.I)
     assert not r.complete and r.verify()
@@ -290,18 +290,18 @@ def test_counts_cannot_be_booleans():
     assert not replace(c, root_count=False).verify()
 
 
-def test_inconsistent_parameter_guard_is_not_a_certificate():
+def test_inconsistent_parameter_guard():
     a = sp.Symbol("a", positive=True)
     r = specialize_root_coverage(x - a, x, {a: -1}, sp.Interval(-2, 2))
     assert r.guard is sp.S.false and not r.certified and not r.complete
 
 
 @pytest.mark.parametrize("f", [z + sp.I, z + sp.sqrt(2), sp.sin(z), 1 / z])
-def test_unsupported_complex_contour_family_is_explicitly_unresolved(f):
+def test_unsupported_complex_contour_family_unresolved(f):
     r = complex_root_coverage(f, z, -2 - 2 * sp.I, 2 + 2 * sp.I)
     assert not r.complete and r.root_count is None and r.verify()
 
 
-def test_exact_nonrational_constant_uses_interval_proof():
+def test_exact_nonrational_constant_interval_proof():
     r = root_coverage(x + sp.pi, x, sp.Interval(-4, 4))
     assert r.complete and r.root_count == 1 and r.verify()

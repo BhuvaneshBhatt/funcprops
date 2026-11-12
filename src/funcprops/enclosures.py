@@ -10,7 +10,7 @@ from .domain_tracking import coordinate_domain_compatible
 from .enclosure_policy import EnclosurePolicy
 from .transcendental.real_interval import certified_real_interval_evaluate
 
-GRAMMAR_VERSION = 1
+GRAMMAR_SCHEMA = 1
 PRIMITIVES = (
     sp.exp,
     sp.sin,
@@ -130,26 +130,32 @@ class EnclosureResult:
 
     @property
     def schema_version(self):
+        """Serialization schema identifier used by the replay checker."""
         return 1
 
     @property
     def lower(self):
+        """Lower endpoint of the outward value bound."""
         return max(w.lower for w in self.witnesses) if self.witnesses else None
 
     @property
     def upper(self):
+        """Upper endpoint of the outward value bound."""
         return min(w.upper for w in self.witnesses) if self.witnesses else None
 
     @property
     def certified(self):
+        """Replay acceptance; a valid partial record need not be complete."""
         return self.verify()
 
     @property
     def complete(self):
+        """Completion status for this record's stated scope; replay validity is separate."""
         return self.verify()
 
     @property
     def scope(self):
+        """Scope identifier: ``compact-real-value-enclosure``."""
         return "compact-real-value-enclosure"
 
     def verify(self):
@@ -236,14 +242,17 @@ class DerivativeEnclosure:
 
     @property
     def certified(self):
+        """Replay acceptance; a valid partial record need not be complete."""
         return self.verify()
 
     @property
     def complete(self):
+        """Completion status for this record's stated scope; replay validity is separate."""
         return self.verify()
 
     @property
     def scope(self):
+        """Scope identifier: ``source-bound-real-derivative-enclosure``."""
         return "source-bound-real-derivative-enclosure"
 
     def verify(self):

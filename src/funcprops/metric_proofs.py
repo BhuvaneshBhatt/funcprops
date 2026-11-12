@@ -84,14 +84,17 @@ class FiniteLipschitzProof:
 
     @property
     def complete(self):
+        """Completion status for this record's stated scope; replay validity is separate."""
         return True
 
     @property
     def scope(self):
+        """Scope identifier: ``optimal-lipschitz-constant-on-effective-finite-domain``."""
         return "optimal-lipschitz-constant-on-effective-finite-domain"
 
     @property
     def certified(self):
+        """Replay acceptance; a valid partial record need not be complete."""
         return self.verify()
 
     def check(self):
@@ -228,14 +231,17 @@ class JumpVariationProof:
 
     @property
     def complete(self):
+        """Completion status for this record's stated scope; replay validity is separate."""
         return True
 
     @property
     def scope(self):
+        """Scope identifier: ``finite-monotone-motion-and-owned-jump-variation``."""
         return "finite-monotone-motion-and-owned-jump-variation"
 
     @property
     def certified(self):
+        """Replay acceptance; a valid partial record need not be complete."""
         return self.verify()
 
     def check(self):

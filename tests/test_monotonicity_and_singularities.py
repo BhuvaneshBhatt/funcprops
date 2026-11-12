@@ -12,7 +12,7 @@ from funcprops import (
 x = sp.symbols("x", real=True)
 
 
-def test_monotonic_decomposition_inverse_trig_composition():
+def test_monotonic_decomposition_inverse_composition():
     d = monotonic_decomposition(sp.acos(sp.exp(x)), x, return_result=True)
     assert d.direction == -1
     assert d.inner == sp.exp(x)
@@ -54,7 +54,7 @@ def test_indexed_monotonic_partition_bessel():
     assert p.indexed.boundary_geometry[0].family == "BesselJ"
 
 
-def test_singularity_analysis_promotes_inner_pole_under_exp():
+def test_singularity_analysis_promotes_pole_under_exp():
     a = singularity_analysis(sp.exp(1 / x), x)
     assert a.complete
     assert any(

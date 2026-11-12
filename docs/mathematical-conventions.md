@@ -18,7 +18,7 @@ Generator labels follow puncture order. A positive letter denotes a positive cro
 
 ## Branches
 
-`log` and nonintegeral rational powers begin on their symbolic principal branches. Analytic continuation along a supported closed contour is represented by the change accumulated along that contour. A logarithm gains
+`log` and nonintegral rational powers begin on their symbolic principal branches. Analytic continuation along a supported closed contour is represented by the change accumulated along that contour. A logarithm gains
 
 \[
 2\pi i\,\operatorname{wind}(g\circ\gamma,0),

@@ -23,13 +23,13 @@ REQUIRED = (
 )
 
 
-def test_every_public_property_has_one_canonical_page():
+def test_every_public_property_one_canonical_page():
     expected = {f"{name.removeprefix('function_')}.md" for name in PUBLIC_QUERIES}
     actual = {path.name for path in DOCS.glob("*.md") if path.name != "index.md"}
     assert actual == expected
 
 
-def test_property_pages_follow_the_common_reference_template():
+def test_property_pages_common_reference_template():
     for name in PUBLIC_QUERIES:
         text = (DOCS / f"{name.removeprefix('function_')}.md").read_text()
         for heading in REQUIRED:

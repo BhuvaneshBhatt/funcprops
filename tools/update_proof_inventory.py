@@ -102,7 +102,7 @@ for name, c in classes.items():
         "witness-kernel"
         if name.startswith(
             (
-                "funcprops.extrema_bounds.",
+                "funcprops.analytic_roots.",
                 "funcprops.algebraic_coefficients.",
                 "funcprops.parameter_geometry.",
                 "funcprops.branch_gluing.",

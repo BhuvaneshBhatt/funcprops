@@ -27,7 +27,7 @@ def test_opaque_multivariate_numerator():
     assert records[0].guard is not sp.S.true
 
 
-def test_local_order_certifies_nonzero_leading_coefficients():
+def test_local_order_certifies_nonzero_coefficients():
     x = sp.symbols("x")
     assert order_at(sp.sin(x) / x**3, x, 0) == -2
     assert order_at((1 + x) / x**2, x, 0) == -2

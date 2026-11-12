@@ -59,7 +59,7 @@ def matrix_text():
         "Each family tracks valid evidence, violated premises or honest decline, source/domain",
         "binding, theorem-relevant field mutations, and its declared replay route. The shared",
         "[result contracts](../../tests/specification/test_result_contracts.py) and",
-        "[registered-type rejection tests](../../tests/test_quotient_soundness_audit.py) cover",
+        "[registered-type rejection tests](../../tests/test_quotient_replay.py) cover",
         "status semantics and self-attesting subclasses. Cluster/unresolved/accuracy cases",
         "apply to isolation families; not every factory-based record has these fields.",
         "",

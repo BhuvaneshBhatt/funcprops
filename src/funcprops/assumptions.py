@@ -48,6 +48,7 @@ class PropertyDecision:
 
     @property
     def certified(self) -> bool:
+        """Replay acceptance; a valid partial record need not be complete."""
         return (
             self.verdict is not None and self.knowledge is not PropertyKnowledge.PARTIAL
         )

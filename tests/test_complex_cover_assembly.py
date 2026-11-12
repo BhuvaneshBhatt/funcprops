@@ -52,7 +52,7 @@ def test_nonreal_exponential_zeros():
         assert q.rectangle.im_min >= 0 or q.rectangle.im_max <= 0
 
 
-def test_clusters_retained_without_false_distinct_count():
+def test_clustered_distinct_counts():
     r = fp.certify_complex_isolation(
         sp.sin(z) ** 2,
         z,
@@ -85,7 +85,7 @@ def test_unresolved_and_boundary_zero_never_complete():
     assert r.proof.outer is None and r.unresolved
 
 
-def test_partial_cover_is_explicit_not_a_global_count(sine):
+def test_partial_cover_counts(sine):
     p = sine.proof
     lost = p.root_regions[0]
     partial = ci._assembled(p, roots=p.root_regions[1:], unresolved=(lost.rectangle,))
@@ -128,12 +128,12 @@ def test_partial_cover_is_explicit_not_a_global_count(sine):
         lambda p: replace(p, multiplicity_count=True),
     ],
 )
-def test_assembly_rejects_omission_duplicate_overlap_and_tampering(sine, mutation):
+def test_assembly_omission_duplicate_overlap_tampering(sine, mutation):
     assert mutation(sine.proof).check().certified is False
 
 
 @pytest.mark.parametrize("kind", ["omitted", "duplicated", "overlapping"])
-def test_exact_partition_rejects_even_recomputed_summary_fields(sine, kind):
+def test_exact_partition_even_summary_fields(sine, kind):
     p = sine.proof
     if kind == "omitted":
         bad = ci._assembled(p, roots=p.root_regions[1:])
@@ -144,7 +144,7 @@ def test_exact_partition_rejects_even_recomputed_summary_fields(sine, kind):
     assert not bad.verify()
 
 
-def test_close_algebraic_pair_is_a_cluster_not_a_guessed_double_root():
+def test_algebraic_pair_cluster():
     q = fp.certify_complex_isolation(
         (z - sp.Rational(1, 100)) * (z + sp.Rational(1, 100)),
         z,
@@ -182,7 +182,7 @@ def test_self_attesting_subclasses_rejected(sine):
         assert not replace(p, root_regions=(bad, *p.root_regions[1:])).verify()
 
 
-def test_replay_with_all_proposing_functions_disabled(sine, monkeypatch):
+def test_replay_proposing_functions_disabled(sine, monkeypatch):
     r = cr._native_result(sine)
 
     def disabled(*args, **kwargs):
@@ -249,7 +249,7 @@ def test_accuracy_is_independent_and_resume_refines():
     assert q.tested > r.tested and q.generation > r.generation
 
 
-def test_split_line_zero_does_not_lose_parent_or_roots(sine):
+def test_split_line_root_ownership(sine):
     # The first vertical bisector passes through sin(0)=0.
     r = fp.certify_complex_isolation(
         sp.sin(z), z, *RECT, policy=fp.EnclosurePolicy(max_depth=0)
@@ -376,12 +376,12 @@ def test_algebraic_route_retained_and_wall_limited():
         sp.exp(sp.Symbol("a") * z),
     ],
 )
-def test_unsupported_sources_never_claim_native_completeness(f):
+def test_unsupported_source_status(f):
     q = fp.certify_complex_isolation(f, z, *RECT)
     assert not q.complete and not q.verify() and q.multiplicity_count is None
 
 
-def test_held_quotient_uses_source_preserving_extension():
+def test_held_quotient_source_preserving_extension():
     f = sp.Mul(z, sp.Pow(z, -1, evaluate=False), evaluate=False)
     q = fp.certify_complex_isolation(f, z, *RECT)
     assert type(q) is fp.QuotientIsolationState
@@ -390,7 +390,7 @@ def test_held_quotient_uses_source_preserving_extension():
 
 
 @pytest.mark.parametrize("width", [0, -1, 0.1, sp.sqrt(2), True])
-def test_requested_accuracy_requires_positive_exact_rational(width):
+def test_requested_accuracy_positive_exact_rational(width):
     with pytest.raises(ValueError, match="exact rational"):
         fp.certify_complex_isolation(sp.sin(z), z, *RECT, max_box_width=width)
 
@@ -418,7 +418,7 @@ def test_reordered_pending_queue_preserves_the_proof():
     assert p.complete and p.verify() and p.root_count == p.total_count == 3
 
 
-def test_series_precision_exhaustion_keeps_unknown_regions():
+def test_series_precision_exhaustion_unknown_regions():
     r = fp.certify_complex_isolation(
         sp.exp(100 * z) + 1,
         z,
@@ -436,7 +436,7 @@ def test_series_precision_exhaustion_keeps_unknown_regions():
     assert r.unresolved and r.total_count is None
 
 
-def test_worker_recovers_last_complete_checkpoint_frame(monkeypatch):
+def test_worker_last_complete_checkpoint_frame(monkeypatch):
     from funcprops import work_budget as wb
 
     state = fp.certify_complex_isolation(

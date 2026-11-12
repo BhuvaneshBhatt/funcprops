@@ -27,6 +27,7 @@ class UnivariateReductionResult:
 
     @property
     def certified(self):
+        """Replay acceptance; a valid partial record need not be complete."""
         return self.complete
 
 

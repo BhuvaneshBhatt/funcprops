@@ -24,7 +24,7 @@ TruthValue.TRUE, FALSE, or UNKNOWN; return_result=True exposes a CompleteMonoton
 
 ## Domains, assumptions, and parameters
 
-The query is interpreted on the supplied domain, not from the expression in isolation. When symbolic parameters change the property, funcprops preserves those cases as guarded parameter strata. Assumptions are proof hypotheses: they can simplify a stratum or branch condition, but they do not justify numerical guessing.
+The query is interpreted on the supplied domain, not from the expression in isolation. When symbolic parameters change the property, `funcprops` preserves those cases as guarded parameter strata. Assumptions are proof hypotheses: they can simplify a stratum or branch condition, but they do not justify numerical guessing.
 
 ## Executable examples
 
@@ -61,7 +61,7 @@ Successful conclusions are exact symbolic claims over the stated domain and assu
 
 ## Known limitations
 
-The implementation certifies supported sufficient theorem families; absence of a matching theorem yields UNKNOWN.
+The implementation certifies supported sufficient theorems families; absence of a matching theorem yields UNKNOWN.
 
 `UNKNOWN` means that the available proof machinery did not certify the claim. It must not be interpreted as the negation of the property.
 

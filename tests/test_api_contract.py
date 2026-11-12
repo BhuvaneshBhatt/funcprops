@@ -20,7 +20,7 @@ from funcprops.results import (
 x, y = sp.symbols("x y", real=True)
 
 
-def test_every_public_function_property_has_direct_contract():
+def test_every_public_function_direct_contract():
     assert fp.domain(sp.log(x), x) == (x > 0)
     assert fp.range(x**2, x, y) == (y >= 0)
     assert fp.branch_cuts(sp.log(x), x)
@@ -74,7 +74,7 @@ def test_zero_contract_finite_periodic_and_indexed():
     assert getattr(b, "geometry", ())
 
 
-def test_smoothness_contract_analytic_and_exceptional():
+def test_smoothness_contract_analytic_exceptional():
     assert fp.smoothness(sp.exp(x), x) is sp.oo
     assert fp.smoothness(sp.Abs(x), x) == 0
     b = fp.smoothness(sp.Abs(x), x, return_result=True)
@@ -122,7 +122,7 @@ def test_homogeneity_degree_contract():
     )
 
 
-def test_smoothness_returns_regularity_order_and_smooth_is_predicate():
+def test_smoothness_regularity_order_smooth_predicate():
     x = sp.symbols("x", real=True)
     assert fp.smoothness(sp.Abs(x), x) == 0
     assert fp.smoothness(sp.exp(x), x) is sp.oo

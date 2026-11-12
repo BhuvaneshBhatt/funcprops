@@ -1,0 +1,15 @@
+include README.md LICENSE pyproject.toml
+recursive-include src *.py *.json
+recursive-include docs *.md *.ipynb
+recursive-include examples *.py *.md *.json
+recursive-include .github *.yml *.yaml *.md *.json
+recursive-include tools *.py *.json
+recursive-include tests *.py *.json *.txt
+exclude .DS_Store
+prune validation
+prune build
+prune dist
+global-exclude __pycache__ *.py[cod] .DS_Store
+
+include RELEASE_NOTES.md
+recursive-include ci *.txt *.toml *.json

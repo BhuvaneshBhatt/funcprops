@@ -15,7 +15,7 @@ def test_nonfinite_constants_have_no_domain(value, mode):
     assert fp.domain(value, x, domain=mode) is sp.S.false
 
 
-def test_constant_parameter_domain_requires_membership():
+def test_constant_parameter_domain_membership():
     a = sp.Symbol("a")
     assert fp.domain(a, x) == sp.Contains(a, sp.S.Reals)
     assert fp.domain(a, x, domain=sp.S.Complexes) == sp.Contains(a, sp.S.Complexes)
@@ -64,7 +64,7 @@ def test_hidden_complex_exponential_values():
     assert fp.sign(expression, x, domain=source) is fp.Sign.SIGN_CHANGING
 
 
-def test_logarithm_composition_does_not_claim_real_inner_image():
+def test_logarithm_inner_image():
     expression = sp.cos(sp.log(x))
     assert expression.subs(x, -1) == sp.cosh(sp.pi)
     assert fp.domain(expression, x) == "unknown_domain"
@@ -154,7 +154,7 @@ def test_shared_domain_cannot_omit_a_root():
     assert result.solutions == sp.FiniteSet(-1)
 
 
-def test_shared_domain_preserves_canceled_complex_holes():
+def test_shared_domain_canceled_complex_holes():
     square = sp.Pow(sp.sqrt(x), 2, evaluate=False)
     expression = sp.Mul(square, sp.Pow(x, -1, evaluate=False), evaluate=False)
     source = sp.Interval(-1, 1)
@@ -168,7 +168,7 @@ def test_shared_domain_preserves_canceled_complex_holes():
     assert result.solutions == expected
 
 
-def test_complex_power_zero_product_has_full_real_domain():
+def test_complex_power_zero_product_full_real_domain():
     expression = sp.Mul(sp.S.Zero, sp.Pow(x, sp.pi, evaluate=False), evaluate=False)
     result = fp.solve(expression, x, domain=sp.S.Reals, return_certificate=True)
     assert result.complete and result.verify()
@@ -199,7 +199,7 @@ def test_held_constant_cannot_hide_undefined_operand():
     assert result.solutions is sp.S.EmptySet
 
 
-def test_held_constant_accepts_defined_complex_intermediate():
+def test_held_constant_defined_complex_intermediate():
     expression = sp.exp(sp.log(-1, evaluate=False), evaluate=False)
     assert fp.domain(expression, x) is sp.S.true
     assert fp.range(expression, x, y, constraints=sp.FiniteSet(0)) == sp.Eq(y, -1)

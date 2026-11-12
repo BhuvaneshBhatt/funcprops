@@ -28,7 +28,7 @@ def test_transcendental_domain_composition():
     assert domain(sp.tan(x), x) == sp.Ne(sp.cos(x), 0)
 
 
-def test_sign_engine_structural_and_interval_certification():
+def test_sign_engine_structural_interval_certification():
     assert sign(sp.exp(x), x) is Sign.POSITIVE
     assert sign(x**2, x) is Sign.NONNEGATIVE
     assert sign(sp.log(x), x, domain=x > 1) is Sign.POSITIVE
@@ -47,7 +47,7 @@ def test_transcendental_monotonicity():
     )
 
 
-def test_transcendental_ranges_and_endpoint_attainment():
+def test_transcendental_ranges_endpoint_attainment():
     assert equivalent(range(sp.exp(x), x, y), y > 0)
     assert equivalent(range(sp.log(x), x, y), sp.S.true)
     assert equivalent(range(sp.sin(x), x, y), sp.And(y >= -1, y <= 1))
@@ -58,7 +58,7 @@ def test_transcendental_ranges_and_endpoint_attainment():
     assert equivalent(range(2 * sp.exp(x) + 1, x, y), y > 1)
 
 
-def test_transcendental_convexity_and_domain_convexity():
+def test_transcendental_convexity_domain():
     assert convexity(sp.exp(x), x) is Convexity.STRICTLY_CONVEX
     assert convexity(sp.log(x), x) is Convexity.STRICTLY_CONCAVE
     assert convexity(sp.sqrt(x), x) in (

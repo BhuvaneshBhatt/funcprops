@@ -36,7 +36,7 @@ def _direct_property_calls(path: Path) -> Counter[str]:
     return calls
 
 
-def test_every_public_property_query_has_direct_behavioral_coverage():
+def test_every_public_property_behavioral_coverage():
     counts: Counter[str] = Counter()
     for path in TESTS.rglob("test_*.py"):
         if path == Path(__file__):

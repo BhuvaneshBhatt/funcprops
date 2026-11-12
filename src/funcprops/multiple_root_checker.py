@@ -93,6 +93,24 @@ def multiple_counts(leaf, f):
     )
 
     w, x, region = leaf.witness, leaf.variable, leaf.region
+    if leaf.roots:
+        from .exactness import certify_zero
+
+        # These theorem schemas supply one exact location; rational-Sturm
+        # leaves validate their separate exhaustive multi-root lists.
+        if leaf.root_count != 1 or len(leaf.roots) != 1:
+            return None
+        for point, order in leaf.roots:
+            if (
+                not isinstance(point, sp.Expr)
+                or point.free_symbols
+                or point.has(sp.Float)
+                or region.contains(point) is not sp.true
+                or certify_zero(f.subs(x, point)) is not True
+                or (order is not None and (type(order) is not int or order < 1))
+                or order != leaf.multiplicity_count
+            ):
+                return None
     if leaf.theorem == "source-formula":
         if not isinstance(w, SourceFormulaWitness) or not isinstance(
             w.proof, CoverageLeaf

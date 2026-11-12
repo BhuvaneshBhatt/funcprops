@@ -69,6 +69,7 @@ class IdentityRule:
 
     @property
     def slots(self):
+        """Formal argument slots used to instantiate the rule."""
         used = set()
         for value in (self.replacement, self.conditions):
             if isinstance(value, sp.Basic):
@@ -140,6 +141,7 @@ class DerivativeRule:
 
     @property
     def slots(self):
+        """Formal argument slots used to instantiate the rule."""
         used = {self.with_respect_to}
         for value in (self.result, self.conditions):
             if isinstance(value, sp.Basic):

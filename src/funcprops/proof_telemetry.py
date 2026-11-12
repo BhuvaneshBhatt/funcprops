@@ -25,6 +25,7 @@ class ProofTelemetry:
     observations: list[RouteObservation] = field(default_factory=list)
 
     def record(self, route, estimated_cost, started, outcome, cache_hit=False):
+        """Append one route observation when telemetry is enabled."""
         if self.enabled:
             self.observations.append(
                 RouteObservation(

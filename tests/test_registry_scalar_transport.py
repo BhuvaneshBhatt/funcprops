@@ -15,7 +15,7 @@ class F(sp.Function):
     nargs = 1
 
 
-def test_sign_fact_substitutes_through_unary_composition():
+def test_sign_fact_substitutes_unary_composition():
     z = FunctionSlot(0, "z")
     rule = PropertyRule(F, "sign", z, conditions=z > 0, result=Sign.POSITIVE)
     x = sp.symbols("x", real=True)
@@ -62,7 +62,7 @@ def test_analyticity_requires_analytic_inner_map():
     assert out.complete is True
 
 
-def test_unary_subject_map_remains_available_after_p3_extension():
+def test_unary_subject_map():
     z = FunctionSlot(0, "z")
     rule = PropertyRule(F, "sign", z, result=Sign.POSITIVE)
     x = sp.symbols("x", real=True)

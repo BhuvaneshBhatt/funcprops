@@ -222,10 +222,12 @@ class DeterminantNonvanishingCertificate:
 
     @property
     def primary(self):
+        """Primary mathematical answer or classification."""
         return self.classification
 
     @property
     def scope(self):
+        """Scope identifier: ``real-C1-map-Jacobian-nonvanishing-on-requested-domain``."""
         return "real-C1-map-Jacobian-nonvanishing-on-requested-domain"
 
     def verify(self):
@@ -300,10 +302,12 @@ class LocalInvertibilityCertificate:
 
     @property
     def primary(self):
+        """Primary mathematical answer or classification."""
         return self.classification
 
     @property
     def scope(self):
+        """Scope identifier: ``real-C1-inverse-function-theorem-applicability``."""
         return "real-C1-inverse-function-theorem-applicability"
 
     def verify(self):
@@ -395,10 +399,12 @@ class ChangeOfVariablesCertificate:
 
     @property
     def primary(self):
+        """Primary mathematical answer or classification."""
         return self.classification
 
     @property
     def volume_factor(self):
+        """Jacobian volume factor established for the transformation."""
         return self.absolute_determinant
 
     def verify(self):
@@ -532,7 +538,7 @@ def _det_nonzero_from_jacobian(
             expressions=expressions,
         )
 
-    # A parameter is not a transformation coordinate.  Semialgebraic zero
+    # A parameter is not a transformation coordinate. Semialgebraic zero
     # search must not choose parameter values as if they were points in the
     # requested domain.
     unresolved_parameters = det.free_symbols.difference(variables)

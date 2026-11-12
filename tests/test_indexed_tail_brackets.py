@@ -34,7 +34,7 @@ def test_tail_certificate_carries_bracket():
     assert c.integer_bracket.lower == 4
 
 
-def test_unsupported_airy_does_not_fake_asymptotic_bracket():
+def test_unsupported_airy_bracket():
     k = sp.symbols("k", integer=True, positive=True)
     z = IndexedZero("AiryAi", k, sp.S.NaN, 1, "negative")
     assert indexed_tail_integer_bracket(z, -100, direction="left") is None

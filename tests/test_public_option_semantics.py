@@ -14,7 +14,7 @@ def test_monotonicity_weakens_strict_results():
     assert monotonicity(-x, x, strict_inequalities=False) is Monotonicity.NONINCREASING
 
 
-def test_monotonicity_all_properties_reports_implications():
+def test_monotonicity_properties_implications():
     x = sp.symbols("x", real=True)
     result = monotonicity(x, x, all_properties=True, return_result=True)
     assert isinstance(result, PropertyResult)
@@ -29,7 +29,7 @@ def test_monotonicity_all_properties_reports_implications():
     }
 
 
-def test_sign_all_properties_reports_weak_implications():
+def test_sign_properties_weak_implications():
     x = sp.symbols("x", real=True)
     result = sign(sp.exp(x), x, all_properties=True, return_result=True)
     assert isinstance(result, PropertyResult)

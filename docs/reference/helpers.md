@@ -58,6 +58,14 @@ algebraize(expr, var, *, domain=None, allow_trig=False)
 
 Transform supported transcendental expressions while retaining exact domain constraints.
 
+## analysis_data_equal
+
+```text
+analysis_data_equal(left, right)
+```
+
+Compare exact analysis payloads without trusting overloaded record equality.
+
 ## analytic_complex_coverage
 
 ```text
@@ -81,6 +89,26 @@ analytic_neighborhood(expr, var, interval, radius=None)
 ```
 
 Certify a complex rectangular neighborhood of a finite real interval.
+
+## analyze_parameter_range
+
+```text
+analyze_parameter_range(expression, variable, parameters, domain, *, value=None, parameter_domain=True, certified=False)
+```
+
+Analyze polynomial image families of degree at most three on fixed finite rational source cells.
+
+Coefficients may be rational functions of any number of real parameters. One invertible elementary outer map is supported. General transcendental critical-point families and parameter-dependent source cells are unresolved. No optimization package is imported.
+
+## analyze_range
+
+```text
+analyze_range(expression, variable, domain=Reals, *, policy=None, certified=False, tail_facts=(), _previous=None, _transfers=True)
+```
+
+Assemble exact implicit ranges or partial image bounds on real source cells.
+
+Interval cells use checked C1 closure extensions or exact real interior regularity with one-sided limits. Complete critical geometry can return an exact ConditionSet when value order is unresolved. Root evidence is reused by refine_range; supported periods and tail bounds extend unbounded queries. tail_facts accepts source-bound TailValueBound records from other providers.
 
 ## analyze_transcendental_real
 
@@ -125,6 +153,16 @@ as_detailed_result(value, *, domain=None, source=None, complete=None, domain_rec
 ```
 
 Return a uniform detailed view without changing compact public APIs.
+
+## bound_range_tail
+
+```text
+bound_range_tail(expression, variable, domain, *, limit=None, certified=False)
+```
+
+Return supported explicit polynomial-plus-bounded-remainder tail facts.
+
+A supplied limit is a proposal checked against the whole-tail squeeze. None denotes unsupported dominance, continuity or bounded-remainder work.
 
 ## cache_info
 
@@ -222,16 +260,6 @@ Contract a known count-one rectangle, or return None without new claims.
 
 Accepts a native count certificate or a public CertifiedComplexRootRectangle. A failed Newton proposal leaves the existing parent proof untouched.
 
-## certify_extrema_bounds
-
-```text
-certify_extrema_bounds(expr, var, domain, *, tolerance=None, policy=None, critical_covers=())
-```
-
-Bound infimum/supremum without requiring explicit stationary coordinates.
-
-Coverage may use enclosures of unresolved stationary regions. Accuracy is a separate, checked goal. Open endpoints contribute limits of C1 extensions, never a claim that the bounds or extrema are attained.
-
 ## certify_finite_lipschitz
 
 ```text
@@ -239,14 +267,6 @@ certify_finite_lipschitz(expression, variable, requested, *, work_budget=None)
 ```
 
 Return an optimal finite-domain proof, or None if exact data is unresolved.
-
-## certify_global_minimum
-
-```text
-certify_global_minimum(expr, var, domain=Reals, *, work_budget=None)
-```
-
-Certify an attained minimum by interval curvature or exact components.
 
 ## certify_global_positive
 
@@ -520,6 +540,16 @@ compose_property(prop, outer_value, inner_value, *, outer_increasing=True, outer
 
 Compose certified facts, refusing unresolved map-interface obligations.
 
+## condition_to_real_set
+
+```text
+condition_to_real_set(condition, variable)
+```
+
+Convert a supported real condition to a set, returning None if unresolved.
+
+Parameter-only guards, typed semantic predicates and incomplete ConditionSet answers are not interpreted as empty sets or universal real domains.
+
 ## coverage_policy_stage
 
 ```text
@@ -527,6 +557,34 @@ coverage_policy_stage(stage, *, base=None)
 ```
 
 A cofinal sequence of finite effort caps, not an unconditional solver.
+
+## critical_value
+
+```text
+critical_value(expression, variable, root)
+```
+
+Represent an exact real function value at an implicit root.
+
+## critical_value_regions
+
+```text
+critical_value_regions(f, x, D, cover)
+```
+
+Return endpoint, critical and unresolved value regions for a finite cell.
+
+The supplied derivative cover must match the cell interior exactly. The returned regions contain every possible extremum; they do not select an optimum or claim that an endpoint limit is attained.
+
+## critical_values_equal
+
+```text
+critical_values_equal(first, second)
+```
+
+Prove selected common-root or reflected-root value identities.
+
+None denotes an unproved identity. Structural equality, shared unique roots and a verified reflection symmetry are supported; arbitrary analytic value equality is outside this rule.
 
 ## decide
 
@@ -572,6 +630,16 @@ Prove nonnegativity on domain and strict positivity on strict_domain.
 
 A zero at an included left endpoint is retained in the nonnegative claim; it is explicitly excluded from strict_domain. No strict endpoint claim is inferred merely from positive higher derivatives.
 
+## derivative_on_domain
+
+```text
+derivative_on_domain(expression, variable, domain, order=1)
+```
+
+Return a checked real derivative formula on a region, or None.
+
+This checks the supplied formula, including any required extension to a closed region. Original source holes remain in the separate domain record.
+
 ## dlmf_audit_report
 
 ```text
@@ -611,12 +679,12 @@ Complete here means a value enclosure on this cell, not root completeness. Refin
 ## encode_algebraic_coefficients
 
 ```text
-encode_algebraic_coefficients(inputs, variables, *, work_budget=None)
+encode_algebraic_coefficients(inputs, variables, *, policy=None, work_budget=None)
 ```
 
-Encode up to four real algebraic constants in one field of degree at most four.
+Encode exact real coefficients by an isolated algebraic generator.
 
-All remaining symbols must be declared query coordinates. Inexact, nonreal, transcendental and larger fields decline before a rational backend is loaded.
+The default policy allows degree four. An explicit CoefficientFieldPolicy can increase discovery caps while preserving source guards and exact replay. Inexact, nonreal and transcendental fields are unsupported.
 
 ## entails
 
@@ -736,15 +804,15 @@ The Airy proof is derived from ``E=y'^2-x*y^2``: ``E'=-y^2`` and ``(E/(-x))'=y'^
 
 For Bessel J, with ``E=x^2*y'^2+(x^2-nu^2)*y^2``, Bessel's equation gives ``E'=2*x*y^2`` and ``(E/(x^2-nu^2))'=-2*x^3*y'^2/(x^2-nu^2)^2 < 0`` for ``x>nu``.  At critical points the ratio is ``y^2``.  DLMF 10.21.E3 places the positive J_nu derivative zeros at or beyond nu (strictly beyond for the nonzero critical points), yielding decreasing successive extremum magnitudes.
 
-## finite_component_minimum
+## function_cells
 
 ```text
-finite_component_minimum(expr, var, domain=Reals)
+function_cells(expression, variable, domain)
 ```
 
-Find a rational function's infimum, distinguishing unattained limits.
+Return supported formula/region cells, including isolated piecewise seams.
 
-All derivative roots must be solved exactly; unresolved comparisons or root coverage return an incomplete result, without claiming an optimum.
+An empty tuple describes an empty domain. None means that the decomposition is unsupported; it supplies no coverage claim. Source definedness remains the responsibility of the associated DomainRecord.
 
 ## generated_adversarial_cases
 
@@ -799,6 +867,14 @@ homotopic(contour1, contour2, *, punctures=(), return_certificate=False, work_bu
 Certify based-loop homotopy in ``C`` minus finitely many punctures.
 
 The implementation uses a certified cut system and the standard free-group normal form of ``pi_1(C \ P)``.  Thus generator order is retained and the result is genuinely nonabelian for two or more punctures.  ``None`` means that exact crossing geometry could not be certified for the supplied symbolic parameterizations; it is not a negative homotopy result.
+
+## implicit_real_root
+
+```text
+implicit_real_root(expression, variable, interval)
+```
+
+Return the exact unique root on a checked finite rational interval.
 
 ## indexed_tail_integer_bracket
 
@@ -934,6 +1010,32 @@ normalize_assumptions(value)
 
 Canonicalize Boolean syntax without expensive logical reasoning.
 
+## normalize_real_expression
+
+```text
+normalize_real_expression(expression)
+```
+
+Normalize arithmetic for analytic calculations after recording its domain.
+
+The returned formula can cancel source holes. Preserve and verify the original DomainRecord separately when reasoning about the supplied source.
+
+## pack_analysis_data
+
+```text
+pack_analysis_data(value)
+```
+
+Serialize trusted worker data while preserving held formulas and source holes.
+
+## parameter_range
+
+```text
+parameter_range(expression, variable, parameters, domain, **kwargs)
+```
+
+Return the exact parameter-dependent image condition, or None if unsupported.
+
 ## parameter_root_coverage
 
 ```text
@@ -942,7 +1044,7 @@ parameter_root_coverage(expr, var, parameter, domain=Reals, *, parameter_domain=
 
 Cover exact one-parameter strata, retaining all exceptional/unproved cells.
 
-Full-space degree <=2 polynomials over QQ[parameter] and compact monotone translations have exact finite strata. Other finite parameter intervals use bounded uniform-box subdivision; collisions need not admit a finite proof.
+Full-space degree <=2 polynomials over QQ[parameter] and compact monotone translations have exact finite strata. Strongly convex level families on finite intervals can split minimum and endpoint events. Other finite parameter intervals use bounded uniform-box subdivision; general collisions need not admit a finite proof.
 
 ## piecewise_decomposition
 
@@ -1035,6 +1137,24 @@ refine_parameter_cells(result, parameters=None, *, split_zero=True, split_sign=F
 Refine unresolved parameter cells by exact zero/sign partitions.
 
 This is bounded and purely symbolic.  It never samples parameter values and never labels a cell with a new conclusion; it only refines guards so existing conditional conclusions can specialize cleanly downstream.
+
+## refine_range
+
+```text
+refine_range(result, *, policy=None, certified=False)
+```
+
+Resume valid critical-root covers and refine their value enclosures.
+
+## refine_root_cover
+
+```text
+refine_root_cover(proof, *, policy=None)
+```
+
+Refine isolated single-root regions while retaining the original coverage.
+
+Only independently valid covers are accepted. Existing unresolved regions remain explicit. The policy limits contraction attempts and is checked between them; one symbolic contraction can overrun its wall-time budget.
 
 ## registry_chain_rule
 
@@ -1322,6 +1442,16 @@ validate_registry()
 
 Check theorem identifiers, premise declarations and adversarial case definitions.
 
+## value_enclosure
+
+```text
+value_enclosure(expression, variable, region, *, precision=30, max_series_terms=4096)
+```
+
+Enclose a real formula on a finite region with replayable outward evidence.
+
+None denotes unsupported enclosure work. The caller must bind this formula and region to an admissible source-domain or extension argument.
+
 ## verify_certificate
 
 ```text
@@ -1394,6 +1524,14 @@ verify_monotonic_partition(expr, var, cert)
 
 Check the stored monotonic partition premises and report their replay outcome.
 
+## verify_real_identity
+
+```text
+verify_real_identity(left, right)
+```
+
+Return True only when an exact identity is established; unresolved is False.
+
 ## verify_real_root_interval
 
 ```text
@@ -1409,6 +1547,14 @@ verify_root_certificate(cert)
 ```
 
 Check the stored root certificate premises and report their replay outcome.
+
+## verify_value_enclosure
+
+```text
+verify_value_enclosure(witness, expression, variable, region)
+```
+
+Replay an enclosure against its exact formula, coordinate and region.
 
 ## verify_zero_geometry
 

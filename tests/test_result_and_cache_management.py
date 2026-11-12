@@ -18,7 +18,7 @@ def test_assumptions_collapse_parameter_strata():
     assert result is Monotonicity.STRICTLY_INCREASING
 
 
-def test_detailed_result_exposes_self_verifying_certificate():
+def test_detailed_result_exposes_verifying_certificate():
     x = sp.symbols("x", real=True)
     cert = change_of_variables((2 * x,), x)
     detail = as_detailed_result(cert)

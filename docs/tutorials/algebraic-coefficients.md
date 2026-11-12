@@ -53,4 +53,4 @@ The rational generator guard selects a unique real embedding.
 
 ## Scope and next steps
 
-The compositum degree is at most four, with at most four nonrational constants and no extra coefficient parameters in the lift. See [troubleshooting](../troubleshooting.md), [result contracts](../reference/result-contracts.md), [capabilities](../capabilities.md), and [all tutorials](index.md).
+Discovery defaults to compositum degree four and four nonrational constants. An explicit CoefficientFieldPolicy can raise the degree cap; symbolic coefficient parameters and nonreal embeddings are unsupported. See [troubleshooting](../troubleshooting.md), [result contracts](../reference/result-contracts.md), [capabilities](../capabilities.md), and [all tutorials](index.md).

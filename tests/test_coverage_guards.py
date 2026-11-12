@@ -10,14 +10,14 @@ from funcprops.results import ConditionalExpression, PropertyResult, TruthValue
 x, a = sp.symbols("x a", real=True)
 
 
-def test_m2_m3_wrappers_expose_consistent_certified_fields():
+def test_coverage_certification_fields():
     r = fp.adaptive_root_coverage(sp.exp(x) - 2, x, sp.Interval(0, 1))
     z = sp.Symbol("z")
     c = fp.certify_complex_cluster(sp.exp(z) - 1, z, 0, sp.Rational(1, 2))
     assert r.certified and r.state.certified and c.certified
 
 
-def test_unsupported_branch_state_cannot_be_resumed_as_complete():
+def test_unsupported_branch_state():
     r = fp.adaptive_root_coverage(sp.exp(x) - 2, x, sp.Interval(0, 1))
     bad = replace(
         r.state,
@@ -29,7 +29,7 @@ def test_unsupported_branch_state_cannot_be_resumed_as_complete():
         fp.resume_root_coverage(bad)
 
 
-def test_m3_mutable_witness_payloads_do_not_pass_frozen_contract():
+def test_mutable_witness_payloads():
     c = fp.deflate_real_root(sp.exp(x) - 1 - x, x, sp.Interval(-1, 1), 0, 2)
     assert c.verify()
     assert not replace(
@@ -41,7 +41,7 @@ def test_m3_mutable_witness_payloads_do_not_pass_frozen_contract():
 
 
 @pytest.mark.parametrize("function", [sp.asin, sp.acos])
-def test_inverse_phase_bounds_keep_endpoint_regularities_distinct(function):
+def test_inverse_phase_endpoint_regularities_distinct(function):
     c = fp.enclose_derivative(function(x), x, sp.Interval(-1, 1), order=0)
     assert c.verify()
     assert not fp.enclose_derivative(function(x), x, sp.Interval(-1, 1)).verify()
@@ -51,7 +51,7 @@ def test_inverse_phase_bounds_keep_endpoint_regularities_distinct(function):
     assert not fp.enclose_expression(function(x), x, sp.Interval(1, 2)).verify()
 
 
-def test_factory_quadratic_helper_retains_linear_degree_drop():
+def test_factory_quadratic_helper_linear_degree():
     p = fp.quadratic_discriminant_cells(a * x * x + x + 1, x, a)
     selected = [c.value for c in p.cases if c.condition.subs(a, 0) is sp.S.true]
     assert selected == [1]
@@ -61,7 +61,7 @@ def test_factory_quadratic_helper_retains_linear_degree_drop():
 
 
 @pytest.mark.parametrize("cap", [0, 1, 2])
-def test_factory_refinement_budget_preserves_original_parameter_space(cap):
+def test_factory_refinement_budget_parameter_space(cap):
     p = PropertyResult(
         None,
         (
@@ -100,7 +100,7 @@ def test_transition_locus_binding():
     assert polynomial_transition_locus(x * x - a, x, parameters=(x,)) is None
 
 
-def test_exp_linear_strata_check_real_coefficients_and_zero_slope():
+def test_exp_linear_strata_real_zero_slope():
     from funcprops.parameter_discriminants import exp_linear_root_strata
 
     assert exp_linear_root_strata(sp.exp(x) + sp.I * x + 1, x, sp.I, 1) is None

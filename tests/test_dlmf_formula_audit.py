@@ -12,7 +12,7 @@ from funcprops import (
 from funcprops.conditions import IntegerCondition, parse_catalogue_expression
 
 
-def test_formula_audit_promotes_all_remaining_or_corrects_mapping():
+def test_formula_audit_promotes_corrects_mapping():
     summary = dlmf_audit_report()["summary"]
     assert summary["formula_verified_core"] == 26
     assert summary["formula_verified_derived"] == 22
@@ -29,13 +29,13 @@ def test_jacobi_formula_references():
     assert helper["formula_refs"] == ["15.4.E4"]
 
 
-def test_marcumq_mapping_is_corrected_not_falsely_formula_verified():
+def test_marcumq_formula_replay():
     row = dlmf_audit_report("marcumq")
     assert row["status"] == "dlmf-related-not-native"
     assert row["formula_refs"] == []
 
 
-def test_dlmf_facts_exposes_formula_level_runtime_provenance():
+def test_dlmf_facts_exposes_formula_runtime_provenance():
     refs = {f.section for f in dlmf_facts("jacobi")}
     assert "18.16.1" in refs or "18.16.E1" in refs
     refs = {f.section for f in dlmf_facts("multigamma")}
@@ -43,7 +43,7 @@ def test_dlmf_facts_exposes_formula_level_runtime_provenance():
     assert "35.3.E4" in refs
 
 
-def test_catalogue_parser_roundtrips_semantic_predicates():
+def test_catalogue_parser_roundtrips_predicates():
     x, y = sp.symbols("x y")
     expected = sp.And(IntegerCondition(x), IntegerCondition(y / 2))
     got = parse_catalogue_expression(sp.srepr(expected))
@@ -57,7 +57,7 @@ def test_catalogue_parser_roundtrips_boolean_relations():
     assert got == expected
 
 
-def test_assoc_legendre_domain_catalogue_condition_no_longer_crashes():
+def test_assoc_legendre_domain():
     x = sp.symbols("x", real=True)
     n = sp.symbols("n", integer=True, nonnegative=True)
     dom = domain(sp.assoc_legendre(n, 1, x), x)
@@ -72,14 +72,14 @@ def test_hypergeometric_entire_analyticity():
     assert analytic(expr, z, domain=sp.S.Complexes) is Analyticity.ANALYTIC
 
 
-def test_terminating_hypergeometric_has_no_principal_cut():
+def test_terminating_hypergeometric_cut():
     z, b, c = sp.symbols("z b c")
     expr = sp.hyper([-2, b], [c], z)  # p=q+1 but terminating polynomial
     records = branch_cuts(expr, z, mode="records")
     assert not any(r.source == "DLMF 16.2(iii)" for r in records)
 
 
-def test_associated_legendre_integer_zero_count_on_ferrers_interval():
+def test_associated_legendre_zero_count_interval():
     x = sp.symbols("x", real=True)
     n = sp.symbols("n", integer=True, positive=True)
     result = transcendental_roots(
@@ -122,7 +122,7 @@ def test_spherical_bessel_zero_interlacing():
     assert fam.interlaces_prev_degree is True
 
 
-def test_jacobi_zero_family_carries_parameter_guard_and_interlacing():
+def test_jacobi_zero_family_parameter_guard():
     x = sp.symbols("x", real=True)
     n = sp.symbols("n", integer=True, positive=True)
     a, b = sp.symbols("a b", real=True)
@@ -140,7 +140,7 @@ def test_jacobi_zero_family_carries_parameter_guard_and_interlacing():
     assert fam.support == sp.Interval.open(-1, 1)
 
 
-def test_symbolic_chebyshev_zeros_use_exact_dlmf_indexed_formula():
+def test_symbolic_chebyshev_zeros_indexed_formula():
     x = sp.symbols("x", real=True)
     n = sp.symbols("n", integer=True, positive=True)
     result = transcendental_roots(
@@ -154,7 +154,7 @@ def test_symbolic_chebyshev_zeros_use_exact_dlmf_indexed_formula():
     assert isinstance(result.evidence[0], sp.Set)
 
 
-def test_incomplete_elliptic_f_parameter_branch_condition_is_recorded():
+def test_incomplete_elliptic_f_parameter_recorded():
     phi = sp.symbols("phi", real=True)
     m = sp.symbols("m")
     records = branch_cuts(sp.elliptic_f(phi, m), m, mode="records")

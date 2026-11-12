@@ -49,7 +49,9 @@ BOOLEAN_PROPS = {
     "Injective",
     "LocallyAnalytic",
 }
-BOOL_CASES = [(f.id, p, c) for f in FAMILIES for p in BOOLEAN_PROPS for c in f.cases(p)]
+BOOL_CASES = [
+    (f.id, p, c) for f in FAMILIES for p in sorted(BOOLEAN_PROPS) for c in f.cases(p)
+]
 
 
 @pytest.mark.parametrize("family_id,prop,case", BOOL_CASES)

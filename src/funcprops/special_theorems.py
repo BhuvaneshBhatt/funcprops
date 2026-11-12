@@ -22,7 +22,8 @@ class GuardedTheorem:
     domain: object
 
     def applicable(self, assumptions=sp.S.true):
-        # Deliberately conservative: only syntactic truth or SymPy-provable implication.
+        # Accept syntactic truth or an implication proved by SymPy.
+        """Check whether the supplied assumptions imply the theorem guard."""
         g = sp.sympify(self.guard)
         a = sp.sympify(assumptions)
         if g is sp.S.true:

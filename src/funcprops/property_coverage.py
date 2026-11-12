@@ -279,8 +279,8 @@ def certify_property_coverage(
         NotImplementedError,
         sp.PolynomialError,
     ) as exc:
-        # Supplied evidence must not be silently discarded and replaced by a
-        # different query. A bad caller-provided cover is a rejected premise.
+        # A caller-provided cover is a premise of this query. Reject an invalid
+        # cover instead of retrying a different query without that evidence.
         if critical_covers or zero_covers:
             raise ValueError("invalid supplied property coverage") from exc
         return proof

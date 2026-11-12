@@ -7,7 +7,8 @@ The checker separates a proposed search result from a coverage proof. The real c
 ```python
 import sympy as sp
 from funcprops import root_coverage, replay_status
-x = sp.Symbol('x', real=True)
+
+x = sp.Symbol("x", real=True)
 
 r = root_coverage(sp.exp(x) - 2, x, sp.Interval(0, 2))
 assert r.complete and r.root_count == 1 and r.verify()
@@ -39,13 +40,13 @@ Every region must be a certified counted/excluded region or explicitly unresolve
 ```python
 from funcprops import specialize_root_coverage, complex_root_coverage
 
-a = sp.Symbol('a', real=True)
+a = sp.Symbol("a", real=True)
 s = specialize_root_coverage(x**2 - a, x, {a: 1}, sp.Interval(-2, 2))
 assert s.guard == sp.Eq(a, 1) and s.complete
 assert s.coverage.root_count == 2
 
-z = sp.Symbol('z')
-c = complex_root_coverage((z - 1)**2, z, -2-2*sp.I, 2+2*sp.I)
+z = sp.Symbol("z")
+c = complex_root_coverage((z - 1) ** 2, z, -2 - 2 * sp.I, 2 + 2 * sp.I)
 assert c.complete and c.root_count == 1 and c.multiplicity_count == 2
 ```
 

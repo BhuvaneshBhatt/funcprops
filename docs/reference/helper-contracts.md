@@ -26,10 +26,10 @@ Use the [helper reference](helpers.md) for signatures and full implementation do
 
 | Contract | Meaning |
 | --- | --- |
-| Accepted inputs | A tuple of source expressions/conditions and declared query coordinates. All remaining constants must be finite exact real algebraic values. Up to four nonrational constants, field degree at most four, and total input operation count at most 80 are supported. |
+| Accepted inputs | Source expressions/conditions and declared query coordinates. CoefficientFieldPolicy defaults to four constants, degree four and 80 input operations; larger discovery caps are opt-in. All constants must be finite exact real algebraic values. |
 | Return value | AlgebraicCoefficientEncoding or None; a wall timeout returns an uncertified BudgetedResult. |
 | Replay and completion | The minimal polynomial, unique rational isolating interval, exact representations and source-preserving replacements replay without number-field discovery. |
-| Failure and limits | Larger fields, extra symbolic coefficient parameters, nonreal/inexact/transcendental constants and unsupported embeddings decline with None. |
+| Failure and limits | Fields exceeding the selected policy, extra symbolic coefficient parameters, nonreal/inexact/transcendental constants and unsupported embeddings decline with None. |
 
 ### certify_parameter_geometry
 
@@ -93,6 +93,42 @@ Use the [helper reference](helpers.md) for signatures and full implementation do
 | Return value | ReplayStatus with supported, certified, complete, scope, reason, outcome, schema_version and factory_replay. |
 | Replay and completion | Inspect completion only after successful replay, under the concrete theorem contract. Factory/backend replay dependencies differ from native premise checking. |
 | Failure and limits | Unsupported replay reports certified=None. Rejected or exhausted evidence reports certified=False; this is not a mathematical counterexample. |
+
+### analyze_range
+
+| Contract | Meaning |
+| --- | --- |
+| Accepted inputs | A fixed exact scalar real source and requested real set/condition. Optional source-bound tail_facts augment internal tail analysis. EnclosurePolicy controls per-cell search, jets, enclosures and isolated elapsed time. certified defaults to False. |
+| Return value | RangeAnalysis with image, inner, outer and unresolved sets; a wall timeout returns an uncertified BudgetedResult. |
+| Replay and completion | Exact intervals or ConditionSets, checked native root leaves and outward values, real-interior/one-sided backend records, and source-bound transfers. An exact Boolean image does not require canonical value ordering; partial evidence may verify without completion. Oscillatory escape, selected dense trig images and finite rational-amplitude tail enclosures avoid exhaustive tail critical-root search. |
+| Failure and limits | Unsupported continuity, limits, geometry, roots or tail facts remain explicit; malformed or source-mismatched supplied facts raise ValueError. |
+
+### analyze_parameter_range
+
+| Contract | Meaning |
+| --- | --- |
+| Accepted inputs | A rational polynomial of degree at most three in one real coordinate, real parameter Symbols, a fixed finite rational interval/point union and an optional parameter guard. One supported invertible elementary outer head is allowed. certified defaults to False. |
+| Return value | ParameterRangeAnalysis containing a quantifier-free output condition and candidate transition events; unsupported families remain incomplete. |
+| Replay and completion | Exact polynomial image identities retain degree loss, guarded real critical points, endpoint ties, coefficient poles and ownership. Inactive branches remain real and defined. Specialization respects intrinsic Symbol assumptions. |
+| Failure and limits | Moving source cells and general transcendental critical-point families are unsupported. Invalid coordinates and guards raise ValueError; unsupported source geometry gives an incomplete record. |
+
+### critical_value_regions
+
+| Contract | Meaning |
+| --- | --- |
+| Accepted inputs | A fixed finite continuous real cell and a source-bound derivative-root cover of its interior, or no cover for partial/constant analysis. |
+| Return value | Endpoint, critical and unresolved region/kind pairs; raises for a mismatched cover or unsupported cell. |
+| Replay and completion | The source and exact coverage context are checked. Regions contain every possible extremum; no optimizer or attainment decision is selected. |
+| Failure and limits | Unbounded cells, unproved C1 closure extensions and inconsistent covers raise ValueError. |
+
+### bound_range_tail
+
+| Contract | Meaning |
+| --- | --- |
+| Accepted inputs | A fixed exact real function on one rational-cutoff tail, optionally with a proposed limit and certified=False. |
+| Return value | TailValueBound or None; supports a rational polynomial trend and structurally bounded oscillatory remainder. |
+| Replay and completion | Whole-tail source continuity, remainder interval bounds, shifted polynomial signs and infinite limit are reconstructed. A provider flag is not a premise. |
+| Failure and limits | Unsupported trends/remainders, finite-limit or parameter-dependent tails decline. Invalid certification controls raise TypeError. |
 
 ## Concrete replay records
 
@@ -167,6 +203,24 @@ Replay contract: `witness-kernel`; mode: `theorem-premise-check`.
 | `transformed` | `required` | Source-preserving auxiliary expressions. |
 
 Available status/check interfaces: `complete`, `certified`, `scope`, `verify`.
+
+[Owning implementation](https://github.com/BhuvaneshBhatt/funcprops/blob/main/src/funcprops/algebraic_coefficients.py).
+
+### funcprops.algebraic_coefficients.CoefficientFieldPolicy
+
+Bound coefficient-field discovery without limiting mathematical replay.
+
+Larger degrees are opt-in. max_operations limits the supplied syntax; process-isolated work_budget remains available on the encoding query.
+
+Replay contract: `nested-or-summary-data`; mode: `no-registered-standalone-replay`.
+
+| Field | Default | Role |
+| --- | --- | --- |
+| `max_degree` | `4` | Theorem or context data interpreted by this concrete record; inspect its owning checker before changing it. |
+| `max_constants` | `4` | Theorem or context data interpreted by this concrete record; inspect its owning checker before changing it. |
+| `max_operations` | `80` | Theorem or context data interpreted by this concrete record; inspect its owning checker before changing it. |
+
+No status or check methods are defined on this data record; use its owning or registered checker.
 
 [Owning implementation](https://github.com/BhuvaneshBhatt/funcprops/blob/main/src/funcprops/algebraic_coefficients.py).
 
@@ -285,6 +339,20 @@ Replay contract: `witness-kernel`; mode: `theorem-premise-check`.
 Available status/check interfaces: `complete`, `certified`, `verify`.
 
 [Owning implementation](https://github.com/BhuvaneshBhatt/funcprops/blob/main/src/funcprops/analytic_contours.py).
+
+### funcprops.analytic_roots.ImplicitRealRoot
+
+An exact unique real zero specified by a checked isolating interval.
+
+Direct construction searches a rational interval. from_cover reuses checked evidence and accepts exact nonrational bounds without another search. The bound coordinate is carried by a Lambda, not a free symbol. Different isolating descriptions need not compare equal structurally.
+
+Replay contract: `witness-kernel`; mode: `theorem-premise-check`.
+
+Constructor data and derived fields are documented by the class and its owning interface.
+
+Available status/check interfaces: `verify`.
+
+[Owning implementation](https://github.com/BhuvaneshBhatt/funcprops/blob/main/src/funcprops/analytic_roots.py).
 
 ### funcprops.assumption_closure.AssumptionClosure
 
@@ -760,29 +828,6 @@ Available status/check interfaces: `complete`, `certified`.
 
 [Owning implementation](https://github.com/BhuvaneshBhatt/funcprops/blob/main/src/funcprops/certified_operations.py).
 
-### funcprops.certified_optimization.GlobalMinimumCertificate
-
-Bind a minimum value, location and uniqueness to sufficient global premises.
-
-Replay contract: `factory-certificate`; mode: `declared-backend-replay`.
-
-| Field | Default | Role |
-| --- | --- | --- |
-| `expression` | `required` | Original expression bound to this theorem; source holes remain relevant. |
-| `variable` | `required` | Analysis coordinate and its intrinsic assumptions. |
-| `point` | `required` | Theorem or context data interpreted by this concrete record; inspect its owning checker before changing it. |
-| `value` | `required` | Theorem or context data interpreted by this concrete record; inspect its owning checker before changing it. |
-| `unique` | `required` | Theorem or context data interpreted by this concrete record; inspect its owning checker before changing it. |
-| `source` | `required` | Route identifier or source-context record; consult this type's docstring. |
-| `domain` | `Reals` | Domain of this concrete claim; consult the route for requested/effective semantics. |
-| `coercive` | `False` | Theorem or context data interpreted by this concrete record; inspect its owning checker before changing it. |
-| `domain_record` | `None` | Theorem or context data interpreted by this concrete record; inspect its owning checker before changing it. |
-| `component_result` | `None` | Theorem or context data interpreted by this concrete record; inspect its owning checker before changing it. |
-
-Available status/check interfaces: `complete`, `certified`, `scope`, `verify`.
-
-[Owning implementation](https://github.com/BhuvaneshBhatt/funcprops/blob/main/src/funcprops/certified_optimization.py).
-
 ### funcprops.complex_certification.ArgumentPrincipleCertificate
 
 Store a contour count with its route-specific boundary premises.
@@ -1230,45 +1275,6 @@ Available status/check interfaces: `complete`, `certified`, `scope`, `verify`, `
 
 [Owning implementation](https://github.com/BhuvaneshBhatt/funcprops/blob/main/src/funcprops/complex_newton.py).
 
-### funcprops.component_optimization.ComponentMinimumResult
-
-Combine finite-component minimum candidates and attainment data.
-
-Replay contract: `factory-certificate`; mode: `declared-backend-replay`.
-
-| Field | Default | Role |
-| --- | --- | --- |
-| `expression` | `required` | Original expression bound to this theorem; source holes remain relevant. |
-| `variable` | `required` | Analysis coordinate and its intrinsic assumptions. |
-| `domain_record` | `required` | Theorem or context data interpreted by this concrete record; inspect its owning checker before changing it. |
-| `infimum` | `None` | Theorem or context data interpreted by this concrete record; inspect its owning checker before changing it. |
-| `minimizers` | `EmptySet` | Theorem or context data interpreted by this concrete record; inspect its owning checker before changing it. |
-| `candidates` | `()` | Theorem or context data interpreted by this concrete record; inspect its owning checker before changing it. |
-| `complete` | `False` | Stored completion claim; its theorem premises still require replay. |
-| `reason` | `None` | Theorem or context data interpreted by this concrete record; inspect its owning checker before changing it. |
-
-Available status/check interfaces: `complete`, `certified`, `scope`, `verify`.
-
-[Owning implementation](https://github.com/BhuvaneshBhatt/funcprops/blob/main/src/funcprops/component_optimization.py).
-
-### funcprops.component_optimization.OptimizationCandidate
-
-Record a component endpoint, limit or stationary value candidate.
-
-Replay contract: `nested-or-summary-data`; mode: `no-registered-standalone-replay`.
-
-| Field | Default | Role |
-| --- | --- | --- |
-| `point` | `required` | Theorem or context data interpreted by this concrete record; inspect its owning checker before changing it. |
-| `value` | `required` | Theorem or context data interpreted by this concrete record; inspect its owning checker before changing it. |
-| `attained` | `required` | Theorem or context data interpreted by this concrete record; inspect its owning checker before changing it. |
-| `component` | `required` | Theorem or context data interpreted by this concrete record; inspect its owning checker before changing it. |
-| `kind` | `required` | Theorem or context data interpreted by this concrete record; inspect its owning checker before changing it. |
-
-No status or check methods are defined on this data record; use its owning or registered checker.
-
-[Owning implementation](https://github.com/BhuvaneshBhatt/funcprops/blob/main/src/funcprops/component_optimization.py).
-
 ### funcprops.coverage_contract.CellDomainWitness
 
 Full requested-cell definition from raw-source outward evaluations.
@@ -1624,7 +1630,9 @@ Available status/check interfaces: `certified`, `scope`, `verify`.
 
 ### funcprops.enclosure_policy.EnclosurePolicy
 
-Bound precision refinement, subdivision, series work and elapsed time.
+Bound precision, subdivision, series work, root jets and elapsed time.
+
+max_taylor_order caps exclusion polynomials. max_root_order independently caps automatic exact-jet deflation; structural power factors can prove higher multiplicities without those jets.
 
 Replay contract: `nested-or-summary-data`; mode: `no-registered-standalone-replay`.
 
@@ -1636,6 +1644,7 @@ Replay contract: `nested-or-summary-data`; mode: `no-registered-standalone-repla
 | `max_depth` | `10` | Theorem or context data interpreted by this concrete record; inspect its owning checker before changing it. |
 | `max_cells` | `1024` | Theorem or context data interpreted by this concrete record; inspect its owning checker before changing it. |
 | `max_taylor_order` | `2` | Theorem or context data interpreted by this concrete record; inspect its owning checker before changing it. |
+| `max_root_order` | `8` | Theorem or context data interpreted by this concrete record; inspect its owning checker before changing it. |
 | `max_series_terms` | `4096` | Theorem or context data interpreted by this concrete record; inspect its owning checker before changing it. |
 | `seconds` | `None` | Theorem or context data interpreted by this concrete record; inspect its owning checker before changing it. |
 
@@ -1722,30 +1731,6 @@ Replay contract: `nested-or-summary-data`; mode: `no-registered-standalone-repla
 No status or check methods are defined on this data record; use its owning or registered checker.
 
 [Owning implementation](https://github.com/BhuvaneshBhatt/funcprops/blob/main/src/funcprops/explanations.py).
-
-### funcprops.extrema_bounds.ExtremaBoundsProof
-
-Bind infimum/supremum brackets to component and critical-root evidence.
-
-Replay contract: `witness-kernel`; mode: `theorem-premise-check`.
-
-| Field | Default | Role |
-| --- | --- | --- |
-| `expression` | `required` | Original expression bound to this theorem; source holes remain relevant. |
-| `variable` | `required` | Analysis coordinate and its intrinsic assumptions. |
-| `requested` | `required` | Original requested set or rectangle cover. |
-| `domain_record` | `required` | Theorem or context data interpreted by this concrete record; inspect its owning checker before changing it. |
-| `tolerance` | `required` | Theorem or context data interpreted by this concrete record; inspect its owning checker before changing it. |
-| `pieces` | `()` | Theorem or context data interpreted by this concrete record; inspect its owning checker before changing it. |
-| `minimum_bounds` | `None` | Theorem or context data interpreted by this concrete record; inspect its owning checker before changing it. |
-| `maximum_bounds` | `None` | Theorem or context data interpreted by this concrete record; inspect its owning checker before changing it. |
-| `tested` | `0` | Recorded search work; it is not proof of coverage. |
-| `reason` | `None` | Theorem or context data interpreted by this concrete record; inspect its owning checker before changing it. |
-| `schema_version` | `1` | Record schema identifier; a matching number is not a proof. |
-
-Available status/check interfaces: `complete`, `coverage_complete`, `accuracy_complete`, `certified`, `scope`, `verify`, `check`.
-
-[Owning implementation](https://github.com/BhuvaneshBhatt/funcprops/blob/main/src/funcprops/extrema_bounds.py).
 
 ### funcprops.geometry.BoundaryBehavior
 
@@ -2382,6 +2367,25 @@ Replay contract: `witness-kernel`; mode: `theorem-premise-check`.
 | `schema_version` | `1` | Record schema identifier; a matching number is not a proof. |
 
 Available status/check interfaces: `complete`, `certified`, `scope`, `verify`.
+
+[Owning implementation](https://github.com/BhuvaneshBhatt/funcprops/blob/main/src/funcprops/parameter_contract.py).
+
+### funcprops.parameter_contract.ConvexLevelWitness
+
+A strictly convex level family with one exact interior critical point.
+
+Replay contract: `nested-or-summary-data`; mode: `no-registered-standalone-replay`.
+
+| Field | Default | Role |
+| --- | --- | --- |
+| `base` | `required` | Theorem or context data interpreted by this concrete record; inspect its owning checker before changing it. |
+| `center` | `required` | Iteration center for a contraction or geometric center for a contour; a Krawczyk center need not be a root. |
+| `minimum` | `required` | Theorem or context data interpreted by this concrete record; inspect its owning checker before changing it. |
+| `left_value` | `required` | Theorem or context data interpreted by this concrete record; inspect its owning checker before changing it. |
+| `right_value` | `required` | Theorem or context data interpreted by this concrete record; inspect its owning checker before changing it. |
+| `curvature` | `required` | Theorem or context data interpreted by this concrete record; inspect its owning checker before changing it. |
+
+No status or check methods are defined on this data record; use its owning or registered checker.
 
 [Owning implementation](https://github.com/BhuvaneshBhatt/funcprops/blob/main/src/funcprops/parameter_contract.py).
 
@@ -3067,6 +3071,24 @@ Available status/check interfaces: `complete`, `certified`, `scope`, `verify`, `
 
 [Owning implementation](https://github.com/BhuvaneshBhatt/funcprops/blob/main/src/funcprops/quotient_refinement.py).
 
+### funcprops.rational_signs.RationalSignCertificate
+
+Bind a rational inequality to its complete zero/pole sign partition.
+
+Replay contract: `factory-certificate`; mode: `unsupported-unified-replay`.
+
+| Field | Default | Role |
+| --- | --- | --- |
+| `expression` | `required` | Original expression bound to this theorem; source holes remain relevant. |
+| `variable` | `required` | Analysis coordinate and its intrinsic assumptions. |
+| `domain` | `required` | Domain of this concrete claim; consult the route for requested/effective semantics. |
+| `relation` | `required` | Entire implicit equation defining the local branch family. |
+| `region` | `required` | Theorem or context data interpreted by this concrete record; inspect its owning checker before changing it. |
+
+Available status/check interfaces: `verify`.
+
+[Owning implementation](https://github.com/BhuvaneshBhatt/funcprops/blob/main/src/funcprops/rational_signs.py).
+
 ### funcprops.real_analysis.advanced_convexity.ConvexityCertificate
 
 Bind a curvature classification to its route and optional uniform modulus.
@@ -3537,6 +3559,242 @@ Replay contract: `witness-kernel`; mode: `theorem-premise-check`.
 Available status/check interfaces: `complete`, `certified`, `scope`, `verify`.
 
 [Owning implementation](https://github.com/BhuvaneshBhatt/funcprops/blob/main/src/funcprops/real_analysis/variation.py).
+
+### funcprops.real_images.analysis.CriticalValueCover
+
+Endpoint, critical and unresolved value sites on one continuous real cell.
+
+Search state is retained only for resumption. The root proof and the supplied value witnesses establish the mathematical claims independently of discovery.
+
+Replay contract: `factory-certificate`; mode: `declared-backend-replay`.
+
+| Field | Default | Role |
+| --- | --- | --- |
+| `expression` | `required` | Original expression bound to this theorem; source holes remain relevant. |
+| `variable` | `required` | Analysis coordinate and its intrinsic assumptions. |
+| `domain` | `required` | Domain of this concrete claim; consult the route for requested/effective semantics. |
+| `critical_cover` | `None` | Theorem or context data interpreted by this concrete record; inspect its owning checker before changing it. |
+| `sites` | `()` | Theorem or context data interpreted by this concrete record; inspect its owning checker before changing it. |
+| `samples` | `()` | Theorem or context data interpreted by this concrete record; inspect its owning checker before changing it. |
+| `search_state` | `None` | Theorem or context data interpreted by this concrete record; inspect its owning checker before changing it. |
+
+Available status/check interfaces: `verify`.
+
+[Owning implementation](https://github.com/BhuvaneshBhatt/funcprops/blob/main/src/funcprops/real_images/analysis.py).
+
+### funcprops.real_images.analysis.RangeAnalysis
+
+An exact image or source-bound partial inner/outer range information.
+
+certified=False is the default. Exactness, critical-root coverage and replay are distinct: a partial image can have valid enclosure evidence. Requested per-cell work is controlled by EnclosurePolicy; unsupported cells remain unresolved.
+
+Replay contract: `factory-certificate`; mode: `declared-backend-replay`.
+
+| Field | Default | Role |
+| --- | --- | --- |
+| `expression` | `required` | Original expression bound to this theorem; source holes remain relevant. |
+| `variable` | `required` | Analysis coordinate and its intrinsic assumptions. |
+| `requested` | `required` | Original requested set or rectangle cover. |
+| `domain_record` | `required` | Theorem or context data interpreted by this concrete record; inspect its owning checker before changing it. |
+| `cells` | `()` | Certified local cells; their union and ownership are separate obligations. |
+| `image` | `None` | Theorem or context data interpreted by this concrete record; inspect its owning checker before changing it. |
+| `inner` | `EmptySet` | Theorem or context data interpreted by this concrete record; inspect its owning checker before changing it. |
+| `outer` | `Reals` | Theorem or context data interpreted by this concrete record; inspect its owning checker before changing it. |
+| `unresolved` | `Reals` | Regions or obligations with no exhaustive conclusion. |
+| `reason` | `None` | Theorem or context data interpreted by this concrete record; inspect its owning checker before changing it. |
+| `certified` | `False` | Stored or derived certification status, meaningful under the replay contract. |
+| `transfer` | `None` | Theorem or context data interpreted by this concrete record; inspect its owning checker before changing it. |
+
+Available status/check interfaces: `complete`, `certified`, `scope`, `verify`.
+
+[Owning implementation](https://github.com/BhuvaneshBhatt/funcprops/blob/main/src/funcprops/real_images/analysis.py).
+
+### funcprops.real_images.critical_values.CriticalValueEnclosure
+
+Outward bounds at an implicit root, with independently replayable premises.
+
+Replay contract: `factory-certificate`; mode: `declared-backend-replay`.
+
+| Field | Default | Role |
+| --- | --- | --- |
+| `value` | `required` | Theorem or context data interpreted by this concrete record; inspect its owning checker before changing it. |
+| `root_cover` | `required` | Theorem or context data interpreted by this concrete record; inspect its owning checker before changing it. |
+| `enclosure` | `required` | Theorem or context data interpreted by this concrete record; inspect its owning checker before changing it. |
+
+Available status/check interfaces: `verify`.
+
+[Owning implementation](https://github.com/BhuvaneshBhatt/funcprops/blob/main/src/funcprops/real_images/critical_values.py).
+
+### funcprops.real_images.interior.InteriorCriticalCover
+
+Critical geometry on a real open cell with one-sided endpoint analysis.
+
+Strict-sign proofs use symbolic sign inference. Finite root sets replay the exact symbolic solveset backend. Neither route assumes endpoint smoothness. None roots explicitly retain unresolved critical geometry.
+
+Replay contract: `factory-certificate`; mode: `declared-backend-replay`.
+
+| Field | Default | Role |
+| --- | --- | --- |
+| `source` | `required` | Route identifier or source-context record; consult this type's docstring. |
+| `expression` | `required` | Original expression bound to this theorem; source holes remain relevant. |
+| `variable` | `required` | Analysis coordinate and its intrinsic assumptions. |
+| `domain` | `required` | Domain of this concrete claim; consult the route for requested/effective semantics. |
+| `roots` | `required` | Theorem or context data interpreted by this concrete record; inspect its owning checker before changing it. |
+| `sign` | `None` | Theorem or context data interpreted by this concrete record; inspect its owning checker before changing it. |
+
+Available status/check interfaces: `complete`, `verify`.
+
+[Owning implementation](https://github.com/BhuvaneshBhatt/funcprops/blob/main/src/funcprops/real_images/interior.py).
+
+### funcprops.real_images.interior.InteriorRootCover
+
+Native numerator-root coverage for a derivative with excluded poles.
+
+Replay contract: `factory-certificate`; mode: `declared-backend-replay`.
+
+| Field | Default | Role |
+| --- | --- | --- |
+| `source` | `required` | Route identifier or source-context record; consult this type's docstring. |
+| `expression` | `required` | Original expression bound to this theorem; source holes remain relevant. |
+| `variable` | `required` | Analysis coordinate and its intrinsic assumptions. |
+| `domain` | `required` | Domain of this concrete claim; consult the route for requested/effective semantics. |
+| `equation` | `required` | Theorem or context data interpreted by this concrete record; inspect its owning checker before changing it. |
+| `denominator` | `required` | Theorem or context data interpreted by this concrete record; inspect its owning checker before changing it. |
+| `proof` | `required` | Underlying proof that must agree with this public summary. |
+
+Available status/check interfaces: `complete`, `verify`.
+
+[Owning implementation](https://github.com/BhuvaneshBhatt/funcprops/blob/main/src/funcprops/real_images/interior.py).
+
+### funcprops.real_images.oscillatory.OscillatoryEscape
+
+A continuous image is all reals by two exact oscillatory phase sequences.
+
+Replay contract: `factory-certificate`; mode: `declared-backend-replay`.
+
+| Field | Default | Role |
+| --- | --- | --- |
+| `expression` | `required` | Original expression bound to this theorem; source holes remain relevant. |
+| `variable` | `required` | Analysis coordinate and its intrinsic assumptions. |
+| `domain` | `required` | Domain of this concrete claim; consult the route for requested/effective semantics. |
+| `amplitude` | `required` | Theorem or context data interpreted by this concrete record; inspect its owning checker before changing it. |
+| `offset` | `required` | Theorem or context data interpreted by this concrete record; inspect its owning checker before changing it. |
+| `oscillator` | `required` | Theorem or context data interpreted by this concrete record; inspect its owning checker before changing it. |
+| `direction` | `required` | Theorem or context data interpreted by this concrete record; inspect its owning checker before changing it. |
+| `sequences` | `required` | Theorem or context data interpreted by this concrete record; inspect its owning checker before changing it. |
+
+Available status/check interfaces: `verify`.
+
+[Owning implementation](https://github.com/BhuvaneshBhatt/funcprops/blob/main/src/funcprops/real_images/oscillatory.py).
+
+### funcprops.real_images.parameters.ParameterRangeAnalysis
+
+A quantifier-free image family for rational polynomial coefficients of degree at most three.
+
+``condition`` is a formula in ``value`` and the declared parameters. It retains constant and affine strata, coefficient poles, endpoint ownership, vertex crossings and endpoint ties. ``transitions`` lists candidate events; it does not claim every event changes the image. Supported transcendental outer maps use their real inverse branch. Other families remain incomplete.
+
+Replay contract: `factory-certificate`; mode: `declared-backend-replay`.
+
+| Field | Default | Role |
+| --- | --- | --- |
+| `expression` | `required` | Original expression bound to this theorem; source holes remain relevant. |
+| `variable` | `required` | Analysis coordinate and its intrinsic assumptions. |
+| `parameters` | `required` | Parameter coordinates, including their intrinsic assumptions. |
+| `domain` | `required` | Domain of this concrete claim; consult the route for requested/effective semantics. |
+| `parameter_domain` | `required` | Explicit guard restricting the parameter family. |
+| `value` | `required` | Theorem or context data interpreted by this concrete record; inspect its owning checker before changing it. |
+| `condition` | `None` | Theorem or context data interpreted by this concrete record; inspect its owning checker before changing it. |
+| `transitions` | `()` | Theorem or context data interpreted by this concrete record; inspect its owning checker before changing it. |
+| `complete` | `False` | Stored completion claim; its theorem premises still require replay. |
+| `certified` | `False` | Stored or derived certification status, meaningful under the replay contract. |
+| `reason` | `None` | Theorem or context data interpreted by this concrete record; inspect its owning checker before changing it. |
+
+Available status/check interfaces: `complete`, `certified`, `verify`.
+
+[Owning implementation](https://github.com/BhuvaneshBhatt/funcprops/blob/main/src/funcprops/real_images/parameters.py).
+
+### funcprops.real_images.tails.FiniteTailBound
+
+A finite limit and whole-tail interval for rationally damped oscillation.
+
+Replay contract: `factory-certificate`; mode: `declared-backend-replay`.
+
+| Field | Default | Role |
+| --- | --- | --- |
+| `expression` | `required` | Original expression bound to this theorem; source holes remain relevant. |
+| `variable` | `required` | Analysis coordinate and its intrinsic assumptions. |
+| `domain` | `required` | Domain of this concrete claim; consult the route for requested/effective semantics. |
+| `limit` | `required` | Theorem or context data interpreted by this concrete record; inspect its owning checker before changing it. |
+| `lower` | `required` | Theorem or context data interpreted by this concrete record; inspect its owning checker before changing it. |
+| `upper` | `required` | Theorem or context data interpreted by this concrete record; inspect its owning checker before changing it. |
+| `certified` | `False` | Stored or derived certification status, meaningful under the replay contract. |
+
+Available status/check interfaces: `certified`, `verify`.
+
+[Owning implementation](https://github.com/BhuvaneshBhatt/funcprops/blob/main/src/funcprops/real_images/tails.py).
+
+### funcprops.real_images.tails.TailValueBound
+
+A whole-tail function bound and infinite limit, independent of monotonicity.
+
+The remainder uses checked structural bounds; polynomial dominance supplies both a finite exclusion bound and the limit. A provider's certification flag is metadata and never substitutes for these source-bound premises.
+
+Replay contract: `factory-certificate`; mode: `declared-backend-replay`.
+
+| Field | Default | Role |
+| --- | --- | --- |
+| `expression` | `required` | Original expression bound to this theorem; source holes remain relevant. |
+| `variable` | `required` | Analysis coordinate and its intrinsic assumptions. |
+| `domain` | `required` | Domain of this concrete claim; consult the route for requested/effective semantics. |
+| `trend` | `required` | Theorem or context data interpreted by this concrete record; inspect its owning checker before changing it. |
+| `remainder` | `required` | Theorem or context data interpreted by this concrete record; inspect its owning checker before changing it. |
+| `remainder_bounds` | `required` | Theorem or context data interpreted by this concrete record; inspect its owning checker before changing it. |
+| `limit` | `required` | Theorem or context data interpreted by this concrete record; inspect its owning checker before changing it. |
+| `bound` | `required` | Theorem or context data interpreted by this concrete record; inspect its owning checker before changing it. |
+| `certified` | `False` | Stored or derived certification status, meaningful under the replay contract. |
+
+Available status/check interfaces: `certified`, `verify`.
+
+[Owning implementation](https://github.com/BhuvaneshBhatt/funcprops/blob/main/src/funcprops/real_images/tails.py).
+
+### funcprops.real_images.transfers.MonotoneTail
+
+A C1 tail image with strict derivative-sign and endpoint-limit premises.
+
+Replay contract: `factory-certificate`; mode: `declared-backend-replay`.
+
+| Field | Default | Role |
+| --- | --- | --- |
+| `expression` | `required` | Original expression bound to this theorem; source holes remain relevant. |
+| `variable` | `required` | Analysis coordinate and its intrinsic assumptions. |
+| `domain` | `required` | Domain of this concrete claim; consult the route for requested/effective semantics. |
+| `sign_proof` | `required` | Theorem or context data interpreted by this concrete record; inspect its owning checker before changing it. |
+| `limit` | `required` | Theorem or context data interpreted by this concrete record; inspect its owning checker before changing it. |
+| `image` | `required` | Theorem or context data interpreted by this concrete record; inspect its owning checker before changing it. |
+
+Available status/check interfaces: `verify`.
+
+[Owning implementation](https://github.com/BhuvaneshBhatt/funcprops/blob/main/src/funcprops/real_images/transfers.py).
+
+### funcprops.real_images.trigonometric.DenseTrigImage
+
+Phase density and exact endpoint compatibility for two trig frequencies.
+
+Replay contract: `factory-certificate`; mode: `declared-backend-replay`.
+
+| Field | Default | Role |
+| --- | --- | --- |
+| `expression` | `required` | Original expression bound to this theorem; source holes remain relevant. |
+| `variable` | `required` | Analysis coordinate and its intrinsic assumptions. |
+| `domain` | `required` | Domain of this concrete claim; consult the route for requested/effective semantics. |
+| `terms` | `required` | Theorem or context data interpreted by this concrete record; inspect its owning checker before changing it. |
+| `offset` | `required` | Theorem or context data interpreted by this concrete record; inspect its owning checker before changing it. |
+| `frequency_polynomial` | `required` | Theorem or context data interpreted by this concrete record; inspect its owning checker before changing it. |
+| `image` | `required` | Theorem or context data interpreted by this concrete record; inspect its owning checker before changing it. |
+
+Available status/check interfaces: `verify`.
+
+[Owning implementation](https://github.com/BhuvaneshBhatt/funcprops/blob/main/src/funcprops/real_images/trigonometric.py).
 
 ### funcprops.registry.ArgumentPattern
 

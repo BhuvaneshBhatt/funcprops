@@ -66,7 +66,7 @@ def test_invalid_branch_context_cannot_be_a_proof(context):
     )
 
 
-def test_branch_context_cannot_fill_branch_points_or_raw_source_holes():
+def test_branch_context_source_holes():
     ctx = fp.LocalBranchContext(0, ((z, s.S.Zero),))
     assert (
         fp.laurent_series(s.log(z), z, 0, branch_context=ctx, return_certificate=True)
@@ -86,7 +86,7 @@ def test_branch_context_cannot_fill_branch_points_or_raw_source_holes():
     )
 
 
-def test_guarded_affine_cases_are_exhaustive_and_source_bound():
+def test_guarded_affine_cases_exhaustive_source_bound():
     c = fp.solve(a * x + b, x, domain=s.S.Reals, guarded=True, return_certificate=True)
     assert c.verify() and c.complete and len(c.cases) == 3 and c.root_count is None
     assert [case.value.root_count for case in c.cases] == [1, s.oo, 0]
@@ -124,7 +124,7 @@ def test_affine_strata_specialize_under_assumptions(context, count, solutions):
         (2 * z - 1, 1, s.FiniteSet(s.Rational(1, 2))),
     ],
 )
-def test_guarded_constant_and_unconditional_affine_cases(expression, count, solutions):
+def test_guarded_constant_unconditional_affine_cases(expression, count, solutions):
     c = fp.solve(expression, z, guarded=True, return_certificate=True)
     assert c.verify() and c.root_count == count and c.solutions == solutions
 
@@ -141,7 +141,7 @@ def test_affine_source_premises():
         fp.solve(a * x, x, assumptions=s.Ne(a, 0))
 
 
-def test_real_coefficient_guards_and_real_coordinate_premises():
+def test_real_coefficient_guards_coordinate_premises():
     q = s.Symbol("q", complex=True)
     c = fp.solve(q * x + 1, x, guarded=True, domain=s.S.Reals, return_certificate=True)
     assert not c.complete
@@ -165,7 +165,7 @@ def test_real_coefficient_guards_and_real_coordinate_premises():
 
 
 @pytest.mark.parametrize("family", [s.erf, s.erfc, s.erfi])
-def test_common_entire_families_local_and_continuation(family):
+def test_common_entire_families_local_continuation(family):
     e = family(z)
     c = fp.laurent_series(e, z, 0, return_certificate=True)
     assert c.verify()
@@ -241,7 +241,7 @@ def native_records():
 
 
 @pytest.mark.parametrize("index", range(6))
-def test_remaining_native_records_use_source_bound_unified_replay(index):
+def test_native_records_source_bound_unified_replay(index):
     c, e, v = native_records()[index]
     assert fp.verify_certificate(c, expr=e, var=v) is True
     assert fp.replay_status(c).certified is True
@@ -261,7 +261,7 @@ def test_polynomial_source_binding():
     assert not replace(c, center=s.S.One).verify()
 
 
-def test_records_and_contexts_survive_isolated_execution():
+def test_records_contexts_isolated_execution():
     ctx = fp.LocalBranchContext(-1, ((z, s.I * s.pi),))
     c = fp.residue(
         s.log(z) / (z + 1),
@@ -288,7 +288,7 @@ def test_records_and_contexts_survive_isolated_execution():
     "offset,count,admissible",
     [(s.S.Zero, 1, True), (s.Integer(2), 0, True), (s.S.One, None, False)],
 )
-def test_guarded_affine_circle_counts_keep_boundary_strata(offset, count, admissible):
+def test_guarded_affine_circle_counts_boundary_strata(offset, count, admissible):
     t = s.Symbol("t", real=True)
     circle = fp.ParametricContour(s.exp(s.I * t), (t, 0, 2 * s.pi))
     c = fp.argument_principle(
@@ -302,7 +302,7 @@ def test_guarded_affine_circle_counts_keep_boundary_strata(offset, count, admiss
     assert not replace(c, cases=(wrong, *c.cases[1:])).verify()
 
 
-def test_guarded_circle_parameter_strata_and_orientation():
+def test_guarded_circle_parameter_strata_orientation():
     t = s.Symbol("t", real=True)
     circle = fp.ParametricContour(s.exp(s.I * t), (t, 0, 2 * s.pi))
     c = fp.argument_principle(a * z, z, circle, guarded=True, return_certificate=True)

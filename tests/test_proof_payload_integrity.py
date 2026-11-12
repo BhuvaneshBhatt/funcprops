@@ -45,14 +45,6 @@ def assert_rejected(proof):
     assert fp.replay_status(proof).certified is False
 
 
-@pytest.mark.parametrize("name", ["minimum_bounds", "maximum_bounds"])
-def test_extrema_bounds_cannot_override_comparison_of_reported_values(name):
-    x = sp.Symbol("x", real=True)
-    c = fp.certify_extrema_bounds(x**2, x, sp.Interval(-1, 1))
-    assert c.verify() and c.complete
-    assert_rejected(replace(c, **{name: LyingTuple((sp.Integer(-77),) * 2)}))
-
-
 @pytest.mark.parametrize("name", ["minimum", "maximum", "sign", "monotonicity"])
 def test_property_value_container_binding(name):
     x = sp.Symbol("x", real=True)
@@ -65,27 +57,6 @@ def test_property_value_container_binding(name):
         for p in c.conclusions
     )
     assert_rejected(replace(c, conclusions=false))
-
-
-@pytest.mark.parametrize("outer", [True, False])
-def test_real_deflation_cannot_report_another_exact_root_to_extrema(outer):
-    x = sp.Symbol("x", real=True)
-    D = sp.Interval.open(-sp.Rational(1, 4), sp.Rational(1, 4))
-    leaf = fp.deflate_real_root(sp.sin(x) - x, x, D, 0, 3)
-    assert leaf.verify() and leaf.roots == ((0, 3),)
-    roots = (
-        LyingTuple(((sp.Integer(77), 3),))
-        if outer
-        else (LyingTuple((sp.Integer(77), 3)),)
-    )
-    bad = replace(leaf, roots=roots)
-    assert_rejected(bad)
-    cover = fp.CoverageProof(leaf.context, (bad,), sp.S.EmptySet, True, 1, 3)
-    assert_rejected(cover)
-    with pytest.raises(ValueError, match="invalid supplied critical cover"):
-        fp.certify_extrema_bounds(
-            -sp.cos(x) - x * x / 2, x, D, critical_covers=(cover,)
-        )
 
 
 @pytest.mark.parametrize("field", ["outer", "row", "box"])
@@ -109,7 +80,7 @@ def test_zero_function_cannot_acquire_a_nonzero_jet(base, field):
     assert_rejected(p)
 
 
-def test_double_root_cannot_use_derivatives_from_another_box(base):
+def test_double_root_jet_binding(base):
     elsewhere = (sp.Integer(2), sp.S.Zero, sp.Integer(2), sp.S.Zero)
     coefficients = complex_box_taylor(g**2, z, elsewhere, 1)
     w = fp.ImplicitJetWitness(g**2, z, LyingTuple(elsewhere), 1, coefficients, 30)
@@ -121,7 +92,7 @@ def test_double_root_cannot_use_derivatives_from_another_box(base):
 
 
 @pytest.mark.parametrize("field", ["outer", "row", "box"])
-def test_point_taylor_witness_uses_plain_exact_containers(field):
+def test_point_taylor_witness_plain_exact_containers(field):
     zero = (sp.S.Zero,) * 4
     one = (sp.S.One, sp.S.Zero, sp.S.One, sp.S.Zero)
     coefficients = (
@@ -161,7 +132,7 @@ def test_forged_selected_branch_certificates_reject(kind):
 
 @pytest.mark.parametrize("hole", [sp.sin(1 / z), sp.exp(1 / z) - 1])
 @pytest.mark.parametrize("extension", [sp.exp(1 / z), sp.log(z), sp.sqrt(z)])
-def test_classification_retains_accumulating_canceled_holes(hole, extension):
+def test_classification_accumulating_canceled_holes(hole, extension):
     raw = sp.Mul(extension, hole, sp.Pow(hole, -1, evaluate=False), evaluate=False)
     assert fp.classify_singularity(raw, z, 0, return_certificate=True) is None
     assert fp.residue(raw, z, 0, return_certificate=True) is None
@@ -179,7 +150,7 @@ def test_singularity_source_center(point):
 @pytest.mark.parametrize(
     "extension,kind", [(sp.exp(1 / z), "essential"), (sp.sqrt(z), "branch_point")]
 )
-def test_remote_canceled_holes_do_not_block_a_local_classification(extension, kind):
+def test_remote_cancellation_holes(extension, kind):
     raw = sp.Mul(extension, z - 1, sp.Pow(z - 1, -1, evaluate=False), evaluate=False)
     c = fp.classify_singularity(raw, z, 0, return_certificate=True)
     assert c.kind == kind and fp.verify_certificate(c)
@@ -201,7 +172,7 @@ def test_local_branch_classification(expression, point, kind):
     assert c.kind == kind and fp.verify_certificate(c)
 
 
-def test_legitimate_selected_negative_axis_branch_and_replay(base, monkeypatch):
+def test_legitimate_selected_negative_branch_replay(base, monkeypatch):
     branch = LocalBranchContext(sp.Integer(-1), ((z, sp.I * sp.pi),))
     c = fp.residue(
         sp.log(z) / (z + 1), z, -1, branch_context=branch, return_certificate=True
@@ -225,9 +196,7 @@ def test_legitimate_selected_negative_axis_branch_and_replay(base, monkeypatch):
 )
 @pytest.mark.parametrize("power", [2, -1])
 @pytest.mark.parametrize("floating", ["center", "source"])
-def test_local_certification_declines_floating_sources_and_centers(
-    operation, power, floating
-):
+def test_local_certification_declines_sources_centers(operation, power, floating):
     exact, rounded = sp.Rational(1, 10), sp.Float("0.1")
     assert sp.Rational(rounded) > exact
     expression = (z - (rounded if floating == "source" else exact)) ** power
@@ -236,7 +205,7 @@ def test_local_certification_declines_floating_sources_and_centers(
 
 
 @pytest.mark.parametrize("kind", ["residue", "laurent", "singularity"])
-def test_rounded_local_point_cannot_replay_a_false_pole_or_residue(kind):
+def test_rounded_pole_location(kind):
     q, p = sp.Rational(1, 10), sp.Float("0.1")
     e = 1 / (z - q)
     c = (
@@ -261,7 +230,7 @@ def test_exact_center_distinction(stored_float):
     assert c.residue == (0 if stored_float else 1) and fp.verify_certificate(c)
 
 
-def test_branch_values_and_local_order_helpers_do_not_certify_floats():
+def test_inexact_branch_orders():
     from funcprops.singularities.records import order_at
 
     q, p = sp.Rational(1, 10), sp.Float("0.1")

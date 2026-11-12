@@ -77,26 +77,32 @@ class CellDomainWitness:
 
     @property
     def effective(self):
+        """Requested source points retained after definition restrictions."""
         return self.requested
 
     @property
     def complete(self):
+        """Completion status for this record's stated scope; replay validity is separate."""
         return True
 
     @property
     def reason(self):
+        """Diagnostic reason for the returned status."""
         return None
 
     @property
     def natural_complete(self):
+        """Whether the entire natural domain has been established."""
         return False
 
     @property
     def natural(self):
+        """Natural definition domain when it is established."""
         return None
 
     @property
     def scope(self):
+        """Scope identifier: ``definition-on-requested-cells``."""
         return "definition-on-requested-cells"
 
     def verify(self):
@@ -209,18 +215,22 @@ class CoverageLeaf:
 
     @property
     def expression(self):
+        """Expression to which the stored evidence applies."""
         return self.context.expression
 
     @property
     def variable(self):
+        """Coordinate used by the source and its evidence."""
         return self.context.variable
 
     @property
     def certified(self):
+        """Replay acceptance; a valid partial record need not be complete."""
         return self.verify()
 
     @property
     def scope(self):
+        """Scope identifier: ``local-real-root-count``."""
         return "local-real-root-count"
 
     def verify(self):
@@ -246,22 +256,27 @@ class CoverageProof:
 
     @property
     def expression(self):
+        """Expression to which the stored evidence applies."""
         return self.context.expression
 
     @property
     def variable(self):
+        """Coordinate used by the source and its evidence."""
         return self.context.variable
 
     @property
     def scope(self):
+        """Scope identifier: ``real-root-coverage-on-effective-domain``."""
         return "real-root-coverage-on-effective-domain"
 
     @property
     def certified(self):
+        """Replay acceptance; a valid partial record need not be complete."""
         return self.verify()
 
     @property
     def obligations(self):
+        """Unresolved premises that prevent the stated completion claim."""
         if self.complete:
             return ()
         if not self.context.domain_record.complete:
@@ -298,14 +313,17 @@ class InadmissibleProof:
 
     @property
     def complete(self):
+        """Completion status for this record's stated scope; replay validity is separate."""
         return False
 
     @property
     def certified(self):
+        """Replay acceptance; a valid partial record need not be complete."""
         return self.verify()
 
     @property
     def scope(self):
+        """Scope identifier: ``inadmissible-real-valued-stratum``."""
         return "inadmissible-real-valued-stratum"
 
     def check(self):

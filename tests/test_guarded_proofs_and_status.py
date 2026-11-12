@@ -34,7 +34,7 @@ def test_exhaustive_polynomial_parity_cases(av, bv, expected):
     assert fp.verify_certificate(result, expr=expr, var=x)
 
 
-def test_guarded_symmetry_replays_parameter_assumptions():
+def test_guarded_symmetry_parameter_assumptions():
     expr = a * x + x * x
     result = fp.symmetry(expr, x, assumptions=sp.Ne(a, 0), return_result=True)
     assert result.classification is Symmetry.NEITHER
@@ -45,7 +45,7 @@ def test_guarded_symmetry_replays_parameter_assumptions():
     )
 
 
-def test_polynomial_periodicity_partition_and_projection():
+def test_polynomial_periodicity_partition_projection():
     expr = a * x + b
     result = fp.periodicity(expr, x, return_result=True)
     assert result.classification is Periodicity.UNKNOWN
@@ -94,7 +94,7 @@ def test_affine_reality_rank_cases_and_assumptions(query):
     )
 
 
-def test_partial_real_rank_cases_become_complete_under_reality_only():
+def test_partial_real_rank_cases_become_reality_only():
     result = fp.surjective(
         (u * x, y), (x, y), assumptions=sp.Q.real(u), return_result=True
     )
@@ -103,7 +103,7 @@ def test_partial_real_rank_cases_become_complete_under_reality_only():
 
 
 @pytest.mark.parametrize("kind", ["division", "log", "gamma"])
-def test_source_parameter_poles_survive_affine_extraction(kind):
+def test_source_parameter_poles_affine_extraction(kind):
     if kind == "division":
         expr = sp.Mul(x, a, sp.Pow(a, -1, evaluate=False), evaluate=False)
     else:
@@ -129,7 +129,7 @@ def test_coordinate_holes_cannot_be_parameter_guards():
     "query,expected",
     [(fp.periodicity, Periodicity.UNKNOWN), (fp.symmetry, Symmetry.UNKNOWN)],
 )
-def test_cancelled_log_definition_survives_polynomial_cases(query, expected):
+def test_cancelled_log_definition_polynomial_cases(query, expected):
     expr = sp.Add(x, sp.log(a), -sp.log(a), evaluate=False)
     result = query(expr, x, assumptions=sp.Eq(a, 0), return_result=True)
     assert result.classification is expected
@@ -141,7 +141,7 @@ def test_cancelled_log_definition_survives_polynomial_cases(query, expected):
     "query,expected",
     [(fp.periodicity, Periodicity.UNKNOWN), (fp.symmetry, Symmetry.UNKNOWN)],
 )
-def test_polynomial_parameter_denominator_is_not_defined_at_zero(query, expected):
+def test_parameter_denominator_at_zero(query, expected):
     result = query(x / a, x, assumptions=sp.Eq(a, 0), return_result=True)
     assert result.classification is expected
     assert result.complete is False and result.certified is False
@@ -166,7 +166,7 @@ def test_local_root_certification():
     )
 
 
-def test_detailed_certificate_presence_is_not_verification():
+def test_detailed_replay_status():
     record = DetailedPropertyResult(
         TruthValue.UNKNOWN, complete=False, certificate=object(), certified=None
     )
@@ -178,7 +178,7 @@ def test_detailed_certificate_presence_is_not_verification():
     assert "Certified" not in html
 
 
-def test_status_fields_survive_general_projection_and_budget_expiry():
+def test_status_fields_general_budget_expiry():
     record = PropertyResult(TruthValue.UNKNOWN, complete=False, certified=False)
     detail = fp.as_detailed_result(record)
     assert detail.complete is False and detail.certified is False
@@ -207,7 +207,7 @@ def test_fabricated_root_count():
     )
 
 
-def test_verified_root_count_does_not_certify_corrupted_root_values():
+def test_altered_root_values():
     r = fp.transcendental_roots(
         sp.sin(x), x, sp.Interval(0, 2 * sp.pi), allow_numerical=False
     )

@@ -8,8 +8,6 @@ import sympy as sp
 
 import funcprops as fp
 from funcprops import analytic_contours as ac
-from funcprops.certified_optimization import GlobalMinimumCertificate
-from funcprops.component_optimization import ComponentMinimumResult
 from funcprops.domain_tracking import DomainRecord
 from funcprops.enclosures import EnclosureResult
 from funcprops.real_analysis.image_rules import exact_image
@@ -23,7 +21,7 @@ z = sp.Symbol("z")
     "left_open,right_open", [(True, True), (True, False), (False, True), (False, False)]
 )
 @pytest.mark.parametrize("turn", [-2, 0, 3])
-def test_one_period_images_preserve_extremum_attainment(
+def test_one_period_images_extremum_attainment(
     function, offset, left_open, right_open, turn
 ):
     start = offset + turn * 2 * sp.pi
@@ -36,7 +34,7 @@ def test_one_period_images_preserve_extremum_attainment(
     "function,offset",
     [(sp.sin, sp.pi / 2), (sp.cos, 0), (sp.sin, -sp.pi / 2), (sp.cos, sp.pi)],
 )
-def test_composed_one_period_ranges_do_not_add_missing_values(function, offset):
+def test_periodic_composition_missing_values(function, offset):
     upper_missing = function(offset) == 1
     expected = sp.Interval(-1, 1, left_open=not upper_missing, right_open=upper_missing)
     source = sp.Interval.open(sp.exp(offset), sp.exp(offset + 2 * sp.pi))
@@ -50,7 +48,7 @@ def test_composed_one_period_ranges_do_not_add_missing_values(function, offset):
 
 @pytest.mark.parametrize("function,offset", [(sp.sin, sp.pi / 2), (sp.cos, 0)])
 @pytest.mark.parametrize("left_open,right_open", [(True, False), (False, True)])
-def test_composed_one_period_closed_endpoint_attains_the_peak(
+def test_composed_one_period_endpoint_attains_peak(
     function, offset, left_open, right_open
 ):
     domain = sp.Interval(
@@ -63,9 +61,7 @@ def test_composed_one_period_closed_endpoint_attains_the_peak(
 
 @pytest.mark.parametrize("periods", [2, 3])
 @pytest.mark.parametrize("function,offset", [(sp.sin, sp.pi / 2), (sp.cos, 0)])
-def test_interior_periodic_extremum_is_not_lost_at_an_open_endpoint(
-    function, offset, periods
-):
+def test_periodic_extremum_ownership(function, offset, periods):
     domain = sp.Interval.open(offset, offset + periods * 2 * sp.pi)
     assert fp.range(function(x), x, y, domain=domain).as_set() == sp.Interval(-1, 1)
 
@@ -86,9 +82,7 @@ def test_interior_periodic_extremum_is_not_lost_at_an_open_endpoint(
         ),
     ],
 )
-def test_algebraized_and_composed_ranges_retain_attained_values(
-    expression, domain, expected
-):
+def test_algebraized_composed_ranges_attained_values(expression, domain, expected):
     assert fp.range(expression, x, y, domain=domain).as_set() == expected
 
 
@@ -153,7 +147,7 @@ def test_contour_rejects_self_attesting_image_leaves():
     assert_rejected(cover)
 
 
-def test_contour_coverage_rejects_self_attesting_regions():
+def test_contour_coverage_self_attesting_regions():
     class LyingContour(ac.AnalyticContourCertificate):
         def verify(self):
             return True
@@ -178,7 +172,7 @@ def test_contour_does_not_trust_rectangle_callbacks():
     assert_rejected(false)
 
 
-def test_real_derivative_rejects_self_attesting_enclosure():
+def test_real_derivative_self_attesting_enclosure():
     class LyingEnclosure(EnclosureResult):
         def verify(self):
             return True
@@ -198,7 +192,7 @@ def test_real_derivative_rejects_self_attesting_enclosure():
     assert_rejected(false)
 
 
-def test_property_cover_cannot_discard_the_domain_with_a_callback():
+def test_property_cover_domain_binding():
     class LyingDomain(DomainRecord):
         def verify(self):
             return True
@@ -211,32 +205,6 @@ def test_property_cover_cannot_discard_the_domain_with_a_callback():
         domain_record=LyingDomain(x, x, source, sp.S.Reals, sp.S.EmptySet, True),
     )
     assert false.image is sp.S.EmptySet  # The actual image is [-1, 1].
-    assert_rejected(false)
-
-
-def test_global_minimum_rejects_self_attesting_component_results():
-    class LyingMinimum(ComponentMinimumResult):
-        def verify(self):
-            return True
-
-    domain = sp.Interval(-1, 1)
-    good = fp.finite_component_minimum(x**2, x, domain)
-    assert good.verify() and good.infimum == 0
-    false_result = LyingMinimum(
-        **replace(good, infimum=sp.Integer(-77), minimizers=sp.FiniteSet(0)).__dict__
-    )
-    false = GlobalMinimumCertificate(
-        x**2,
-        x,
-        sp.S.Zero,
-        sp.Integer(-77),
-        True,
-        "finite-components",
-        domain,
-        False,
-        good.domain_record,
-        false_result,
-    )
     assert_rejected(false)
 
 

@@ -27,7 +27,7 @@ def solve(f, rect=RECT, **kwargs):
 
 @pytest.mark.parametrize("power", [1, 2, 3, 4])
 @pytest.mark.parametrize("unit", [s.S.One, s.exp(z)])
-def test_shared_factor_excludes_every_multiplicity_of_a_source_hole(power, unit):
+def test_shared_factor_every_multiplicity_source_hole(power, unit):
     f = s.Mul(unit * g**power, g, s.Pow(g, -1, evaluate=False), evaluate=False)
     q = solve(f)
     assert q.verify() and q.complete
@@ -41,7 +41,7 @@ def test_shared_factor_excludes_every_multiplicity_of_a_source_hole(power, unit)
 
 
 @pytest.mark.parametrize("n,d", [(1, 1), (1, 2), (1, 3), (2, 1), (2, 3), (3, 2)])
-def test_composition_orders_resolve_a_nonrational_common_root(n, d):
+def test_composition_orders_nonrational_common_root(n, d):
     q = solve(g**n / s.sin(g) ** d)
     assert q.verify() and q.complete and q.total_count == q.root_count == 0
     assert q.pole_multiplicity_count == max(d - n, 0)
@@ -89,7 +89,7 @@ def test_composition_zero_jets(shared_pole, mutate):
     assert not replace(shared_pole.proof, cells=(replace(c, denominator=bad),)).verify()
 
 
-def test_factor_implication_and_source_guard_must_match():
+def test_factor_implication_source_guard_must():
     f = s.Mul(g**2, g, s.Pow(g, -1, evaluate=False), evaluate=False)
     q = solve(f)
     c = q.proof.cells[0]
@@ -102,7 +102,7 @@ def test_factor_implication_and_source_guard_must_match():
     assert not replace(c.guard_zero, base_region=wrong).verify()
 
 
-def test_component_count_must_exclude_additional_outer_function_zeros():
+def test_component_count_must_exclude_function_zeros():
     base = fp.certify_analytic_contour(4 * z, z, *RECT)
     parent = fp.certify_analytic_contour(s.sin(4 * z), z, *RECT)
     assert base.zero_count == 1 and parent.zero_count == 3
@@ -127,7 +127,7 @@ def test_component_count_must_exclude_additional_outer_function_zeros():
 @pytest.mark.parametrize(
     "epsilon", [s.Rational(1, 100), s.Rational(1, 10**12), -s.Rational(1, 10**12)]
 )
-def test_nearby_roots_do_not_become_an_exact_shared_zero(epsilon):
+def test_nearby_common_zero_status(epsilon):
     q = fp.certify_quotient_isolation(
         g / s.sin(g + epsilon), z, *RECT, policy=replace(POLICY, max_depth=0)
     )
@@ -145,7 +145,7 @@ def refinement():
     return r
 
 
-def test_joint_newton_keeps_both_divisor_totals_and_complement_strips(refinement):
+def test_joint_newton_divisor_totals_complement_strips(refinement):
     r = refinement
     assert len(r.cells) == 5
     assert (
@@ -189,7 +189,7 @@ def test_joint_newton_keeps_both_divisor_totals_and_complement_strips(refinement
         lambda r: replace(r, schema_version=True),
     ],
 )
-def test_joint_refinement_rejects_missing_or_altered_evidence(refinement, mutate):
+def test_joint_refinement_missing_altered_evidence(refinement, mutate):
     bad = mutate(refinement)
     assert not bad.verify() and not fp.verify_certificate(bad)
 
@@ -356,7 +356,7 @@ def test_cofinal_divisor_premises():
 @pytest.mark.parametrize(
     "entry", ["adaptive_quotient_isolation", "adaptive_complex_isolation"]
 )
-def test_cofinal_wall_budget_returns_checked_resumable_state(entry):
+def test_cofinal_wall_budget_checked_resumable_state(entry):
     run = getattr(fp, entry)(
         1 / g, z, *RECT, stages=8, policy=replace(POLICY, seconds=0.001)
     )
@@ -365,7 +365,7 @@ def test_cofinal_wall_budget_returns_checked_resumable_state(entry):
     assert run.verify() and run.complete and run.distinct_pole_count == 1
 
 
-def test_atomic_cofinal_checkpoints_and_forged_run_fields():
+def test_atomic_cofinal_checkpoints_forged_run_fields():
     saved = []
     with capture_checkpoints(saved.append):
         run = fp.adaptive_quotient_isolation(
@@ -387,7 +387,7 @@ def test_atomic_cofinal_checkpoints_and_forged_run_fields():
     assert not replace(run.termination_contract, theorem="unconditional").verify()
 
 
-def test_certificates_replay_with_all_proposing_code_disabled(
+def test_certificates_replay_proposing_code_disabled(
     monkeypatch, refinement, shared_pole
 ):
     run = fp.adaptive_quotient_isolation(1 / g, z, *SMALL, stages=1, policy=POLICY)
@@ -455,7 +455,7 @@ def test_joint_refinement_replay():
         (lambda u: s.cosh(u) - 1, 2),
     ],
 )
-def test_supported_outer_orders_and_normalization_rewrites(outer, order):
+def test_supported_outer_orders_normalization(outer, order):
     q = solve(g / outer(g), SMALL)
     assert q.complete and q.verify() and q.total_count == 0
     assert q.pole_multiplicity_count == order - 1

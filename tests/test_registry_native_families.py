@@ -28,7 +28,7 @@ def test_erf_and_airy_derivatives_feed_chain_rule():
     )
 
 
-def test_bessel_argument_derivative_keeps_order_as_ordinary_argument():
+def test_bessel_argument_derivative_order():
     nu, x = sp.symbols("nu x")
     cert = registry_derivative(sp.besselj(nu, x**2), x)
     expected = x * (sp.besselj(nu - 1, x**2) - sp.besselj(nu + 1, x**2))
@@ -36,7 +36,7 @@ def test_bessel_argument_derivative_keeps_order_as_ordinary_argument():
     assert sp.simplify(cert.derivative - expected) == 0
 
 
-def test_lambertw_optional_arity_rules_do_not_collide():
+def test_lambertw_rule_arities():
     x = sp.symbols("x")
     for expr in (sp.LambertW(x), sp.LambertW(x, 1)):
         cert = registry_derivative(expr, x)
@@ -44,7 +44,7 @@ def test_lambertw_optional_arity_rules_do_not_collide():
         assert cert.conditions is not sp.S.false
 
 
-def test_identity_rules_are_exact_but_not_automatically_recursive():
+def test_identity_rule_recursion():
     x = sp.symbols("x")
     inst = rewrite_with_registry(sp.erfc(x))
     assert sp.simplify(inst.replacement - (1 - sp.erf(x))) == 0
@@ -58,7 +58,7 @@ def test_native_entire_property_rule_is_localized():
     assert inst.result is Analyticity.ANALYTIC
 
 
-def test_conservative_catalogue_case_adapter_on_real_catalogue_case():
+def test_conservative_catalogue_case_adapter_real():
     fam = registry().require("erf")
     case = fam.cases("LocallyAnalytic")[0]
     rule = adapt_catalogue_rule_case(sp.erf, "LocallyAnalytic", case)

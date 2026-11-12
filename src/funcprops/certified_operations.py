@@ -22,6 +22,7 @@ from .work_budget import budgeted_operation
 class _ReplayedOperation:
     @property
     def certified(self):
+        """Replay acceptance; a valid partial record need not be complete."""
         try:
             return bool(self.verify())
         except (
@@ -35,6 +36,7 @@ class _ReplayedOperation:
 
     @property
     def complete(self):
+        """Completion status for this record's stated scope; replay validity is separate."""
         return self.certified
 
 
@@ -265,6 +267,7 @@ class EquationSolutionCertificate:
 
     @property
     def scope(self):
+        """Scope identifier: ``source-domain-and-equation-solution-set``."""
         return "source-domain-and-equation-solution-set"
 
     def verify(self):
@@ -348,6 +351,7 @@ class LaurentCertificate(_ReplayedOperation):
 
     @property
     def scope(self):
+        """Mathematical scope for interpreting this record and its evidence."""
         return (
             "local-selected-meromorphic-germ-series"
             if self.branch_context is not None
@@ -423,6 +427,7 @@ class ResidueCertificate(_ReplayedOperation):
 
     @property
     def scope(self):
+        """Mathematical scope for interpreting this record and its evidence."""
         return (
             "residue-of-selected-local-branch"
             if self.branch_context is not None
@@ -1138,6 +1143,7 @@ class SingularityClassificationCertificate(_ReplayedOperation):
 
     @property
     def scope(self):
+        """Mathematical scope for interpreting this record and its evidence."""
         return (
             "classification-of-selected-local-branch"
             if self.branch_context is not None

@@ -28,4 +28,4 @@ Quotient search distinguishes cell-budget, depth-budget and unresolved boundary 
 
 Some route identifiers and search-work fields are descriptive metadata, not independently authenticated execution provenance. A checked backend identifier and replayed numerical enclosure are different obligations. General zero-duration and arbitrary Piecewise contour wrappers, exact images for unsupported nested catalogue functions, and unrestricted domain simplification remain capability limits. See the [capability matrix](capabilities.md).
 
-The [robustness regression suite](../tests/test_robustness_contracts.py) checks these boundaries alongside the [family test matrix](reference/testing-matrix.md). Historical observations are reconciled separately in the delivery validation report, including findings already corrected and limitations that remain open.
+The [robustness regression suite](../tests/test_robustness_contracts.py) checks these boundaries alongside the [family test matrix](reference/testing-matrix.md).

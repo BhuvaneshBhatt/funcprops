@@ -45,8 +45,8 @@ def test_semialg_rational_avoidance_helper():
     from funcprops.integration import _point_avoided_semialg
 
     c = fp.ParametricContour(t + sp.I * t**2, (t, -1, 1))
-    q = _point_avoided_semialg(c, 2)
-    assert q in (True, None)  # True with semialg installed; conservative otherwise.
+    assert _point_avoided_semialg(c, 2) is True
+    assert _point_avoided_semialg(c, 0) is False
 
 
 def test_analytic_exact_fallback():
@@ -91,7 +91,7 @@ def test_generic_certificate_replay():
     assert fp.verify_certificate(r)
 
 
-def test_branch_sensitive_complex_contour_is_not_silently_certified():
+def test_branch_sensitive_contour():
     c = fp.ParametricContour(sp.exp(sp.I * t), (t, 0, 2 * sp.pi))
     r = fp.integrate(sp.log(z), (z, c), return_result=True)
     assert not r.complete and not r.certified

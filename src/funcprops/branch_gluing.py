@@ -94,22 +94,27 @@ class HolomorphicBranchChart:
 
     @property
     def expression(self):
+        """Expression to which the stored evidence applies."""
         return self.relation
 
     @property
     def value(self):
+        """Value represented or selected by this record."""
         return self.formula.xreplace({u: c.logarithm for u, c in self.logarithms})
 
     @property
     def complete(self):
+        """Completion status for this record's stated scope; replay validity is separate."""
         return True
 
     @property
     def certified(self):
+        """Replay acceptance; a valid partial record need not be complete."""
         return self.verify()
 
     @property
     def scope(self):
+        """Scope identifier: ``selected-holomorphic-solution-of-entire-implicit-relation``."""
         return "selected-holomorphic-solution-of-entire-implicit-relation"
 
     def verify(self):
@@ -270,36 +275,44 @@ class BranchGluingProof:
 
     @property
     def expression(self):
+        """Expression to which the stored evidence applies."""
         return self.relation
 
     @property
     def coverage_complete(self):
+        """Whether the evidence covers the entire requested region."""
         return bool(self.charts) and not self.unresolved
 
     @property
     def gluing_complete(self):
+        """Whether all required chart-overlap conditions are established."""
         return self.coverage_complete and all(
             p.status == "equal" for p in self.overlaps
         )
 
     @property
     def complete(self):
+        """Completion status for this record's stated scope; replay validity is separate."""
         return self.gluing_complete
 
     @property
     def obstructions(self):
+        """Overlap or transition data preventing global gluing."""
         return tuple(p for p in self.overlaps if p.status == "different")
 
     @property
     def unresolved_overlaps(self):
+        """Chart intersections whose compatibility remains unresolved."""
         return tuple(p for p in self.overlaps if p.status == "unresolved")
 
     @property
     def certified(self):
+        """Replay acceptance; a valid partial record need not be complete."""
         return self.verify()
 
     @property
     def scope(self):
+        """Scope identifier: ``finite-certified-holomorphic-chart-gluing-for-an-entire-relation``."""
         return "finite-certified-holomorphic-chart-gluing-for-an-entire-relation"
 
     def check(self):

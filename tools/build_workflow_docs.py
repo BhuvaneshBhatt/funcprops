@@ -8,7 +8,7 @@ from pathlib import Path
 
 import funcprops as fp
 from examples.workflow_catalog import WORKFLOWS
-from tools.build_tutorial_notebook import code, md
+from tools.build_tutorial_notebook import code, identify_cells, md
 from tools.markdown import normalize_markdown
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -120,7 +120,7 @@ def generated_files():
     files["docs/notebooks/certified-workflows.ipynb"] = (
         json.dumps(
             {
-                "cells": cells,
+                "cells": identify_cells(cells),
                 "metadata": {
                     "kernelspec": {
                         "display_name": "Python 3",
@@ -133,6 +133,7 @@ def generated_files():
                 "nbformat_minor": 5,
             },
             indent=1,
+            sort_keys=True,
         )
         + "\n"
     )

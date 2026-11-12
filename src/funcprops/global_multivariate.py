@@ -76,24 +76,29 @@ class GlobalMapCertificate:
 
     @property
     def expression(self):
+        """Expression to which the stored evidence applies."""
         return sp.Tuple(*self.expressions) if self.expressions is not None else None
 
     @property
     def variable(self):
+        """Coordinate used by the source and its evidence."""
         return sp.Tuple(*self.variables) if self.variables is not None else None
 
     @property
     def certified(self):
+        """Replay acceptance; a valid partial record need not be complete."""
         return self.verify()
 
     @property
     def complete(self):
+        """Completion status for this record's stated scope; replay validity is separate."""
         return self.verify() and all(
             c.value is not TruthValue.UNKNOWN for c in self.cases
         )
 
     @property
     def scope(self):
+        """Scope identifier: ``affine-map-between-full-real-spaces-under-parameter-assumptions``."""
         return "affine-map-between-full-real-spaces-under-parameter-assumptions"
 
     def verify(self):
@@ -157,16 +162,19 @@ class ComposedMapCertificate:
 
     @property
     def certified(self):
+        """Replay acceptance; a valid partial record need not be complete."""
         return self.verify()
 
     @property
     def complete(self):
+        """Completion status for this record's stated scope; replay validity is separate."""
         return self.verify() and all(
             c.value is not TruthValue.UNKNOWN for c in self.cases
         )
 
     @property
     def scope(self):
+        """Scope identifier: ``composition-between-full-real-spaces-under-parameter-assumptions``."""
         return "composition-between-full-real-spaces-under-parameter-assumptions"
 
     def verify(self):

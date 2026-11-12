@@ -24,25 +24,31 @@ class ComplexRectangle:
 
     @property
     def lower_left(self):
+        """Lower-left corner of the complex rectangle."""
         return self.re_min + sp.I * self.im_min
 
     @property
     def upper_right(self):
+        """Upper-right corner of the complex rectangle."""
         return self.re_max + sp.I * self.im_max
 
     @property
     def center(self):
+        """Center used by this geometric or contraction record."""
         return (self.re_min + self.re_max) / 2 + sp.I * (self.im_min + self.im_max) / 2
 
     @property
     def width(self):
+        """Real-coordinate width of the rectangle."""
         return sp.simplify(self.re_max - self.re_min)
 
     @property
     def height(self):
+        """Imaginary-coordinate height of the rectangle."""
         return sp.simplify(self.im_max - self.im_min)
 
     def as_pair(self):
+        """Return the lower-left and upper-right rectangle corners."""
         return self.lower_left, self.upper_right
 
 
@@ -72,10 +78,12 @@ class CertifiedComplexRootRectangle:
 
     @property
     def multiplicity_count(self):
+        """Root count with multiplicity, or None when unresolved."""
         return self.root_count
 
     @property
     def distinct_root_count(self):
+        """Distinct-root count supplied by the record, or None when unresolved."""
         return getattr(
             self.certificate, "known_distinct", 1 if self.root_count == 1 else None
         )
@@ -99,30 +107,37 @@ class ComplexRootIsolationResult:
 
     @property
     def state(self):
+        """Resumable search state, when one is retained."""
         return self.isolation_state
 
     @property
     def isolation_certificate(self):
+        """Evidence supporting the root-isolation result."""
         return getattr(self.isolation_state, "proof", None)
 
     @property
     def proof(self):
+        """Coverage evidence retained by the result."""
         return self.isolation_certificate or self.algebraic_certificate
 
     @property
     def expression(self):
+        """Expression to which the stored evidence applies."""
         return getattr(self.proof, "expression", None)
 
     @property
     def variable(self):
+        """Coordinate used by the source and its evidence."""
         return getattr(self.proof, "variable", None)
 
     @property
     def scope(self):
+        """Mathematical scope for interpreting this record and its evidence."""
         return getattr(self.proof, "scope", "factory-complex-root-isolation")
 
     @property
     def schema_version(self):
+        """Serialization schema identifier used by the replay checker."""
         return getattr(self.proof, "schema_version", None)
 
     def check(self):
@@ -213,10 +228,12 @@ class ComplexRootIsolationResult:
 
     @property
     def root_count(self):
+        """Distinct-root count supplied by the record, or None when unresolved."""
         return self.distinct_root_count
 
     @property
     def coverage_complete(self):
+        """Whether the evidence covers the entire requested region."""
         return (
             self.isolation_certificate.coverage_complete
             if self.isolation_state is not None
@@ -225,6 +242,7 @@ class ComplexRootIsolationResult:
 
     @property
     def accuracy_complete(self):
+        """Whether the requested enclosure accuracy has been reached."""
         return (
             self.isolation_certificate.accuracy_complete
             if self.isolation_state is not None
@@ -233,38 +251,47 @@ class ComplexRootIsolationResult:
 
     @property
     def clusters(self):
+        """Covered root clusters that have not been separated individually."""
         return getattr(self.isolation_certificate, "clusters", ())
 
     @property
     def unresolved(self):
+        """Requested regions whose proof obligations remain open."""
         return getattr(self.isolation_certificate, "unresolved", ())
 
     @property
     def refinements(self):
+        """Refinement records retained by the search or proof."""
         return getattr(self.isolation_certificate, "refinements", ())
 
     @property
     def individual_multiplicities(self):
+        """Per-root multiplicities when individually established."""
         return getattr(self.proof, "individual_multiplicities", None)
 
     @property
     def pole_multiplicity_count(self):
+        """Pole count with multiplicity, or None when unresolved."""
         return getattr(self.proof, "pole_multiplicity_count", None)
 
     @property
     def distinct_pole_count(self):
+        """Distinct-pole count established by the quotient evidence."""
         return getattr(self.proof, "distinct_pole_count", None)
 
     @property
     def pole_regions(self):
+        """Regions carrying the retained pole-count evidence."""
         return getattr(self.proof, "pole_regions", ())
 
     @property
     def winding_count(self):
+        """Winding count established on the zero-free boundary."""
         return getattr(self.proof, "winding_count", None)
 
     @property
     def certified(self):
+        """Replay acceptance; a valid partial record need not be complete."""
         return self.verify() if self.proof is not None else self.complete
 
 

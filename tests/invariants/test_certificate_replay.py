@@ -9,7 +9,7 @@ from funcprops.results import PropertyResult
 x = sp.symbols("x", real=True)
 
 
-def test_strong_convexity_modulus_replays_as_second_derivative_bound():
+def test_strong_convexity_modulus_derivative_bound():
     expr = 3 * x**2 + 2 * x + 1
     result = fp.convexity(expr, x, return_result=True, all_properties=True)
     assert isinstance(result, PropertyResult)

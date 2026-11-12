@@ -15,7 +15,7 @@ z = sp.Symbol("z")
     st.dictionaries(st.integers(-3, 3), st.integers(1, 3), min_size=1, max_size=4),
     st.integers(-3, 3),
 )
-def test_held_source_holes_remove_prescribed_roots_not_just_orders(orders, hole):
+def test_held_hole_local_orders(orders, hole):
     polynomial = sp.prod((x - r) ** m for r, m in orders.items())
     g = x - hole
     held = sp.Mul(polynomial, g, sp.Pow(g, -1, evaluate=False), evaluate=False)
@@ -28,7 +28,7 @@ def test_held_source_holes_remove_prescribed_roots_not_just_orders(orders, hole)
 
 @settings(max_examples=12)
 @given(st.dictionaries(st.integers(-2, 2), st.integers(1, 2), min_size=1, max_size=3))
-def test_exact_real_and_algebraic_routes_agree_with_prescribed_orders(orders):
+def test_exact_real_algebraic_routes_prescribed_orders(orders):
     real = fp.prove_root_coverage(
         sp.prod((x - r) ** m for r, m in orders.items()), x, sp.Interval(-3, 3)
     )
@@ -44,9 +44,7 @@ def test_exact_real_and_algebraic_routes_agree_with_prescribed_orders(orders):
 
 @settings(max_examples=16)
 @given(st.integers(-3, 1), st.integers(1, 3), st.booleans(), st.booleans())
-def test_strict_exponential_images_preserve_endpoint_ownership(
-    a, width, left_open, right_open
-):
+def test_strict_exponential_images_endpoint_ownership(a, width, left_open, right_open):
     b = a + width
     constraints = (x > a if left_open else x >= a) & (x < b if right_open else x <= b)
     image = fp.range(sp.exp(x), x, y, constraints=constraints)

@@ -34,10 +34,12 @@ class FunctionSlot(sp.Dummy):
 
     @property
     def position(self) -> int:
+        """Zero-based argument position represented by this slot."""
         return self._function_slot_position
 
     @property
     def display_name(self) -> str | None:
+        """Human-readable name for the formal slot."""
         return self._function_slot_name
 
 
@@ -81,6 +83,7 @@ class InstantiatedPropertyRule:
 
     @property
     def substitution_map(self) -> dict[FunctionSlot, Any]:
+        """Mapping from formal slots to their instantiated expressions."""
         return dict(self.substitutions)
 
 
@@ -134,6 +137,7 @@ class PropertyRule:
 
     @property
     def slots(self) -> tuple[FunctionSlot, ...]:
+        """Formal argument slots used to instantiate the rule."""
         used = set(self.subject)
         for value in (self.conditions, self.result):
             if isinstance(value, sp.Basic):
@@ -150,6 +154,7 @@ class PropertyRule:
         return all(slot.position < nargs for slot in self.slots)
 
     def substitutions(self, expr) -> dict[FunctionSlot, Any]:
+        """Bind the rule's formal argument slots to a matching expression."""
         expr = sp.sympify(expr)
         if not self.matches(expr):
             raise ValueError(f"Rule for {self.head} does not match {expr}")
@@ -237,10 +242,12 @@ class RuleCase:
 
     @property
     def condition(self):
+        """Boolean guard under which this formula or conclusion applies."""
         return parse_catalogue_expression(self.condition_source or "True")
 
     @property
     def value(self):
+        """Value represented or selected by this record."""
         return parse_catalogue_expression(self.value_source)
 
     def substitutions(self, expr):
@@ -313,14 +320,17 @@ class Family:
 
     @property
     def id(self):
+        """Stable identifier for this function declaration."""
         return self.raw["family_id"]
 
     @property
     def sympy_names(self):
+        """SymPy function names matched by this declaration."""
         return tuple(self.raw.get("sympy_names", ()))
 
     @property
     def mpmath_names(self):
+        """mpmath function names matched by this declaration."""
         return tuple(self.raw.get("mpmath_names", ()))
 
     def cases(self, prop: str) -> tuple[RuleCase, ...]:

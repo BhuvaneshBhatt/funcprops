@@ -43,7 +43,7 @@ def quotient():
     return fp.certify_quotient_isolation((s.exp(z) - 2) / (s.exp(z) - 1), z, *RECT)
 
 
-def test_public_pole_records_carry_replayable_source_domain_evidence(quotient):
+def test_public_pole_records_source_domain_evidence(quotient):
     assert quotient.complete and quotient.verify()
     p = quotient.proof.pole_regions[0]
     assert p.guard_contours == quotient.proof.outer[2:]
@@ -77,7 +77,7 @@ def test_public_pole_records_carry_replayable_source_domain_evidence(quotient):
         ),
     ],
 )
-def test_local_pole_domain_premise_is_bound_and_checked(quotient, mutate):
+def test_local_pole_domain_premise_bound_checked(quotient, mutate):
     record = mutate(quotient.proof.pole_regions[0])
     assert not record.verify()
     assert not fp.verify_certificate(record)
@@ -91,7 +91,7 @@ def test_nonvanishing_on_the_pole_is_not_required():
     assert p.cell.denominator.zero_count == 2
 
 
-def test_domain_guard_may_have_separate_removable_holes():
+def test_domain_guard_may_removable_holes():
     f = s.Mul(z, s.Pow(z, -1, evaluate=False), 1 / (s.exp(z) - 2), evaluate=False)
     q = fp.certify_quotient_isolation(f, z, *RECT)
     assert q.complete and q.verify() and q.distinct_pole_count == 1
@@ -122,7 +122,7 @@ def polynomial():
     return q
 
 
-def test_polynomial_assembly_rejects_self_attesting_regions(polynomial):
+def test_polynomial_assembly_self_attesting_regions(polynomial):
     class LyingRegion(ComplexRootRegionProof):
         def verify(self):
             return True
@@ -135,7 +135,7 @@ def test_polynomial_assembly_rejects_self_attesting_regions(polynomial):
     assert not fp.verify_certificate(forged)
 
 
-def test_direct_base_region_check_does_not_accept_a_subclass(polynomial):
+def test_base_region_subclass(polynomial):
     class OtherRegion(ComplexRootRegionProof):
         pass
 
@@ -157,7 +157,7 @@ def test_polynomial_assembly_subclasses(polynomial):
 @pytest.mark.parametrize(
     "name", ["rectangle", "unresolved_rectangle", "region_rectangle"]
 )
-def test_polynomial_cover_does_not_trust_rectangle_subclasses(polynomial, name):
+def test_polynomial_rectangle_subclasses(polynomial, name):
     class LyingRectangle(fp.CoverageRectangle):
         def valid(self):
             return True
@@ -183,7 +183,7 @@ def test_polynomial_cover_does_not_trust_rectangle_subclasses(polynomial, name):
 
 
 @pytest.mark.parametrize("field", ["regions", "unresolved"])
-def test_polynomial_assembly_requires_immutable_region_lists(polynomial, field):
+def test_polynomial_assembly_immutable_region_lists(polynomial, field):
     assert not replace(polynomial, **{field: list(getattr(polynomial, field))}).verify()
 
 
@@ -213,7 +213,7 @@ def test_unregistered_record_dispatch(base):
     assert status.outcome == "rejected-evidence"
 
 
-def test_registered_derived_record_selects_its_own_checker(monkeypatch):
+def test_registered_derived_record_own_checker(monkeypatch):
     import funcprops.verification as verification
 
     class Base:
@@ -239,7 +239,7 @@ def test_registered_derived_record_selects_its_own_checker(monkeypatch):
     assert verification.verify_certificate(Unregistered()) is False
 
 
-def test_factory_real_coverage_rejects_self_attesting_count_leaf():
+def test_factory_real_coverage_self_count_leaf():
     from funcprops.root_coverage import RootRegionProof
 
     x = s.Symbol("x", real=True)
@@ -258,7 +258,7 @@ def test_factory_real_coverage_rejects_self_attesting_count_leaf():
 
 
 @pytest.mark.parametrize("native", [False, True])
-def test_root_coverage_cannot_shrink_its_domain_through_a_callback(native):
+def test_root_coverage_callback_binding(native):
     from funcprops.domain_tracking import DomainRecord
     from funcprops.root_coverage import RootCoverageCertificate
 
@@ -400,7 +400,7 @@ def test_parameter_parent_replay():
     assert not bad.verify() and not fp.verify_certificate(bad)
 
 
-def test_adaptive_result_does_not_trust_a_state_check_override():
+def test_adaptive_state_replay_dispatch():
     from funcprops.adaptive_roots import AdaptiveRootResult, CoverageState
     from funcprops.coverage_contract import CheckOutcome, CheckResult
 
@@ -418,7 +418,7 @@ def test_adaptive_result_does_not_trust_a_state_check_override():
         fp.resume_root_coverage(bad.state)
 
 
-def test_real_tail_leaf_does_not_trust_a_tail_verifier_override():
+def test_tail_replay_dispatch():
     from funcprops.asymptotic_tails import TailSignCertificate
     from funcprops.root_coverage import RootRegionProof
 
@@ -437,7 +437,7 @@ def test_real_tail_leaf_does_not_trust_a_tail_verifier_override():
     assert not leaf.verify() and not fp.verify_certificate(leaf)
 
 
-def test_periodic_leaf_does_not_trust_a_family_verifier_override():
+def test_periodic_replay_dispatch():
     from funcprops.root_coverage import RootRegionProof
     from funcprops.transcendental.periodic import PeriodicSet
     from funcprops.transcendental.roots import RootIsolationResult

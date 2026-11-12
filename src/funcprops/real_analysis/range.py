@@ -212,6 +212,18 @@ def _composition_range(expr, var, y, domain_condition, *, source_constraints=Non
         sp.cosh,
         sp.tanh,
         sp.atan,
+        sp.asin,
+        sp.acos,
+        sp.asinh,
+        sp.acosh,
+        sp.atanh,
+        sp.erf,
+        sp.erfc,
+        sp.erfi,
+        sp.Abs,
+        sp.sech,
+        sp.tan,
+        sp.cot,
         sp.floor,
         sp.ceiling,
         sp.Pow,
@@ -401,7 +413,12 @@ def _early_range_stage(expr, var, y, domain_condition, constraints):
 
 def _semialgebraic_range_stage(expr, var, y, domain_condition, method, kwargs):
     """Run structural then exact semialgebraic range analysis."""
-    if not _semialg.eligible_problem(expr, var, domain=domain_condition):
+    if not _semialg.eligible_problem(
+        expr,
+        var,
+        domain=domain_condition,
+        coefficient_policy=kwargs.get("coefficient_policy"),
+    ):
         return None
     structural = _affine_transform(expr, var, y, domain_condition)
     if structural is not None:
@@ -553,6 +570,30 @@ def _function_range_impl(
     y = sp.sympify(y)
     if _source_constraints is None:
         _source_constraints = constraints
+    parameters = tuple(sorted(expr.free_symbols - {var}, key=sp.default_sort_key))
+    if (
+        parameters
+        and all(p.is_real is True for p in parameters)
+        and y not in parameters
+        and isinstance(y, sp.Symbol)
+        and y != var
+        and method == "auto"
+        and not kwargs
+        and sp.count_ops(expr) <= 60
+    ):
+        requested = condition_to_set(_source_constraints, var)
+        from ..domain_tracking import coordinate_domain_compatible
+
+        if (
+            isinstance(requested, sp.Set)
+            and not requested.free_symbols
+            and coordinate_domain_compatible(y, S.Reals)
+        ):
+            from ..real_images.parameters import analyze_parameter_range
+
+            family = analyze_parameter_range(expr, var, parameters, requested, value=y)
+            if family.complete:
+                return family.condition
     natural = domain(expr, var)
     if natural is S.false:
         return S.false
@@ -624,6 +665,48 @@ def _function_range_impl(
         if getattr(result, "func", None) == sp.Function("UnknownRange"):
             return sp.Function("UnknownRange")(expr, var, y)
         return result
+    from .domain import _has_complex_intermediates
+
+    if _has_complex_intermediates(expr, var):
+        from .domain import _real_formula_on_domain
+
+        support = condition_to_set(domain_condition, var)
+        formula = _real_formula_on_domain(expr, var, support)
+        if formula is not None and formula != expr:
+            return _function_range_impl(
+                formula,
+                var,
+                y,
+                constraints=domain_condition,
+                method=method,
+                partition=None,
+                _domain_ready=True,
+                _source_constraints=domain_condition,
+                **kwargs,
+            )
+        if formula is None:
+            if isinstance(support, sp.Union):
+                images = [
+                    _function_range_impl(
+                        expr,
+                        var,
+                        y,
+                        constraints=set_to_condition(part, var),
+                        method=method,
+                        partition=None,
+                        _domain_ready=True,
+                        _source_constraints=set_to_condition(part, var),
+                        **kwargs,
+                    )
+                    for part in support.args
+                ]
+                if all(
+                    not isinstance(v, PropertyResult)
+                    and getattr(v, "func", None) != sp.Function("UnknownRange")
+                    for v in images
+                ):
+                    return sp.Or(*images)
+            return sp.Function("UnknownRange")(expr, var, y)
     if not _domain_ready:
         split = evaluate_parameter_strata(
             domain_condition,
@@ -818,6 +901,36 @@ def _function_range_impl(
     return sp.Function("UnknownRange")(expr, var, y)
 
 
+def _analytic_image_fallback(expr, var, y, requested):
+    """Bound the automatic image search after established fast routes decline."""
+    ds = condition_to_set(requested, var)
+    parts = ds.args if isinstance(ds, sp.Union) else (ds,)
+    if (
+        isinstance(ds, sp.Set)
+        and len(parts) <= 8
+        and not expr.free_symbols - {var}
+        and not expr.has(sp.Float)
+        and sp.count_ops(expr) <= 60
+        and all(
+            isinstance(p, (sp.FiniteSet, sp.Interval)) or p is S.Reals for p in parts
+        )
+    ):
+        from ..enclosure_policy import EnclosurePolicy
+        from ..real_images.analysis import analyze_range
+
+        analysis = analyze_range(
+            expr,
+            var,
+            ds,
+            policy=EnclosurePolicy(
+                precision=20, max_cells=128, max_depth=8, max_refinements=1
+            ),
+        )
+        if analysis.complete:
+            return analysis.as_condition(y)
+    return None
+
+
 def range(
     expr,
     var,
@@ -836,7 +949,7 @@ def range(
         constraints = combine_domain_condition(
             normalize_domain_condition(constraints, var), domain, var
         )
-    return _function_range_impl(
+    result = _function_range_impl(
         expr,
         var,
         y,
@@ -846,3 +959,14 @@ def range(
         _domain_ready=False,
         **kwargs,
     )
+    if (
+        method == "auto"
+        and not kwargs
+        and getattr(result, "func", None) == sp.Function("UnknownRange")
+    ):
+        fallback = _analytic_image_fallback(
+            sp.sympify(expr), sp.sympify(var), sp.sympify(y), constraints
+        )
+        if fallback is not None:
+            return fallback
+    return result

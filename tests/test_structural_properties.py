@@ -19,13 +19,13 @@ def test_commensurate_periods_and_composition_replay():
     assert verify_periodicity_result(e, x, r)
 
 
-def test_incommensurate_visible_frequencies_are_aperiodic():
+def test_incommensurate_visible_frequencies_aperiodic():
     assert (
         fp.periodicity(sp.sin(x) + sp.sin(sp.sqrt(2) * x), x) is Periodicity.APERIODIC
     )
 
 
-def test_parameterized_affine_frequency_retains_condition():
+def test_parameterized_affine_frequency_condition():
     e = sp.sin(a * x)
     r = fp.periodicity(e, x, return_result=True)
     assert r.classification is Periodicity.PERIODIC
@@ -45,7 +45,7 @@ def test_frequency_realness_guard():
     assert fp.verify_certificate(r, expr=e, var=x)
 
 
-def test_discovered_polynomial_and_composed_reflection_centers():
+def test_discovered_polynomial_composed_centers():
     for e in ((x - 2) ** 2, sp.exp((x - 2) ** 2)):
         r = fp.symmetry(e, x, center=None, return_result=True)
         assert r.classification is Symmetry.EVEN and r.center == 2
@@ -69,7 +69,7 @@ def test_affine_trigonometric_center_families():
     assert {q[0] for q in r.center_families} == {Symmetry.EVEN, Symmetry.ODD}
 
 
-def test_weighted_multivariate_homogeneity_and_replay():
+def test_weighted_multivariate_homogeneity_replay():
     e = x**2 + y**4
     r = fp.homogeneity(e, (x, y), weights=(2, 1), return_result=True)
     assert r.classification is Homogeneity.HOMOGENEOUS and r.degree == 4
@@ -78,7 +78,7 @@ def test_weighted_multivariate_homogeneity_and_replay():
     assert fp.verify_certificate(r, expr=e)
 
 
-def test_parameterized_homogeneity_retains_all_strata():
+def test_parameterized_homogeneity_strata():
     e = a * x + b * x**2
     r = fp.homogeneity(e, x, return_result=True)
     assert r.classification is Homogeneity.UNKNOWN
@@ -101,7 +101,7 @@ def test_parameterized_homogeneity_retains_all_strata():
     assert fp.homogeneity(e, x) is Homogeneity.UNKNOWN
 
 
-def test_zero_function_is_homogeneous_of_any_requested_degree():
+def test_zero_function_homogeneous_requested_degree():
     assert (
         fp.homogeneity(0, (x, y), degree=sp.Rational(7, 3)) is Homogeneity.HOMOGENEOUS
     )
@@ -168,7 +168,7 @@ def test_strong_convexity_implies_weaker_classes():
     assert r.all_properties == (Convexity.STRICTLY_CONVEX, Convexity.CONVEX)
 
 
-def test_symmetry_replay_does_not_turn_unknown_identity_into_neither(monkeypatch):
+def test_symmetry_identity_replay(monkeypatch):
     import funcprops.verification as verification
     from funcprops.real_analysis.structural_properties import SymmetryResult
 

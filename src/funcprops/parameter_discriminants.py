@@ -37,7 +37,7 @@ class TranscendentalDiscriminant:
 
 @dataclass(frozen=True)
 class ParameterTransitionLocus:
-    """Record a polynomial family's exceptional parameter locus."""
+    """Record a polynomial familys exceptional parameter locus."""
 
     expression: sp.Expr
     variable: sp.Symbol

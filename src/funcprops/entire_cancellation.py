@@ -74,19 +74,22 @@ class EntireCancellationProof:
 
     @property
     def complete(self):
+        """Completion status for this record's stated scope; replay validity is separate."""
         return self.verify()
 
     @property
     def certified(self):
+        """Replay acceptance; a valid partial record need not be complete."""
         return self.verify()
 
     @property
     def scope(self):
+        """Scope identifier: ``entire-by-even-square-root-series``."""
         return "entire-by-even-square-root-series"
 
 
 def entire_cancellation_proof(expression, variable):
-    """Return a bounded exact branch-cancellation proof when its premises hold."""
+    """Return a bounded exact branch-cancelation proof when its premises hold."""
     data = _entire_data(expression, variable)
     return (
         EntireCancellationProof(expression, variable, *data)

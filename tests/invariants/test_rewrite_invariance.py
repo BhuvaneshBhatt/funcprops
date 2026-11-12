@@ -10,7 +10,7 @@ x = sp.symbols("x", real=True)
 
 
 @given(c=st.integers(-5, 5), k=st.integers(1, 6))
-def test_positive_quadratic_rewrites_preserve_sign_and_convexity(c, k):
+def test_positive_quadratic_sign_convexity(c, k):
     expr = (x + c) ** 2 + k
     forms = (expr, sp.expand(expr), sp.factor(sp.expand(expr)))
     assert {fp.sign(form, x) for form in forms} == {fp.Sign.POSITIVE}
@@ -18,7 +18,7 @@ def test_positive_quadratic_rewrites_preserve_sign_and_convexity(c, k):
 
 
 @given(a=st.integers(-4, 4).filter(bool), b=st.integers(-5, 5))
-def test_nonzero_affine_rewrites_preserve_mapping_properties(a, b):
+def test_nonzero_affine_mapping_properties(a, b):
     expr = a * x + b
     forms = (expr, sp.expand(expr), sp.factor(expr))
     assert {fp.injective(form, x) for form in forms} == {fp.TruthValue.TRUE}

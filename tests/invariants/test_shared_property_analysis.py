@@ -17,7 +17,7 @@ def _case_map(result):
     return {case.value: sp.simplify(case.condition) for case in result.cases}
 
 
-def test_parameter_domain_strata_are_shared_across_real_properties():
+def test_parameter_domain_strata_real_properties():
     x, a = sp.symbols("x a", real=True)
     domain = sp.Or(sp.And(a > 0, x > 0), sp.And(a <= 0, x < 0))
 
@@ -48,13 +48,13 @@ def test_zero_sets_preserve_parameter_domain_strata():
     assert result.subs(a, 0) is sp.EmptySet
 
 
-def test_monotonic_decomposition_requires_its_validity_domain():
+def test_monotonic_decomposition_validity_domain():
     x = sp.symbols("x", real=True)
     assert fp.monotonicity(x**2, x, domain=x < 0) is Monotonicity.STRICTLY_DECREASING
     assert fp.monotonicity(x**2, x, domain=x > 0) is Monotonicity.STRICTLY_INCREASING
 
 
-def test_piecewise_monotonicity_checks_interface_direction():
+def test_piecewise_monotonicity_checks_direction():
     x = sp.symbols("x", real=True)
     upward = sp.Piecewise((x, x < 0), (x + 1, True))
     downward = sp.Piecewise((x, x < 0), (x - 1, True))
@@ -63,7 +63,7 @@ def test_piecewise_monotonicity_checks_interface_direction():
     assert fp.monotonicity(downward, x) is Monotonicity.NOT_MONOTONE
 
 
-def test_piecewise_convexity_checks_values_and_slopes_at_interfaces():
+def test_piecewise_convexity_checks_at_interfaces():
     x = sp.symbols("x", real=True)
     absolute_value = sp.Piecewise((-x, x < 0), (x, True))
     discontinuous = sp.Piecewise((x**2, x < 0), (x**2 + 1, True))
@@ -72,12 +72,12 @@ def test_piecewise_convexity_checks_values_and_slopes_at_interfaces():
     assert fp.convexity(discontinuous, x) is Convexity.NEITHER
 
 
-def test_structural_boundedness_uses_composition_closure():
+def test_structural_boundedness_composition_closure():
     x = sp.symbols("x", real=True)
     assert fp.boundedness(sp.sin(x) + sp.cos(x), x) is Boundedness.BOUNDED
 
 
-def test_affine_output_injectivity_preserves_scale_strata():
+def test_affine_output_injectivity_scale_strata():
     x, a = sp.symbols("x a", real=True)
     cases = _case_map(fp.injective(a * x, x, return_result=True))
     assert cases == {TruthValue.TRUE: sp.Ne(a, 0), TruthValue.FALSE: sp.Eq(a, 0)}

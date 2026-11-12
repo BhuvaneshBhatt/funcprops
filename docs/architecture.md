@@ -30,13 +30,14 @@ flowchart TD
 | Branch recipes | branch_gluing.py checks given holomorphic solutions and every overlap for a shared entire implicit relation |
 | Exact algebraic support | algebraic_coefficients.py encodes bounded real fields by a uniquely isolated generator; semialg handles supported real constraints; algebraic_complex.py adapts algroots enumeration/certificates and filters against original principal-source restrictions |
 | Native real kernel | coverage_contract.py and coverage_checker.py bind and check witnesses; enclosures.py supplies outward bounds |
+| Real images | real_images groups critical values, finite cells, parameter images, tails, periodic transfers and oscillatory rules behind the root-level analysis APIs |
 | Real search and extensions | coverage_search.py, adaptive_roots.py, infinite/parameter/property modules propose compact partitions, tails, families, guarded boxes and consumer proofs |
 | Complex contour kernel | complex_interval.py and analytic_contours.py check outward image boxes, zero-free boundaries and exact winding counts |
 | Complex isolation | complex_isolation.py assembles exact rectangle covers; complex_cofinal.py schedules bounded attempts and conditional guarantees |
 | Multiplicity and acceleration | complex_multiplicity.py and complex_newton.py supply checked location/order and Krawczyk witnesses, including all complement regions |
 | Quotient ledger | quotient_isolation.py tracks numerator, denominator and original guards; shared_zeros.py proves shared orders; quotient_refinement.py and quotient_cofinal.py preserve that ledger |
 | Factory-based operations | certified_operations.py, integration.py and real/transcendental helper families retain their declared replay contracts |
-| Replay and inspection | verification.py selects registered concrete types; diagnostics.py reports replay status; proof_inventory.py exposes scoped release metadata |
+| Replay and inspection | verification.py selects registered concrete types; diagnostics.py reports replay status; proof_inventory.py exposes scoped replay metadata |
 | Resource control | work_budget.py implements supported isolated wall budgets; _source_transport.py retains held operands and coefficient domains across inputs, results and checkpoints |
 
 ## Search versus checking
@@ -51,7 +52,7 @@ Transformations carry restrictions exactly or decline the route. Real/complex in
 
 ## Trust and package boundaries
 
-SymPy arithmetic, differentiation and declared identity oracles, outward interval primitives, semialg and algroots are trusted where used. This is not a formal proof-assistant development. Funcprops owns source/branch/domain policy and consumer assembly; algroots owns supported exact algebraic enumeration; semialg owns supported semialgebraic reasoning. Native nonalgebraic search/checkpoint contracts are currently inside funcprops; extraction into another package remains a design option, not a dependency already introduced here.
+SymPy arithmetic, differentiation and declared identity oracles, outward interval primitives, semialg and algroots are trusted where used. This is not a formal proof-assistant development. Funcprops owns source/branch/domain policy and consumer assembly; algroots owns supported exact algebraic enumeration; semialg owns supported semialgebraic reasoning. Funcprops also owns nonalgebraic search and checkpoint contracts. symbopt consumes analysis facts for optimization, and caller-side asymptotic adapters can supply checked tail facts without a reverse dependency.
 
 ## Documentation and validation
 

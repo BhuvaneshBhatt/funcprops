@@ -275,18 +275,22 @@ class ParameterGeometryProof:
 
     @property
     def complete(self):
+        """Completion status for this record's stated scope; replay validity is separate."""
         return not self.unresolved
 
     @property
     def certified(self):
+        """Replay acceptance; a valid partial record need not be complete."""
         return self.verify()
 
     @property
     def scope(self):
+        """Scope identifier: ``bounded-polynomial-multi-parameter-distinct-real-root-geometry``."""
         return "bounded-polynomial-multi-parameter-distinct-real-root-geometry"
 
     @property
     def strata(self):
+        """Parameter regions carrying distinct guarded conclusions."""
         from .results import ConditionalExpression
 
         return tuple(
@@ -297,6 +301,7 @@ class ParameterGeometryProof:
 
     @property
     def unresolved_condition(self):
+        """Parameter condition under which analysis remains unresolved."""
         return sp.Or(*(_region_data(self, r)[0] for r in self.unresolved))
 
     def specialize(self, substitutions):

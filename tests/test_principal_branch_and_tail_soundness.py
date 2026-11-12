@@ -24,7 +24,7 @@ x = s.Symbol("x", real=True)
         lambda z: s.Pow(z, s.pi, evaluate=False),
     ],
 )
-def test_principal_cut_has_no_full_disk_meromorphic_certificate(form):
+def test_principal_cut_meromorphy(form):
     e = form(z)
     assert fp.laurent_series(e, z, -1, return_certificate=True) is None
     assert fp.residue(e, z, -1, return_certificate=True) is None
@@ -43,7 +43,7 @@ def test_principal_germ_away_from_cut_preserved(point, form):
     assert c.residue == 0 and c.verify()
 
 
-def test_shifted_branch_cut_and_whole_germ_cancellation():
+def test_shifted_branch_cut_whole_germ_cancellation():
     assert fp.laurent_series(s.log(z - 2), z, 1, return_certificate=True) is None
     e = s.exp(s.log(z, evaluate=False), evaluate=False)
     c = fp.laurent_series(e, z, -1, return_certificate=True)
@@ -58,7 +58,7 @@ def test_rectangle_original_boundary_hole_not_erased(bounds):
     assert meromorphic_rectangle_count(held, z, *bounds) is None
 
 
-def test_rectangle_interior_removable_hole_and_replay_binding():
+def test_rectangle_interior_removable_hole_replay():
     held = s.Mul(z, s.Pow(z, -1, evaluate=False), evaluate=False)
     c = meromorphic_rectangle_count(held, z, -1 - s.I, 1 + s.I)
     assert c.expression == held and c.verify()
@@ -68,12 +68,12 @@ def test_rectangle_interior_removable_hole_and_replay_binding():
 
 
 @pytest.mark.parametrize("bounds", [(1 + s.I, -1 - s.I), (0, 0), (0, 1), (0, s.I)])
-def test_rectangle_geometry_must_have_positive_area_and_order(bounds):
+def test_rectangle_geometry_must_positive_area_order(bounds):
     assert meromorphic_rectangle_count(s.S.One, z, *bounds) is None
 
 
 @pytest.mark.parametrize("e", [s.exp(x + s.I), s.exp(x + s.I * s.pi, evaluate=False)])
-def test_complex_or_negative_exponential_not_positive_real_tail(e):
+def test_complex_exponential_positivity(e):
     assert certify_tail_sign(e, x, threshold=0) is None
     c = TailSignCertificate(e, x, 1, s.S.Zero, 1, "exp-polynomial-dominance")
     assert not c.verify()
@@ -101,7 +101,7 @@ def test_valid_real_tail_theorems_preserved(e, direction, sign):
     assert c.sign == sign and c.verify()
 
 
-def test_argument_principle_keeps_source_boundary_exclusions():
+def test_argument_principle_source_boundary_exclusions():
     t = s.Symbol("t", real=True)
     contour = fp.ParametricContour(s.exp(s.I * t), (t, 0, 2 * s.pi))
     hole = s.Mul(z - 1, s.Pow(z - 1, -1, evaluate=False), evaluate=False)

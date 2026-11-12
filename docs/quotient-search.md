@@ -7,9 +7,10 @@ Python blocks on this page form one ordered session, executed from a fresh names
 ```python
 import sympy as s
 import funcprops as fp
-z = s.Symbol('z')
-g = s.exp(z)-2
-rect = (-1-s.I, 1+s.I)
+
+z = s.Symbol("z")
+g = s.exp(z) - 2
+rect = (-1 - s.I, 1 + s.I)
 policy = fp.EnclosurePolicy(max_cells=8192, max_depth=24, max_taylor_order=5)
 held = s.Mul(g**2, g, s.Pow(g, -1, evaluate=False), evaluate=False)
 q = fp.certify_quotient_isolation(held, z, *rect, policy=policy)
@@ -28,8 +29,8 @@ A cell's `guard_zero` is an implication for one unchanged original source guard 
 ## Exact outer jets and exhaustive composition orders
 
 ```python
-for denominator, poles in ((s.sin(g), 0), (s.sin(g)**2, 1)):
-    q = fp.certify_quotient_isolation(g/denominator, z, *rect, policy=policy)
+for denominator, poles in ((s.sin(g), 0), (s.sin(g) ** 2, 1)):
+    q = fp.certify_quotient_isolation(g / denominator, z, *rect, policy=policy)
     assert q.complete and q.verify() and q.total_count == 0
     assert q.pole_multiplicity_count == poles
     assert q.proof.extension_zero_count == 0
@@ -39,9 +40,10 @@ for denominator, poles in ((s.sin(g), 0), (s.sin(g)**2, 1)):
 Composition mode checks F=H(G), with an exact entire outer expression H in its own unconstrained coordinate, and exact zero derivatives H^(k)(0)=0 for 0<=k<m. A simple G zero then contributes order at least m. The independent F count m again proves exactness and exhaustiveness. No small numerical value or overlap of isolating boxes proves equality of roots. If sin(G) has additional zeros in the rectangle, its larger total cannot certify order one at G's zero.
 
 ```python
-base = s.exp(z)+1
-q = fp.certify_quotient_isolation(base/s.sin(base)**2, z,
-    -1+2*s.I, 1+4*s.I, policy=policy)
+base = s.exp(z) + 1
+q = fp.certify_quotient_isolation(
+    base / s.sin(base) ** 2, z, -1 + 2 * s.I, 1 + 4 * s.I, policy=policy
+)
 assert q.complete and q.verify() and q.total_count == 0
 assert q.pole_multiplicity_count == q.distinct_pole_count == 1
 ```
@@ -53,8 +55,14 @@ Automatic identity proposals use at most 512 source operations and eight affine 
 ## Bounded cofinal stages and a conditional completion argument
 
 ```python
-run = fp.adaptive_quotient_isolation(g/(s.exp(z)-1), z, *rect, stages=0,
-    policy=fp.EnclosurePolicy(max_cells=128, max_depth=0), use_newton=False)
+run = fp.adaptive_quotient_isolation(
+    g / (s.exp(z) - 1),
+    z,
+    *rect,
+    stages=0,
+    policy=fp.EnclosurePolicy(max_cells=128, max_depth=0),
+    use_newton=False,
+)
 assert run.verify() and not run.complete
 run = fp.resume_adaptive_quotient_isolation(run, stages=8)
 assert run.verify() and run.complete
@@ -90,8 +98,8 @@ Initial and resumed calls accept wall budgets, serialize only atomic checked cov
 ## Certified joint Newton refinement
 
 ```python
-small = (s.Rational(1,2)-s.I/4, 1+s.I/4)
-q = fp.certify_quotient_isolation(g/s.sin(g)**2, z, *small, policy=policy)
+small = (s.Rational(1, 2) - s.I / 4, 1 + s.I / 4)
+q = fp.certify_quotient_isolation(g / s.sin(g) ** 2, z, *small, policy=policy)
 r = fp.certify_quotient_refinement(q)
 assert r.verify() and fp.verify_certificate(r)
 assert len(r.cells) == 5
@@ -104,8 +112,9 @@ assert sum(c.denominator.zero_count for c in r.cells) == 2
 A shared-order component transfers its multiplicity along the simple base's refined count-one/count-zero regions (`SharedZeroRegion`). An power factor uses its existing transfer record. A zero-free component transfers to a closed subset (`ComplexZeroSubsetProof`). Other components need independent counts on every child; failed counts discard the whole proposed refinement. Original guard exclusions and zero implications are retained/rebound on each child.
 
 ```python
-q = fp.certify_complex_isolation(1/g, z, *rect, policy=policy,
-    max_box_width=s.Rational(1,100), use_newton=True)
+q = fp.certify_complex_isolation(
+    1 / g, z, *rect, policy=policy, max_box_width=s.Rational(1, 100), use_newton=True
+)
 assert q.complete and q.verify() and q.refinements
 assert all(r.verify() for r in q.refinements)
 assert all(p.verify() for p in q.proof.pole_regions)

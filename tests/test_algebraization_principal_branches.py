@@ -76,7 +76,7 @@ def test_cancellation_cannot_hide_unsupported_power(exponent, family):
     assert not result.changed
 
 
-def test_contour_coordinates_cannot_capture_user_parameters():
+def test_contour_parameter_capture():
     coefficient = sp.Symbol("_contour_cos", real=True)
     gamma = coefficient + sp.cos(x) + sp.I * sp.sin(x)
     expression, relation, cosine, sine = _trig_algebraization(gamma, x)
@@ -99,21 +99,21 @@ def test_contour_coordinates_cannot_capture_user_parameters():
         ),
     ],
 )
-def test_principal_branch_intersects_restricted_auxiliary_domain(source, expected):
+def test_principal_branch_intersects_auxiliary_domain(source, expected):
     result = algebraize((sp.exp(x) - 2) ** sp.Rational(1, 3), x, domain=source)
     assert result.changed and result.exact
     auxiliary = result.substitutions[0][0]
     assert condition_to_set(result.constraints, auxiliary) == expected
 
 
-def test_explicit_real_root_keeps_negative_base_domain():
+def test_explicit_real_root_negative_base_domain():
     expr = sp.real_root(sp.exp(x) - 2, 3)
     assert sp.simplify(domain(expr, x).subs(x, 0)) is sp.S.true
     assert expr.subs(x, 0) == -1
 
 
 @pytest.mark.parametrize("q", [sp.Rational(1, 3), sp.Rational(1, 2)])
-def test_proven_nonreal_power_does_not_form_real_comparison(q):
+def test_nonreal_power_comparisons(q):
     expr = (sp.exp(x) + sp.I) ** q
     assert expr.is_real is False
     assert not algebraize(expr, x).changed

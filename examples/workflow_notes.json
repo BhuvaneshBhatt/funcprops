@@ -21,7 +21,7 @@
     "question": "How do I keep an algebraic coefficient on its intended real conjugate?",
     "expected": "The image is (0,sqrt(2)); a canceled source hole has empty image at its excluded point.",
     "interpretation": "The rational generator guard selects a unique real embedding.",
-    "limits": "The compositum degree is at most four, with at most four nonrational constants and no extra coefficient parameters in the lift."
+    "limits": "Discovery defaults to compositum degree four and four nonrational constants. An explicit CoefficientFieldPolicy can raise the degree cap; symbolic coefficient parameters and nonreal embeddings are unsupported."
   },
   "parameter-geometry": {
     "level": "intermediate",
@@ -38,14 +38,6 @@
     "expected": "The compatible square-root recipes glue; opposite selected recipes disagree; crossing branches stay unresolved.",
     "interpretation": "Agreement at one anchor does not prove equality of local formulas.",
     "limits": "This assembles supplied recipes for entire implicit relations; it does not discover arbitrary implicit branches."
-  },
-  "certified-extrema-bounds": {
-    "level": "intermediate",
-    "topic": "Real optimization",
-    "question": "Can I bound extrema without solving the stationary equation exactly?",
-    "expected": "Both value brackets have width at most 1/10000, while exact extrema remain unresolved.",
-    "interpretation": "Value accuracy can be certified without a closed-form stationary coordinate.",
-    "limits": "The supported finite smooth branches and interval enclosures do not cover arbitrary nonsmooth inputs."
   },
   "branch-chart-gluing": {
     "level": "advanced",
@@ -150,5 +142,13 @@
     "expected": "The unresolved seed and boundary obstruction retain unknown totals and incomplete status.",
     "interpretation": "Successful local replay does not assert exhaustive coverage.",
     "limits": "Unsupported grammar and unclear boundaries are neither root-exclusion proofs nor mathematical counterexamples."
+  },
+  "range-analysis": {
+    "level": "intermediate",
+    "topic": "Domains and shape",
+    "question": "Which outputs are possible when critical points have no closed form?",
+    "expected": "The implicit minimum has checked outward bounds; periodic and monotone-tail images complete; an open quadratic family retains its endpoint transitions.",
+    "interpretation": "An exact image, valid partial evidence, exhaustive critical roots and value accuracy are separate conclusions.",
+    "limits": "Analytic cells need checked interior regularity and one-sided endpoint limits or closure regularity. Parameter images support rational polynomial families through degree three on fixed finite rational cells and selected invertible outer heads."
   }
 }

@@ -20,6 +20,7 @@ class CoverageRectangle:
     upper_right: sp.Expr
 
     def bounds(self):
+        """Return the real/imaginary bounds as xmin, ymin, xmax, ymax."""
         return (
             sp.re(self.lower_left),
             sp.im(self.lower_left),
@@ -28,6 +29,7 @@ class CoverageRectangle:
         )
 
     def valid(self):
+        """Check rational corners and strictly positive width and height."""
         a, b, c, d = self.bounds()
         return (
             all(q.is_Rational for q in (a, b, c, d))
@@ -143,10 +145,12 @@ class ComplexRootCoverage:
 
     @property
     def certified(self):
+        """Replay acceptance; a valid partial record need not be complete."""
         return self.verify()
 
     @property
     def scope(self):
+        """Scope identifier: ``polynomial-root-coverage-on-closed-complex-rectangle``."""
         return "polynomial-root-coverage-on-closed-complex-rectangle"
 
     def verify(self):

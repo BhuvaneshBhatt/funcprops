@@ -36,22 +36,27 @@ class LipschitzResult:
 
     @property
     def expression(self):
+        """Expression to which the stored evidence applies."""
         return getattr(self.proof, "expression", None)
 
     @property
     def variable(self):
+        """Coordinate used by the source and its evidence."""
         return getattr(self.proof, "variable", None)
 
     @property
     def complete(self):
+        """Completion status for this record's stated scope; replay validity is separate."""
         return self.verify()
 
     @property
     def certified(self):
+        """Replay acceptance; a valid partial record need not be complete."""
         return self.verify()
 
     @property
     def scope(self):
+        """Mathematical scope for interpreting this record and its evidence."""
         return (
             "limiting-gap-lipschitz-replay"
             if self.source == "separated-limits"

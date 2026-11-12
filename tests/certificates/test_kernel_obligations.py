@@ -9,21 +9,21 @@ import funcprops as fp
 x = sp.Symbol("x", real=True)
 
 
-def test_omitted_domain_is_rejected_even_with_recomputed_totals():
+def test_omitted_domain_even_recomputed_totals():
     proof = fp.prove_root_coverage(x - 1, x, sp.Interval(-2, 2))
     assert proof.verify() and proof.complete
     forged = replace(proof, leaves=(), root_count=0, multiplicity_count=0)
     assert not forged.verify()
 
 
-def test_duplicate_domain_is_rejected_even_with_recomputed_totals():
+def test_duplicate_domain_even_recomputed_totals():
     proof = fp.prove_root_coverage(x - 1, x, sp.Interval(-2, 2))
     assert len(proof.leaves) == 1 and proof.verify()
     forged = replace(proof, leaves=proof.leaves * 2, root_count=2, multiplicity_count=2)
     assert not forged.verify()
 
 
-def test_changed_source_syntax_cannot_rebind_every_leaf():
+def test_source_syntax_binding():
     proof = fp.prove_root_coverage(x - 1, x, sp.Interval(-2, 2))
     context = replace(proof.context, source_syntax="forged-source")
     forged = replace(

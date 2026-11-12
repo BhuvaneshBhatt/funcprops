@@ -14,7 +14,7 @@ from funcprops import (
 )
 
 
-def test_boundary_behavior_records_both_real_escape_limits():
+def test_boundary_behavior_records_real_escape_limits():
     x = sp.symbols("x", real=True)
     result = boundary_behavior(x**2, x)
     assert result.complete
@@ -25,7 +25,7 @@ def test_boundary_behavior_records_both_real_escape_limits():
     assert all(item.value is S.Infinity for item in result.limits)
 
 
-def test_univariate_level_boundedness_from_infinity_limits():
+def test_univariate_level_boundedness_infinity_limits():
     x = sp.symbols("x", real=True)
     assert level_boundedness(x**4 - x, x) is TruthValue.TRUE
     positive = level_boundedness(x**4 - x, x, return_result=True)
@@ -49,7 +49,7 @@ def test_bounded_domain_mode_implications():
     assert mode.domain_closed is TruthValue.FALSE
 
 
-def test_mode_existence_for_coercive_minimum_and_log_density_maximum():
+def test_mode_existence_coercive_density_maximum():
     x = sp.symbols("x", real=True)
     assert mode_existence(x**2 + 1, x, sense="min") is TruthValue.TRUE
     minimum = mode_existence(x**2 + 1, x, sense="min", return_result=True)
@@ -61,7 +61,7 @@ def test_mode_existence_for_coercive_minimum_and_log_density_maximum():
     assert maximum.verify()
 
 
-def test_multivariate_strong_convexity_certifies_level_boundedness():
+def test_multivariate_strong_convexity_boundedness():
     x, y = sp.symbols("x y", real=True)
     cert = level_boundedness(x**2 + y**2, (x, y), return_result=True)
     assert cert.classification is TruthValue.TRUE
@@ -69,14 +69,14 @@ def test_multivariate_strong_convexity_certifies_level_boundedness():
     assert mode_existence(x**2 + y**2, (x, y), sense="min") is TruthValue.TRUE
 
 
-def test_multivariate_separable_high_even_powers_are_coercive():
+def test_multivariate_separable_high_powers_coercive():
     x, y = sp.symbols("x y", real=True)
     cert = level_boundedness(x**4 + y**6 + 3, (x, y), return_result=True)
     assert cert.classification is TruthValue.TRUE
     assert cert.source == "separable-coercivity"
 
 
-def test_geometry_combines_regularity_and_attainment_contracts():
+def test_geometry_regularity_attainment_contracts():
     x = sp.symbols("x", real=True)
     result = geometry(x**2, x)
     assert result.continuity is Continuity.CONTINUOUS
@@ -93,7 +93,7 @@ def test_geometry_combines_regularity_and_attainment_contracts():
     assert result.maximum_exists.exists is None
 
 
-def test_boundary_behavior_on_bounded_domain_has_no_escape_limits():
+def test_bounded_domain_limits():
     x = sp.symbols("x", real=True)
     result = boundary_behavior(x**2, x, domain=sp.Interval(-1, 2))
     assert result.complete

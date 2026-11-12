@@ -40,7 +40,7 @@ def test_routes_exact_algebraic_sources_to_algroots(f, distinct, total, monkeypa
     )
 
 
-def test_public_detailed_result_exposes_the_adapted_certificate():
+def test_public_detailed_result_adapted_certificate():
     r = fp.complex_zeros(z * z + 1, variable=z, rectangle=RECT, return_result=True)
     assert isinstance(r, fp.ComplexRootIsolationResult) and r.verify()
     assert fp.complex_zeros(z * z + 1, z, rectangle=RECT) == sp.FiniteSet(-sp.I, sp.I)
@@ -48,7 +48,7 @@ def test_public_detailed_result_exposes_the_adapted_certificate():
 
 
 @pytest.mark.parametrize("power", [2, 3, 4])
-def test_held_source_poles_are_not_added_back_by_algebraization(power):
+def test_algebraized_source_poles(power):
     raw = sp.Mul(z**power, sp.Pow(z, -1, evaluate=False), evaluate=False)
     r = fp.isolate_complex_roots(raw, z, RECT)
     assert r.complete and r.roots == () and r.total_count == 0
@@ -56,7 +56,7 @@ def test_held_source_poles_are_not_added_back_by_algebraization(power):
     assert fp.verify_certificate(r, expr=raw, var=z)
 
 
-def test_rational_saturation_preserves_other_defined_roots_and_orders():
+def test_rational_saturation_other_roots_orders():
     raw = sp.Mul(z, (z - 1) ** 3, sp.Pow(z, -1, evaluate=False), evaluate=False)
     r = fp.isolate_complex_roots(raw, z, RECT)
     assert r.complete and r.roots == (1,) and r.total_count == 3
@@ -73,14 +73,14 @@ def test_rational_saturation_preserves_other_defined_roots_and_orders():
         (sp.sqrt(z) - sp.I, (-1,)),
     ],
 )
-def test_principal_radical_branches_are_filtered_before_completion(f, roots):
+def test_principal_radical_branches_before_completion(f, roots):
     p = fp.certify_algebraic_complex_roots(f, z, RECT)
     assert p.complete and p.roots == roots and p.verify()
     assert p.root_count == len(roots)
     assert p.total_count == (0 if not roots else None)
 
 
-def test_augmented_branch_multiplicity_is_not_a_source_order():
+def test_augmented_branch_multiplicity():
     p = fp.certify_algebraic_complex_roots(sp.sqrt(z), z, RECT)
     c = next(d.certificate for d in p.decisions if d.disposition == "accepted")
     assert c.multiplicity == 1
@@ -96,19 +96,19 @@ def test_augmented_branch_multiplicity_is_not_a_source_order():
         (sp.S.EmptySet, ()),
     ],
 )
-def test_requested_set_domain_is_retained_and_checked(domain, expected):
+def test_requested_set_domain_retained_checked(domain, expected):
     r = fp.isolate_complex_roots(z * z + 1, z, RECT, domain=domain)
     assert r.complete and r.roots == expected and r.verify()
     assert r.algebraic_certificate.domain == domain
 
 
-def test_exact_closed_rectangle_owns_its_boundary_roots():
+def test_exact_closed_rectangle_owns_boundary_roots():
     p = fp.certify_algebraic_complex_roots(z * (z - 1), z, (0, 1 + sp.I))
     assert p.complete and p.roots == (0, 1) and p.root_count == p.total_count == 2
     assert p.verify()
 
 
-def test_conditional_and_public_assumption_guards_are_both_retained():
+def test_conditional_public_assumption_guards_retained():
     f = fp.ConditionalExpression(z * z - 1, sp.Ne(z, 1))
     r = fp.complex_zeros(
         f, z, rectangle=RECT, assumptions=sp.Ne(z, -1), return_result=True
@@ -119,7 +119,7 @@ def test_conditional_and_public_assumption_guards_are_both_retained():
 
 
 @pytest.mark.parametrize("negated", [False, True])
-def test_raw_guard_holes_survive_normalization_and_negation(negated):
+def test_raw_guard_holes_normalization_negation(negated):
     raw = sp.Mul(z, sp.Pow(z, -1, evaluate=False), evaluate=False)
     guard = sp.Eq(raw, 1, evaluate=False)
     if negated:
@@ -161,13 +161,13 @@ def test_unresolved_root_counts(
         sp.Piecewise((z, sp.Eq(z, 0)), (1, True)),
     ],
 )
-def test_unsupported_algebraic_inputs_do_not_get_backend_claims(f):
+def test_unsupported_algebraic_input(f):
     p = fp.certify_algebraic_complex_roots(f, z, RECT)
     assert not p.complete and p.root_count is p.multiplicity_count is None
     assert fp.replay_status(p).outcome == "unsupported-replay"
 
 
-def test_non_algebraic_problem_keeps_the_existing_contour_route():
+def test_non_algebraic_problem_existing_contour_route():
     r = fp.isolate_complex_roots(sp.exp(z) - 1, z, (-1 - sp.I, 1 + sp.I))
     assert r.complete and r.total_count == 1 and r.algebraic_certificate is None
     assert fp.replay_status(r).supported is True
@@ -195,7 +195,7 @@ def test_algebraic_scope_and_effort_caps():
         fp.certify_algebraic_complex_roots(z, z, RECT, max_quotient_dimension=True)
 
 
-def test_producer_disabled_replay_and_consistent_status(monkeypatch):
+def test_producer_disabled_replay_consistent_status(monkeypatch):
     r = fp.isolate_complex_roots((z - 1) ** 2, z, RECT)
     monkeypatch.setattr(
         ac,
@@ -238,7 +238,7 @@ def test_mutated_adapter_payloads_are_rejected():
     ).verify()
 
 
-def test_mutated_wrapper_counts_and_scope_are_rejected():
+def test_altered_wrapper_counts():
     r = fp.isolate_complex_roots((z - 1) ** 3, z, RECT)
     for bad in (
         replace(r, total_count=1),
@@ -251,7 +251,7 @@ def test_mutated_wrapper_counts_and_scope_are_rejected():
         assert not fp.verify_certificate(bad)
 
 
-def test_backend_failure_does_not_fabricate_completeness(monkeypatch):
+def test_backend_failure_status(monkeypatch):
     import algroots.rational_univariate as rur
 
     def failed(*args, **kwargs):
@@ -270,7 +270,7 @@ def test_condition_set_source_holes():
     assert not p.complete and fp.replay_status(p).outcome == "unsupported-replay"
 
 
-def test_fake_self_attesting_backend_certificate_is_rejected():
+def test_self_attesting_backend_certificate():
     p = fp.certify_algebraic_complex_roots(z - 1, z, RECT)
 
     class Fake:
@@ -281,7 +281,7 @@ def test_fake_self_attesting_backend_certificate_is_rejected():
     assert not replace(p, decisions=(d,)).verify()
 
 
-def test_mutated_rectangle_and_backend_enumeration_are_rejected():
+def test_mutated_rectangle_backend_enumeration():
     p = fp.certify_algebraic_complex_roots(z * z - 1, z, RECT)
     from funcprops.complex_coverage import CoverageRectangle
 

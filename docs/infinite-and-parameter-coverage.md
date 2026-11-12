@@ -21,3 +21,9 @@ A finite root count on a compact core is global only when both required tails ar
 ## Limits
 
 These methods do not solve general transcendental parameter geometry. A family declaration is not a theorem for every composition, boundary case or parameter value. Local witnesses remain useful when the complete parameter partition is unavailable. See [capabilities](capabilities.md), [root coverage](root-coverage-checker.md) and [result contracts](reference/result-contracts.md).
+
+## Strongly convex level events
+
+`parameter_root_coverage(g(x)-a, x, a, D)` can partition a fixed finite interval when a checked positive curvature bound and one exact interior stationary point establish two monotone branches. Minimum and endpoint levels become separate event cells. The minimum is one double root; endpoint roots retain the source interval's ownership. See [the worked level-family example](range-applications.md). General analytic event discovery remains unsupported.
+
+Fixed exact source and parameter sets must respect their Symbols' intrinsic assumptions; incompatible requests raise ValueError. Event cells retain both distinct-root counts and multiplicities, including when the parameter domain is a finite set. See [proof scope](real-source-contracts.md).

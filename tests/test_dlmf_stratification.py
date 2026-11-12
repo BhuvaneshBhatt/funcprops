@@ -20,7 +20,7 @@ def _case(result, predicate):
     return [c for c in result.cases if predicate(c)]
 
 
-def test_besseli_parameter_domain_stratification_from_catalogue():
+def test_besseli_parameter_domain_stratification():
     r = domain(sp.besseli(nu, x), x, stratified=True, return_result=True)
     assert isinstance(r, PropertyResult)
     assert any(
@@ -33,7 +33,7 @@ def test_besseli_parameter_domain_stratification_from_catalogue():
     )
 
 
-def test_besseli_parameter_dependent_range_endpoint_open_and_closed():
+def test_besseli_parameter_dependent_endpoint_closed():
     ro = range(sp.besseli(nu, x), x, y, constraints=x > 0, return_result=True)
     rc = range(sp.besseli(nu, x), x, y, constraints=x >= 0, return_result=True)
     assert any(c.value == (y > 1) and c.condition == sp.Eq(nu, 0) for c in ro.cases)
@@ -48,7 +48,7 @@ def test_besseli_parameter_dependent_range_endpoint_open_and_closed():
     )
 
 
-def test_incomplete_gamma_parameter_endpoint_and_boundedness():
+def test_incomplete_gamma_parameter_endpoint():
     lo = range(sp.lowergamma(a, x), x, y, constraints=x >= 0, return_result=True)
     up = range(sp.uppergamma(a, x), x, y, constraints=x >= 0, return_result=True)
     assert lo.cases[0].value == sp.And(y >= 0, y < sp.gamma(a))
@@ -76,7 +76,7 @@ def test_incomplete_beta_parameter_dependent_endpoint():
     assert rr.cases[0].value == sp.And(y >= 0, y <= 1)
 
 
-def test_zeta_registry_pole_not_erased_by_failed_local_series():
+def test_zeta_local_pole():
     s = sp.symbols("s")
     pole_records = poles(sp.zeta(s), s, return_result=True)
     assert any(p.condition == sp.Eq(s, 1) for p in pole_records)

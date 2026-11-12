@@ -15,7 +15,7 @@ def test_certified_zero_is_three_valued():
     assert certify_zero(x) is None
 
 
-def test_certified_equality_distinguishes_identity_and_assumptions():
+def test_certified_equality_identity_assumptions():
     x, a = sp.symbols("x a", real=True)
     assert certify_equal(x, a, assumptions=sp.Eq(x, a)) is True
     assert certify_equal(x, a) is None

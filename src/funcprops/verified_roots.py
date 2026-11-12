@@ -36,18 +36,22 @@ class RealRootInterval:
 
     @property
     def certified(self):
+        """Replay acceptance; a valid partial record need not be complete."""
         return self.verify()
 
     @property
     def complete(self):
+        """Completion status for this record's stated scope; replay validity is separate."""
         return self.verify()
 
     @property
     def scope(self):
+        """Scope identifier: ``root-count-on-interval``."""
         return "root-count-on-interval"
 
     @property
     def certificate(self):
+        """Evidence retained for this result's declared replay route."""
         return self if self.root_count in (0, 1) else None
 
     def verify(self):

@@ -27,6 +27,7 @@ class CompleteMonotonicityCertificate:
 
     @property
     def primary(self):
+        """Primary mathematical answer or classification."""
         return self.classification
 
     def verify(self):

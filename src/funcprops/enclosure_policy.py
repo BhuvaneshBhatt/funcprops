@@ -6,7 +6,12 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True)
 class EnclosurePolicy:
-    """Bound precision refinement, subdivision, series work and elapsed time."""
+    """Bound precision, subdivision, series work, root jets and elapsed time.
+
+    max_taylor_order caps exclusion polynomials. max_root_order independently
+    caps automatic exact-jet deflation; structural power factors can prove
+    higher multiplicities without those jets.
+    """
 
     precision: int = 30
     max_precision: int = 240
@@ -14,6 +19,7 @@ class EnclosurePolicy:
     max_depth: int = 10
     max_cells: int = 1024
     max_taylor_order: int = 2
+    max_root_order: int = 8
     max_series_terms: int = 4096
     seconds: float | None = None
 
@@ -25,6 +31,7 @@ class EnclosurePolicy:
             "max_depth",
             "max_cells",
             "max_taylor_order",
+            "max_root_order",
             "max_series_terms",
         ):
             value = getattr(self, name)
@@ -41,6 +48,7 @@ class EnclosurePolicy:
 
     @property
     def precisions(self):
+        """Ordered arithmetic precisions in the bounded effort policy."""
         values = [self.precision]
         for _ in range(self.max_refinements):
             if values[-1] >= self.max_precision:

@@ -1,8 +1,8 @@
 """Canonical examples shared by the property reference, tests, and tutorial.
 
-The examples in this module are small and deterministic: each one illustrates
-public API behavior and is executed by the specification tests so that
-documentation cannot drift from code.
+The examples in this module are small and deterministic.  They are
+not a second test suite: each example illustrates public API behavior and is
+executed by the specification tests so documentation cannot drift from code.
 """
 
 from __future__ import annotations
@@ -31,7 +31,7 @@ EXAMPLES = (
         "result = fp.domain(sp.sqrt(x - 1) / (x - 2), x)",
         "sp.simplify(result ^ ((x >= 1) & sp.Ne(x, 2))) is sp.false",
         "``(x >= 1) & Ne(x, 2)``",
-        "Validate the admisible input region before symbolic optimization or plotting.",
+        "Validate the admissible input region before symbolic optimization or plotting.",
     ),
     PropertyExample(
         "range-restricted-quadratic",
@@ -431,7 +431,7 @@ STATISTICAL_SPECIAL_FUNCTION_EXAMPLES = (
         'm, a, b = sp.symbols("m a b", positive=True)\nresult = fp.monotonicity(sp.marcumq(m, a, b), b, domain=b > 0)',
         "result is fp.Monotonicity.STRICTLY_DECREASING",
         "strict decrease in the positive threshold",
-        "Analyze noncentral-tail probabilties and detection thresholds structurally.",
+        "Analyze noncentral-tail probabilities and detection thresholds structurally.",
     ),
     StatisticalSpecialFunctionExample(
         "mittag-leffler-complete-monotonicity",

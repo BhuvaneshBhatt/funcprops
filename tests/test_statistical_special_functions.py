@@ -17,7 +17,7 @@ def test_statistical_heads_exact_rules():
     assert fp.MittagLefflerE(1, x) == sp.exp(x)
 
 
-def test_regularized_gamma_heads_rewrite_and_differentiate():
+def test_regularized_gamma_heads_rewrite_differentiate():
     a = sp.symbols("a", positive=True)
     x = sp.symbols("x", positive=True)
     p = fp.RegularizedGammaP(a, x)
@@ -29,7 +29,7 @@ def test_regularized_gamma_heads_rewrite_and_differentiate():
     assert q.rewrite(sp.uppergamma) == sp.uppergamma(a, x) / sp.gamma(a)
 
 
-def test_loggamma_and_digamma_geometry_on_positive_axis():
+def test_loggamma_digamma_geometry_positive_axis():
     x = sp.symbols("x", positive=True)
     assert fp.convexity(sp.loggamma(x), x, domain=x > 0) is fp.Convexity.STRICTLY_CONVEX
     assert (
@@ -39,7 +39,7 @@ def test_loggamma_and_digamma_geometry_on_positive_axis():
     assert fp.convexity(sp.digamma(x), x, domain=x > 0) is fp.Convexity.STRICTLY_CONCAVE
 
 
-def test_polygamma_sign_and_monotonicity_parity_strata():
+def test_polygamma_sign_monotonicity_parity_strata():
     x = sp.symbols("x", positive=True)
     assert fp.sign(sp.polygamma(1, x), x, domain=x > 0) is fp.Sign.POSITIVE
     assert fp.sign(sp.polygamma(2, x), x, domain=x > 0) is fp.Sign.NEGATIVE
@@ -70,7 +70,7 @@ def test_regularized_gamma_monotonicity_and_range():
     )
 
 
-def test_regularized_beta_is_increasing_on_probability_support():
+def test_regularized_beta_increasing_support():
     a, b = sp.symbols("a b", positive=True)
     x, y = sp.symbols("x y", real=True)
     expr = sp.betainc_regularized(a, b, 0, x)
@@ -86,7 +86,7 @@ def test_regularized_beta_is_increasing_on_probability_support():
     )
 
 
-def test_owen_t_is_positive_and_increasing_in_second_argument():
+def test_owen_t_positive_increasing_second_argument():
     h = sp.symbols("h", real=True)
     a = sp.symbols("a", positive=True)
     expr = fp.OwenT(h, a)
@@ -94,7 +94,7 @@ def test_owen_t_is_positive_and_increasing_in_second_argument():
     assert fp.monotonicity(expr, a, domain=a > 0) is fp.Monotonicity.STRICTLY_INCREASING
 
 
-def test_marcum_q_threshold_and_noncentrality_monotonicity():
+def test_marcum_q_threshold_noncentrality_monotonicity():
     m = sp.symbols("m", positive=True)
     a, b = sp.symbols("a b", positive=True)
     assert (
@@ -107,7 +107,7 @@ def test_marcum_q_threshold_and_noncentrality_monotonicity():
     )
 
 
-def test_marcum_q_probability_range_on_positive_threshold():
+def test_marcum_q_probability_range_positive_threshold():
     m, a = sp.symbols("m a", positive=True)
     b, y = sp.symbols("b y", real=True)
     result = fp.range(sp.marcumq(m, a, b), b, y, constraints=b > 0)
@@ -133,7 +133,7 @@ def test_mittag_leffler_parameter_guard():
     )
 
 
-def test_mittag_leffler_geometry_follows_complete_monotonicity():
+def test_mittag_leffler_geometry_complete_monotonicity():
     alpha = sp.symbols("alpha", positive=True)
     x = sp.symbols("x", positive=True)
     expr = fp.MittagLefflerE(alpha, -x)
@@ -148,7 +148,7 @@ def test_mittag_leffler_geometry_follows_complete_monotonicity():
     assert sign.cases[0].value is fp.Sign.POSITIVE
 
 
-def test_besselk_complete_monotonicity_requires_open_positive_axis():
+def test_besselk_complete_monotonicity_positive_axis():
     nu = sp.symbols("nu", real=True)
     x = sp.symbols("x", real=True)
     assert (
@@ -165,7 +165,7 @@ def test_besselk_complete_monotonicity_requires_open_positive_axis():
     )
 
 
-def test_complete_monotonicity_certificate_replays_generically():
+def test_complete_monotonicity_certificate_generically():
     alpha = sp.symbols("alpha", positive=True)
     x = sp.symbols("x", nonnegative=True)
     cert = fp.complete_monotonicity(

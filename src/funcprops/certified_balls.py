@@ -23,10 +23,12 @@ class RealBallCertificate:
 
     @property
     def excludes_zero(self):
+        """Whether the retained bound separates its values from zero."""
         return self.lower.is_positive is True or self.upper.is_negative is True
 
     @property
     def sign(self):
+        """Sign classification established by the stored bounds or theorem."""
         return (
             1
             if self.lower.is_positive is True

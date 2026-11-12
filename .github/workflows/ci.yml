@@ -3,13 +3,17 @@ name: CI
 on:
   push:
   pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   tests:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.11", "3.12", "3.13", "3.14"]
+        python-version: ['3.11', '3.12', '3.13', '3.14']
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -17,20 +21,93 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           cache: pip
-      - run: python -m pip install -U pip
       - run: python -m pip install -e '.[test]'
-      - run: python -m pytest
+      - run: python -m tools.run_test_corpus --evidence --require-replay-types --report-dir validation/source
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: source-${{ matrix.python-version }}
+          path: validation/source/
 
-  registry-coverage:
+  documentation-and-style:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.13"
-      - run: python -m pip install -e .
-      - name: Check registry coverage matrix for regressions
-        run: python tools/registry_coverage/coverage_matrix.py --check
+          python-version: '3.14'
+      - run: python -m pip install -e '.[dev]'
+      - run: python -m tools.validate --profile quick --report-dir validation/quick
+      - run: python -m tools.check_ci --check
+      - run: python -m tools.check_docs --report validation/documentation.json
+      - run: python -m tools.benchmark_proofs --report validation/proof-performance.json
+      - run: python -m tools.check_kernel_mutations --report validation/kernel-mutations.json
+      - run: python tools/registry_coverage/coverage_matrix.py --check
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: documentation-and-style
+          path: validation/
+
+  minimum-runtime-dependencies:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install -c tests/constraints-minimum.txt -e '.[test]'
+      - run: python -m tools.run_test_corpus --report-dir validation/minimum
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: minimum-dependencies
+          path: validation/minimum/
+
+  platform-smoke:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: python -m pip install -e '.[test]'
+      - run: python -m tools.run_selected_tests platform
+
+  warm-state:
+    strategy:
+      fail-fast: false
+      matrix:
+        seed: ['3', '17']
+    runs-on: ubuntu-latest
+    env:
+      PYTHONHASHSEED: ${{ matrix.seed }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: python -m pip install -e '.[test]'
+      - run: python -m tools.run_selected_tests warm
+
+  kernel-branch-coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: python -m pip install -e '.[dev]'
+      - run: python -m tools.run_selected_tests kernel --cov=funcprops --cov-branch --cov-report=xml:validation/coverage.xml --cov-report=term-missing
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: kernel-branch-coverage
+          path: validation/coverage.xml
 
   package-check:
     runs-on: ubuntu-latest
@@ -38,9 +115,29 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.13"
-      - run: python -m pip install --upgrade build twine
-      - run: python -m build
-      - run: python -m twine check dist/*
-      - run: python -m pip install dist/*.whl
-      - run: python -c "import funcprops; print(funcprops.__name__)"
+          python-version: '3.13'
+      - run: python -m pip install -e '.[dev]'
+      - run: python -m tools.validate --profile package --report-dir validation/package
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: tested-distributions
+          path: validation/package/
+
+  extended-randomized:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    env:
+      FUNCPROPS_TEST_PROFILE: extended
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+      - run: python -m pip install -e '.[test]'
+      - run: python -m tools.run_test_corpus --report-dir validation/extended
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: extended-randomized
+          path: validation/extended/

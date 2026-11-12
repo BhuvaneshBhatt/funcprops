@@ -32,7 +32,9 @@ assert axis.hessian == sp.zeros(1)
 ```python
 held = sp.Mul(x, x, sp.Pow(x, -1, evaluate=False), evaluate=False)
 assert fp.determinant_nonvanishing(held, x) is fp.TruthValue.UNKNOWN
-safe = fp.determinant_nonvanishing(1 / x, x, domain=sp.Interval(1, 2), return_result=True)
+safe = fp.determinant_nonvanishing(
+    1 / x, x, domain=sp.Interval(1, 2), return_result=True
+)
 assert safe.classification is fp.TruthValue.TRUE and safe.verify()
 assert safe.expressions == (1 / x,)
 ```

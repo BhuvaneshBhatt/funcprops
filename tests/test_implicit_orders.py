@@ -48,7 +48,7 @@ def test_general_congruences_and_local_multiplicity(base, m):
     assert transfer.verify() and fp.verify_certificate(transfer)
 
 
-def test_known_nonzero_values_and_nearby_distinct_zeros(base):
+def test_known_nonzero_values_nearby_distinct_zeros(base):
     p = fp.certify_root_value(sp.exp(z), base)
     assert p.value == 2 and p.verify()
     epsilon = sp.Rational(1, 10**50)
@@ -76,7 +76,7 @@ def test_exact_leading_values_prove_positive_orders(base):
     assert not fp.verify_certificate(replace(p, zero_jets=p.zero_jets[:-1]))
 
 
-def test_common_root_order_tuple_and_non_discrete_case(base):
+def test_common_root_order_tuple_non_discrete_case(base):
     c = fp.certify_common_zero((model(1), model(2)), base, max_order=3, policy=P)
     assert c.verify() and c.common_zero_certified and c.orders_complete
     assert c.multiplicities == (1, 2) and not c.complete
@@ -125,9 +125,7 @@ def test_false_orders_and_jet_domains_rejected(double, mutate):
     assert not fp.verify_certificate(replace(double.taylor, coefficients=()))
 
 
-def test_replay_independent_of_all_proposers_and_symbolic_division(
-    base, double, monkeypatch
-):
+def test_replay_independent_proposers_division(base, double, monkeypatch):
     c = fp.certify_common_zero((model(1), model(2)), base, policy=P)
     v = fp.certify_root_value(model(1), base)
 
@@ -146,7 +144,7 @@ def test_replay_independent_of_all_proposers_and_symbolic_division(
         assert fp.verify_certificate(p)
 
 
-def test_source_holes_parameters_and_nonunique_bases_are_declined(base):
+def test_source_holes_parameters_nonunique_declined(base):
     hole = sp.Mul(z, sp.Pow(z, -1, evaluate=False), evaluate=False)
     assert fp.certify_root_value(hole, base) is None
     with pytest.raises(ValueError):
@@ -169,7 +167,7 @@ def test_orders_are_consumed_by_quotient_ledger(base, m, n):
     assert q.pole_multiplicity_count == max(n - m, 0)
 
 
-def test_radical_ideal_value_proof_at_a_multiple_implicit_base():
+def test_radical_ideal_value_proof_implicit_base():
     state = fp.certify_complex_isolation(g**2, z, *RECT, policy=P)
     assert state.complete
     base = state.proof.root_regions[0]
@@ -182,7 +180,7 @@ def test_radical_ideal_value_proof_at_a_multiple_implicit_base():
     assert order.verify() and order.order == 2
 
 
-def test_generic_guard_proof_preserves_canceled_source_holes(base):
+def test_guard_proof_canceled_source_holes(base):
     guard = model(1)
     held = sp.Mul(g, guard, sp.Pow(guard, -1, evaluate=False), evaluate=False)
     q = fp.certify_quotient_isolation(held, z, *RECT, policy=replace(P, max_cells=1024))

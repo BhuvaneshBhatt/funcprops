@@ -22,7 +22,7 @@ def _case_map(result):
     return {c.value: sp.simplify(c.condition) for c in result.cases}
 
 
-def test_parameter_sign_range_boundedness_and_injectivity_propagate():
+def test_parameter_sign_range_injectivity_propagate():
     x, a, y = sp.symbols("x a y", real=True)
     sign = _case_map(fp.sign(a * x, x, domain=x > 0, return_result=True))
     assert sign[Sign.POSITIVE] == (a > 0)
@@ -44,7 +44,7 @@ def test_parameter_sign_range_boundedness_and_injectivity_propagate():
     assert inj[TruthValue.FALSE] == sp.Eq(a, 0)
 
 
-def test_exp_affine_parameter_strata_reach_mapping_properties():
+def test_exp_affine_parameter_strata_properties():
     x, a, y = sp.symbols("x a y", real=True)
     rng = _case_map(fp.range(sp.exp(a * x), x, y, return_result=True))
     assert rng[y > 0] == sp.Ne(a, 0)
@@ -103,7 +103,7 @@ def test_polygamma_order_parity_sign_strata():
     assert cases[Sign.NEGATIVE].subs(n, 2) is S.true
 
 
-def test_symbolic_set_nonidentity_is_not_automatically_false():
+def test_symbolic_set_identity():
     x = sp.symbols("x", real=True)
     a = sp.Symbol("a", real=True)
     A = sp.ConditionSet(x, x > a, S.Reals)
@@ -111,7 +111,7 @@ def test_symbolic_set_nonidentity_is_not_automatically_false():
     assert exact_set_equal(A, B) is TruthValue.UNKNOWN
 
 
-def test_periodic_affine_pullback_handles_large_translation_exactly():
+def test_periodic_affine_pullback_translation_exactly():
     x = sp.symbols("x", real=True)
     p = PeriodicSet(sp.FiniteSet(0), 2 * sp.pi, x)
     q = p.affine_pullback(2, 100 * sp.pi, x)
@@ -120,7 +120,7 @@ def test_periodic_affine_pullback_handles_large_translation_exactly():
     assert q.contains(0) is S.true
 
 
-def test_holomorphic_tristate_does_not_turn_unknown_into_false():
+def test_holomorphic_unknown_status():
     z = sp.Symbol("z")
     r = holomorphic_on_rectangle(sp.exp(sp.gamma(z)), z, (1 - sp.I / 10, 2 + sp.I / 10))
     assert r.holomorphic is None
@@ -138,7 +138,7 @@ def test_holomorphic_tristate_does_not_turn_unknown_into_false():
     )
 
 
-def test_sympy_range_result_containing_input_variable_is_rejected():
+def test_sympy_range_result_containing_input_variable():
     x, nu, y = sp.symbols("x nu y")
     # SymPy currently returns {besselk(nu, x)} here; that is not a range.
     assert _sympy_range(sp.besselk(nu, x), x, y, x > 0) is None
@@ -150,7 +150,7 @@ def test_unresolved_singularity_reduction():
     assert r.complete is False
 
 
-def test_restricted_nonsmooth_functions_can_be_analytic_and_smooth():
+def test_restricted_nonsmooth_functions_smooth():
     x = sp.symbols("x", real=True)
     assert fp.analytic(sp.Abs(x), x) == fp.Analyticity.NOT_ANALYTIC
     assert fp.analytic(sp.Abs(x), x, domain=x > 0) == fp.Analyticity.ANALYTIC

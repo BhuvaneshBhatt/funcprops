@@ -24,7 +24,7 @@
       ],
       "shared_contract_suites": [
         "tests/specification/test_result_contracts.py",
-        "tests/test_quotient_soundness_audit.py",
+        "tests/test_quotient_replay.py",
         "tests/test_robustness_contracts.py"
       ]
     },
@@ -47,7 +47,7 @@
       ],
       "shared_contract_suites": [
         "tests/specification/test_result_contracts.py",
-        "tests/test_quotient_soundness_audit.py"
+        "tests/test_quotient_replay.py"
       ]
     },
     {
@@ -58,7 +58,8 @@
       "suites": [
         "tests/test_parameter_root_coverage.py",
         "tests/test_uniform_parameter_coverage.py",
-        "tests/certificates/test_replay_type_fixtures.py"
+        "tests/certificates/test_replay_type_fixtures.py",
+        "tests/test_convex_level_families.py"
       ],
       "independent_native_replay": true,
       "obligations": [
@@ -70,7 +71,7 @@
       ],
       "shared_contract_suites": [
         "tests/specification/test_result_contracts.py",
-        "tests/test_quotient_soundness_audit.py"
+        "tests/test_quotient_replay.py"
       ]
     },
     {
@@ -91,7 +92,7 @@
       ],
       "shared_contract_suites": [
         "tests/specification/test_result_contracts.py",
-        "tests/test_quotient_soundness_audit.py",
+        "tests/test_quotient_replay.py",
         "tests/test_proof_payload_integrity.py"
       ]
     },
@@ -116,7 +117,7 @@
       ],
       "shared_contract_suites": [
         "tests/specification/test_result_contracts.py",
-        "tests/test_quotient_soundness_audit.py"
+        "tests/test_quotient_replay.py"
       ]
     },
     {
@@ -138,7 +139,7 @@
       ],
       "shared_contract_suites": [
         "tests/specification/test_result_contracts.py",
-        "tests/test_quotient_soundness_audit.py"
+        "tests/test_quotient_replay.py"
       ]
     },
     {
@@ -160,7 +161,7 @@
       ],
       "shared_contract_suites": [
         "tests/specification/test_result_contracts.py",
-        "tests/test_quotient_soundness_audit.py",
+        "tests/test_quotient_replay.py",
         "tests/test_proof_payload_integrity.py"
       ]
     },
@@ -182,7 +183,7 @@
       ],
       "shared_contract_suites": [
         "tests/specification/test_result_contracts.py",
-        "tests/test_quotient_soundness_audit.py"
+        "tests/test_quotient_replay.py"
       ]
     },
     {
@@ -203,7 +204,7 @@
       ],
       "shared_contract_suites": [
         "tests/specification/test_result_contracts.py",
-        "tests/test_quotient_soundness_audit.py"
+        "tests/test_quotient_replay.py"
       ]
     },
     {
@@ -213,7 +214,7 @@
       ],
       "suites": [
         "tests/test_quotient_isolation.py",
-        "tests/test_quotient_soundness_audit.py"
+        "tests/test_quotient_replay.py"
       ],
       "independent_native_replay": true,
       "obligations": [
@@ -225,7 +226,7 @@
       ],
       "shared_contract_suites": [
         "tests/specification/test_result_contracts.py",
-        "tests/test_quotient_soundness_audit.py"
+        "tests/test_quotient_replay.py"
       ]
     },
     {
@@ -237,7 +238,7 @@
       ],
       "suites": [
         "tests/test_quotient_shared_orders.py",
-        "tests/test_quotient_soundness_audit.py"
+        "tests/test_quotient_replay.py"
       ],
       "independent_native_replay": true,
       "obligations": [
@@ -249,7 +250,7 @@
       ],
       "shared_contract_suites": [
         "tests/specification/test_result_contracts.py",
-        "tests/test_quotient_soundness_audit.py"
+        "tests/test_quotient_replay.py"
       ]
     },
     {
@@ -272,7 +273,7 @@
       ],
       "shared_contract_suites": [
         "tests/specification/test_result_contracts.py",
-        "tests/test_quotient_soundness_audit.py"
+        "tests/test_quotient_replay.py"
       ]
     },
     {
@@ -282,7 +283,7 @@
       ],
       "suites": [
         "tests/test_algroots_complex_adapter.py",
-        "tests/test_quotient_soundness_audit.py"
+        "tests/test_quotient_replay.py"
       ],
       "independent_native_replay": false,
       "obligations": [
@@ -294,7 +295,7 @@
       ],
       "shared_contract_suites": [
         "tests/specification/test_result_contracts.py",
-        "tests/test_quotient_soundness_audit.py"
+        "tests/test_quotient_replay.py"
       ]
     },
     {
@@ -317,7 +318,7 @@
       ],
       "shared_contract_suites": [
         "tests/specification/test_result_contracts.py",
-        "tests/test_quotient_soundness_audit.py",
+        "tests/test_quotient_replay.py",
         "tests/test_robustness_contracts.py"
       ]
     },
@@ -341,7 +342,7 @@
       ],
       "shared_contract_suites": [
         "tests/specification/test_result_contracts.py",
-        "tests/test_quotient_soundness_audit.py"
+        "tests/test_quotient_replay.py"
       ]
     },
     {
@@ -362,7 +363,7 @@
       ],
       "shared_contract_suites": [
         "tests/specification/test_result_contracts.py",
-        "tests/test_quotient_soundness_audit.py"
+        "tests/test_quotient_replay.py"
       ]
     },
     {
@@ -390,7 +391,7 @@
       ],
       "shared_contract_suites": [
         "tests/specification/test_result_contracts.py",
-        "tests/test_quotient_soundness_audit.py"
+        "tests/test_quotient_replay.py"
       ]
     },
     {
@@ -412,7 +413,7 @@
       ],
       "shared_contract_suites": [
         "tests/specification/test_result_contracts.py",
-        "tests/test_quotient_soundness_audit.py"
+        "tests/test_quotient_replay.py"
       ]
     },
     {
@@ -438,7 +439,7 @@
       ],
       "shared_contract_suites": [
         "tests/specification/test_result_contracts.py",
-        "tests/test_quotient_soundness_audit.py",
+        "tests/test_quotient_replay.py",
         "tests/test_proof_payload_integrity.py",
         "tests/test_robustness_contracts.py"
       ]
@@ -465,16 +466,14 @@
       ],
       "shared_contract_suites": [
         "tests/specification/test_result_contracts.py",
-        "tests/test_quotient_soundness_audit.py",
+        "tests/test_quotient_replay.py",
         "tests/test_robustness_contracts.py"
       ]
     },
     {
       "family": "domain-and-optimization",
       "modules": [
-        "funcprops.domain_tracking",
-        "funcprops.component_optimization",
-        "funcprops.certified_optimization"
+        "funcprops.domain_tracking"
       ],
       "suites": [
         "tests/test_domain_components_and_replay.py",
@@ -490,7 +489,7 @@
       ],
       "shared_contract_suites": [
         "tests/specification/test_result_contracts.py",
-        "tests/test_quotient_soundness_audit.py"
+        "tests/test_quotient_replay.py"
       ]
     },
     {
@@ -514,7 +513,7 @@
       ],
       "shared_contract_suites": [
         "tests/specification/test_result_contracts.py",
-        "tests/test_quotient_soundness_audit.py"
+        "tests/test_quotient_replay.py"
       ]
     },
     {
@@ -536,7 +535,7 @@
       ],
       "shared_contract_suites": [
         "tests/specification/test_result_contracts.py",
-        "tests/test_quotient_soundness_audit.py"
+        "tests/test_quotient_replay.py"
       ]
     },
     {
@@ -567,7 +566,7 @@
       ],
       "shared_contract_suites": [
         "tests/specification/test_result_contracts.py",
-        "tests/test_quotient_soundness_audit.py"
+        "tests/test_quotient_replay.py"
       ]
     },
     {
@@ -591,29 +590,7 @@
       ],
       "shared_contract_suites": [
         "tests/specification/test_result_contracts.py",
-        "tests/test_quotient_soundness_audit.py"
-      ]
-    },
-    {
-      "family": "extrema-bounds",
-      "modules": [
-        "funcprops.extrema_bounds"
-      ],
-      "suites": [
-        "tests/test_extrema_bounds.py"
-      ],
-      "independent_native_replay": true,
-      "obligations": [
-        "valid-evidence",
-        "violated-premise-or-decline",
-        "source-domain-binding",
-        "theorem-field-mutation",
-        "proposer-disabled-replay"
-      ],
-      "shared_contract_suites": [
-        "tests/specification/test_result_contracts.py",
-        "tests/test_quotient_soundness_audit.py",
-        "tests/test_proof_payload_integrity.py"
+        "tests/test_quotient_replay.py"
       ]
     },
     {
@@ -634,7 +611,7 @@
       ],
       "shared_contract_suites": [
         "tests/specification/test_result_contracts.py",
-        "tests/test_quotient_soundness_audit.py"
+        "tests/test_quotient_replay.py"
       ]
     },
     {
@@ -655,7 +632,7 @@
       ],
       "shared_contract_suites": [
         "tests/specification/test_result_contracts.py",
-        "tests/test_quotient_soundness_audit.py",
+        "tests/test_quotient_replay.py",
         "tests/test_proof_payload_integrity.py"
       ]
     },
@@ -682,7 +659,7 @@
       ],
       "shared_contract_suites": [
         "tests/specification/test_result_contracts.py",
-        "tests/test_quotient_soundness_audit.py",
+        "tests/test_quotient_replay.py",
         "tests/test_robustness_contracts.py"
       ]
     },
@@ -694,7 +671,8 @@
       "suites": [
         "tests/test_algebraic_coefficient_support.py",
         "tests/property/test_property_models.py",
-        "tests/test_proof_obligations.py"
+        "tests/test_proof_obligations.py",
+        "tests/test_coefficient_field_policy.py"
       ],
       "independent_native_replay": true,
       "obligations": [
@@ -706,7 +684,7 @@
       ],
       "shared_contract_suites": [
         "tests/specification/test_result_contracts.py",
-        "tests/test_quotient_soundness_audit.py"
+        "tests/test_quotient_replay.py"
       ]
     },
     {
@@ -729,7 +707,7 @@
       ],
       "shared_contract_suites": [
         "tests/specification/test_result_contracts.py",
-        "tests/test_quotient_soundness_audit.py",
+        "tests/test_quotient_replay.py",
         "tests/test_robustness_contracts.py"
       ]
     },
@@ -752,7 +730,7 @@
       ],
       "shared_contract_suites": [
         "tests/specification/test_result_contracts.py",
-        "tests/test_quotient_soundness_audit.py"
+        "tests/test_quotient_replay.py"
       ]
     },
     {
@@ -774,7 +752,52 @@
       ],
       "shared_contract_suites": [
         "tests/specification/test_result_contracts.py",
-        "tests/test_quotient_soundness_audit.py"
+        "tests/test_quotient_replay.py"
+      ]
+    },
+    {
+      "family": "range-analysis",
+      "modules": [
+        "funcprops.real_images.critical_values",
+        "funcprops.real_images.analysis",
+        "funcprops.real_images.transfers",
+        "funcprops.real_images.parameters",
+        "funcprops.analytic_roots",
+        "funcprops.real_images.interior",
+        "funcprops.real_images.tails",
+        "funcprops.real_images.oscillatory",
+        "funcprops.real_images.trigonometric"
+      ],
+      "suites": [
+        "tests/test_implicit_range_values.py",
+        "tests/test_range_payload_fields.py",
+        "tests/test_range_transfers.py",
+        "tests/test_parameter_ranges.py",
+        "tests/test_range_conditions.py",
+        "tests/test_reused_real_roots.py",
+        "tests/test_one_sided_range_cells.py",
+        "tests/test_bounded_range_tails.py",
+        "tests/test_flat_critical_ranges.py",
+        "tests/test_oscillatory_images.py",
+        "tests/test_cubic_parameter_images.py",
+        "tests/test_finite_range_tails.py",
+        "tests/test_dense_trig_images.py",
+        "tests/test_range_transfer_mutations.py",
+        "tests/test_analysis_proof_boundaries.py",
+        "tests/test_complex_intermediate_images.py",
+        "tests/test_cubic_corner_models.py"
+      ],
+      "independent_native_replay": false,
+      "obligations": [
+        "valid-evidence",
+        "violated-premise-or-decline",
+        "source-domain-binding",
+        "theorem-field-mutation",
+        "proposer-disabled-replay"
+      ],
+      "shared_contract_suites": [
+        "tests/specification/test_result_contracts.py",
+        "tests/test_quotient_replay.py"
       ]
     }
   ]

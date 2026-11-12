@@ -1,8 +1,6 @@
 # Known issues
 
-The delivery validation report reconciles the cumulative smaller-issue lists, including repeated observations and findings already corrected. The [robustness contracts](robustness.md) document the maintained input, replay and metadata behavior; the regression suite covers the reproduced failures.
-
-The following smaller findings remain recorded while mathematical soundness fixes take priority:
+These are interface inconsistencies and incomplete dispatch routes. Consult the [capability matrix](capabilities.md) for mathematical scope and the [robustness contracts](robustness.md) for input and replay behavior.
 
 - Determinant zero-set routing can decline a set-valued interval restriction that succeeds as an equivalent Boolean inequality. No affirmative result is inferred from that decline.
 - `registry_hessian` accepts repeated argument positions, unlike `registry_gradient`. Callers should supply distinct positions; input-validation consistency remains to be improved.

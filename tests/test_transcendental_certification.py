@@ -99,7 +99,7 @@ def test_analytic_neighborhood_exp():
     assert r.certified and r.holomorphic is True
 
 
-def test_rationally_commensurate_exponential_algebraization():
+def test_rationally_commensurate_algebraization():
     e = sp.exp(x / 2) + sp.exp(3 * x / 2) + sp.exp(-x / 2)
     a = algebraize(e, x)
     assert a.changed and a.exact and a.method == "exponential_substitution"

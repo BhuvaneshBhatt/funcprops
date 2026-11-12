@@ -121,6 +121,58 @@ def _real_value_on_domain(expr, var, requested):
     return normalize_arithmetic(expr).xreplace({var: axis}).is_real is True
 
 
+def _has_complex_intermediates(expr, var):
+    """Find complex operands anywhere in the raw tree after intrinsic assumptions."""
+    return any(
+        isinstance(node, sp.Expr)
+        # Piecewise arguments are expression/condition pairs, not operands of
+        # an elementary formula. Its branch formulas are visited separately.
+        and node.func in _ELEMENTARY_HEADS
+        and not all(_real_on_definition(arg, var) for arg in node.args)
+        and _complex_intermediates(node, var)
+        for node in sp.preorder_traversal(expr)
+    )
+
+
+def _real_formula_on_domain(expr, var, support):
+    """Rewrite complex intermediates on a proved signed real source interval.
+
+    Assumptions on a fresh axis justify principal-log branch expansion. The
+    caller must keep the original source guards: this formula describes values
+    on support and does not redefine the source at canceled holes.
+    """
+    from ..domain_tracking import coordinate_domain_compatible
+
+    if (
+        not isinstance(support, sp.Set)
+        or not coordinate_domain_compatible(var, support)
+        or expr.free_symbols - {var}
+        or expr.has(sp.Float)
+        or sp.count_ops(expr) > 80
+    ):
+        return None
+    if support.is_subset(sp.Interval.open(0, sp.oo)) is True:
+        axis = sp.Dummy("real_formula_axis", positive=True)
+    elif support.is_subset(sp.Interval.open(-sp.oo, 0)) is True:
+        axis = sp.Dummy("real_formula_axis", negative=True)
+    else:
+        axis = sp.Dummy("real_formula_axis", real=True)
+    try:
+        value = sp.simplify(
+            sp.expand_complex(normalize_arithmetic(expr).xreplace({var: axis}))
+        )
+        if value.has(sp.re, sp.im, sp.arg, sp.atan2) or value.is_real is not True:
+            return None
+        exponential = sp.simplify(value.rewrite(sp.exp))
+        if exponential.is_real is True and sp.count_ops(exponential) < sp.count_ops(
+            value
+        ):
+            value = exponential
+        return value.xreplace({axis: var})
+    except SYMBOLIC_QUERY_ERRORS:
+        return None
+
+
 def _pow_real_domain(expr, var):
     if normalize_arithmetic(expr).is_real is False:
         return S.false

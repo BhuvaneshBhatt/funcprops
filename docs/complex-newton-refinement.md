@@ -8,9 +8,9 @@ Python blocks on this page form one ordered session, executed from a fresh names
 import sympy as s
 import funcprops as fp
 
-z = s.Symbol('z')
+z = s.Symbol("z")
 r = s.Rational(1, 10)
-parent = fp.certify_analytic_contour(s.exp(z)-1, z, -r-s.I*r, r+s.I*r)
+parent = fp.certify_analytic_contour(s.exp(z) - 1, z, -r - s.I * r, r + s.I * r)
 step = fp.certify_complex_refinement(parent)
 assert step is not None and step.verify()
 assert step.contraction < 1
@@ -18,9 +18,14 @@ assert step.root_region.zero_count == 1
 assert len(step.zero_regions) == 4
 assert all(region.verify() for region in step.regions)
 
-state = fp.certify_complex_isolation(s.exp(z)-1, z, -r-s.I*r, r+s.I*r,
+state = fp.certify_complex_isolation(
+    s.exp(z) - 1,
+    z,
+    -r - s.I * r,
+    r + s.I * r,
     max_box_diameter=s.Rational(1, 10**8),
-    policy=fp.EnclosurePolicy(max_depth=32, max_cells=1024))
+    policy=fp.EnclosurePolicy(max_depth=32, max_cells=1024),
+)
 assert state.complete and state.verify() and state.refinements
 assert state.coverage_complete and state.isolation_complete and state.accuracy_complete
 ```

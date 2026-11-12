@@ -308,7 +308,7 @@ def test_numeric_branch_cut_jumps_elliptic_f_amplitude():
     assert abs(complex(best["Jump"]) - complex(best["ExpectedJump"])) < 3
 
 
-def test_numeric_branch_cut_jumps_elliptic_pi_amplitude():
+def test_numeric_branch_cut_jumps_pi_amplitude():
     z = Symbol("z", complex=True)
     out = numeric_branch_cut_jumps(elliptic_pi(S.Half, z, S(3)), [z], wprec=30)
     assert out
@@ -318,7 +318,7 @@ def test_numeric_branch_cut_jumps_elliptic_pi_amplitude():
     assert abs(complex(best["Jump"]) - complex(best["ExpectedJump"])) < 2
 
 
-def test_numeric_branch_samples_do_not_use_sympy_evalf(monkeypatch):
+def test_branch_sample_evaluation(monkeypatch):
     import funcprops.branchcuts.computation as computation
 
     z = symbols("z")
@@ -346,7 +346,7 @@ def test_numeric_branch_callable_is_reused():
     ) is computation._mpmath_numeric_callable(expr, z)
 
 
-def test_elliptic_pi_branch_sampling_avoids_adaptive_ellippi(monkeypatch):
+def test_elliptic_pi_branch_sampling_adaptive_ellippi(monkeypatch):
     """The warmed elliptic-Pi branch sampler must use only fixed-work contours."""
     import mpmath as mp
 

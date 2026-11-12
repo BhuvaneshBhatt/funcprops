@@ -24,7 +24,7 @@ def test_complex_expression_cannot_be_certified_zero(expr):
     assert certify_identity_zero(expr) is False
 
 
-def test_complex_pointwise_and_identity_zero_are_distinct():
+def test_complex_pointwise_identity_zero_distinct():
     assert certify_zero(sp.I * x) is None
     assert certify_identity_zero(sp.I * x) is False
     assert certify_zero(sp.I * x, assumptions=sp.Eq(x, 0)) is True
@@ -49,7 +49,7 @@ def test_nonreal_output_has_no_real_sign_or_domain(expr):
     assert sign(expr, x, domain=sp.FiniteSet(0)) is Sign.UNKNOWN
 
 
-def test_complex_exponential_real_axis_domain_is_not_unrestricted():
+def test_complex_exponential_domain():
     assert domain(sp.exp(sp.I * x), x) == sp.Eq(sp.sin(x), 0)
     assert domain(sp.exp(sp.I * x), x, domain=sp.S.Complexes) is sp.S.true
     assert domain(sp.exp(sp.I / x), x, domain=sp.S.Complexes) == sp.Ne(x, 0)
@@ -128,7 +128,7 @@ def test_real_root_families_require_real_phase(head, phase):
     assert not zero_geometry(expr, x)
 
 
-def test_root_family_verification_rejects_nonreal_formula():
+def test_root_family_verification_nonreal_formula():
     from dataclasses import replace
 
     from funcprops.infinite_root_families import affine_trig_root_family
@@ -139,7 +139,7 @@ def test_root_family_verification_rejects_nonreal_formula():
     assert not replace(family, index_domain=sp.FiniteSet(0)).verify()
 
 
-def test_parameter_constant_cannot_be_certified_root_free():
+def test_parameter_constant_roots():
     from funcprops.transcendental.roots import transcendental_roots
 
     parameter = sp.Symbol("parameter")
@@ -149,7 +149,7 @@ def test_parameter_constant_cannot_be_certified_root_free():
 
 
 @pytest.mark.parametrize("head", [sp.erf, sp.erfi])
-def test_unique_real_zero_theorem_requires_real_affine_argument(head):
+def test_unique_real_zero_theorem_affine_argument(head):
     from funcprops.transcendental.roots import _special
 
     assert _special(head(x + sp.I), x, sp.S.Reals) is None
@@ -157,7 +157,7 @@ def test_unique_real_zero_theorem_requires_real_affine_argument(head):
 
 
 @pytest.mark.parametrize("threshold", [0, 1])
-def test_strict_outer_curvature_does_not_erase_inner_plateau(threshold):
+def test_strict_curvature_inner_plateau(threshold):
     from funcprops import convexity
     from funcprops.results import Convexity
 
@@ -170,7 +170,7 @@ def test_strict_outer_curvature_does_not_erase_inner_plateau(threshold):
     )
 
 
-def test_nonlinear_exponential_is_not_automatically_convex():
+def test_nonlinear_exponential_curvature():
     from funcprops import convexity
     from funcprops.results import Convexity
 

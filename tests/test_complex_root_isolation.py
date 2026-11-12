@@ -32,7 +32,7 @@ def test_argument_principle_refuses_boundary_zero():
     assert cert.zero_count is None
 
 
-def test_complex_isolation_separates_three_sine_roots():
+def test_complex_isolation_three_sine_roots():
     z = sp.symbols("z")
     result = fp.complex_zeros(
         sp.sin(z),
@@ -50,7 +50,7 @@ def test_complex_isolation_separates_three_sine_roots():
     assert all(item.certificate.certified for item in result.rectangles)
 
 
-def test_exact_complex_roots_are_returned_as_mathematical_set():
+def test_exact_complex_roots_returned_mathematical_set():
     z = sp.symbols("z")
     roots = fp.complex_zeros(
         z**3 - 1,

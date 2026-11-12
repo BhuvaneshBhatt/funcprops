@@ -98,7 +98,7 @@ def test_boundary_zeros_never_complete(f, lo, hi):
     )
 
 
-def test_mutations_source_geometry_images_winding_schema():
+def test_mutations_source_geometry_images_schema():
     c = fp.certify_analytic_contour(sp.exp(z) - 1, z, LO, HI, policy=P)
     for bad in (
         replace(c, zero_count=2),
@@ -140,7 +140,7 @@ def test_exact_tiling_shared_edges_and_omissions():
     assert not replace(c, regions=(boundary, right)).verify()
 
 
-def test_budget_primitive_and_complex_coordinate_guards():
+def test_budget_primitive_complex_coordinate_guards():
     c = fp.certify_analytic_contour(
         sp.exp(z) - 1, z, LO, HI, policy=replace(P, max_cells=0)
     )
@@ -178,7 +178,7 @@ def test_budget_primitive_and_complex_coordinate_guards():
         sp.exp(sp.sin(z)),
     ],
 )
-def test_outward_complex_primitive_contains_high_precision_samples(f):
+def test_outward_complex_primitive_contains_samples(f):
     box = (sp.Rational(-1, 4), sp.Rational(-1, 5), sp.Rational(1, 3), sp.Rational(1, 4))
     bounds = complex_box_evaluate(f, z, box, precision=25)
     for re in (box[0], 0, box[2]):
@@ -188,7 +188,7 @@ def test_outward_complex_primitive_contains_high_precision_samples(f):
             assert bool(bounds[1].evalf(70) <= sp.im(v) <= bounds[3].evalf(70))
 
 
-def test_erf_disk_shared_cluster_evidence_and_multiple_winding():
+def test_erf_disk_shared_cluster_multiple_winding():
     c = fp.certify_complex_cluster(
         sp.erf(z), z, 0, sp.Rational(1, 4), policy=replace(P, max_taylor_order=12)
     )
@@ -207,7 +207,7 @@ def test_erf_disk_shared_cluster_evidence_and_multiple_winding():
 @pytest.mark.parametrize(
     "operation", [fp.certify_analytic_contour, fp.analytic_complex_coverage]
 )
-def test_hard_wall_returns_native_source_bound_pending(operation):
+def test_hard_wall_native_source_bound_pending(operation):
     c = operation(sp.exp(z) - 1, z, LO, HI, policy=replace(P, seconds=0.000001))
     assert not c.complete and c.verify()
     status = fp.replay_status(c)

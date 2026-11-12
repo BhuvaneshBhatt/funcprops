@@ -45,7 +45,7 @@ def test_exhaustive_indexed_or_degenerate_families(f, count, mult):
         (sp.Union(sp.Interval(0, sp.pi), sp.Interval(3 * sp.pi, 4 * sp.pi)), 4),
     ],
 )
-def test_finite_integer_ranges_and_endpoint_ownership(D, count):
+def test_finite_integer_ranges_endpoint_ownership(D, count):
     r = fp.infinite_root_coverage(sp.sin(x), x, D)
     assert r.complete and r.root_count == count and r.verify()
 
@@ -62,7 +62,7 @@ def test_finite_integer_ranges_and_endpoint_ownership(D, count):
         (sp.tan(x), sp.Interval(-sp.pi / 2, sp.pi / 2), 1, 1),
     ],
 )
-def test_fold_multiplicities_and_inverse_phase_boundaries(f, D, count, mult):
+def test_fold_multiplicities_inverse_phase_boundaries(f, D, count, mult):
     r = fp.infinite_root_coverage(f, x, D)
     assert (
         r.complete
@@ -72,7 +72,7 @@ def test_fold_multiplicities_and_inverse_phase_boundaries(f, D, count, mult):
     )
 
 
-def test_cancelled_denominator_and_tangent_chart_poles_are_not_roots():
+def test_tangent_poles_after_cancellation():
     atom = sp.sin(x)
     held = sp.Mul(atom, sp.Pow(atom, -1, evaluate=False), evaluate=False)
     r = fp.infinite_root_coverage(held, x, sp.Interval(0, 2 * sp.pi))
@@ -86,7 +86,7 @@ def test_cancelled_denominator_and_tangent_chart_poles_are_not_roots():
     assert q.complete and q.root_count == 0 and q.verify()
 
 
-def test_held_zero_expression_has_infinite_defined_roots():
+def test_held_zero_expression_infinite_defined_roots():
     atom = sp.sin(x)
     held = sp.Add(atom, sp.Mul(-1, atom, evaluate=False), evaluate=False)
     r = fp.infinite_root_coverage(held, x)
@@ -98,14 +98,14 @@ def test_held_zero_expression_has_infinite_defined_roots():
     )
 
 
-def test_source_formula_transfer_keeps_a_nonperiodic_hole():
+def test_source_formula_transfer_nonperiodic_hole():
     held = sp.Mul(sp.sin(x), x, sp.Pow(x, -1, evaluate=False), evaluate=False)
     r = fp.infinite_root_coverage(held, x)
     assert r.complete and r.root_count is sp.oo and r.verify()
     assert r.proof.context.effective.contains(0) is sp.S.false
 
 
-def test_family_mutations_and_replay_without_enumeration(monkeypatch):
+def test_family_replay_enumeration(monkeypatch):
     r = fp.infinite_root_coverage(sp.sin(x) + sp.Rational(1, 3), x, sp.Interval(0, 10))
     leaf = r.proof.leaves[0]
     w, family = leaf.witness, leaf.witness.families[0]
@@ -136,6 +136,6 @@ def test_family_mutations_and_replay_without_enumeration(monkeypatch):
 @pytest.mark.parametrize(
     "f", [sp.sin(x) + sp.cos(x), sp.sin(x * x), sp.sin(x) + sp.sin(sp.sqrt(2) * x)]
 )
-def test_unsupported_global_family_never_infers_exhaustiveness(f):
+def test_unsupported_global_family(f):
     r = fp.infinite_root_coverage(f, x, policy=fp.EnclosurePolicy(max_cells=4))
     assert not r.complete and r.root_count is None

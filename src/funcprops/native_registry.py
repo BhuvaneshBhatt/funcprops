@@ -16,7 +16,7 @@ class NativeFamilyRegistration:
 
     Registration data stays explicit so CI can count native coverage without
     executing property analyzers. Only facts whose slot semantics are
-    unambigous are promoted here.
+    unambiguous are promoted here.
     """
 
     family: str
@@ -54,7 +54,6 @@ def _unary_entire(family: str, head, derivative, *, identities=()):
 
 
 def _derivative_family(family, head, slot, result, *, source=None, **rule_options):
-    """Declare a family with one exact argument-derivative theorem."""
     return NativeFamilyRegistration(
         family,
         head,

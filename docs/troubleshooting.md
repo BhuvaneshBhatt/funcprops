@@ -7,7 +7,7 @@ Start with the result's concrete type, source domain and theorem scope. Use the 
 | A compact property is UNKNOWN | The available rules did not decide it | Make parameter hypotheses explicit, supply an exact restricted domain, and request detailed results where supported |
 | verify() succeeds but complete is false | The supplied local/partial evidence is valid | Inspect unresolved regions, clusters and the relevant per-conclusion completion fields |
 | verify_certificate returns false | Evidence is unsupported or rejected; this does not negate the mathematical proposition | Inspect replay_status, check the concrete record type and retain the original source/coordinate/domain |
-| certified is None in replay_status | Unified replay is unavailble for this object | Use its documented route; do not treat an arbitrary verify method as a certificate |
+| certified is None in replay_status | Unified replay is unavailable for this object | Use its documented route; do not treat an arbitrary verify method as a certificate |
 | A wall budget expires | Work ended without the requested theorem | Retain a supported checkpoint and resume, or choose a narrower domain or larger budget |
 | A coefficient route declines | The exact field, embedding or expression grammar is outside that adapter | Keep exact SymPy constants and allow native routes; check the field-degree and parameter limits |
 | A branch assembly reports disagreement | The supplied selected charts differ | Inspect sheet choices and overlaps; disagreement alone does not prove every possible global branch impossible |
@@ -20,7 +20,7 @@ import sympy as sp
 import funcprops as fp
 
 x, a = sp.symbols("x a", real=True)
-partial = fp.certify_parameter_geometry(x*x-a, x, (a,), max_cells=0)
+partial = fp.certify_parameter_geometry(x * x - a, x, (a,), max_cells=0)
 assert partial.verify() and not partial.complete
 assert partial.specialize({a: 1}) is None
 complete = fp.resume_parameter_geometry(partial, max_cells=100)

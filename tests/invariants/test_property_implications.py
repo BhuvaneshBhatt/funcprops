@@ -8,7 +8,7 @@ from funcprops.results import PropertyResult
 x = sp.symbols("x", real=True)
 
 
-def test_analytic_implies_smooth_differentiable_and_continuous():
+def test_analytic_smooth_differentiable_continuous():
     for expr in (sp.exp(x), sp.sin(x), x**4 + x + 1):
         assert fp.analytic(expr, x) is fp.Analyticity.ANALYTIC
         assert fp.smoothness(expr, x, return_result=True).smooth is True
@@ -16,7 +16,7 @@ def test_analytic_implies_smooth_differentiable_and_continuous():
         assert fp.continuous(expr, x) is fp.Continuity.CONTINUOUS
 
 
-def test_strong_convexity_reports_strict_and_ordinary_implications():
+def test_strong_convexity_strict_implications():
     result = fp.convexity(x**2, x, all_properties=True, return_result=True)
     assert isinstance(result, PropertyResult)
     assert result.primary is fp.Convexity.STRONGLY_CONVEX
@@ -36,7 +36,7 @@ def test_strict_monotonicity_implies_injectivity():
         assert fp.injective(expr, x) is fp.TruthValue.TRUE
 
 
-def test_bijectivity_requires_both_mapping_properties():
+def test_bijectivity_mapping_properties():
     for expr in (x, x**3):
         assert fp.bijective(expr, x) is fp.TruthValue.TRUE
         assert fp.injective(expr, x) is fp.TruthValue.TRUE

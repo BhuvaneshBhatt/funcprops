@@ -9,8 +9,8 @@ Choose a task and run its checked example. Each workflow starts fresh; its secti
 | [Restricted domains and held expressions](restricted-domains.md) | Domains and shape | introductory |
 | [Algebraic backend roots](algebraic-roots.md) | Complex roots | intermediate |
 | [Budgets and resumption](budgets-and-resume.md) | Budgets and replay | intermediate |
-| [Certified extrema bounds](certified-extrema-bounds.md) | Real optimization | intermediate |
 | [Exact algebraic coefficients](algebraic-coefficients.md) | Exact arithmetic | intermediate |
+| [Exact and partial real images](range-analysis.md) | Domains and shape | intermediate |
 | [Guarded and Piecewise results](guarded-piecewise.md) | Parameters | intermediate |
 | [Independent native replay](replay.md) | Budgets and replay | intermediate |
 | [Polynomial parameter geometry](parameter-geometry.md) | Parameters | intermediate |

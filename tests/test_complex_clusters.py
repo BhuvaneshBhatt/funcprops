@@ -18,7 +18,7 @@ z = sp.Symbol("z")
         (z - sp.I, sp.Rational(1, 2), 0),
     ],
 )
-def test_analytic_cluster_count_does_not_infer_real_or_distinct_roots(f, R, count):
+def test_cluster_counts(f, R, count):
     r = fp.certify_complex_cluster(f, z, 0, R)
     assert r.complete and r.zero_count == count and r.multiplicity_count == count
     assert r.verify() and fp.verify_certificate(r)
@@ -59,7 +59,7 @@ def test_source_parameter_and_coordinate_guards():
         assert not r.complete and not r.verify()
 
 
-def test_complex_witness_mutations_and_independent_replay(monkeypatch):
+def test_complex_witness_mutations_independent_replay(monkeypatch):
     r = fp.certify_complex_cluster((sp.exp(z) - 1) ** 2, z, 0, sp.Rational(1, 4))
     for altered in (
         replace(r, zero_count=1),

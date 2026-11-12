@@ -72,7 +72,7 @@ def test_ferrers_q_named_function_interlacing_metadata():
     assert g.interlacings and "interlace" in g.interlacings[0].source
 
 
-def test_monotonicity_consumes_bessel_derivative_geometry():
+def test_monotonicity_bessel_derivative_geometry():
     nu = sp.symbols("nu", real=True, nonnegative=True)
     r = monotonicity(
         sp.besselj(nu, x), x, domain=x > 0, intervals=True, return_result=True
@@ -83,7 +83,7 @@ def test_monotonicity_consumes_bessel_derivative_geometry():
     assert r.evidence[0].alternating is True
 
 
-def test_monotonicity_consumes_airy_derivative_geometry():
+def test_monotonicity_airy_derivative_geometry():
     r = monotonicity(sp.airyai(x), x, intervals=True, return_result=True)
     assert isinstance(r, PropertyResult)
     assert r.primary is Monotonicity.NOT_MONOTONE
@@ -102,7 +102,7 @@ def test_convexity_airy_uses_ode_zero_geometry():
     assert dec.alternating is True
 
 
-def test_orthogonal_derivative_geometry_drives_interval_reasoning():
+def test_orthogonal_derivative_geometry_reasoning():
     f = sp.legendre(4, x)
     m = monotonicity(
         f, x, domain=(x > -1) & (x < 1), intervals=True, return_result=True
@@ -128,7 +128,7 @@ def test_indexed_zero_ordering_bounds_api():
     assert len(zero_ordering_bounds(a)) == 2
 
 
-def test_sign_partition_orders_exact_algebraic_roots_mathematically():
+def test_sign_partition_orders_roots_mathematically():
     f = sp.diff(sp.legendre(4, x), x)
     from funcprops import Sign, sign
 

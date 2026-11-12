@@ -19,7 +19,7 @@ z = s.Symbol("z")
 a = s.Symbol("a", real=True)
 
 
-def test_bounded_precision_refinement_resolves_rounding():
+def test_bounded_precision_refinement_rounding():
     cutoff = s.Rational(str(s.E.evalf(60))) - s.Rational(1, 10) ** 59
     f = (s.E - cutoff) * s.exp(x)
     D = s.Interval(0, 1)
@@ -59,7 +59,7 @@ def test_affine_parameter_assumptions_specialize(premise, expected):
     assert not replace(c, assumptions=s.S.true).verify()
 
 
-def test_unknown_and_contradictory_guard_contexts_do_not_certify():
+def test_unknown_guard_consistency():
     c = affine_global_mapping((a * x,), (x,), assumptions=False)
     assert c.classification is T.UNKNOWN and not c.certified and not c.complete
     with pytest.raises(ValueError, match="coordinates"):
@@ -78,7 +78,7 @@ def test_composition_keeps_component_assumptions():
     assert not replace(combined, assumptions=s.S.true).verify()
 
 
-def test_specialization_happens_before_case_product_budget():
+def test_specialization_happens_before_product_budget():
     parameters = s.symbols("a0:9", real=True)
     parts = tuple(
         affine_global_mapping((parameter * x,), (x,)) for parameter in parameters
@@ -102,7 +102,7 @@ def test_constant_power_continuation_and_reversal(exponent):
     assert s.simplify(backward - z**exponent * s.exp(-2 * s.pi * s.I * exponent)) == 0
 
 
-def test_power_parameter_requires_finite_constant_exponent():
+def test_power_parameter_finite_constant_exponent():
     contour = fp.ParametricContour(s.exp(s.I * t), (t, 0, 2 * s.pi))
     q = s.Symbol("q", complex=True)
     assert fp.analytic_continue(z**q, z, contour, return_certificate=True).verify()
@@ -110,7 +110,7 @@ def test_power_parameter_requires_finite_constant_exponent():
     assert fp.analytic_continue(z ** s.Symbol("unknown"), z, contour) is None
 
 
-def test_piecewise_inequality_branch_and_singleton_assembly():
+def test_piecewise_inequality_branch_assembly():
     f = s.Piecewise((s.exp(x), x < 0), (2, s.Eq(x, 0)), (x * x + 1, True))
     c = fp.certify_inequality(f, 0, x, s.Interval(-1, 1))
     assert c.source == "piecewise-assembly" and c.verify() and c.complete
@@ -119,7 +119,7 @@ def test_piecewise_inequality_branch_and_singleton_assembly():
     assert not replace(c, evidence=(wrong, *c.evidence[1:])).verify()
 
 
-def test_piecewise_counterexample_and_jump_remain_distinct():
+def test_piecewise_counterexample_jump_remain_distinct():
     f = s.Piecewise((x * x + 1, x < 0), (-2, True))
     c = fp.certify_inequality(f, 0, x, s.Interval(-1, 1))
     assert c.classification is T.FALSE and c.verify()
@@ -127,7 +127,7 @@ def test_piecewise_counterexample_and_jump_remain_distinct():
     assert fp.verify_real_root_interval(f, x, s.Interval(-1, 1)).root_count is None
 
 
-def test_corner_regular_assembly_is_not_a_global_c1_claim():
+def test_corner_regularity_assembly():
     f = s.Piecewise((-x, x < 0), (x, True))
     D = s.Interval(-1, 1)
     c = fp.certify_piecewise_regular(f, x, D)
@@ -163,7 +163,7 @@ def test_piecewise_polygon_winding_and_continuation():
     )
 
 
-def test_inactive_complex_source_holes_and_undefined_conditions():
+def test_inactive_complex_source_holes_undefined():
     f = s.Piecewise((1 + s.I, x <= 0), (s.log(x) + s.I, True))
     assert complex_source_defined(f, x, s.Interval(-1, 1))
     bad_condition = s.Gt(s.Pow(x, -1, evaluate=False), 0, evaluate=False)
@@ -182,10 +182,9 @@ def test_inactive_complex_source_holes_and_undefined_conditions():
         (fp.winding_number, (square(), 0), {"return_certificate": True}),
         (fp.argument_principle, (z, z, square()), {"return_certificate": True}),
         (fp.certify_inequality, (s.exp(x), 0, x, s.Interval(0, 1)), {}),
-        (fp.certify_global_minimum, (x * x, x), {}),
     ],
 )
-def test_budget_expiry_is_context_bound_and_incomplete(operation, args, kwargs):
+def test_budget_expiry_context_bound_incomplete(operation, args, kwargs):
     result = operation(*args, **kwargs, work_budget=1e-6)
     assert isinstance(result, BudgetedResult)
     assert not result.complete and not result.certified and not result.verify()

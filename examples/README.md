@@ -9,8 +9,8 @@ Install the package and run an example from the checkout root, such as `python e
 | How do input restrictions and held operations affect an answer? | [restricted_domains.py](restricted_domains.py) | introductory |
 | How does the algebraic backend preserve principal branches and holes? | [algebraic_roots.py](algebraic_roots.py) | intermediate |
 | What can I retain when a bounded search stops? | [budgets_and_resume.py](budgets_and_resume.py) | intermediate |
-| Can I bound extrema without solving the stationary equation exactly? | [certified_extrema_bounds.py](certified_extrema_bounds.py) | intermediate |
 | How do I keep an algebraic coefficient on its intended real conjugate? | [algebraic_coefficients.py](algebraic_coefficients.py) | intermediate |
+| Which outputs are possible when critical points have no closed form? | [range_analysis.py](range_analysis.py) | intermediate |
 | How do parameter guards and singleton branches reach downstream results? | [guarded_piecewise.py](guarded_piecewise.py) | intermediate |
 | Can I check a native proof with its proposer disabled? | [replay.py](replay.py) | intermediate |
 | How many distinct real roots does a polynomial family have? | [parameter_geometry.py](parameter_geometry.py) | intermediate |

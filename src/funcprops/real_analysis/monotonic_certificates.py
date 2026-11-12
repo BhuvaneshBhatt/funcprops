@@ -30,7 +30,7 @@ class MonotonicDecomposition:
     source: str = "structural-monotonic-decomposition"
 
     def reconstruct(self):
-        """Reconstruct the expression from the stored transformation and auxilliary data."""
+        """Reconstruct the expression from the stored transformation and auxiliary data."""
 
         return sp.simplify(self.outer(self.inner))
 
@@ -51,6 +51,7 @@ class MonotonicInterval:
 
     @property
     def increasing(self):
+        """Source cells classified as increasing."""
         return self.direction in (
             Monotonicity.STRICTLY_INCREASING,
             Monotonicity.NONDECREASING,
@@ -58,6 +59,7 @@ class MonotonicInterval:
 
     @property
     def decreasing(self):
+        """Source cells classified as decreasing."""
         return self.direction in (
             Monotonicity.STRICTLY_DECREASING,
             Monotonicity.NONINCREASING,
@@ -70,8 +72,8 @@ class IndexedMonotonicPartition:
 
     domain: sp.Set
     boundary_geometry: tuple
-    # Empty means the geometry proves alternation but not its phase; different
-    # from assuming that the leftmost cell increases.
+    # Empty means the geometry proves alternation but not its phase.  This is
+    # deliberately different from assuming that the leftmost cell increases.
     direction_pattern: tuple[Monotonicity, ...] = ()
     complete: bool = False
     first_direction: Monotonicity | None = None
@@ -99,6 +101,7 @@ class MonotonicPartition:
 
     @property
     def finite(self):
+        """Whether the represented root family is finite."""
         return self.indexed is None
 
     @property
@@ -168,6 +171,7 @@ class MonotonicPartition:
 
     @property
     def has_indexed_oscillation(self):
+        """Whether indexed oscillatory extrema are retained."""
         return bool(
             self.indexed is not None
             and self.indexed.complete
@@ -1132,7 +1136,8 @@ def certified_monotonic_inverse(expr, var, value, *, domain=True, partition=None
                 complete = complete and cell_complete
         else:
             sols.append(s)
-    # Include attained shared/end boundaries exactly once; solveset on open cells excludes them.
+    # Include attained shared/end boundaries exactly once; solveset on open
+    # cells intentionally excludes them.
     boundaries = []
     if isinstance(part.domain, sp.Interval):
         if not part.domain.left_open:

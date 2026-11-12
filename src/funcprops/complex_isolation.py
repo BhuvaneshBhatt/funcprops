@@ -123,6 +123,7 @@ class ComplexIsolationProof:
 
     @property
     def complete(self):
+        """Completion status for this record's stated scope; replay validity is separate."""
         return (
             self.coverage_complete
             and self.isolation_complete
@@ -131,22 +132,27 @@ class ComplexIsolationProof:
 
     @property
     def root_count(self):
+        """Distinct-root count supplied by the record, or None when unresolved."""
         return self.distinct_root_count
 
     @property
     def total_count(self):
+        """Total count established by the coverage evidence."""
         return self.multiplicity_count
 
     @property
     def regions(self):
+        """Geometric regions to which the stored evidence applies."""
         return self.zero_regions + self.root_regions + self.clusters
 
     @property
     def isolating_boxes(self):
+        """Enclosures retained for the individually isolated roots."""
         return tuple(c.rectangle for c in self.root_regions)
 
     @property
     def refinements(self):
+        """Refinement records retained by the search or proof."""
         found, seen = [], set()
         nodes = list(self.regions)
         stack = []
@@ -167,10 +173,12 @@ class ComplexIsolationProof:
 
     @property
     def real_root_count(self):
+        """Number of real roots when their reality and count are established."""
         return 0 if self.multiplicity_count == 0 else None
 
     @property
     def individual_multiplicities(self):
+        """Per-root multiplicities when individually established."""
         return (
             tuple(c.zero_count for c in self.root_regions)
             if self.isolation_complete
@@ -179,10 +187,12 @@ class ComplexIsolationProof:
 
     @property
     def scope(self):
+        """Scope identifier: ``native-entire-complex-root-isolation``."""
         return "native-entire-complex-root-isolation"
 
     @property
     def certified(self):
+        """Replay acceptance; a valid partial record need not be complete."""
         return self.verify()
 
     def check(self):
@@ -437,6 +447,7 @@ class ComplexIsolationTask:
 
     @property
     def depth(self):
+        """Number of derivative steps retained by the chain."""
         return len(self.path)
 
 
@@ -464,74 +475,92 @@ class ComplexIsolationState:
 
     @property
     def state(self):
+        """Resumable search state, when one is retained."""
         return self
 
     @property
     def expression(self):
+        """Expression to which the stored evidence applies."""
         return self.proof.expression
 
     @property
     def variable(self):
+        """Coordinate used by the source and its evidence."""
         return self.proof.variable
 
     @property
     def scope(self):
+        """Scope identifier: ``resumable-native-entire-complex-isolation``."""
         return "resumable-native-entire-complex-isolation"
 
     @property
     def complete(self):
+        """Completion status for this record's stated scope; replay validity is separate."""
         return self.proof.complete
 
     @property
     def coverage_complete(self):
+        """Whether the evidence covers the entire requested region."""
         return self.proof.coverage_complete
 
     @property
     def isolation_complete(self):
+        """Whether every covered root is individually isolated."""
         return self.proof.isolation_complete
 
     @property
     def accuracy_complete(self):
+        """Whether the requested enclosure accuracy has been reached."""
         return self.proof.accuracy_complete
 
     @property
     def multiplicity_count(self):
+        """Root count with multiplicity, or None when unresolved."""
         return self.proof.multiplicity_count
 
     @property
     def total_count(self):
+        """Total count established by the coverage evidence."""
         return self.proof.total_count
 
     @property
     def distinct_root_count(self):
+        """Distinct-root count supplied by the record, or None when unresolved."""
         return self.proof.distinct_root_count
 
     @property
     def root_count(self):
+        """Distinct-root count supplied by the record, or None when unresolved."""
         return self.proof.root_count
 
     @property
     def unresolved(self):
+        """Requested regions whose proof obligations remain open."""
         return self.proof.unresolved
 
     @property
     def isolating_boxes(self):
+        """Enclosures retained for the individually isolated roots."""
         return self.proof.isolating_boxes
 
     @property
     def clusters(self):
+        """Covered root clusters that have not been separated individually."""
         return self.proof.clusters
 
     @property
     def refinements(self):
+        """Refinement records retained by the search or proof."""
         return self.proof.refinements
 
     @property
     def exhaustion(self):
+        """Resource limit that stopped the search, if any."""
         return self.proof.exhaustion
 
     @property
     def certified(self):
+        """Replay acceptance; a valid partial record need not be complete."""
         return self.verify()
 
     def verify(self):

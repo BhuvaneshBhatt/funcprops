@@ -38,7 +38,10 @@ import funcprops as fp
 
 x, y = sp.symbols("x y", real=True)
 result = fp.periodicity(sp.sin(3 * x), x, return_result=True)
-assert result.classification is fp.Periodicity.PERIODIC and sp.simplify(result.period - 2*sp.pi/3) == 0
+assert (
+    result.classification is fp.Periodicity.PERIODIC
+    and sp.simplify(result.period - 2 * sp.pi / 3) == 0
+)
 ```
 
 Expected: periodic with period ``2*pi/3``.

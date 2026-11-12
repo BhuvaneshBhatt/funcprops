@@ -4,20 +4,20 @@ import funcprops as fp
 from funcprops.results import SingularityKind, SingularityResult
 
 
-def test_complex_log_returns_single_boolean_singularity_locus():
+def test_complex_log_single_boolean_singularity_locus():
     x = sp.Symbol("x")
     locus = fp.singularities(sp.log(x), x, sp.S.Complexes)
     expected = (sp.re(x) <= 0) & sp.Eq(sp.im(x), 0)
     assert sp.simplify_logic(sp.Xor(locus, expected), force=True) is sp.S.false
 
 
-def test_conditional_expression_can_restrict_away_singularities():
+def test_conditional_expression_restrict_singularities():
     x = sp.Symbol("x")
     expr = fp.ConditionalExpression(sp.log(x), x > 0)
     assert fp.singularities(expr, x) is sp.S.false
 
 
-def test_detailed_result_classifies_loci_and_preserves_records():
+def test_detailed_result_classifies_loci_records():
     x = sp.Symbol("x")
     result = fp.singularities(sp.log(x), x, return_result=True)
     assert isinstance(result, SingularityResult)
@@ -35,7 +35,7 @@ def test_detailed_result_classifies_loci_and_preserves_records():
     }
 
 
-def test_detailed_singularities_are_disjunction_of_classified_loci():
+def test_detailed_singularities_disjunction_loci():
     x = sp.Symbol("x", real=True)
     expr = sp.sign(x) / (x - 1)
     result = fp.singularities(expr, x, sp.S.Reals, return_result=True)
@@ -51,7 +51,7 @@ def test_detailed_singularities_are_disjunction_of_classified_loci():
     assert sp.simplify_logic(sp.Xor(result.singularities, union)) is sp.S.false
 
 
-def test_restricted_detailed_result_has_no_excluded_records():
+def test_restricted_detailed_records():
     x = sp.Symbol("x")
     expr = fp.ConditionalExpression(sp.log(x), x > 0)
     result = fp.singularities(expr, x, return_result=True)

@@ -50,74 +50,92 @@ class ComplexIsolationRun:
 
     @property
     def expression(self):
+        """Expression to which the stored evidence applies."""
         return self.state.expression
 
     @property
     def variable(self):
+        """Coordinate used by the source and its evidence."""
         return self.state.variable
 
     @property
     def proof(self):
+        """Coverage evidence retained by the result."""
         return self.state.proof
 
     @property
     def complete(self):
+        """Completion status for this record's stated scope; replay validity is separate."""
         return self.state.complete
 
     @property
     def coverage_complete(self):
+        """Whether the evidence covers the entire requested region."""
         return self.state.coverage_complete
 
     @property
     def isolation_complete(self):
+        """Whether every covered root is individually isolated."""
         return self.state.isolation_complete
 
     @property
     def accuracy_complete(self):
+        """Whether the requested enclosure accuracy has been reached."""
         return self.state.accuracy_complete
 
     @property
     def root_count(self):
+        """Distinct-root count supplied by the record, or None when unresolved."""
         return self.state.root_count
 
     @property
     def distinct_root_count(self):
+        """Distinct-root count supplied by the record, or None when unresolved."""
         return self.root_count
 
     @property
     def individual_multiplicities(self):
+        """Per-root multiplicities when individually established."""
         return self.proof.individual_multiplicities
 
     @property
     def refinements(self):
+        """Refinement records retained by the search or proof."""
         return self.proof.refinements
 
     @property
     def unresolved(self):
+        """Requested regions whose proof obligations remain open."""
         return self.proof.unresolved
 
     @property
     def clusters(self):
+        """Covered root clusters that have not been separated individually."""
         return self.proof.clusters
 
     @property
     def multiplicity_count(self):
+        """Root count with multiplicity, or None when unresolved."""
         return self.state.multiplicity_count
 
     @property
     def total_count(self):
+        """Total count established by the coverage evidence."""
         return self.multiplicity_count
 
     @property
     def tested(self):
+        """Number of candidate cells or attempts examined."""
         return self.state.tested
 
     @property
     def termination_contract(self):
+        """Conditional completion theorem attached to the search."""
         return ComplexIsolationGuarantee(self)
 
     @property
     def scope(self):
+        """Scope identifier: ``cofinal-staged-native_complex_isolation``."""
         return "cofinal-staged-native_complex_isolation"
 
     def check(self):
@@ -173,30 +191,37 @@ class ComplexIsolationGuarantee:
 
     @property
     def expression(self):
+        """Expression to which the stored evidence applies."""
         return self.run.expression
 
     @property
     def variable(self):
+        """Coordinate used by the source and its evidence."""
         return self.run.variable
 
     @property
     def conditional(self):
+        """Whether the conclusion depends on unproved hypotheses."""
         return True
 
     @property
     def complete(self):
+        """Completion status for this record's stated scope; replay validity is separate."""
         return False
 
     @property
     def scope(self):
+        """Scope identifier: ``conditional-complex-isolation-termination-theorem``."""
         return "conditional-complex-isolation-termination-theorem"
 
     @property
     def known_multiple_root(self):
+        """Whether the retained evidence identifies a repeated root."""
         return any(c.zero_count > 1 for c in self.run.proof.root_regions)
 
     @property
     def unproved_hypotheses(self):
+        """Premises of the conditional theorem that remain unproved."""
         result = []
         if self.run.proof.outer is None:
             result.append("zero-free-outer-boundary")
@@ -207,6 +232,7 @@ class ComplexIsolationGuarantee:
 
     @property
     def applicable(self):
+        """Whether the theorem's supported input conditions are established."""
         return (
             False
             if self.known_multiple_root

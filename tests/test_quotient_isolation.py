@@ -109,7 +109,7 @@ def test_cancellation_keeps_original_source_holes():
     assert q.pole_multiplicity_count == 0
 
 
-def test_cancellation_does_not_restore_a_zero_at_a_hole():
+def test_cancellation_hole():
     f = s.Mul(z, s.Pow(z, -1, evaluate=False), s.exp(z) - 1, evaluate=False)
     q = solve(f)
     assert q.verify() and q.complete and q.root_count == 0
@@ -178,7 +178,7 @@ def test_near_collision_is_never_exact_cancellation(epsilon):
         s.Piecewise((1 / z, s.re(z) > 0), (z, True)),
     ],
 )
-def test_unsupported_grammar_does_not_acquire_certification(f):
+def test_unsupported_grammar_status(f):
     assert not qi.quotient_source_supported(f, z)
     with pytest.raises(ValueError, match="unsupported"):
         solve(f)
@@ -191,7 +191,7 @@ def test_unsupported_grammar_does_not_acquire_certification(f):
         s.Mul(s.exp(z) - 1, s.Pow(s.exp(z) - 1, -1, evaluate=False), evaluate=False),
     ],
 )
-def test_outer_poles_and_source_holes_remain_unresolved(f):
+def test_outer_poles_source_holes_remain_unresolved(f):
     q = fp.certify_quotient_isolation(
         f, z, -s.I, 1 + s.I, policy=replace(P, max_cells=64)
     )
@@ -200,7 +200,7 @@ def test_outer_poles_and_source_holes_remain_unresolved(f):
     assert q.proof.unresolved == (q.proof.rectangle,)
 
 
-def test_multiple_root_and_pole_clusters_have_separate_completion():
+def test_multiple_root_pole_clusters_completion():
     q = fp.certify_quotient_isolation(
         1 / (s.exp(z) - 2) ** 2,
         z,
@@ -229,7 +229,7 @@ def test_requested_accuracy_for_zeros_and_poles(name, value):
             assert (u - a) ** 2 + (v - b) ** 2 <= value**2
 
 
-def test_accuracy_is_not_implied_by_individual_isolation():
+def test_isolation_accuracy():
     q = fp.certify_quotient_isolation(
         1 / (s.exp(z) - 2),
         z,
@@ -269,7 +269,7 @@ def test_all_atomic_checkpoints_replay():
         "isolate_complex_roots",
     ],
 )
-def test_wall_timeout_returns_replayable_resumable_quotient_state(entry):
+def test_wall_timeout_replayable_resumable_state(entry):
     f = (s.exp(z) - 2) / (z + 2)
     policy = replace(P, seconds=0.001)
     if entry == "isolate_complex_roots":
@@ -348,7 +348,7 @@ def test_denominator_exclusion_rejects_tampering(holomorphic, mutation):
     assert not p.verify()
 
 
-def test_approximate_common_zero_and_altered_jets_are_rejected():
+def test_invalid_common_zero_jets():
     p = solve(s.sin(z) / (s.exp(z) - 1)).proof
     c = p.cells[0]
     for loc in (
@@ -361,7 +361,7 @@ def test_approximate_common_zero_and_altered_jets_are_rejected():
         assert not replace(p, cells=(replace(c, numerator_location=loc),)).verify()
 
 
-def test_bad_checkpoint_paths_and_duplicate_tasks_are_rejected():
+def test_bad_checkpoint_paths_duplicate_tasks():
     q = fp.certify_quotient_isolation(
         1 / (s.exp(z) - 2), z, *RECT, policy=replace(P, max_cells=0)
     )
@@ -379,9 +379,7 @@ def test_bad_checkpoint_paths_and_duplicate_tasks_are_rejected():
             fp.resume_quotient_isolation(bad)
 
 
-def test_local_records_and_result_replay_with_all_search_disabled(
-    monkeypatch, holomorphic, mixed
-):
+def test_local_records_result_replay_search_disabled(monkeypatch, holomorphic, mixed):
     coincidence = solve(s.sin(z) / (s.exp(z) - 1))
     result = cr._quotient_result(mixed)
     source = holomorphic.proof.source
@@ -418,7 +416,7 @@ def test_local_records_and_result_replay_with_all_search_disabled(
         assert fp.replay_status(record).certified is True
 
 
-def test_self_attesting_subclasses_cannot_enter_unified_replay(holomorphic):
+def test_self_attesting_record_subclasses(holomorphic):
     for record in (
         holomorphic,
         holomorphic.proof,
@@ -450,7 +448,7 @@ def test_invalid_controls_are_rejected(field, value):
         solve(1 / (s.exp(z) - 2), **{field: value})
 
 
-def test_standalone_pole_region_replay_and_kind_binding(mixed):
+def test_standalone_pole_region_replay_kind(mixed):
     record = mixed.proof.pole_regions[0]
     assert record.kind == "pole" and record.verify()
     assert record.multiplicity_count == record.distinct_pole_count == 1
@@ -459,7 +457,7 @@ def test_standalone_pole_region_replay_and_kind_binding(mixed):
     assert not replace(record, kind="unknown").verify()
 
 
-def test_joint_count_checker_rejects_altered_component_box(mixed):
+def test_joint_count_checker_altered_component_box(mixed):
     c = mixed.proof.cells[0]
     n = c.numerator
     bad = replace(n, rectangle=fp.CoverageRectangle(-1 - s.I, 1 + s.I))
@@ -478,7 +476,7 @@ def test_joint_count_checker_rejects_altered_component_box(mixed):
         (1 / (s.exp(z) - 2) ** 2, 0, 2, -2, 0),
     ],
 )
-def test_public_meromorphic_counter_has_explicit_extension_counts(
+def test_public_meromorphic_counter_extension_counts(
     f, zeros, poles, winding, source_zeros
 ):
     c = fp.meromorphic_rectangle_count(f, z, *RECT, policy=P)
@@ -495,7 +493,7 @@ def test_public_meromorphic_counter_has_explicit_extension_counts(
     assert not replace(c, schema_version=True).verify()
 
 
-def test_meromorphic_count_does_not_require_individual_pole_isolation():
+def test_meromorphic_pole_isolation():
     c = fp.meromorphic_rectangle_count(
         1 / (s.exp(z) - 2) ** 2,
         z,
@@ -516,7 +514,7 @@ def test_unseparated_quotient_divisors():
     )
 
 
-def test_meromorphic_certificate_replay_does_not_call_search(monkeypatch, mixed):
+def test_meromorphic_replay_independence(monkeypatch, mixed):
     c = fp.QuotientContourCertificate(mixed.proof)
 
     def forbidden(*args, **kwargs):
@@ -542,7 +540,7 @@ def test_counted_outer_checkpoint_resume(mixed):
     assert q.complete and q.verify() and q.root_count == q.distinct_pole_count == 1
 
 
-def test_unsupported_source_is_rejected_before_wall_worker():
+def test_unsupported_source_before_wall_worker():
     with pytest.raises(ValueError, match="unsupported"):
         fp.certify_quotient_isolation(
             s.log(z), z, *RECT, policy=replace(P, seconds=0.001)
@@ -552,7 +550,7 @@ def test_unsupported_source_is_rejected_before_wall_worker():
 @pytest.mark.parametrize(
     "entry", [fp.certify_complex_isolation, fp.resume_complex_isolation]
 )
-def test_generic_dispatch_does_not_ignore_invalid_newton_mode(entry, mixed):
+def test_invalid_newton_mode(entry, mixed):
     with pytest.raises(ValueError, match="use_newton"):
         if entry is fp.certify_complex_isolation:
             entry(mixed.proof.expression, z, *RECT, use_newton=1)

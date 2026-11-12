@@ -152,10 +152,12 @@ class RestrictedExpr(Expr):
 
     @property
     def expr(self):
+        """Expression represented by this record."""
         return self.args[0]
 
     @property
     def cond(self):
+        """Boolean guard attached to the restricted expression."""
         return self.args[1]
 
     def _sympystr(self, printer):
@@ -329,6 +331,7 @@ class ConditionalJump:
     note: str = ""
 
     def to_piecewise(self, off_value=None):
+        """Express the guarded jump as a Piecewise value."""
         if off_value is None:
             off_value = Undefined()
         return Piecewise((self.expr, self.cond), (off_value, True))
@@ -343,6 +346,7 @@ class JumpTerm:
     note: str = ""
 
     def as_restricted(self):
+        """Return the expression with its source restriction attached."""
         return restrict(self.expr, self.cond)
 
 
@@ -355,6 +359,7 @@ class BranchRule:
     remarks: str = ""
 
     def restricted_terms(self):
+        """Return every jump term with its guard attached."""
         return tuple(term.as_restricted() for term in self.jump_terms)
 
     def as_piecewise(self, default=S.Zero):

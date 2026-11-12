@@ -15,9 +15,11 @@ punctured = sp.S.Reals - sp.FiniteSet(0)
 ## A zero disproves Jacobian nonvanishing
 
 ```python
-jacobian = fp.determinant_nonvanishing(sp.sin(x), x, domain=sp.Interval(0, 2), return_result=True)
+jacobian = fp.determinant_nonvanishing(
+    sp.sin(x), x, domain=sp.Interval(0, 2), return_result=True
+)
 assert jacobian.classification is fp.TruthValue.FALSE
-assert jacobian.witness == sp.pi/2
+assert jacobian.witness == sp.pi / 2
 assert fp.verify_certificate(jacobian)
 ```
 
@@ -26,7 +28,7 @@ The scalar rule reuses finite affine sine/cosine zero sets after proving that th
 ## Relative continuity and limiting gaps
 
 ```python
-continuity = fp.continuous(sp.sin(x)*sp.sign(x), x, return_result=True)
+continuity = fp.continuous(sp.sin(x) * sp.sign(x), x, return_result=True)
 assert continuity.primary is fp.Continuity.CONTINUOUS
 assert fp.verify_certificate(continuity.evidence[0])
 step = sp.Piecewise((0, x < 0), (1, True))
@@ -38,10 +40,12 @@ Assembly rewrites supported affine sign arguments into exact real branches, chec
 Uniform continuity can still fail across an excluded seam. Two intervals approaching a common point have arbitrarily close pairs of inputs. Finite unequal limiting values keep their output differences away from zero, disproving uniform continuity and Lipschitz regularity simultaneously.
 
 ```python
-metric = fp.lipschitz(sp.atan(1/x), x, domain=punctured, return_result=True)
-uniform = fp.uniformly_continuous(sp.atan(1/x), x, domain=punctured, return_result=True)
+metric = fp.lipschitz(sp.atan(1 / x), x, domain=punctured, return_result=True)
+uniform = fp.uniformly_continuous(
+    sp.atan(1 / x), x, domain=punctured, return_result=True
+)
 assert metric.value is uniform.primary is fp.TruthValue.FALSE
-assert metric.proof.seams[0][3] == (-sp.pi/2, sp.pi/2)
+assert metric.proof.seams[0][3] == (-sp.pi / 2, sp.pi / 2)
 assert metric.verify() and fp.verify_certificate(uniform.evidence[0])
 ```
 
@@ -50,14 +54,14 @@ A negative Lipschitz result alone does not disprove uniform continuity. This rou
 ## Positive curvature and an interior counterexample
 
 ```python
-expression = sp.exp(x*y) + 2*x*x + 2*y*y
+expression = sp.exp(x * y) + 2 * x * x + 2 * y * y
 curvature = fp.convexity(expression, (x, y), domain=box, return_result=True)
 certificate = curvature.evidence[0]
 assert curvature.primary is fp.Convexity.STRONGLY_CONVEX
-assert certificate.modulus == 4-sp.E
+assert certificate.modulus == 4 - sp.E
 assert fp.verify_certificate(certificate, expr=expression, var=(x, y))
 
-expression = x**4 + y**4 + 10*x*y
+expression = x**4 + y**4 + 10 * x * y
 curvature = fp.convexity(expression, (x, y), domain=box, return_result=True)
 assert curvature.primary is fp.Convexity.NEITHER
 assert curvature.evidence[0].proof[3] == (0, 0)
@@ -73,7 +77,7 @@ Both rules require the existing bounded raw-source C2 grammar on a rational box 
 ## Canceling a square-root branch
 
 ```python
-for expression in (sp.cos(sp.sqrt(z)), sp.sin(sp.sqrt(z))**2):
+for expression in (sp.cos(sp.sqrt(z)), sp.sin(sp.sqrt(z)) ** 2):
     result = fp.meromorphic(expression, z, return_result=True)
     assert result.primary is fp.Meromorphicity.MEROMORPHIC
     assert fp.verify_certificate(result.evidence[0])

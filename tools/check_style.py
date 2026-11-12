@@ -51,6 +51,12 @@ def style_errors(root=ROOT):
         tree = ast.parse(text, filename=str(path))
         source = relative.parts[0] == "src"
         for scope in ast.walk(tree):
+            if isinstance(scope, (ast.FunctionDef, ast.ClassDef)) and re.search(
+                r"(?:^|_)(?:m|p|v)\d+(?:_|$)", scope.name
+            ):
+                errors.append(
+                    f"{relative}:{scope.lineno}: use a mathematical task name"
+                )
             if isinstance(scope, (ast.Module, ast.ClassDef, ast.FunctionDef)):
                 names = set()
                 for node in scope.body:
@@ -73,6 +79,19 @@ def style_errors(root=ROOT):
                     errors.append(
                         f"{relative}:{node.lineno}: undocumented public definition {node.name}"
                     )
+            for cls in ast.walk(tree):
+                if not isinstance(cls, ast.ClassDef) or cls.name.startswith("_"):
+                    continue
+                for member in cls.body:
+                    if (
+                        isinstance(member, (ast.FunctionDef, ast.AsyncFunctionDef))
+                        and not member.name.startswith("_")
+                        and not ast.get_docstring(member)
+                    ):
+                        errors.append(
+                            f"{relative}:{member.lineno}: undocumented public member "
+                            f"{cls.name}.{member.name}"
+                        )
     for target in re.findall(r"\]\(([^)]+)\)", (root / "README.md").read_text()):
         if not urlsplit(target).scheme:
             errors.append(f"README.md: relative link {target}")

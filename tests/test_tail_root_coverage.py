@@ -29,7 +29,7 @@ def test_full_core_and_both_tail_covers(f, count):
     assert fp.replay_status(r).outcome == "complete-coverage"
 
 
-def test_unproved_tail_and_core_are_retained_and_resumable():
+def test_unproved_tail_core_retained_resumable():
     r = fp.infinite_root_coverage(
         sp.exp(x) - 4 * x * x, x, policy=replace(P, max_depth=0, max_cells=4)
     )
@@ -40,7 +40,7 @@ def test_unproved_tail_and_core_are_retained_and_resumable():
     assert all(a in again.proof.leaves for a in r.proof.leaves)
 
 
-def test_tail_witness_mutations_and_independent_replay(monkeypatch):
+def test_tail_witness_mutations_independent_replay(monkeypatch):
     r = fp.infinite_root_coverage(sp.exp(x) - x * x, x, policy=P)
     leaf = next(a for a in r.proof.leaves if a.theorem == "exponential-tail")
     w = leaf.witness
@@ -66,7 +66,7 @@ def test_tail_witness_mutations_and_independent_replay(monkeypatch):
 
 
 @pytest.mark.parametrize("cap", [0, 1, 2])
-def test_insufficient_work_does_not_complete_infinite_domain(cap):
+def test_incomplete_infinite_domain(cap):
     r = fp.infinite_root_coverage(
         sp.exp(x) - 4 * x * x, x, policy=replace(P, max_cells=cap)
     )

@@ -7,6 +7,7 @@ Python blocks on this page form one ordered session, executed from a fresh names
 ```python
 import sympy as sp
 import funcprops as fp
+
 x = sp.symbols("x")
 assert fp.integrate(x**2, (x, 0, 2)) == sp.Rational(8, 3)
 fp.integrate(x**2, (x, 0, 2), return_result=True)
@@ -19,9 +20,9 @@ An oriented symbolic contour retains its parameterization geometric image:
 ```python
 z = sp.symbols("z")
 t = sp.symbols("t", real=True)
-gamma = fp.ParametricContour(sp.cos(t) + sp.I*sp.sin(t), (t, 0, 2*sp.pi))
-assert fp.integrate(1/z, (z, gamma)) == 2*sp.pi*sp.I
-assert fp.integrate(1/z, (z, gamma.reversed())) == -2*sp.pi*sp.I
+gamma = fp.ParametricContour(sp.cos(t) + sp.I * sp.sin(t), (t, 0, 2 * sp.pi))
+assert fp.integrate(1 / z, (z, gamma)) == 2 * sp.pi * sp.I
+assert fp.integrate(1 / z, (z, gamma.reversed())) == -2 * sp.pi * sp.I
 ```
 
 Polynomial/rational parameterizations delegate semialgebraic incidence and nonvanishing obligations to Semialg when available. Algebraizable sine/cosine parameterizations retain an explicit unit-circle algebraization while keeping the original parameter interval, so orientation and multiple winding are not lost. General analytic pullbacks use adaptive Taylor panels. Remainders are bounded with validated interval arithmetic; inability to enclose a derivative causes an incomplete result.
@@ -29,8 +30,8 @@ Polynomial/rational parameterizations delegate semialgebraic incidence and nonva
 A sequence of complex points is accepted as a piecewise-linear path:
 
 ```python
-square = [1+sp.I, -1+sp.I, -1-sp.I, 1-sp.I, 1+sp.I]
-assert fp.integrate(1/z, (z, square)) == 2*sp.pi*sp.I
+square = [1 + sp.I, -1 + sp.I, -1 - sp.I, 1 - sp.I, 1 + sp.I]
+assert fp.integrate(1 / z, (z, square)) == 2 * sp.pi * sp.I
 ```
 
 ## Certification boundary

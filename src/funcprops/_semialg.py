@@ -115,7 +115,7 @@ def _require_coefficients(expression, variables, *conditions):
         )
 
 
-def _algebraic_encoding(expression, variable, *conditions):
+def _algebraic_encoding(expression, variable, *conditions, policy=None):
     if (
         coefficient_profile(expression, variable, conditions=conditions).kind
         != "algebraic"
@@ -125,7 +125,9 @@ def _algebraic_encoding(expression, variable, *conditions):
     from .real_analysis.common import normalize_domain_condition
 
     normalized = tuple(normalize_domain_condition(c, variable) for c in conditions)
-    return encode_algebraic_coefficients((expression, *normalized), (variable,))
+    return encode_algebraic_coefficients(
+        (expression, *normalized), (variable,), policy=policy
+    )
 
 
 def _algebraic_shape(expr, variable, restriction, *, mode):
@@ -174,14 +176,14 @@ def _public_function(name: str) -> Callable:
         import semialg
     except ImportError as exc:
         raise SemialgUnavailable(
-            "funcprops real-analysis queries require semialg>=1.3.0"
+            "funcprops real-analysis queries require semialg>=1.5.0"
         ) from exc
 
     try:
         function = getattr(semialg, name)
     except AttributeError as exc:
         raise SemialgUnavailable(
-            f"semialg>=1.3.0 does not provide the required public function {name!r}"
+            f"semialg>=1.5.0 does not provide the required public function {name!r}"
         ) from exc
     if not callable(function):
         raise SemialgUnavailable(f"semialg public attribute {name!r} is not callable")
@@ -200,9 +202,9 @@ def _public_function(name: str) -> Callable:
     return call
 
 
-def domain(expr, variable):
+def domain(expr, variable, *, coefficient_policy=None):
     """Return semialg's recognized real-domain condition."""
-    encoding = _algebraic_encoding(expr, variable)
+    encoding = _algebraic_encoding(expr, variable, policy=coefficient_policy)
     if encoding is not None:
         from .real_analysis.domain import _argument_domains, _piecewise_domain
         from .results import PropertyResult
@@ -228,14 +230,29 @@ def domain(expr, variable):
     return function(sp.sympify(expr), [variable])
 
 
-def range(expr, variable, value_symbol, *, constraints=True, method="qe", **kwargs):
+def range(
+    expr,
+    variable,
+    value_symbol,
+    *,
+    constraints=True,
+    method="qe",
+    coefficient_policy=None,
+    **kwargs,
+):
     """Return an exact real-range condition from semialg."""
-    encoding = _algebraic_encoding(expr, variable, constraints)
+    encoding = _algebraic_encoding(
+        expr, variable, constraints, policy=coefficient_policy
+    )
     if encoding is not None:
         if method != "qe":
             raise NotImplementedError("algebraic coefficients require exact QE")
         encoding = _algebraic_encoding(
-            expr, variable, constraints, domain(expr, variable)
+            expr,
+            variable,
+            constraints,
+            domain(expr, variable, coefficient_policy=coefficient_policy),
+            policy=coefficient_policy,
         )
         if encoding is None:
             raise NotImplementedError("algebraic range query exceeds encoding bounds")
@@ -335,7 +352,7 @@ def function_mapping_properties(
     )
 
 
-def eligible_problem(expr, variable, *, domain=True) -> bool:
+def eligible_problem(expr, variable, *, domain=True, coefficient_policy=None) -> bool:
     """Return whether an expression/domain pair is safe for semialg delegation."""
     from .real_analysis.common import (
         is_semialgebraic_condition,
@@ -345,7 +362,16 @@ def eligible_problem(expr, variable, *, domain=True) -> bool:
     return (
         is_semialgebraic_expression(expr, variable)
         and is_semialgebraic_condition(domain, variable)
-        and coefficient_profile(expr, variable, conditions=(domain,)).kind == "rational"
+        and (
+            coefficient_profile(expr, variable, conditions=(domain,)).kind == "rational"
+            or (
+                coefficient_policy is not None
+                and _algebraic_encoding(
+                    expr, variable, domain, policy=coefficient_policy
+                )
+                is not None
+            )
+        )
     )
 
 

@@ -43,7 +43,7 @@ def test_complex_taylor_coefficients(expr, order):
         assert a <= real <= c and b <= imag <= d
 
 
-def test_precision_portfolios_are_nested_and_all_caps_grow():
+def test_precision_portfolios_nested_caps_grow():
     base = fp.EnclosurePolicy(
         precision=2,
         max_precision=2,
@@ -77,7 +77,7 @@ def test_every_split_index_gets_unbounded_effort():
         assert efforts == list(range(len(efforts))) and len(efforts) > 25
 
 
-def test_reserved_work_does_not_advance_an_unattempted_split():
+def test_reserved_split_work():
     q = fp.certify_complex_isolation(
         sp.sin(z),
         z,
@@ -93,7 +93,7 @@ def test_reserved_work_does_not_advance_an_unattempted_split():
     assert r.exhaustion == "cell-budget"
 
 
-def test_source_bound_cofinal_resume_and_conditional_scope():
+def test_conditional_cofinal_resume():
     q = fp.adaptive_complex_isolation(sp.sin(z), z, -4 - sp.I, 4 + sp.I, stages=0)
     assert q.verify() and not q.complete and q.next_stage == 0
     theorem = q.termination_contract
@@ -179,7 +179,7 @@ def test_false_cofinal_checkpoints_rejected(mutation):
         fp.resume_adaptive_complex_isolation(q)
 
 
-def test_cofinal_wall_seed_and_resume_preserve_stage_and_source():
+def test_cofinal_wall_seed_resume_stage_source():
     q = fp.adaptive_complex_isolation(
         sp.sin(z),
         z,
@@ -252,7 +252,7 @@ def test_individual_multiple_roots_and_accuracy(expr, multiplicity):
     assert q.proof.individual_multiplicities == (multiplicity,) and not q.clusters
 
 
-def test_nearby_simple_pair_is_not_a_guessed_multiple():
+def test_nearby_simple_pair():
     f = (sp.exp(z) - 1) * (sp.exp(z) - sp.Rational(1001, 1000))
     p = fp.certify_analytic_contour(f, z, *RECT)
     assert p.verify() and p.zero_count == 2
@@ -267,7 +267,7 @@ def test_nearby_simple_pair_is_not_a_guessed_multiple():
     "center",
     [sp.Float("0.0"), sp.Rational(1, 10**20), sp.I / 100, sp.Symbol("a"), sp.log(2)],
 )
-def test_approximate_or_unproved_centers_are_declined(exact, center):
+def test_approximate_unproved_centers_declined(exact, center):
     assert fp.certify_complex_multiple_root(exact.parent, center=center) is None
 
 
@@ -324,7 +324,7 @@ def test_located_subsets_preserve_boundary_ownership(exact):
     assert not boundary.verify()
 
 
-def test_multiple_roots_do_not_satisfy_the_simple_class_guarantee():
+def test_multiple_root_class_guarantee():
     q = fp.adaptive_complex_isolation((sp.exp(z) - 1) ** 2, z, *RECT, stages=4)
     assert q.verify() and q.complete and q.root_count == 1 and q.total_count == 2
     assert (
@@ -425,7 +425,7 @@ def test_exact_nonreal_multiple_root():
     )
 
 
-def test_mixed_simple_and_multiple_roots_have_correct_totals():
+def test_mixed_simple_multiple_roots_correct_totals():
     f = (sp.exp(z) - 1) ** 2 * (sp.exp(z) - 2)
     q = fp.certify_complex_isolation(
         f,
@@ -438,7 +438,7 @@ def test_mixed_simple_and_multiple_roots_have_correct_totals():
     assert sorted(q.proof.individual_multiplicities) == [1, 2]
 
 
-def test_cofinal_series_growth_releases_a_small_erf_problem():
+def test_cofinal_series_growth_releases_erf_problem():
     base = fp.EnclosurePolicy(
         precision=2,
         max_precision=2,
@@ -472,7 +472,7 @@ def test_multiple_refinement_complements():
         assert not ci._assembled(p, zeros=zeros).verify()
 
 
-def test_altered_conditional_theorem_and_source_rejected():
+def test_altered_conditional_theorem_source():
     q = fp.adaptive_complex_isolation(sp.sin(z), z, *RECT, stages=0)
     assert not replace(q.termination_contract, theorem="unconditional").verify()
     assert (
@@ -481,7 +481,7 @@ def test_altered_conditional_theorem_and_source_rejected():
     )
 
 
-def test_multiple_helper_wall_budget_and_false_unit_proof(power):
+def test_multiple_helper_wall_budget_false_unit_proof(power):
     assert (
         fp.certify_complex_multiple_root(
             power.factorization.parent, policy=fp.EnclosurePolicy(seconds=0.001)
@@ -496,7 +496,7 @@ def test_multiple_helper_wall_budget_and_false_unit_proof(power):
     assert not fake.verify()
 
 
-def test_failed_factor_heuristic_does_not_disable_cofinal_contours(monkeypatch):
+def test_factor_failure_contours(monkeypatch):
     def failed(*args, **kwargs):
         raise sp.PolynomialError("unsupported factor heuristic")
 

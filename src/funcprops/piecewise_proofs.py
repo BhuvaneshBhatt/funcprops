@@ -50,14 +50,17 @@ class PiecewiseRegularityCertificate:
 
     @property
     def complete(self):
+        """Completion status for this record's stated scope; replay validity is separate."""
         return self.verify()
 
     @property
     def certified(self):
+        """Replay acceptance; a valid partial record need not be complete."""
         return self.verify()
 
     @property
     def scope(self):
+        """Scope identifier: ``continuous-piecewise-C1-on-requested-interval``."""
         return "continuous-piecewise-C1-on-requested-interval"
 
     def verify(self):

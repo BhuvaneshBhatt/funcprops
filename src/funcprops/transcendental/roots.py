@@ -72,6 +72,7 @@ class RootIsolationResult:
 
     @property
     def scope(self):
+        """Scope identifier: ``real-root-data-on-requested-domain``."""
         return "real-root-data-on-requested-domain"
 
     def verify(self):
@@ -144,10 +145,12 @@ class RootIsolationResult:
 
     @property
     def has_certificate(self):
+        """Whether the result carries a certificate object."""
         return bool(self.certificates or self.isolated_intervals)
 
     @property
     def has_local_certificates(self):
+        """Whether local proof records are retained."""
         return bool(self.isolated_intervals)
 
 
@@ -742,7 +745,6 @@ def _bisect_certified_bracket(expr, var, a, b, sa, *, steps=32):
 
 
 def _certified_range_on_interval(expr, var, interval):
-    """Return an exact range set on ``interval`` when funcprops can certify it."""
     try:
         from ..real_analysis.common import condition_to_set, set_to_condition
         from ..real_analysis.range import range

@@ -40,7 +40,7 @@ def test_unary_chain_rule_certificate():
     assert cert.terms[0].argument_position == 0
 
 
-def test_multivariate_outer_chain_rule_sums_partial_terms():
+def test_multivariate_outer_chain_rule_partial_terms():
     u = FunctionSlot(0, "u")
     v = FunctionSlot(1, "v")
     reg = FunctionRegistry(
@@ -69,7 +69,7 @@ def test_preserves_derivative_rule_conditions():
     assert cert.conditions == (x**2 > 0)
 
 
-def test_missing_partial_derivative_is_incomplete_not_guessed():
+def test_missing_partial_derivative():
     u = FunctionSlot(0, "u")
     reg = FunctionRegistry([], derivative_rules=[DerivativeRule(G, u, 2 * u)])
     x = sp.symbols("x")
@@ -78,7 +78,7 @@ def test_missing_partial_derivative_is_incomplete_not_guessed():
     assert cert.derivative is None
 
 
-def test_shared_derivative_cache_consumes_unconditional_native_rule():
+def test_shared_derivative_cache_unconditional_rule():
     from funcprops import registry
     from funcprops.proof_cache import cached_derivative
 

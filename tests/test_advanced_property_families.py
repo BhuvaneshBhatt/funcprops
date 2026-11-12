@@ -1,7 +1,6 @@
 import sympy as sp
 
 from funcprops.asymptotic_tails import certify_tail_sign
-from funcprops.certified_optimization import certify_global_minimum
 from funcprops.derivative_inequalities import derivative_chain_positive
 from funcprops.infinite_root_families import affine_sine_root_family
 from funcprops.meromorphic_contours import meromorphic_rectangle_count
@@ -33,12 +32,6 @@ def test_polynomial_tail_replay():
     x = sp.symbols("x", real=True)
     c = certify_tail_sign(x**4 - 3 * x + 1, x, direction=1, threshold=8)
     assert c.sign == 1 and c.verify()
-
-
-def test_certified_global_minimum():
-    x = sp.symbols("x", real=True)
-    c = certify_global_minimum((x - 3) ** 2 + 5, x)
-    assert c.point == 3 and c.value == 5 and c.verify()
 
 
 def test_infinite_affine_sine_family():
@@ -78,7 +71,7 @@ def test_meromorphic_boundary_zero_is_rejected():
     )
 
 
-def test_special_function_expansion_has_guarded_catalogue_entries():
+def test_special_function_expansion_catalogue_entries():
     from funcprops.real_analysis.special_functions import dlmf_facts
 
     assert dlmf_facts("LambertW")

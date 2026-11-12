@@ -28,7 +28,7 @@ def test_affine_bijectivity_does_not_ignore_target():
 
 
 @pytest.mark.parametrize("expr", [sp.exp(sp.I * x), sp.I * sp.exp(sp.I * x)])
-def test_real_injective_outer_rules_cannot_clip_complex_inner(expr):
+def test_injective_outer_complex_inner(expr):
     assert fp.injective(expr, x) is not TruthValue.TRUE
 
 
@@ -77,7 +77,7 @@ def test_finite_order_uses_values_not_derivatives(expr, points, expected):
         (sp.Ne(a, 0), Periodicity.APERIODIC),
     ],
 )
-def test_polynomial_periodicity_retains_zero_coefficient_cases(assumptions, expected):
+def test_polynomial_periodicity_zero_coefficient_cases(assumptions, expected):
     c = fp.periodicity(a * x, x, assumptions=assumptions, return_result=True)
     assert c.classification is expected
     assert fp.verify_certificate(c, expr=a * x, var=x)
@@ -100,7 +100,7 @@ def test_incommensurate_period_premises():
     )
 
 
-def test_compact_periodicity_does_not_drop_real_frequency_guard():
+def test_periodic_frequency_guard():
     u = sp.Symbol("u")
     assert fp.periodicity(sp.sin(u * x), x) is Periodicity.UNKNOWN
     c = fp.periodicity(sp.sin(u * x), x, return_result=True)
@@ -113,7 +113,7 @@ def test_compact_periodicity_does_not_drop_real_frequency_guard():
     assert fp.verify_certificate(c, expr=sp.sin(a * x), var=x)
 
 
-def test_negative_symmetry_does_not_ignore_parameter_stratum():
+def test_symmetry_parameter_strata():
     assert fp.symmetry(a * x + x * x, x) is Symmetry.UNKNOWN
     c = SymmetryResult(Symmetry.NEITHER)
     assert not fp.verify_certificate(c, expr=a * x + x * x, var=x)
@@ -152,7 +152,7 @@ def test_discovered_symmetry_metadata_must_replay():
         (sp.Ne(a, 0), Homogeneity.NOT_HOMOGENEOUS),
     ],
 )
-def test_nonpolynomial_homogeneity_keeps_zero_factor_cases(assumptions, expected):
+def test_nonpolynomial_homogeneity_zero_factor_cases(assumptions, expected):
     c = fp.homogeneity(
         a * sp.sqrt(x), x, degree=2, assumptions=assumptions, return_result=True
     )
@@ -171,7 +171,7 @@ def test_requested_homogeneity_degree():
     assert fp.homogeneity(x**a, x, degree=2) is not Homogeneity.NOT_HOMOGENEOUS
 
 
-def test_finite_injectivity_uses_original_values_and_pole_exclusions():
+def test_finite_injectivity_original_pole_exclusions():
     assert fp.injective(x * x, x, domain=sp.FiniteSet(-1, 1)) is TruthValue.FALSE
     assert fp.injective(1 / x, x, domain=sp.FiniteSet(0, 1)) is TruthValue.TRUE
     assert (

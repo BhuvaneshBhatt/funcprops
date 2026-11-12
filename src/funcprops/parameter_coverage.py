@@ -20,6 +20,7 @@ from .parameter_checker import (
 )
 from .parameter_contract import (
     BoxEnclosureWitness,
+    ConvexLevelWitness,
     ExponentialParameterWitness,
     MonotoneParameterWitness,
     ParameterCoverageProof,
@@ -436,14 +437,71 @@ def _exponential_cells(proof):
     return cells
 
 
+def _convex_level_cells(proof, policy):
+    """Split exact minimum and endpoint levels of a strongly convex source."""
+    from .coverage_checker import derivative_formula_on_cell
+    from .parameter_checker import convex_level_counts
+
+    f, x, a, D = proof.expression, proof.variable, proof.parameter, proof.domain
+    if not isinstance(D, sp.Interval) or any(
+        v.is_finite is not True for v in (D.start, D.end)
+    ):
+        return None
+    base = normalize_arithmetic(f + a)
+    if base.free_symbols - {x}:
+        return None
+    precision = policy.precision
+    if not translation_source_regular(
+        f, x, a, D.closure, precision, policy.max_series_terms
+    ):
+        return None
+    derivative = derivative_formula_on_cell(base, x, D.closure)
+    curvature = derivative_formula_on_cell(base, x, D.closure, 2)
+    if derivative is None or curvature is None:
+        return None
+    bound = enclosure_witness(
+        curvature, x, D.closure, precision, policy.max_series_terms
+    )
+    if bound is None or bound.lower <= 0:
+        return None
+    roots = sp.solveset(derivative, x, domain=D.interior)
+    if not isinstance(roots, sp.FiniteSet) or len(roots) != 1:
+        return None
+    center = next(iter(roots))
+    values = tuple(sp.simplify(base.subs(x, p)) for p in (center, D.start, D.end))
+    if any(v.is_real is not True or v.is_finite is not True for v in values):
+        return None
+    witness = ConvexLevelWitness(base, center, *values, bound)
+    # SymPy interval construction requires exact event ordering; unresolved
+    # order declines to the existing bounded-box portfolio.
+    events = sorted(set(values))
+    previous = -sp.oo
+    bands = []
+    for event in events:
+        bands.extend((sp.Interval.open(previous, event), sp.FiniteSet(event)))
+        previous = event
+    bands.append(sp.Interval.open(previous, sp.oo))
+    result = []
+    for band in bands:
+        for region in _parts(sp.Intersection(proof.parameter_domain, band)):
+            cell = ParameterRootCell(region, "convex-level", 0, 0, witness)
+            data = convex_level_counts(proof, cell)
+            if data is None:
+                return None
+            result.append(replace(cell, root_count=data[0], multiplicity_count=data[1]))
+    return result
+
+
 def parameter_root_coverage(
     expr, var, parameter, domain=sp.S.Reals, *, parameter_domain=sp.S.Reals, policy=None
 ):
     """Cover exact one-parameter strata, retaining all exceptional/unproved cells.
 
     Full-space degree <=2 polynomials over QQ[parameter] and compact monotone
-    translations have exact finite strata. Other finite parameter intervals use
-    bounded uniform-box subdivision; collisions need not admit a finite proof.
+    translations have exact finite strata. Strongly convex level families on
+    finite intervals can split minimum and endpoint events. Other finite
+    parameter intervals use bounded uniform-box subdivision; general collisions
+    need not admit a finite proof.
     """
     policy = EnclosurePolicy() if policy is None else policy
     if not isinstance(policy, EnclosurePolicy):
@@ -462,8 +520,23 @@ def parameter_root_coverage(
             policy.seconds,
         )
     proof = _parameter_seed(expr, var, parameter, domain, parameter_domain)
-    if not isinstance(parameter_domain, sp.Set) or not isinstance(domain, sp.Set):
-        raise ValueError("domain and parameter_domain must be exact Sets")
+    if (
+        not isinstance(parameter_domain, sp.Set)
+        or not isinstance(domain, sp.Set)
+        or domain.free_symbols
+        or parameter_domain.free_symbols
+        or domain.has(sp.Float)
+        or parameter_domain.has(sp.Float)
+    ):
+        raise ValueError("domain and parameter_domain must be fixed exact Sets")
+    from .domain_tracking import coordinate_domain_compatible
+
+    if not coordinate_domain_compatible(proof.variable, domain):
+        raise ValueError("domain conflicts with the source Symbol assumptions")
+    if not coordinate_domain_compatible(proof.parameter, parameter_domain):
+        raise ValueError(
+            "parameter_domain conflicts with the parameter Symbol assumptions"
+        )
     if policy.max_cells == 0:
         return replace(proof, exhaustion="cell-budget" if not proof.complete else None)
     candidates = None
@@ -473,6 +546,8 @@ def parameter_root_coverage(
             candidates = _exponential_cells(proof)
         if candidates is None:
             candidates = _monotone_cells(proof, policy)
+        if candidates is None:
+            candidates = _convex_level_cells(proof, policy)
     except (
         ValueError,
         TypeError,

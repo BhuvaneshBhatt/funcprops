@@ -29,6 +29,7 @@ class AlgebraizationResult:
 
     @property
     def changed(self):
+        """Whether the transformation changed the source formula."""
         return bool(self.substitutions)
 
 

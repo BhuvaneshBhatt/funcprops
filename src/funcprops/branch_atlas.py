@@ -66,6 +66,7 @@ class _Replay:
 
     @property
     def certified(self):
+        """Replay acceptance; a valid partial record need not be complete."""
         return self.verify()
 
 
@@ -83,23 +84,28 @@ class LogBranchChart(_Replay):
 
     @property
     def source_syntax(self):
+        """Serialized source expression retained for definition-guard checks."""
         return sp.srepr(self.expression)
 
     @property
     def coordinate_assumptions(self):
+        """Intrinsic coordinate assumptions bound to the source."""
         return tuple(sorted(self.variable.assumptions0.items()))
 
     @property
     def logarithm(self):
+        """Selected logarithm represented by the chart."""
         a = _PHASES[self.phase]
         return sp.log(self.expression / a) + sp.log(a) + 2 * sp.pi * sp.I * self.sheet
 
     @property
     def complete(self):
+        """Completion status for this record's stated scope; replay validity is separate."""
         return True
 
     @property
     def scope(self):
+        """Scope identifier: ``selected-holomorphic-logarithm-on-rectangle-neighborhood``."""
         return "selected-holomorphic-logarithm-on-rectangle-neighborhood"
 
     def check(self):
@@ -156,22 +162,27 @@ class LogAtlasProof(_Replay):
 
     @property
     def coverage_complete(self):
+        """Whether the evidence covers the entire requested region."""
         return bool(self.charts) and not self.unresolved
 
     @property
     def gluing_complete(self):
+        """Whether all required chart-overlap conditions are established."""
         return self.coverage_complete and all(t.turns == 0 for t in self.transitions)
 
     @property
     def complete(self):
+        """Completion status for this record's stated scope; replay validity is separate."""
         return self.gluing_complete
 
     @property
     def obstructions(self):
+        """Overlap or transition data preventing global gluing."""
         return tuple(t for t in self.transitions if t.turns)
 
     @property
     def scope(self):
+        """Scope identifier: ``finite-log-chart-cover-with-checked-overlap-transitions``."""
         return "finite-log-chart-cover-with-checked-overlap-transitions"
 
     def check(self):
@@ -246,14 +257,17 @@ class GluedPowerProof(_Replay):
 
     @property
     def expression(self):
+        """Expression to which the stored evidence applies."""
         return sp.Pow(self.atlas.expression, self.exponent, evaluate=False)
 
     @property
     def variable(self):
+        """Coordinate used by the source and its evidence."""
         return self.atlas.variable
 
     @property
     def multipliers(self):
+        """Branch multipliers retained on chart overlaps."""
         return tuple(
             sp.simplify(sp.exp(2 * sp.pi * sp.I * self.exponent * t.turns))
             for t in self.atlas.transitions
@@ -261,13 +275,16 @@ class GluedPowerProof(_Replay):
 
     @property
     def complete(self):
+        """Completion status for this record's stated scope; replay validity is separate."""
         return self.atlas.coverage_complete and all(m == 1 for m in self.multipliers)
 
     @property
     def scope(self):
+        """Scope identifier: ``selected-power-chart-gluing-not-principal-power-identity``."""
         return "selected-power-chart-gluing-not-principal-power-identity"
 
     def branch(self, index):
+        """Return the selected power branch on one logarithm chart."""
         return sp.exp(self.exponent * self.atlas.charts[index].logarithm)
 
     def check(self):

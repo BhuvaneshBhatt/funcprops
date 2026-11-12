@@ -1,5 +1,42 @@
 # Changelog
 
+## 0.5.0
+
+### Real-Function Ranges
+
+- New `real_images` subsystem for certified real-function range analysis, supporting exact images, partial inner and outer bounds.
+- Add incremental range refinement with checkpoint/resume support, allowing unresolved critical-point isolation to continue under larger budgets.
+- Improve range analysis over disconnected, open, closed, and unbounded domains, including handling of excluded points, endpoint attainment, and one-sided limits.
+- Expand support for nonsmooth expressions, including selected piecewise functions, absolute values, and minimum/maximum constructions.
+
+### Transcendental and Oscillatory Functions
+
+- Add range methods for unbounded monotone and nonmonotone tails, combining derivative-sign proofs, asymptotic behavior, and bounded oscillatory remainders.
+- Improve analysis of damped oscillations and functions with infinitely many critical points, including selected sinc-type expressions and oscillatory functions with unbounded amplitude.
+- Add exact range proofs for selected incommensurate trig sums, using phase-density arguments while distinguishing attainable extrema from limiting values.
+- Extend exact-image rules for elementary functions, including inverse trig and hyperbolic functions, quadratic transformations, and monotone compositions, as well as error functions.
+- Improve periodic-function analysis by reducing supported infinite-domain range problems to certified fundamental-period calculations.
+
+### Parameter-Dependent Analysis
+
+- Add `analyze_parameter_range` and `parameter_range` for exact condition-dependent range analysis of supported polynomial families through degree-3.
+- Account for parameter-dependent critical points, degree changes, endpoint inclusion, and transitions between distinct range configurations.
+- Support selected compositions with invertible elementary functions, including exponential transformations of parametrised polynomials.
+- Extend parametrised root-count analysis with strongly convex level-set witnesses, distinguishing zero, one, or two roots under certified conditions.
+
+### Analysis APIs and Reusable Infrastructure
+
+- Add `analyze_range`, `refine_range`, and `RangeAnalysis` for structured range computation, refinement, and verification.
+- Introduce reusable interfaces for function-cell decomposition, domain-aware derivatives, numerical value enclosures, and tail-range bounds.
+- Expand certificate metadata and verification contracts to support independent checking and integration with other symbolic math packages.
+- Improve modular separation between function-property analysis, algebraic root isolation, and semialgebraic reasoning.
+
+### Documentation & Testing
+
+- Expand mathematical documentation with dedicated guides for real-image analysis, exact critical values, parameterized ranges, proof verification, and the new analysis interfaces.
+- Add 27 test modules covering implicit critical roots, oscillatory ranges, parameter-dependent images, algebraic coefficient fields, domain restrictions, and certificate integrity.
+- Strengthen adversarial and mutation testing to detect invalid certificates, incomplete root coverage, incorrect endpoint handling, and unsound transformations.
+
 ## 0.4.0
 
 ### More reliable domains, ranges, and assumptions

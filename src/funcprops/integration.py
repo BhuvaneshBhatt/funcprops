@@ -49,18 +49,22 @@ class ParametricContour:
 
     @property
     def start(self):
+        """Initial point of the parameterized path."""
         return sp.simplify(self.gamma.subs(self.parameter, self.lower))
 
     @property
     def end(self):
+        """Final point of the parameterized path."""
         return sp.simplify(self.gamma.subs(self.parameter, self.upper))
 
     @property
     def closed(self) -> bool:
+        """Whether the path's endpoint equality is established."""
         return certify_identity_equal(self.start, self.end) is True
 
     @property
     def derivative(self):
+        """Derivative formula retained by this record."""
         return differentiate(self.gamma, self.parameter)
 
     def reversed(self):

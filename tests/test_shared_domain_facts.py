@@ -156,7 +156,7 @@ def test_compound_integer_exponents(terms, natural):
     assert condition_to_set(condition, x) == natural
 
 
-def test_unclassified_exponent_has_no_false_global_domain():
+def test_unclassified_exponent_domain():
     exponent = sp.log(4) / sp.log(2)
     expression = sp.Pow(x, exponent, evaluate=False)
     result = fp.track_domain(expression, x)

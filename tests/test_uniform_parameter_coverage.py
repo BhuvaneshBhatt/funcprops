@@ -48,7 +48,7 @@ P = fp.EnclosurePolicy(
         ),
     ],
 )
-def test_entire_box_proof_and_disjoint_multi_root_assembly(f, box, D, count):
+def test_entire_box_proof_disjoint_multi_root_assembly(f, box, D, count):
     c = fp.certify_parameter_box(f, x, box, D, policy=P)
     assert c.complete and c.root_count == count and c.verify() and c.certified
     assert fp.replay_status(c).outcome == "complete-coverage"
@@ -59,7 +59,7 @@ def test_entire_box_proof_and_disjoint_multi_root_assembly(f, box, D, count):
         assert not replace(c, leaves=c.leaves + c.leaves[:1]).verify()
 
 
-def test_uniform_witness_is_bound_to_whole_box_and_source(monkeypatch):
+def test_uniform_witness_bound_whole_box_source(monkeypatch):
     g = sp.exp(x) + a * x - b
     box = {
         a: sp.Interval(-sp.Rational(1, 4), sp.Rational(1, 4)),
@@ -92,14 +92,14 @@ def test_uniform_witness_is_bound_to_whole_box_and_source(monkeypatch):
         (sp.sqrt(x + a) - 1, {a: sp.Interval(-1, 1)}),
     ],
 )
-def test_collision_pole_or_branch_change_prevents_complete_count(g, box):
+def test_collision_pole_branch_complete_count(g, box):
     c = fp.certify_parameter_box(
         g, x, box, sp.Interval(-1, 1), policy=replace(P, max_cells=12)
     )
     assert not c.complete and c.root_count is None
 
 
-def test_parameter_subdivision_uses_uniform_multi_root_cover():
+def test_parameter_subdivision_uniform_root_cover():
     c = fp.parameter_root_coverage(
         x * x - a,
         x,
@@ -111,7 +111,7 @@ def test_parameter_subdivision_uses_uniform_multi_root_cover():
     assert c.complete and c.verify() and c.cells[0].root_count == 2
 
 
-def test_transcendental_collision_region_is_explicitly_unresolved():
+def test_transcendental_collision_partition():
     c = fp.parameter_root_coverage(
         sp.exp(x) - 1 - x - a,
         x,
@@ -120,12 +120,13 @@ def test_transcendental_collision_region_is_explicitly_unresolved():
         parameter_domain=sp.Interval(-sp.Rational(1, 10), sp.Rational(1, 10)),
         policy=replace(P, max_cells=12, max_depth=2),
     )
-    assert not c.complete and c.unresolved is not sp.S.EmptySet and c.verify()
-    assert c.unresolved.contains(0) is sp.S.true
+    assert c.complete and c.unresolved is sp.S.EmptySet and c.verify()
+    assert fp.specialize_parameter_coverage(c, 0).root_count == 1
+    assert fp.specialize_parameter_coverage(c, 0).multiplicity_count == 2
 
 
 @pytest.mark.parametrize("seconds", [None, 0.001])
-def test_zero_or_time_budget_does_not_claim_uniform_box_completion(seconds):
+def test_zero_budget_uniform_box(seconds):
     policy = replace(P, max_cells=0, seconds=seconds)
     c = fp.certify_parameter_box(
         sp.exp(x) - a, x, {a: sp.Interval(1, 2)}, sp.Interval(0, 1), policy=policy

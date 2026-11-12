@@ -59,7 +59,7 @@ def test_smoothness_abs_exp():
     assert e.smooth is True and e.differentiability_order is sp.oo
 
 
-def test_certified_interval_isolation_multiple_transcendental_roots():
+def test_certified_interval_isolation_roots():
     expr = sp.sin(x) - x / 10
     z = zeros(expr, x, domain=sp.Interval(-10, 10), return_result=True)
     assert isinstance(z, RootIsolationResult)
@@ -79,7 +79,7 @@ def test_certified_interval_isolation_multiple_transcendental_roots():
         assert isolated.certificate.multiplicity == 1
 
 
-def test_certified_interval_isolation_keeps_metadata_optional():
+def test_certified_interval_isolation_optional():
     expr = sp.cos(x) - x
     direct = zeros(expr, x, domain=sp.Interval(0, 1))
     detailed = zeros(expr, x, domain=sp.Interval(0, 1), return_result=True)
@@ -89,7 +89,7 @@ def test_certified_interval_isolation_keeps_metadata_optional():
     assert direct == detailed
 
 
-def test_repeated_factor_lifts_isolation_and_multiplicity():
+def test_repeated_factor_lifts_isolation_multiplicity():
     expr = (sp.cos(x) - x) ** 2
     z = zeros(expr, x, domain=sp.Interval(0, 1), return_result=True)
     assert isinstance(z, RootIsolationResult)
@@ -106,7 +106,7 @@ def test_repeated_factor_lifts_isolation_and_multiplicity():
     )
 
 
-def test_validated_numeric_even_root_requires_exact_validation():
+def test_numeric_even_root_exact_validation():
     expr = x**2 + sp.sin(x) ** 2
     z = zeros(
         expr,

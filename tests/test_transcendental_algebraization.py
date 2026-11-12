@@ -26,7 +26,7 @@ def test_periodic_condition_sin_positive():
     assert ps.base == sp.Interval.open(0, sp.pi)
 
 
-def test_periodic_condition_tan_positive_partitions_at_pole():
+def test_periodic_condition_tan_positive_at_pole():
     r = reduce_univariate_condition(sp.tan(x) > 0, x)
     assert r.complete
     assert isinstance(r.condition, PeriodicCondition)
@@ -84,7 +84,7 @@ def test_range_uses_exponential_algebraization():
     assert s == sp.Interval(-1, sp.oo)
 
 
-def test_convexity_uses_algebraized_second_derivative():
+def test_convexity_algebraized_second_derivative():
     assert convexity(sp.exp(x) + sp.exp(2 * x), x) is Convexity.STRICTLY_CONVEX
 
 

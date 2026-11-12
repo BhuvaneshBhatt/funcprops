@@ -1,5 +1,6 @@
 """Direct valid/invalid fixtures for the leaf/factory_replay replay observation gaps."""
 
+import pickle
 from dataclasses import fields, is_dataclass, replace
 
 import pytest
@@ -70,7 +71,11 @@ def cases():
         sp.exp(-x), x, domain=sp.Interval(0, sp.oo), return_result=True
     )
     determinant = fp.determinant_nonvanishing((2 * x,), x, return_result=True)
+    implicit = fp.implicit_real_root(x - sp.cos(x), x, sp.Interval(0, 1))
+    bad_implicit = pickle.loads(pickle.dumps(implicit))
+    bad_implicit._proof = replace(implicit.evidence, root_count=2)
     return {
+        "implicit-root": (implicit, bad_implicit),
         "complex-box": (complex_box, replace(complex_box, bounds=(sp.S.Zero,) * 4)),
         "parameter-box": (box, replace(box, lower=box.upper + 1)),
         "real-enclosure": (enclosure, replace(enclosure, lower=enclosure.upper + 1)),
@@ -94,6 +99,7 @@ def cases():
 @pytest.mark.parametrize(
     "name",
     [
+        "implicit-root",
         "complex-box",
         "parameter-box",
         "real-enclosure",

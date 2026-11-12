@@ -2,7 +2,7 @@
 
 `funcprops` is a SymPy-backed package for global mathematical properties of real, complex, and multivariate functions — including domains, ranges, zeros, monotonicity, convexity, regularity, singularities, extrema, mapping properties, and transformation geometry —while supporting assumptions, parameter-dependent answers, and replayable proof certificates. It combines a conditional function property registry, exact semialgebraic reasoning from the semialgebraic geometry package `semialg`, exact algebraic geometry from `algroots`, transcendental interval analysis, special-function zero geometry, and branch-cut/singularity analysis.
 
-When a result cannot be established by the available symbolic, semialgebraic, theorem-based, or validated numerical methods, `funcprops` preserves unresolved conditions or returns "unknown" for the result.
+When a result cannot be established by the available symbolic, semialgebraic, theorem-based, or validated numerical methods, `funcprops` preserves unresolved conditions or returns `UNKNOWN` for the result.
 
 ## Installation
 
@@ -10,7 +10,7 @@ When a result cannot be established by the available symbolic, semialgebraic, th
 pip install funcprops
 ```
 
-The runtime requires Python 3.11+, SymPy 1.14+, mpmath 1.3+, semialg 1.3.2+, algroots 0.3.0+ and exprtest 0.1.0+.
+The runtime requires Python 3.11+, SymPy 1.14+, mpmath 1.3+, semialg 1.5.0+, algroots 0.4.1+ and exprtest 0.1.0+.
 
 ## Quick start
 
@@ -101,10 +101,8 @@ The main real-analysis queries are:
 - `monotonicity()` and `oscillation()`;
 - `convexity()` and `complete_monotonicity()`;
 - `injective()`, `surjective()`, and `bijective()`;
-- `continuous()`, `differentiability()`,
-  `smoothness()`, and `analytic()`;
-- `periodicity()`, `symmetry()`, and
-  `homogeneity()`.
+- `continuous()`, `differentiability()`, `smoothness()`, and `analytic()`;
+- `periodicity()`, `symmetry()`, and `homogeneity()`.
 
 Mixed variable/parameter domains are split by shared stratification layer and analyzed branch by branch. Finite `Piecewise` expressions use the same effective branch representation, with each property adding only the interface conditions it requires.
 
@@ -128,11 +126,11 @@ Special-function zeros are represented symbolically when closed forms are not av
 
 `branch_cuts()` provides inexpensive structural pullback of principal cuts; boundary-value and jump computations are available under `funcprops.branchcuts`.
 
-`complex_zeros()` isolates zeros in finite complex rectangles. It uses exact complex solving when available, otherwise a validated argument-principle contour with structural holomorphy checks, complex-interval boundary enclosures, winding-number counting, and count-preserving rational subdivision. Uncertified numerical winding estimates remain only diagnostic.
+`complex_zeros()` isolates zeros in finite complex rectangles. It uses exact complex solving when available, otherwise a validated argument-principle contour with structural holomorphy checks, complex-interval boundary enclosures, winding-number counting, and count-preserving rational subdivision. Uncertified numerical winding estimates remain purely diagnostic.
 
 ## Function geometry and attainment
 
-`geometry()` combines regularity, singularity, convexity, boundary escape, level-boundedness, and structural mode-existence information in one summary. Related focussed queries are:
+`geometry()` combines regularity, singularity, convexity, boundary escape, level-boundedness, and structural mode-existence information in one summary. Related focused queries are:
 
 - `boundary_behavior()` for certified limits at unbounded boundaries;
 - `level_boundedness()` for a compact coercivity classification, with certificates via `return_result=True`;
@@ -150,7 +148,7 @@ For an explicit coordinate map, `funcprops` can compute and certify:
 - `change_of_variables()` — the local volume factor `Abs(det J)`;
 - `transformation_geometry()` — combined transformation summary.
 
-A nonzero Jacobian determinant proves local invertibility, not global injectivity. The API keeps those claims separate so change-of-variables reasoning does not silently overstate a local theorem.
+A nonzero Jacobian determinant proves local invertibility, not global injectivity. The API keeps those claims separate so change-of-variables reasoning does not overstate a local theorem.
 
 ## Special-function registry and provenance
 
@@ -240,5 +238,4 @@ The package keeps exact fast paths ahead of heavier partition, root-isolation, o
 
 ## License
 
-`funcprops` is licensed under the GNU General Public License version 3 only
-(GPL-3.0-only). See [LICENSE](https://github.com/BhuvaneshBhatt/funcprops/blob/main/LICENSE).
+`funcprops` is licensed under the GNU General Public License version 3 only (GPL-3.0-only). See [LICENSE](https://github.com/BhuvaneshBhatt/funcprops/blob/main/LICENSE).

@@ -87,6 +87,9 @@ def validate_distributions(dist, report_dir):
                     "tests/replay_matrix.json",
                     "docs/index.md",
                     "examples/workflow_catalog.py",
+                    "examples/workflow_notes.json",
+                    ".github/workflows/ci.yml",
+                    ".github/registry/coverage-baseline.json",
                 ):
                     if not (project / name).is_file():
                         raise ValueError(f"source archive omitted {name}")
@@ -143,6 +146,22 @@ def validate_distributions(dist, report_dir):
             env["PYTHONPATH"] = os.pathsep.join([str(installed), str(harness)])
             env["FUNCPROPS_EXPECTED_PACKAGE_ROOT"] = str(installed)
             env.pop("FUNCPROPS_REPLAY_EVIDENCE", None)
+            run(
+                [
+                    sys.executable,
+                    "-c",
+                    "from importlib.metadata import version\n"
+                    "import funcprops\n"
+                    "reported = funcprops.__version__\n"
+                    "installed = version('funcprops')\n"
+                    "if reported != installed:\n"
+                    "    raise ValueError((reported, installed))\n"
+                    "print(reported)\n",
+                ],
+                cwd=temporary,
+                env=env,
+                log=report_dir / (artifact.suffix + "-version.log"),
+            )
             xml = report_dir / (artifact.suffix + "-behavior.xml")
             run(
                 [
@@ -166,6 +185,9 @@ def validate_distributions(dist, report_dir):
                     "behavior": "passed",
                     "external_harness": True,
                     "source_resource_identity": True,
+                    "version": (report_dir / (artifact.suffix + "-version.log"))
+                    .read_text()
+                    .strip(),
                 }
             )
     return summary

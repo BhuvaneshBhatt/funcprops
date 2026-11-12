@@ -7,9 +7,9 @@ from dataclasses import dataclass
 import sympy as sp
 
 from .certified_balls import RealBallCertificate, certified_real_ball
-from .component_optimization import ComponentMinimumResult, finite_component_minimum
 from .domain_tracking import DomainRecord, track_domain
 from .exactness import certify_identity_equal
+from .rational_signs import RationalSignCertificate, rational_sign_evidence
 from .results import TruthValue
 from .root_coverage import RootCoverageCertificate, root_coverage
 from .source_syntax import normalize_arithmetic
@@ -34,15 +34,6 @@ def _violated(value, relation):
         ">=": value.is_negative is True,
         "<=": value.is_positive is True,
     }[relation]
-
-
-def _minimum_proves(result, relation):
-    if not result.complete or result.infimum is None:
-        return False
-    bound = result.infimum
-    if relation in (">=", "<="):
-        return bound.is_nonnegative is True
-    return bound.is_positive is True or (bound == 0 and not result.attained)
 
 
 @dataclass(frozen=True)
@@ -91,14 +82,17 @@ class InequalityCertificate:
 
     @property
     def certified(self):
+        """Replay acceptance; a valid partial record need not be complete."""
         return self.verify()
 
     @property
     def complete(self):
+        """Completion status for this record's stated scope; replay validity is separate."""
         return self.verify()
 
     @property
     def scope(self):
+        """Scope identifier: ``inequality-on-requested-interval``."""
         return "inequality-on-requested-interval"
 
     def verify(self):
@@ -213,18 +207,15 @@ class InequalityCertificate:
                 and coverage.variable == self.variable
                 and coverage.domain == self.domain
             )
-        if self.source == "exact-minimum":
-            minimum = self.evidence
-            target = (
-                self.expression if self.relation in (">", ">=") else -self.expression
-            )
+        if self.source == "rational-sign-chart":
+            proof = self.evidence
             return (
-                isinstance(minimum, ComponentMinimumResult)
-                and minimum.expression == target
-                and minimum.variable == self.variable
-                and minimum.domain == self.domain
-                and minimum.verify()
-                and _minimum_proves(minimum, self.relation)
+                type(proof) is RationalSignCertificate
+                and proof.expression == self.expression
+                and proof.variable == self.variable
+                and proof.domain == self.domain
+                and proof.relation == self.relation
+                and proof.verify()
             )
         if self.source == "outward-interval":
             ball = self.evidence
@@ -310,15 +301,14 @@ def certify_inequality(
         or record.effective != domain
     ):
         return result(TruthValue.UNKNOWN, "unresolved-source-domain")
-    target = f if relation in (">", ">=") else -f
-    minimum = finite_component_minimum(target, x, domain)
-    if _minimum_proves(minimum, relation):
-        return result(TruthValue.TRUE, "exact-minimum", minimum)
+    sign_proof, counterexample = rational_sign_evidence(f, x, domain, relation)
+    if sign_proof is not None:
+        return result(TruthValue.TRUE, "rational-sign-chart", sign_proof)
     points = [sp.S.Zero, sp.S.One, -sp.S.One, domain.start, domain.end]
+    if counterexample is not None:
+        points.append(counterexample)
     if domain.start.is_finite is True and domain.end.is_finite is True:
         points.append((domain.start + domain.end) / 2)
-    if minimum.complete and isinstance(minimum.minimizers, sp.FiniteSet):
-        points.extend(minimum.minimizers)
     for point in points:
         if domain.contains(point) is sp.S.true:
             value = f.subs(x, point)

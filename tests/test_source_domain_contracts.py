@@ -84,7 +84,7 @@ def test_continuation_rejects_undefined_path():
     assert fp.analytic_continue(sp.log(z), z, path, return_certificate=True) is None
 
 
-def test_zero_exponent_with_defined_base_remains_valid():
+def test_zero_exponent_defined_base_remains_valid():
     z = sp.Symbol("z")
     unit = sp.Pow(0, 0, evaluate=False)
     gamma = sp.Mul(unit, sp.exp(2 * sp.pi * sp.I * x), evaluate=False)
@@ -134,7 +134,7 @@ def test_complex_relations_preserve_negative_axis():
 
 
 @pytest.mark.parametrize("base", [0, 1, bad])
-def test_complex_definition_rejects_invalid_logarithm_base(base):
+def test_complex_definition_invalid_logarithm_base(base):
     z = sp.Symbol("z")
     expression = sp.log(z, base, evaluate=False)
     assert complex_definition_domain(expression, z, sp.S.Complexes) is None
@@ -142,7 +142,7 @@ def test_complex_definition_rejects_invalid_logarithm_base(base):
     assert fp.residue(expression, z, 2, return_certificate=True) is None
 
 
-def test_essential_residue_keeps_constant_source_holes():
+def test_essential_residue_constant_source_holes():
     z = sp.Symbol("z")
     unit = sp.Pow(sp.log(0, evaluate=False), 0, evaluate=False)
     expression = sp.Mul(unit, sp.exp(1 / z), evaluate=False)
@@ -222,7 +222,7 @@ def test_undefined_piecewise_guard_has_no_domain():
     assert fp.domain(expression, x) is sp.S.false
 
 
-def test_piecewise_ordering_guard_requires_real_operands():
+def test_piecewise_ordering_guard_real_operands():
     expression = sp.Piecewise((1, sp.log(x) > 0), (0, True))
     assert fp.domain(expression, x) == (x > 0)
 

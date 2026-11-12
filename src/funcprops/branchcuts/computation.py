@@ -780,10 +780,9 @@ def numeric_branch_cut_jumps(
 ):
     """Numerically sample jumps across branch cuts inferred from ``branch_cut_jumps_pairs``.
 
-    Currently this supports one complex variable. It handles common real-axis and
-    imaginary-axis cuts, and now also supports the more complicated seam predicates
-    that arise in elliptic amplitude cases by searching for representative sample
-    points near ``pi/2 + i y`` and crossing them in the real direction.
+    Supports one complex variable, real-axis and imaginary-axis cuts, and
+    elliptic-amplitude seams. For the latter, representative points near
+    ``pi/2 + i y`` are sampled across the seam in the real direction.
     """
     if isinstance(vars_list, Symbol):
         vars_list = [vars_list]

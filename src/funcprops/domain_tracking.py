@@ -33,10 +33,12 @@ class DomainRecord:
 
     @property
     def certified(self):
+        """Replay acceptance; a valid partial record need not be complete."""
         return self.complete is True and self.verify()
 
     @property
     def scope(self):
+        """Scope identifier: ``real-definition-domain``."""
         return "real-definition-domain"
 
     def matches(self, other):
@@ -388,6 +390,60 @@ def _positive_power_coverage(f, x, domain):
     return None
 
 
+def _rational_log_domain(f, x, requested):
+    """Resolve a rational affine expression in one real principal logarithm.
+
+    On a negative log argument the imaginary part is pi times its rational
+    coefficient. Its zeros are retained when the original source is defined.
+    This handles zero coefficients without discarding poles or log(0).
+    """
+    from .real_analysis.common import condition_to_set
+
+    logs = tuple(f.atoms(sp.log))
+    if len(logs) != 1 or len(logs[0].args) != 1 or f.free_symbols - {x}:
+        return None
+    u = sp.Dummy("log_value", real=True)
+    try:
+        polynomial = sp.Poly(f.xreplace({logs[0]: u}), u)
+        if polynomial.degree() > 1:
+            return None
+        a, b, g = polynomial.nth(0), polynomial.nth(1), logs[0].args[0]
+        for part in (a, b, g):
+            n, d = sp.fraction(sp.cancel(part))
+            sp.Poly(n, x, domain=sp.QQ)
+            sp.Poly(d, x, domain=sp.QQ)
+        guards = []
+        for node in sp.preorder_traversal(f):
+            if node.is_Pow and node.exp.is_negative:
+                if node.base.has(sp.log) or node.exp.is_Integer is not True:
+                    return None
+                guards.append(sp.Ne(node.base, 0))
+        positive = condition_to_set(g > 0, x)
+        negative = condition_to_set(g < 0, x)
+        zero_coefficient = sp.solveset(b, x, domain=sp.S.Reals)
+        allowed = condition_to_set(sp.And(*guards), x)
+        D = condition_to_set(sp.true if requested is None else requested, x)
+        if not all(
+            isinstance(v, sp.Set)
+            for v in (positive, negative, zero_coefficient, allowed, D)
+        ) or zero_coefficient.has(sp.ConditionSet):
+            return None
+        natural = sp.Intersection(
+            allowed, sp.Union(positive, sp.Intersection(negative, zero_coefficient))
+        )
+        return DomainRecord(
+            f, x, requested, natural, sp.Intersection(D, natural), True, tuple(guards)
+        )
+    except (
+        TypeError,
+        ValueError,
+        NotImplementedError,
+        sp.PolynomialError,
+        sp.polys.polyerrors.CoercionFailed,
+    ):
+        return None
+
+
 @budgeted_operation
 def track_domain(expr, var, domain=sp.S.Reals):
     """Certify exact natural domains or coverage of a requested Piecewise set.
@@ -401,6 +457,13 @@ def track_domain(expr, var, domain=sp.S.Reals):
     result = _global_domain(f, x, domain)
     if result.reason in ("inexact-requested-domain", "inexact-source-expression"):
         return result
+    if (
+        not result.complete
+        and result.reason != "requested-domain-conflicts-with-coordinate-assumptions"
+    ):
+        log_record = _rational_log_domain(f, x, domain)
+        if log_record is not None:
+            return log_record
     if not result.complete and any(
         isinstance(n, sp.Pow) and n.exp.is_Rational is not True
         for n in sp.preorder_traversal(f)

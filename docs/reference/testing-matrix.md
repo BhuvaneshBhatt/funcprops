@@ -1,6 +1,6 @@
 # Replay and consumer test matrix
 
-All 122 registered concrete replay types have an assigned family. These assignments locate maintained tests and their intended obligations; they are not an assertion of complete semantic coverage. The replay-evidence plugin reports actual accepted/rejected examples by type and test node. Missing observations remain explicit gaps, distinct from these static assignments.
+All 131 registered concrete replay types have an assigned family. These assignments locate maintained tests and their intended obligations; they are not an assertion of complete semantic coverage. The replay-evidence plugin reports actual accepted/rejected examples by type and test node. Missing observations remain explicit gaps, distinct from these static assignments.
 
 ## Family obligations
 
@@ -8,17 +8,17 @@ All 122 registered concrete replay types have an assigned family. These assignme
 | --- | --- | --- |
 | native-real | Independent native witness replay | [test_coverage_kernel.py](../../tests/test_coverage_kernel.py), [test_real_enclosures.py](../../tests/test_real_enclosures.py), [test_adaptive_root_coverage.py](../../tests/test_adaptive_root_coverage.py), [test_replay_type_fixtures.py](../../tests/certificates/test_replay_type_fixtures.py) |
 | infinite-real | Independent native witness replay | [test_periodic_root_coverage.py](../../tests/test_periodic_root_coverage.py), [test_tail_root_coverage.py](../../tests/test_tail_root_coverage.py) |
-| parameters | Independent native witness replay | [test_parameter_root_coverage.py](../../tests/test_parameter_root_coverage.py), [test_uniform_parameter_coverage.py](../../tests/test_uniform_parameter_coverage.py), [test_replay_type_fixtures.py](../../tests/certificates/test_replay_type_fixtures.py) |
+| parameters | Independent native witness replay | [test_parameter_root_coverage.py](../../tests/test_parameter_root_coverage.py), [test_uniform_parameter_coverage.py](../../tests/test_uniform_parameter_coverage.py), [test_replay_type_fixtures.py](../../tests/certificates/test_replay_type_fixtures.py), [test_convex_level_families.py](../../tests/test_convex_level_families.py) |
 | property-assembly | Independent native witness replay | [test_property_coverage.py](../../tests/test_property_coverage.py) |
 | entire-contours | Independent native witness replay | [test_complex_clusters.py](../../tests/test_complex_clusters.py), [test_analytic_contours.py](../../tests/test_analytic_contours.py), [test_replay_type_fixtures.py](../../tests/certificates/test_replay_type_fixtures.py) |
 | complex-isolation | Independent native witness replay | [test_complex_isolation_soundness.py](../../tests/test_complex_isolation_soundness.py), [test_complex_cover_assembly.py](../../tests/test_complex_cover_assembly.py) |
 | complex-multiplicity | Independent native witness replay | [test_complex_completion.py](../../tests/test_complex_completion.py), [test_replay_type_fixtures.py](../../tests/certificates/test_replay_type_fixtures.py) |
 | complex-newton | Independent native witness replay | [test_complex_newton.py](../../tests/test_complex_newton.py) |
 | complex-cofinal | Independent native witness replay | [test_complex_completion.py](../../tests/test_complex_completion.py) |
-| quotient-ledger | Independent native witness replay | [test_quotient_isolation.py](../../tests/test_quotient_isolation.py), [test_quotient_soundness_audit.py](../../tests/test_quotient_soundness_audit.py) |
-| quotient-shared-orders | Independent native witness replay | [test_quotient_shared_orders.py](../../tests/test_quotient_shared_orders.py), [test_quotient_soundness_audit.py](../../tests/test_quotient_soundness_audit.py) |
+| quotient-ledger | Independent native witness replay | [test_quotient_isolation.py](../../tests/test_quotient_isolation.py), [test_quotient_replay.py](../../tests/test_quotient_replay.py) |
+| quotient-shared-orders | Independent native witness replay | [test_quotient_shared_orders.py](../../tests/test_quotient_shared_orders.py), [test_quotient_replay.py](../../tests/test_quotient_replay.py) |
 | complex-public | Declared factory/backend or route-dependent replay | [test_algroots_complex_adapter.py](../../tests/test_algroots_complex_adapter.py), [test_complex_cover_assembly.py](../../tests/test_complex_cover_assembly.py), [test_quotient_isolation.py](../../tests/test_quotient_isolation.py) |
-| algebraic-adapter | Declared factory/backend or route-dependent replay | [test_algroots_complex_adapter.py](../../tests/test_algroots_complex_adapter.py), [test_quotient_soundness_audit.py](../../tests/test_quotient_soundness_audit.py) |
+| algebraic-adapter | Declared factory/backend or route-dependent replay | [test_algroots_complex_adapter.py](../../tests/test_algroots_complex_adapter.py), [test_quotient_replay.py](../../tests/test_quotient_replay.py) |
 | root-coverage | Declared factory/backend or route-dependent replay | [test_regularity_proof_soundness.py](../../tests/test_regularity_proof_soundness.py), [test_root_coverage_checker.py](../../tests/test_root_coverage_checker.py) |
 | local-counts | Declared factory/backend or route-dependent replay | [test_complex_operations_soundness.py](../../tests/test_complex_operations_soundness.py), [test_equation_and_contour_contracts.py](../../tests/test_equation_and_contour_contracts.py) |
 | guarded-affine | Declared factory/backend or route-dependent replay | [test_equation_and_contour_contracts.py](../../tests/test_equation_and_contour_contracts.py) |
@@ -31,16 +31,16 @@ All 122 registered concrete replay types have an assigned family. These assignme
 | geometry | Declared factory/backend or route-dependent replay | [test_boundary_and_attainment_geometry.py](../../tests/test_boundary_and_attainment_geometry.py), [test_structural_properties.py](../../tests/test_structural_properties.py) |
 | real-property-certificates | Declared factory/backend or route-dependent replay | [test_exported_helpers_and_replay.py](../../tests/test_exported_helpers_and_replay.py), [test_guarded_proofs_and_status.py](../../tests/test_guarded_proofs_and_status.py), [test_structural_properties.py](../../tests/test_structural_properties.py), [test_replay_type_fixtures.py](../../tests/certificates/test_replay_type_fixtures.py), [test_consumer_soundness.py](../../tests/test_consumer_soundness.py), [test_property_models.py](../../tests/property/test_property_models.py), [test_proof_obligations.py](../../tests/test_proof_obligations.py), [test_sign_routes.py](../../tests/test_sign_routes.py) |
 | indexed-extrema | Declared factory/backend or route-dependent replay | [test_complex_operations_soundness.py](../../tests/test_complex_operations_soundness.py), [test_exported_helpers_and_replay.py](../../tests/test_exported_helpers_and_replay.py), [test_transcendental_real_analysis.py](../../tests/test_transcendental_real_analysis.py) |
-| extrema-bounds | Independent native witness replay | [test_extrema_bounds.py](../../tests/test_extrema_bounds.py) |
 | branch_atlas | Independent native witness replay | [test_branch_atlas.py](../../tests/test_branch_atlas.py) |
 | implicit_orders | Independent native witness replay | [test_implicit_orders.py](../../tests/test_implicit_orders.py) |
 | finite-metric-replay | Independent native witness replay | [test_metric_replay.py](../../tests/test_metric_replay.py), [test_property_models.py](../../tests/property/test_property_models.py), [test_proof_obligations.py](../../tests/test_proof_obligations.py), [test_source_transport_models.py](../../tests/property/test_source_transport_models.py) |
-| exact-coefficient-fields | Independent native witness replay | [test_algebraic_coefficient_support.py](../../tests/test_algebraic_coefficient_support.py), [test_property_models.py](../../tests/property/test_property_models.py), [test_proof_obligations.py](../../tests/test_proof_obligations.py) |
+| exact-coefficient-fields | Independent native witness replay | [test_algebraic_coefficient_support.py](../../tests/test_algebraic_coefficient_support.py), [test_property_models.py](../../tests/property/test_property_models.py), [test_proof_obligations.py](../../tests/test_proof_obligations.py), [test_coefficient_field_policy.py](../../tests/test_coefficient_field_policy.py) |
 | polynomial-parameter-geometry | Independent native witness replay | [test_parameter_geometry.py](../../tests/test_parameter_geometry.py), [test_property_models.py](../../tests/property/test_property_models.py), [test_proof_obligations.py](../../tests/test_proof_obligations.py) |
 | holomorphic-branch-gluing | Independent native witness replay | [test_branch_gluing.py](../../tests/test_branch_gluing.py), [test_proof_obligations.py](../../tests/test_proof_obligations.py) |
 | bounded-regularity | Independent native witness replay | [test_practical_proofs.py](../../tests/test_practical_proofs.py) |
+| range-analysis | Declared factory/backend or route-dependent replay | [test_implicit_range_values.py](../../tests/test_implicit_range_values.py), [test_range_payload_fields.py](../../tests/test_range_payload_fields.py), [test_range_transfers.py](../../tests/test_range_transfers.py), [test_parameter_ranges.py](../../tests/test_parameter_ranges.py), [test_range_conditions.py](../../tests/test_range_conditions.py), [test_reused_real_roots.py](../../tests/test_reused_real_roots.py), [test_one_sided_range_cells.py](../../tests/test_one_sided_range_cells.py), [test_bounded_range_tails.py](../../tests/test_bounded_range_tails.py), [test_flat_critical_ranges.py](../../tests/test_flat_critical_ranges.py), [test_oscillatory_images.py](../../tests/test_oscillatory_images.py), [test_cubic_parameter_images.py](../../tests/test_cubic_parameter_images.py), [test_finite_range_tails.py](../../tests/test_finite_range_tails.py), [test_dense_trig_images.py](../../tests/test_dense_trig_images.py), [test_range_transfer_mutations.py](../../tests/test_range_transfer_mutations.py), [test_analysis_proof_boundaries.py](../../tests/test_analysis_proof_boundaries.py), [test_complex_intermediate_images.py](../../tests/test_complex_intermediate_images.py), [test_cubic_corner_models.py](../../tests/test_cubic_corner_models.py) |
 
-Each family tracks valid evidence, violated premises or honest decline, source/domain binding, theorem-relevant field mutations, and its declared replay route. The shared [result contracts](../../tests/specification/test_result_contracts.py) and [registered-type rejection tests](../../tests/test_quotient_soundness_audit.py) cover status semantics and self-attesting subclasses. Cluster/unresolved/accuracy cases apply to isolation families; not every factory-based record has these fields.
+Each family tracks valid evidence, violated premises or honest decline, source/domain binding, theorem-relevant field mutations, and its declared replay route. The shared [result contracts](../../tests/specification/test_result_contracts.py) and [registered-type rejection tests](../../tests/test_quotient_replay.py) cover status semantics and self-attesting subclasses. Cluster/unresolved/accuracy cases apply to isolation families; not every factory-based record has these fields.
 
 ## Concrete registered types
 
@@ -53,6 +53,7 @@ Each family tracks valid evidence, violated premises or honest decline, source/d
 | `funcprops.analytic_contours.AnalyticComplexCoverage` | entire-contours |
 | `funcprops.analytic_contours.AnalyticContourCertificate` | entire-contours |
 | `funcprops.analytic_contours.ComplexBoxWitness` | entire-contours |
+| `funcprops.analytic_roots.ImplicitRealRoot` | range-analysis |
 | `funcprops.asymptotic_tails.TailSignCertificate` | inequality-and-piecewise |
 | `funcprops.branch_atlas.GluedPowerProof` | branch_atlas |
 | `funcprops.branch_atlas.LogAtlasProof` | branch_atlas |
@@ -71,7 +72,6 @@ Each family tracks valid evidence, violated premises or honest decline, source/d
 | `funcprops.certified_operations.ResidueCertificate` | certified_operations |
 | `funcprops.certified_operations.SingularityClassificationCertificate` | certified_operations |
 | `funcprops.certified_operations.WindingCertificate` | certified_operations |
-| `funcprops.certified_optimization.GlobalMinimumCertificate` | domain-and-optimization |
 | `funcprops.complex_certification.ArgumentPrincipleCertificate` | local-counts |
 | `funcprops.complex_certification.RectangleRoucheCertificate` | local-counts |
 | `funcprops.complex_certification.RoucheCertificate` | local-counts |
@@ -91,7 +91,6 @@ Each family tracks valid evidence, violated premises or honest decline, source/d
 | `funcprops.complex_newton.ComplexDerivativeWitness` | complex-newton |
 | `funcprops.complex_newton.ComplexNewtonRefinement` | complex-newton |
 | `funcprops.complex_newton.ComplexNewtonRegion` | complex-newton |
-| `funcprops.component_optimization.ComponentMinimumResult` | domain-and-optimization |
 | `funcprops.coverage_contract.CellDomainWitness` | native-real |
 | `funcprops.coverage_contract.CoverageLeaf` | native-real |
 | `funcprops.coverage_contract.CoverageProof` | native-real |
@@ -102,7 +101,6 @@ Each family tracks valid evidence, violated premises or honest decline, source/d
 | `funcprops.enclosures.DerivativeEnclosure` | native-real |
 | `funcprops.enclosures.EnclosureResult` | native-real |
 | `funcprops.entire_cancellation.EntireCancellationProof` | bounded-regularity |
-| `funcprops.extrema_bounds.ExtremaBoundsProof` | extrema-bounds |
 | `funcprops.geometry.LevelBoundednessCertificate` | geometry |
 | `funcprops.geometry.ModeExistenceCertificate` | geometry |
 | `funcprops.global_analysis.GlobalInequalityCertificate` | inequality-and-piecewise |
@@ -146,6 +144,17 @@ Each family tracks valid evidence, violated premises or honest decline, source/d
 | `funcprops.real_analysis.structural_properties.PeriodicityResult` | real-property-certificates |
 | `funcprops.real_analysis.structural_properties.SymmetryResult` | real-property-certificates |
 | `funcprops.real_analysis.variation.VariationResult` | finite-metric-replay |
+| `funcprops.real_images.analysis.CriticalValueCover` | range-analysis |
+| `funcprops.real_images.analysis.RangeAnalysis` | range-analysis |
+| `funcprops.real_images.critical_values.CriticalValueEnclosure` | range-analysis |
+| `funcprops.real_images.interior.InteriorCriticalCover` | range-analysis |
+| `funcprops.real_images.interior.InteriorRootCover` | range-analysis |
+| `funcprops.real_images.oscillatory.OscillatoryEscape` | range-analysis |
+| `funcprops.real_images.parameters.ParameterRangeAnalysis` | range-analysis |
+| `funcprops.real_images.tails.FiniteTailBound` | range-analysis |
+| `funcprops.real_images.tails.TailValueBound` | range-analysis |
+| `funcprops.real_images.transfers.MonotoneTail` | range-analysis |
+| `funcprops.real_images.trigonometric.DenseTrigImage` | range-analysis |
 | `funcprops.root_coverage.RootCoverageCertificate` | root-coverage |
 | `funcprops.root_coverage.RootRegionProof` | root-coverage |
 | `funcprops.root_coverage.SpecializedRootCoverage` | root-coverage |
@@ -179,9 +188,9 @@ Each baseline must pass; removing its named premise must produce one assertion f
 
 | Obligation | Owning module | Sentinel |
 | --- | --- | --- |
-| omitted-domain | `coverage_checker.py` | [test_omitted_domain_is_rejected_even_with_recomputed_totals](../../tests/certificates/test_kernel_obligations.py) |
-| overlapping-domain | `coverage_checker.py` | [test_duplicate_domain_is_rejected_even_with_recomputed_totals](../../tests/certificates/test_kernel_obligations.py) |
-| source-context | `coverage_checker.py` | [test_changed_source_syntax_cannot_rebind_every_leaf](../../tests/certificates/test_kernel_obligations.py) |
+| omitted-domain | `coverage_checker.py` | [test_omitted_domain_even_recomputed_totals](../../tests/certificates/test_kernel_obligations.py) |
+| overlapping-domain | `coverage_checker.py` | [test_duplicate_domain_even_recomputed_totals](../../tests/certificates/test_kernel_obligations.py) |
+| source-context | `coverage_checker.py` | [test_source_syntax_binding](../../tests/certificates/test_kernel_obligations.py) |
 | coefficient-embedding | `algebraic_coefficients.py` | [test_unique_coefficient_root](../../tests/test_proof_obligations.py) |
 | owned-value | `metric_proofs.py` | [test_owned_value_with_consistent_total](../../tests/test_proof_obligations.py) |
 | parameter-premise | `parameter_geometry.py` | [test_parameter_premise](../../tests/test_proof_obligations.py) |

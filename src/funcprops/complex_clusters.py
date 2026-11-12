@@ -97,26 +97,32 @@ class ComplexClusterCertificate:
 
     @property
     def complete(self):
+        """Completion status for this record's stated scope; replay validity is separate."""
         return self.zero_count is not None and not self.obligations
 
     @property
     def multiplicity_count(self):
+        """Root count with multiplicity, or None when unresolved."""
         return self.zero_count
 
     @property
     def distinct_root_count(self):
+        """Distinct-root count supplied by the record, or None when unresolved."""
         return 0 if self.zero_count == 0 else None
 
     @property
     def real_root_count(self):
+        """Number of real roots when their reality and count are established."""
         return 0 if self.zero_count == 0 else None
 
     @property
     def individual_multiplicities(self):
+        """Per-root multiplicities when individually established."""
         return () if self.zero_count == 0 else None
 
     @property
     def scope(self):
+        """Scope identifier: ``analytic-complex-disk-count-with-multiplicity``."""
         return "analytic-complex-disk-count-with-multiplicity"
 
     def check(self):
@@ -126,6 +132,7 @@ class ComplexClusterCertificate:
 
     @property
     def certified(self):
+        """Replay acceptance; a valid partial record need not be complete."""
         return self.verify()
 
     def verify(self):

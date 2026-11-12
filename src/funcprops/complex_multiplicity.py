@@ -90,10 +90,12 @@ class ComplexTaylorWitness:
 
     @property
     def complete(self):
+        """Completion status for this record's stated scope; replay validity is separate."""
         return self.verify()
 
     @property
     def scope(self):
+        """Scope identifier: ``entire-complex-normalized-Taylor-enclosure``."""
         return "entire-complex-normalized-Taylor-enclosure"
 
 
@@ -136,28 +138,34 @@ class ComplexUnitWitness:
 
     @property
     def complete(self):
+        """Completion status for this record's stated scope; replay validity is separate."""
         return self.verify()
 
     @property
     def scope(self):
+        """Scope identifier: ``entire-nonvanishing-unit-on-closed-rectangle``."""
         return "entire-nonvanishing-unit-on-closed-rectangle"
 
 
 class _CountRecord:
     @property
     def complete(self):
+        """Completion status for this record's stated scope; replay validity is separate."""
         return True
 
     @property
     def multiplicity_count(self):
+        """Root count with multiplicity, or None when unresolved."""
         return self.zero_count
 
     @property
     def root_count(self):
+        """Distinct-root count supplied by the record, or None when unresolved."""
         return self.known_distinct
 
     @property
     def certified(self):
+        """Replay acceptance; a valid partial record need not be complete."""
         return self.verify()
 
     def check(self):
@@ -198,14 +206,17 @@ class ComplexExactMultiplicity(_CountRecord):
 
     @property
     def zero_count(self):
+        """Zero count in this record's counting convention."""
         return self.multiplicity
 
     @property
     def known_distinct(self):
+        """Distinct-root count established by this region's evidence."""
         return 1
 
     @property
     def scope(self):
+        """Scope identifier: ``exact-complex-order-and-exhaustive-local-count``."""
         return "exact-complex-order-and-exhaustive-local-count"
 
 
@@ -219,28 +230,34 @@ class ComplexLocatedRegion(_CountRecord):
 
     @property
     def expression(self):
+        """Expression to which the stored evidence applies."""
         return self.parent.expression
 
     @property
     def variable(self):
+        """Coordinate used by the source and its evidence."""
         return self.parent.variable
 
     @property
     def center(self):
+        """Center used by this geometric or contraction record."""
         return self.parent.center
 
     @property
     def zero_count(self):
+        """Zero count in this record's counting convention."""
         if _point_inside(self.center, self.rectangle):
             return self.parent.zero_count
         return None if _point_inside(self.center, self.rectangle, False) else 0
 
     @property
     def known_distinct(self):
+        """Distinct-root count established by this region's evidence."""
         return 1 if self.zero_count else 0
 
     @property
     def scope(self):
+        """Scope identifier: ``located-complex-root-subset-count``."""
         return "located-complex-root-subset-count"
 
 
@@ -263,18 +280,22 @@ class ComplexPowerFactorProof(_CountRecord):
 
     @property
     def zero_count(self):
+        """Zero count in this record's counting convention."""
         return self.multiplicity
 
     @property
     def known_distinct(self):
+        """Distinct-root count established by this region's evidence."""
         return 1
 
     @property
     def scope(self):
+        """Scope identifier: ``simple-entire-factor-times-unit-multiplicity``."""
         return "simple-entire-factor-times-unit-multiplicity"
 
     @property
     def root_region(self):
+        """Region whose root claim is carried by the stored evidence."""
         return ComplexPowerRootRegion(self, self.base_parent)
 
 
@@ -288,26 +309,32 @@ class ComplexPowerRootRegion(_CountRecord):
 
     @property
     def expression(self):
+        """Expression to which the stored evidence applies."""
         return self.factorization.expression
 
     @property
     def variable(self):
+        """Coordinate used by the source and its evidence."""
         return self.factorization.variable
 
     @property
     def rectangle(self):
+        """Rectangle on which this record makes its geometric claim."""
         return self.base_region.rectangle
 
     @property
     def zero_count(self):
+        """Zero count in this record's counting convention."""
         return self.factorization.multiplicity * self.base_region.zero_count
 
     @property
     def known_distinct(self):
+        """Distinct-root count established by this region's evidence."""
         return self.base_region.zero_count
 
     @property
     def scope(self):
+        """Scope identifier: ``power-factor-transferred-region-count``."""
         return "power-factor-transferred-region-count"
 
 

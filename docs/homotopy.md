@@ -1,5 +1,7 @@
 # Homotopy and contour deformation
 
+Python blocks on this page form one ordered session, executed from a fresh namespace.
+
 For a finite puncture set `P`, based loops in `C \\ P` form a free group. With at least two punctures this group is nonabelian, so the order in which a loop passes generators matters.
 
 A loop with word

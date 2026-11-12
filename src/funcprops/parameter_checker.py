@@ -9,6 +9,7 @@ from .coverage_contract import CheckOutcome, CheckResult, EnclosureWitness
 from .domain_tracking import coordinate_domain_compatible
 from .parameter_contract import (
     BoxEnclosureWitness,
+    ConvexLevelWitness,
     ExponentialParameterWitness,
     MonotoneParameterWitness,
     ParameterCoverageProof,
@@ -540,6 +541,75 @@ def monotone_parameter_counts(proof, cell):
     return None
 
 
+def convex_level_counts(proof, cell):
+    """Count the two monotone branches and their shared double-root event."""
+    from .coverage_checker import _bound_matches, _subset, derivative_formula_on_cell
+    from .exactness import certify_equal
+
+    w = cell.witness
+    f, x, a, D = proof.expression, proof.variable, proof.parameter, proof.domain
+    if (
+        type(w) is not ConvexLevelWitness
+        or type(w.curvature) is not EnclosureWitness
+        or not isinstance(D, sp.Interval)
+        or any(v.is_finite is not True for v in (D.start, D.end))
+        or w.base != normalize_arithmetic(f + a)
+        or w.base.free_symbols - {x}
+    ):
+        return None
+    c = w.curvature
+    if not translation_source_regular(
+        f, x, a, D.closure, c.precision, c.max_series_terms
+    ):
+        return None
+    first = derivative_formula_on_cell(
+        w.base, x, D.closure, precision=c.precision, max_series_terms=c.max_series_terms
+    )
+    second = derivative_formula_on_cell(
+        w.base,
+        x,
+        D.closure,
+        2,
+        precision=c.precision,
+        max_series_terms=c.max_series_terms,
+    )
+    if (
+        first is None
+        or second is None
+        or not _bound_matches(c, second, x, D.closure)
+        or c.lower <= 0
+        or w.center.free_symbols
+        or w.center.has(sp.Float)
+        or D.interior.contains(w.center) is not sp.true
+        or certify_equal(first.subs(x, w.center), 0) is not True
+    ):
+        return None
+    expected = tuple(sp.simplify(w.base.subs(x, p)) for p in (w.center, D.start, D.end))
+    if (w.minimum, w.left_value, w.right_value) != expected or any(
+        v.is_real is not True or v.is_finite is not True for v in expected
+    ):
+        return None
+    if _subset(cell.region, sp.FiniteSet(w.minimum)):
+        return 1, 2
+    # The shared minimum is excluded from both simple-root branches. A cell
+    # containing it and another level cannot inherit either branch count.
+    if sp.Intersection(cell.region, sp.FiniteSet(w.minimum)) is not sp.S.EmptySet:
+        return None
+    if _subset(cell.region, sp.Interval.open(-sp.oo, w.minimum)):
+        return 0, 0
+    count = 0
+    for endpoint, owned in (
+        (w.left_value, not D.left_open),
+        (w.right_value, not D.right_open),
+    ):
+        band = sp.Interval(w.minimum, endpoint, True, not owned)
+        if _subset(cell.region, band):
+            count += 1
+        elif sp.Intersection(cell.region, band) is not sp.S.EmptySet:
+            return None
+    return count, count
+
+
 def check_parameter_coverage(proof):
     """Check the stored parameter coverage premises and report their replay outcome."""
 
@@ -610,6 +680,8 @@ def check_parameter_coverage(proof):
                 data = polynomial_parameter_counts(proof, cell)
             elif cell.theorem == "monotone-parameter":
                 data = monotone_parameter_counts(proof, cell)
+            elif cell.theorem == "convex-level":
+                data = convex_level_counts(proof, cell)
             elif cell.theorem == "exponential-parameter":
                 data = exponential_parameter_counts(proof, cell)
             elif cell.theorem == "uniform-parameter-box":

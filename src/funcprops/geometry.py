@@ -103,6 +103,7 @@ class BoundaryBehavior:
 
     @property
     def positive_infinity_on_escape(self):
+        """Whether all supported escape directions have limit positive infinity."""
         if not self.complete:
             return TruthValue.UNKNOWN
         escape = [
@@ -145,6 +146,7 @@ class LevelBoundednessCertificate:
 
     @property
     def primary(self):
+        """Primary mathematical answer or classification."""
         return self.classification
 
     expression: Any = None
@@ -178,6 +180,7 @@ class ModeExistenceCertificate:
 
     @property
     def classification(self):
+        """Property classification represented by the result."""
         if self.exists is True:
             return TruthValue.TRUE
         if self.exists is False:
@@ -186,6 +189,7 @@ class ModeExistenceCertificate:
 
     @property
     def primary(self):
+        """Primary mathematical answer or classification."""
         return self.classification
 
     expression: Any = None

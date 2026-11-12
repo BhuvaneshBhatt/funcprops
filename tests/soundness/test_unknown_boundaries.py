@@ -16,7 +16,7 @@ def test_open_homotopy_unknown():
     assert fp.homotopic(first, second, punctures=(2, 3)) is None
 
 
-def test_unresolved_transcendental_cut_geometry_unknown():
+def test_unresolved_transcendental_geometry_unknown():
     t = sp.symbols("t", real=True)
     first = fp.ParametricContour(3 * sp.exp(sp.I * (t + sp.sin(t))), (t, 0, 2 * sp.pi))
     second = fp.ParametricContour(3 * sp.exp(sp.I * t), (t, 0, 2 * sp.pi))

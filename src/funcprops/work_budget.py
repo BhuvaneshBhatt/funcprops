@@ -58,6 +58,7 @@ _TYPED_BUDGET_OPERATIONS = PROPERTY_BUDGET_OPERATIONS - {
     "convexity",
 }
 _TYPED_BUDGET_OPERATIONS |= {
+    "analyze_range",
     "jacobian",
     "determinant_nonvanishing",
     "local_invertibility",
@@ -77,6 +78,7 @@ class BudgetedResult(PropertyResult):
 
     @property
     def outcome(self):
+        """Replay or search outcome represented by this record."""
         return {
             "work-budget-exhausted": "resource-exhaustion",
             "work-budget-worker-failed": "worker-failure",
@@ -84,6 +86,7 @@ class BudgetedResult(PropertyResult):
 
     @property
     def classification(self):
+        """Property classification represented by the result."""
         return self.primary
 
     def verify(self):
@@ -384,13 +387,11 @@ def bounded_query(operation, expr, args, kwargs, seconds):
             "certify_jump_variation",
             "encode_algebraic_coefficients",
             "certify_inequality",
-            "certify_global_minimum",
             "prove_root_coverage",
             "enclose_expression",
             "enclose_derivative",
             "deflate_real_root",
             "certify_complex_cluster",
-            "certify_extrema_bounds",
             "certify_log_atlas",
             "certify_root_value",
             "certify_implicit_multiplicity",

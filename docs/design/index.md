@@ -7,6 +7,7 @@ The design separates candidate construction from checking and binds each conclus
 | Source and effective domain | [Domain tracking](../domain-tracking-and-components.md), [source semantics](../source-semantics.md) |
 | Real proof records and arithmetic | [Enclosures](../enclosures.md), [root coverage](../root-coverage-checker.md) |
 | Compact search and multiplicity | [Adaptive coverage](../adaptive-coverage.md) |
+| Real images | [Critical values, endpoint ownership and image transfers](real-images.md) |
 | Infinite domains and parameters | [Families, tails and uniform boxes](../infinite-and-parameter-coverage.md) |
 | Contours and property consumers | [Contour and property proofs](../contour-and-property-proofs.md) |
 | Algebraic backend | [Complex backend adapter](../algroots-complex-backend.md) |

@@ -63,6 +63,7 @@ class SingularityAnalysis:
         )
 
     def condition(self):
+        """Combine the exterior and retained singularity guards."""
         conds = []
         if self.domain_exterior is not S.false:
             conds.append(self.domain_exterior)

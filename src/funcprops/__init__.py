@@ -1,7 +1,4 @@
-"""Symbolic function properties for SymPy expressions."""
-
-from importlib.metadata import PackageNotFoundError as _PackageNotFoundError
-from importlib.metadata import version as _distribution_version
+"""Symbolic function properties and certified analysis for SymPy expressions."""
 
 from .adaptive_roots import (
     AdaptiveRootResult,
@@ -17,6 +14,18 @@ from .algebraic_complex import (
     certify_algebraic_complex_roots,
     check_algebraic_complex_roots,
 )
+from .analysis import (
+    analysis_data_equal,
+    condition_to_real_set,
+    derivative_on_domain,
+    function_cells,
+    normalize_real_expression,
+    pack_analysis_data,
+    refine_root_cover,
+    value_enclosure,
+    verify_real_identity,
+    verify_value_enclosure,
+)
 from .analytic_contours import (
     AnalyticComplexCoverage,
     AnalyticContourCertificate,
@@ -24,6 +33,13 @@ from .analytic_contours import (
     analytic_complex_coverage,
     certify_analytic_contour,
     check_analytic_contour,
+)
+from .analytic_roots import (
+    CriticalValue,
+    ImplicitRealRoot,
+    critical_value,
+    critical_values_equal,
+    implicit_real_root,
 )
 from .api import (
     analytic,
@@ -117,7 +133,6 @@ from .certified_operations import (
     solve,
     winding_number,
 )
-from .certified_optimization import GlobalMinimumCertificate, certify_global_minimum
 from .complex_certification import (
     ArgumentPrincipleCertificate,
     RectangleRoucheCertificate,
@@ -168,11 +183,6 @@ from .complex_newton import (
     certify_complex_refinement,
     check_complex_refinement,
 )
-from .component_optimization import (
-    ComponentMinimumResult,
-    OptimizationCandidate,
-    finite_component_minimum,
-)
 from .coverage_checker import check_coverage, check_enclosure, check_leaf
 from .coverage_contract import (
     CellDomainWitness,
@@ -211,7 +221,6 @@ from .enclosures import (
 )
 from .entire_cancellation import EntireCancellationProof
 from .explanations import ResultExplanation, explain
-from .extrema_bounds import ExtremaBoundsProof, certify_extrema_bounds
 from .geometry import (
     BoundaryBehavior,
     BoundaryLimit,
@@ -273,6 +282,7 @@ from .parameter_cells import (
 )
 from .parameter_contract import (
     BoxEnclosureWitness,
+    ConvexLevelWitness,
     ExponentialParameterWitness,
     MonotoneParameterWitness,
     ParameterCoverageProof,
@@ -360,6 +370,22 @@ from .real_analysis.structural_properties import (
     SymmetryResult,
 )
 from .real_analysis.variation import VariationResult
+from .real_images.analysis import (
+    CriticalValueCover,
+    RangeAnalysis,
+    analyze_range,
+    refine_range,
+)
+from .real_images.critical_values import CriticalValueEnclosure, critical_value_regions
+from .real_images.interior import InteriorRootCover
+from .real_images.oscillatory import OscillatoryEscape
+from .real_images.parameters import (
+    ParameterRangeAnalysis,
+    analyze_parameter_range,
+    parameter_range,
+)
+from .real_images.tails import FiniteTailBound, TailValueBound, bound_range_tail
+from .real_images.trigonometric import DenseTrigImage
 from .registry import (
     ArgumentPattern,
     Family,
@@ -535,15 +561,14 @@ from .verification import (
     verify_zero_geometry,
 )
 from .verified_roots import RealRootInterval, verify_real_root_interval
+from .work_budget import BudgetedResult
 
-try:
-    __version__ = _distribution_version("funcprops")
-except _PackageNotFoundError:
-    __version__ = "0.4.0"
+__version__ = "0.5.0"
 
 
 from .algebraic_coefficients import (
     AlgebraicCoefficientEncoding,
+    CoefficientFieldPolicy,
     encode_algebraic_coefficients,
 )
 from .branch_gluing import (
@@ -592,6 +617,7 @@ __all__ = [
     "BoxEnclosureWitness",
     "BranchGluingProof",
     "BranchOverlapProof",
+    "BudgetedResult",
     "CellDomainWitness",
     "CertifiedComplexRootRectangle",
     "CertifiedIntegerBracket",
@@ -601,6 +627,7 @@ __all__ = [
     "ChangeOfVariablesCertificate",
     "CheckOutcome",
     "CheckResult",
+    "CoefficientFieldPolicy",
     "CommonZeroProof",
     "CompleteMonotonicityCertificate",
     "Completeness",
@@ -625,13 +652,13 @@ __all__ = [
     "ComplexTaylorWitness",
     "ComplexUnitWitness",
     "ComplexZeroSubsetProof",
-    "ComponentMinimumResult",
     "ComposedMapCertificate",
     "CompositionFact",
     "ConditionalExpression",
     "ContinuationCertificate",
     "Continuity",
     "ContourDeformationCertificate",
+    "ConvexLevelWitness",
     "Convexity",
     "ConvexityCertificate",
     "CoverageContext",
@@ -641,8 +668,12 @@ __all__ = [
     "CoverageState",
     "CoverageTask",
     "CoveredRootFamily",
+    "CriticalValue",
+    "CriticalValueCover",
+    "CriticalValueEnclosure",
     "DLMFFact",
     "DenominatorExclusionProof",
+    "DenseTrigImage",
     "DerivativeChainCertificate",
     "DerivativeEnclosure",
     "DerivativeRule",
@@ -659,19 +690,18 @@ __all__ = [
     "ExponentialFourierCount",
     "ExponentialParameterWitness",
     "ExponentialTailWitness",
-    "ExtremaBoundsProof",
     "ExtremumEnvelope",
     "ExtremumFamilyCertificate",
     "ExtremumOrderingTheorem",
     "ExtremumRange",
     "Family",
     "FiniteLipschitzProof",
+    "FiniteTailBound",
     "FunctionGeometry",
     "FunctionRegistry",
     "FunctionSlot",
     "GlobalInequalityCertificate",
     "GlobalMapCertificate",
-    "GlobalMinimumCertificate",
     "GluedPowerProof",
     "GradientCertificate",
     "GradientComponent",
@@ -687,6 +717,7 @@ __all__ = [
     "IdentityRule",
     "ImplicitJetWitness",
     "ImplicitMultiplicityProof",
+    "ImplicitRealRoot",
     "ImplicitRootValueProof",
     "InadmissibleProof",
     "IndexRangeWitness",
@@ -703,6 +734,7 @@ __all__ = [
     "IntegerEndpointWitness",
     "IntegrabilityResult",
     "IntegralResult",
+    "InteriorRootCover",
     "IntervalPropertyCell",
     "InverseCertificate",
     "InverseSolutionCertificate",
@@ -732,14 +764,15 @@ __all__ = [
     "MultivariateChainRuleCertificate",
     "NewtonWitness",
     "NonMonotonicityWitness",
-    "OptimizationCandidate",
     "Oscillation",
     "OscillationCertificate",
+    "OscillatoryEscape",
     "OwenT",
     "ParameterCoverageProof",
     "ParameterGeometryCell",
     "ParameterGeometryProof",
     "ParameterGeometryRegion",
+    "ParameterRangeAnalysis",
     "ParameterRootCell",
     "ParameterTransitionLocus",
     "ParametricContour",
@@ -781,6 +814,7 @@ __all__ = [
     "QuotientNewtonRefinement",
     "QuotientRegionProof",
     "QuotientSourceProof",
+    "RangeAnalysis",
     "RationalWitness",
     "RealBallCertificate",
     "RealRootInterval",
@@ -816,6 +850,7 @@ __all__ = [
     "Symmetry",
     "SymmetryResult",
     "TailSignCertificate",
+    "TailValueBound",
     "TaylorDeflationWitness",
     "TaylorModel",
     "TaylorWitness",
@@ -847,16 +882,20 @@ __all__ = [
     "affine_sine_root_family",
     "affine_trig_root_family",
     "algebraize",
+    "analysis_data_equal",
     "analytic",
     "analytic_complex_coverage",
     "analytic_continue",
     "analytic_neighborhood",
+    "analyze_parameter_range",
+    "analyze_range",
     "analyze_transcendental_real",
     "argument_principle",
     "argument_principle_count",
     "argument_principle_rectangle",
     "as_detailed_result",
     "bijective",
+    "bound_range_tail",
     "boundary_behavior",
     "boundedness",
     "branch_cuts",
@@ -872,9 +911,7 @@ __all__ = [
     "certify_complex_isolation",
     "certify_complex_multiple_root",
     "certify_complex_refinement",
-    "certify_extrema_bounds",
     "certify_finite_lipschitz",
-    "certify_global_minimum",
     "certify_global_positive",
     "certify_implicit_multiplicity",
     "certify_inequality",
@@ -911,14 +948,19 @@ __all__ = [
     "complex_zeros",
     "compose_global_maps",
     "compose_property",
+    "condition_to_real_set",
     "continuous",
     "convexity",
     "coverage_policy_stage",
+    "critical_value",
+    "critical_value_regions",
+    "critical_values_equal",
     "decide",
     "deflate_real_root",
     "deform_contour",
     "derivative_cell_root_count",
     "derivative_chain_positive",
+    "derivative_on_domain",
     "determinant_nonvanishing",
     "differentiability",
     "discontinuities",
@@ -941,7 +983,7 @@ __all__ = [
     "export_coverage_proof",
     "extremum_geometry",
     "extremum_ordering_theorems",
-    "finite_component_minimum",
+    "function_cells",
     "generated_adversarial_cases",
     "geometry",
     "glue_branch_charts",
@@ -951,6 +993,7 @@ __all__ = [
     "holomorphic_on_rectangle",
     "homogeneity",
     "homotopic",
+    "implicit_real_root",
     "indexed_tail_integer_bracket",
     "indexed_tail_inversion",
     "infinite_root_coverage",
@@ -975,7 +1018,10 @@ __all__ = [
     "monotonic_partition",
     "monotonicity",
     "normalize_assumptions",
+    "normalize_real_expression",
     "oscillation",
+    "pack_analysis_data",
+    "parameter_range",
     "parameter_root_coverage",
     "periodicity",
     "piecewise_decomposition",
@@ -990,6 +1036,8 @@ __all__ = [
     "range_from_monotonic_partition",
     "reduce_univariate_condition",
     "refine_parameter_cells",
+    "refine_range",
+    "refine_root_cover",
     "registry",
     "registry_chain_rule",
     "registry_derivative",
@@ -1032,6 +1080,7 @@ __all__ = [
     "transport_instantiated_rule",
     "uniformly_continuous",
     "validate_registry",
+    "value_enclosure",
     "variation",
     "verify_certificate",
     "verify_convexity_certificate",
@@ -1042,8 +1091,10 @@ __all__ = [
     "verify_integer_bracket",
     "verify_monotonic_decomposition",
     "verify_monotonic_partition",
+    "verify_real_identity",
     "verify_real_root_interval",
     "verify_root_certificate",
+    "verify_value_enclosure",
     "verify_zero_geometry",
     "winding_number",
     "zero_geometry",

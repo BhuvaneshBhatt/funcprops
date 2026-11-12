@@ -1,7 +1,7 @@
 """Public routing layer for function-property queries.
 
-The wrappers in this module also normalize ``ConditionalExpression`` inputs.
-The underlying property engines remain ordinary SymPy-expression analysers.
+The wrappers in this module also normalize ``ConditionalExpression`` inputs.  The
+underlying property engines remain ordinary SymPy-expression analyzers.
 """
 
 from __future__ import annotations
@@ -237,9 +237,9 @@ def _conditional_wrapper(fn, *, domain_mode="ordinary"):
             }
             if scalar_parameter and not tuple_capable and isinstance(var, sp.Tuple):
                 raise TypeError(
-                    "expected one analysis variable, but received multiple vars; "
+                    "expected one analysis variable, but received multiple variables; "
                     "use a multivariate property such as jacobian(), geometry(), or "
-                    "homogeneity() when analysing several variables"
+                    "homogeneity() when analyzing several variables"
                 )
             if (
                 scalar_parameter

@@ -60,7 +60,7 @@ def test_scalar_keyword_is_variable():
     assert fp.zeros(x**2 - 1, variable=x) == sp.FiniteSet(-1, 1)
 
 
-def test_non_native_detailed_result_is_available_consistently():
+def test_non_native_detailed_available_consistently():
     x = sp.symbols("x", real=True)
     detail = fp.domain(sp.sqrt(x), x, return_result=True)
     assert isinstance(detail, DetailedPropertyResult)
@@ -70,7 +70,7 @@ def test_non_native_detailed_result_is_available_consistently():
     assert isinstance(mapping, DetailedPropertyResult)
 
 
-def test_property_catalog_is_discoverable_and_filterable():
+def test_property_catalog_discoverable_filterable():
     all_properties = fp.properties()
     mapping = fp.properties(category="mapping")
     assert any(name == "convexity" for name, _, _ in all_properties)
@@ -79,7 +79,7 @@ def test_property_catalog_is_discoverable_and_filterable():
         fp.properties(category="not-a-category")
 
 
-def test_parameter_strata_have_readable_text_and_html():
+def test_parameter_strata_readable_text_html():
     a = sp.symbols("a", real=True)
     x = sp.symbols("x", real=True)
     result = fp.injective(a * x, x, return_result=True)
@@ -91,7 +91,7 @@ def test_parameter_strata_have_readable_text_and_html():
     assert "Cases:" in explanation
 
 
-def test_multiple_variables_get_actionable_scalar_error():
+def test_multiple_variables_get_scalar_error():
     x, y = sp.symbols("x y", real=True)
     with pytest.raises(TypeError, match="expected one analysis variable"):
         fp.monotonicity(x + y, (x, y))
@@ -107,7 +107,7 @@ def test_guarded_result_projection():
     assert rich.as_piecewise() == compact
 
 
-def test_partial_property_strata_keep_explicit_unknown_fallback():
+def test_partial_property_strata_unknown_fallback():
     a, b, x = sp.symbols("a b x")
     compact = fp.sign(sp.exp(a * x + b), x)
     assert isinstance(compact, sp.Piecewise)

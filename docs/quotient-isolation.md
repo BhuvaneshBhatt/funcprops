@@ -7,10 +7,11 @@ Python blocks on this page form one ordered session, executed from a fresh names
 ```python
 import sympy as s
 import funcprops as fp
-z = s.Symbol('z')
-rectangle = (-1-s.I, 1+s.I)
 
-q = fp.isolate_complex_roots((s.exp(z)-2)/(z+2), z, rectangle)
+z = s.Symbol("z")
+rectangle = (-1 - s.I, 1 + s.I)
+
+q = fp.isolate_complex_roots((s.exp(z) - 2) / (z + 2), z, rectangle)
 assert q.complete and q.verify() and q.root_count == 1
 assert q.pole_multiplicity_count == 0
 p = q.isolation_certificate
@@ -19,7 +20,7 @@ assert all(w.verify() for w in p.denominator_exclusions)
 ```
 
 ```python
-q = fp.isolate_complex_roots((s.exp(z)-2)/(s.exp(z)-1), z, rectangle)
+q = fp.isolate_complex_roots((s.exp(z) - 2) / (s.exp(z) - 1), z, rectangle)
 assert q.complete and q.verify()
 assert q.root_count == q.distinct_pole_count == 1
 assert q.total_count == q.pole_multiplicity_count == 1
@@ -72,7 +73,7 @@ The checker validates source identities, every local count and exclusion, exact 
 The following example has one extension zero and no source zeros:
 
 ```python
-f = s.Mul(z, s.Pow(z, -1, evaluate=False), s.exp(z)-1, evaluate=False)
+f = s.Mul(z, s.Pow(z, -1, evaluate=False), s.exp(z) - 1, evaluate=False)
 q = fp.certify_quotient_isolation(f, z, *rectangle)
 assert q.complete and q.verify() and q.root_count == 0
 assert q.proof.extension_zero_count == q.proof.excluded_zero_multiplicity == 1
@@ -81,8 +82,12 @@ assert q.proof.source.guards == (z,)
 ```
 
 ```python
-q = fp.certify_quotient_isolation(s.sin(z)/(s.exp(z)-1)**3, z, *rectangle,
-    policy=fp.EnclosurePolicy(max_taylor_order=5))
+q = fp.certify_quotient_isolation(
+    s.sin(z) / (s.exp(z) - 1) ** 3,
+    z,
+    *rectangle,
+    policy=fp.EnclosurePolicy(max_taylor_order=5),
+)
 assert q.complete and q.verify()
 assert q.root_count == 0 and q.pole_multiplicity_count == 2
 ```
@@ -94,8 +99,12 @@ One query-wide `max_cells` allowance charges contour evaluations, optional facto
 Frozen checkpoints retain every accepted cell and every pending path/attempt. Atomic updates preserve exact coverage. Wall-budget workers publish quotient checkpoints; timeout before the first checkpoint produces a source-bound unresolved seed. Resume validates the checkpoint and source before continuing. Symbolic cancellation runs inside the wall-budget worker and can be retried from an initial timeout seed. Root-free complements and all holes remain covered.
 
 ```python
-q = fp.certify_quotient_isolation((s.exp(z)-2)/(s.exp(z)-1), z, *rectangle,
-    policy=fp.EnclosurePolicy(max_cells=0))
+q = fp.certify_quotient_isolation(
+    (s.exp(z) - 2) / (s.exp(z) - 1),
+    z,
+    *rectangle,
+    policy=fp.EnclosurePolicy(max_cells=0),
+)
 assert q.verify() and not q.complete
 q = fp.resume_complex_isolation(q)
 assert q.complete and q.verify() and q.distinct_pole_count == 1
@@ -108,7 +117,7 @@ General branch-chart gluing, arbitrary parameters, essential singularities, boun
 `meromorphic_rectangle_count` accepts exact rational inputs and supported supported transcendental quotients, returning `QuotientContourCertificate`. Its `zeros`, `poles`, and `winding` are divisor counts of the meromorphic extension; `source_zero_count` is the original source's zero multiplicity count. The wrapper needs exhaustive accounting, but does not require individual isolation or box accuracy. It declines unresolved coincidences. The underlying proof remains available as `.proof`, with all original source exclusions.
 
 ```python
-c = fp.meromorphic_rectangle_count(s.sin(z)**3/(s.exp(z)-1), z, *rectangle)
+c = fp.meromorphic_rectangle_count(s.sin(z) ** 3 / (s.exp(z) - 1), z, *rectangle)
 assert c.verify() and c.complete
 assert (c.zeros, c.poles, c.winding, c.source_zero_count) == (2, 0, 2, 0)
 assert fp.replay_status(c).factory_replay is False

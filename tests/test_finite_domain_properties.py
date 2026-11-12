@@ -117,7 +117,7 @@ def test_discrete_exponential_image(head, expected):
     assert condition_to_set(fp.range(head(sp.exp(x)), x, y), y) == expected
 
 
-def test_disconnected_composition_preserves_gaps_and_endpoints():
+def test_disconnected_composition_gaps_endpoints():
     source = sp.Union(sp.Interval(0, 1), sp.Interval(2, 3))
     expected = sp.Union(sp.Interval(1, sp.E), sp.Interval(sp.exp(2), sp.exp(3)))
     image = condition_to_set(fp.range(sp.exp(x), x, y, constraints=source), y)
@@ -161,7 +161,7 @@ def test_invalid_work_budget(seconds):
         fp.range(sp.exp(x), x, y, work_budget=seconds)
 
 
-def test_successful_budgeted_queries_preserve_results():
+def test_successful_budgeted_queries_results():
     assert (
         fp.sign(x - 1, x, domain=sp.FiniteSet(0, 2), work_budget=5)
         is Sign.SIGN_CHANGING
@@ -195,7 +195,7 @@ def test_restricted_positive_axis_range():
     assert fp.range(sp.besselk(0, x), x, y, constraints=x > 0) == (y > 0)
 
 
-def test_parameterized_power_full_axis_theorem_requires_full_axis():
+def test_parameterized_power_full_axis_theorem():
     from funcprops.real_analysis.range import _parameterized_elementary_range
 
     assert _parameterized_elementary_range(x**a, x, y, (x >= 1) & (x <= 2)) is None
@@ -212,7 +212,7 @@ def test_parameterized_power_full_axis_theorem_requires_full_axis():
         (0, fp.Monotonicity.CONSTANT),
     ],
 )
-def test_constant_piecewise_branches_are_not_a_constant_function(right, expected):
+def test_constant_piecewise_branches(right, expected):
     expr = sp.Piecewise((0, x < 0), (right, True))
     assert fp.monotonicity(expr, x) is expected
 
@@ -233,7 +233,7 @@ def test_product_box_and_nonconvex_multivariate_sets():
     assert fp.convexity(x * x + y * y, (x, y), domain=points) is Convexity.UNKNOWN
 
 
-def test_constant_range_retains_parameter_domain_nonemptiness():
+def test_constant_range_parameter_domain_nonemptiness():
     b = sp.Symbol("b", real=True)
     image = fp.range(1, x, y, constraints=(x > a) & (x < b))
     assert sp.simplify(image.subs({a: 2, b: 1})) is sp.S.false
@@ -245,7 +245,7 @@ def test_independent_parameter_guards():
     assert condition_to_set(a > 0, x) is None
 
 
-def test_finite_weak_parameter_signs_retain_zero_case():
+def test_finite_weak_parameter_signs_zero_case():
     assert (
         fp.sign(a**2 * x, x, domain=sp.FiniteSet(-1, 1), assumptions=sp.Eq(a, 0))
         is Sign.ZERO
@@ -265,7 +265,7 @@ def test_complex_intermediate_images():
     assert result != (y > 0)
 
 
-def test_convexity_replay_rejects_tampered_classification_and_subject():
+def test_convexity_replay_tampered_subject():
     from dataclasses import replace
 
     from funcprops.real_analysis.advanced_convexity import ConvexityCertificate
@@ -285,7 +285,7 @@ def test_convexity_replay_rejects_tampered_classification_and_subject():
     assert not fp.verify_convexity_certificate(sp.sin(x), x, fake)
 
 
-def test_separable_certificate_retains_natural_domain():
+def test_separable_certificate_natural_domain():
     from funcprops.real_analysis.advanced_convexity import ConvexityCertificate
 
     result = fp.convexity(sp.log(x) + sp.log(y), (x, y), return_result=True)
@@ -313,7 +313,7 @@ def test_curvature_domain_premises():
     assert not fp.verify_convexity_certificate(x * x, x, cert)
 
 
-def test_curvature_modulus_cannot_verify_wrong_kind_of_conclusion():
+def test_curvature_modulus_binding():
     from funcprops.real_analysis.advanced_convexity import ConvexityCertificate
 
     for claimed in (Convexity.NEITHER, Convexity.AFFINE, Convexity.UNKNOWN):
@@ -323,7 +323,7 @@ def test_curvature_modulus_cannot_verify_wrong_kind_of_conclusion():
         assert not fp.verify_convexity_certificate(x * x, x, cert)
 
 
-def test_replay_rejects_mutated_indexed_and_monotonic_evidence():
+def test_replay_mutated_indexed_monotonic_evidence():
     from dataclasses import replace
 
     p = fp.monotonic_partition(
@@ -361,7 +361,7 @@ def test_root_index_cannot_capture_phase_parameter():
     assert fp.verify_zero_geometry(g)
 
 
-def test_parameter_dependent_order_does_not_use_fixed_order_theorems():
+def test_parameter_dependent_orders():
     from funcprops.real_analysis.special_functions import positive_axis_range_strata
 
     assert not fp.zero_geometry(sp.besselj(x, x), x)
@@ -369,7 +369,7 @@ def test_parameter_dependent_order_does_not_use_fixed_order_theorems():
     assert not positive_axis_range_strata(sp.besseli(x, x), x, y)
 
 
-def test_bessel_y_zero_order_first_maximum_is_first_critical_point():
+def test_bessel_y_zero_order_first_critical_point():
     cert = fp.extremum_ordering_theorems(sp.bessely(0, x), x)[0]
     assert cert.global_max_index == 1
     assert fp.verify_extremum_ordering(cert)
@@ -383,7 +383,7 @@ def test_indexed_order_parameter_binding():
     assert fp.verify_zero_geometry(g)
 
 
-def test_replay_rejects_mutated_root_extremum_and_bracket_conclusions():
+def test_replay_mutated_root_bracket_conclusions():
     from dataclasses import replace
 
     roots = fp.transcendental_roots(
@@ -406,7 +406,7 @@ def test_replay_rejects_mutated_root_extremum_and_bracket_conclusions():
     assert not fp.verify_integer_bracket(replace(c, lower=100, upper=101))
 
 
-def test_unbound_payloads_cannot_be_verified_from_labels():
+def test_unbound_payload_status():
     from funcprops.transcendental.extrema import ExtremumRange
     from funcprops.transcendental.roots import RootCertificate
     from funcprops.transcendental.zero_geometry import CertifiedIntegerBracket

@@ -48,56 +48,68 @@ class PropertyCoverageProof:
     schema_version: int = 1
 
     def conclusion(self, name):
+        """Select the recorded property conclusion by name."""
         return next(c for c in self.conclusions if c.name == name)
 
     @property
     def complete(self):
+        """Completion status for this record's stated scope; replay validity is separate."""
         return len(self.conclusions) == 5 and all(c.complete for c in self.conclusions)
 
     @property
     def range_complete(self):
+        """Whether the requested image is established completely."""
         return self.conclusion("range").complete
 
     @property
     def optimization_complete(self):
+        """Whether the stated optimization conclusion is complete."""
         return (
             self.conclusion("minimum").complete and self.conclusion("maximum").complete
         )
 
     @property
     def sign_complete(self):
+        """Whether sign information covers the requested source."""
         return self.conclusion("sign").complete
 
     @property
     def monotonicity_complete(self):
+        """Whether monotonicity information covers the requested source."""
         return self.conclusion("monotonicity").complete
 
     @property
     def image(self):
+        """Image set established on the effective source."""
         return self.conclusion("range").value
 
     @property
     def infimum(self):
+        """Established lower extremal value, with attainment reported separately."""
         value = self.conclusion("minimum").value
         return None if value is None else value[0]
 
     @property
     def minimizers(self):
+        """Source points proved to attain the infimum."""
         value = self.conclusion("minimum").value
         return None if value is None else value[1]
 
     @property
     def supremum(self):
+        """Established upper extremal value, with attainment reported separately."""
         value = self.conclusion("maximum").value
         return None if value is None else value[0]
 
     @property
     def maximizers(self):
+        """Source points proved to attain the supremum."""
         value = self.conclusion("maximum").value
         return None if value is None else value[1]
 
     @property
     def scope(self):
+        """Scope identifier: ``finite-component-property-coverage``."""
         return "finite-component-property-coverage"
 
     def check(self):
@@ -114,4 +126,5 @@ class PropertyCoverageProof:
 
     @property
     def certified(self):
+        """Replay acceptance; a valid partial record need not be complete."""
         return self.verify()

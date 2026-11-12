@@ -26,7 +26,7 @@ D = s.Interval(0, 1)
         (s.exp(x), s.FiniteSet(0), "point-exclusion", 0),
     ],
 )
-def test_theorem_witnesses_replay_without_any_producer(f, region, method, count):
+def test_theorem_replay_independence(f, region, method, count):
     leaf = propose_leaf(coverage_context(f, x, region), region, method=method)
     assert leaf.root_count == count and leaf.verify()
 
@@ -99,7 +99,7 @@ def test_newton_midpoint_image_and_endpoint_bindings():
     assert not replace(p, region=D).verify()
 
 
-def test_taylor_coefficient_order_center_and_remainder_mutations():
+def test_taylor_coefficient_order_center_mutations():
     f = s.exp(x) - 2 * x + s.Rational(1, 2)
     p = propose_leaf(coverage_context(f, x, D), D, method="taylor-exclusion")
     w = p.witness
@@ -128,7 +128,7 @@ def test_higher_taylor_witnesses_replay_independently(order):
         assert leaf.verify()
 
 
-def test_sturm_counts_multiplicities_and_algebraic_roots():
+def test_sturm_counts_multiplicities_algebraic_roots():
     p = fp.prove_root_coverage((x * x - 2) ** 3, x, s.Interval(-2, 2))
     assert p.verify() and p.root_count == 2 and p.multiplicity_count == 6
     leaf = p.leaves[0]
@@ -150,7 +150,7 @@ def test_sturm_endpoint_ownership(left, right, count):
     assert p.verify() and p.root_count == count
 
 
-def test_cover_gap_overlap_and_false_totals_are_rejected():
+def test_cover_gap_overlap_false_totals():
     region = s.Union(s.Interval(-2, -1), s.Interval(1, 2))
     p = fp.prove_root_coverage(x * x - 1, x, region)
     assert p.verify() and len(p.leaves) == 2
@@ -179,7 +179,7 @@ def test_partial_and_exhausted_status():
     assert fp.replay_status(object()).certified is None
 
 
-def test_parameter_guard_and_specialization_bind_original_held_source():
+def test_parameter_guard_specialization_held_source():
     a = s.Symbol("a", real=True)
     p = fp.prove_root_coverage(s.exp(x) - a, x, D, substitutions={a: 2})
     assert p.verify() and p.root_count == 1 and p.context.parameter_guard == s.Eq(a, 2)
@@ -193,7 +193,7 @@ def test_parameter_guard_and_specialization_bind_original_held_source():
     assert p.context.effective == s.Interval(-1, 1) - s.FiniteSet(0)
 
 
-def test_real_checker_does_not_inherit_selected_complex_sheets():
+def test_real_checker_branch_sheets():
     p = fp.prove_root_coverage(s.log(x), x, s.Interval(1, 2))
     for point in (s.S.One, s.Integer(2)):
         branch = fp.LocalBranchContext(point, ((x, 2 * s.pi * s.I),))
@@ -224,7 +224,7 @@ def test_coverage_export_replay():
     assert not fp.verify_certificate(p, expr=s.exp(x) - 3, var=x)
 
 
-def test_continuity_does_not_upgrade_abs_corner_to_c1():
+def test_absolute_value_corner_regularity():
     assert regular_on_cell(s.Abs(x), x, s.Interval(-1, 1), 0)
     assert not regular_on_cell(s.Abs(x), x, s.Interval(-1, 1), 1)
     assert not regular_on_cell(s.sqrt(x), x, D, 1)
@@ -257,7 +257,7 @@ def test_replay_inventory_contracts():
     } <= {r["api"] for r in manifest["public_entrypoints"]}
 
 
-def test_factory_tail_threshold_mutation_does_not_escape_source_scope():
+def test_tail_threshold_binding():
     tail = fp.certify_tail_sign(x - 2, x, threshold=3)
     assert tail.verify()
     assert not replace(tail, threshold=s.S.One).verify()
@@ -287,7 +287,7 @@ def test_held_zero_inequality(
     assert chain.verify()
 
 
-def test_float_endpoint_cannot_certify_wrong_rational_root_ownership():
+def test_inexact_endpoint_ownership():
     lo = s.Float("0.1")
     exact = s.Rational(lo)
     root = s.Rational(1, 10)
@@ -301,7 +301,7 @@ def test_float_endpoint_cannot_certify_wrong_rational_root_ownership():
         assert correct.verify() and correct.complete and correct.root_count == 0
 
 
-def test_float_source_pole_cannot_certify_a_false_exact_exclusion():
+def test_inexact_source_pole():
     record = fp.track_domain(
         1 / (x - s.Float("0.1")), x, s.FiniteSet(s.Rational(1, 10))
     )

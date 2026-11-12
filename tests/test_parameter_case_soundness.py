@@ -1,4 +1,4 @@
-"""Parameter case transformations preserve premises and specialize conclusions."""
+"""Parameter case transformations preserve premises and specialise conclusions."""
 
 import sympy as sp
 
@@ -59,7 +59,7 @@ def test_specialization_is_simultaneous():
     assert result.exceptions == (sp.Eq(b, a),)
 
 
-def test_specialization_does_not_relabel_parent_proof():
+def test_specialized_proof_binding():
     a = sp.Symbol("a", real=True)
     original = fp.PropertyResult(
         None,

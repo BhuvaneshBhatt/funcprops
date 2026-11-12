@@ -65,7 +65,6 @@ def _source_defined(expression, variable, support):
 
 
 def _smooth_branch(expression, variable, support):
-    """Real arithmetic and smooth heads are smooth wherever their sources exist."""
     return not expression.has(sp.sign, sp.Piecewise) and _source_defined(
         expression, variable, support
     )
@@ -214,14 +213,17 @@ class SeamRegularityProof:
 
     @property
     def complete(self):
+        """Completion status for this record's stated scope; replay validity is separate."""
         return self.verify()
 
     @property
     def certified(self):
+        """Replay acceptance; a valid partial record need not be complete."""
         return self.verify()
 
     @property
     def scope(self):
+        """Mathematical scope for interpreting this record and its evidence."""
         return (
             "real-branch-continuity"
             if self.conclusion == "continuous"

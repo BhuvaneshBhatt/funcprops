@@ -30,7 +30,7 @@ def test_sign_algebraization_respects_requested_domain(domain, expected):
 
 
 @pytest.mark.parametrize("expr", [x + sp.exp(x), x * sp.exp(x)])
-def test_exponential_generator_does_not_leave_original_variable(expr):
+def test_exponential_generator_elimination(expr):
     assert not algebraize(expr, x).changed
 
 
@@ -60,14 +60,14 @@ def test_half_angle_auxiliary_domain_is_exact(source, image):
     "source",
     [sp.Interval(4, 5), sp.Interval(-sp.pi, sp.pi), sp.FiniteSet(sp.pi)],
 )
-def test_half_angle_declines_domains_outside_its_chart(source):
+def test_half_angle_declines_domains_outside_chart(source):
     assert not algebraize_trigonometric(sp.sin(x), x, source_domain=source).changed
 
 
 @pytest.mark.parametrize(
     "expr", [x + sp.sin(x), sp.log(x) + sp.sin(x), sp.sin(x) + sp.tan(x)]
 )
-def test_trig_substitution_declines_residual_phase_dependence(expr):
+def test_trig_substitution_declines_phase_dependence(expr):
     assert not algebraize_trigonometric(expr, x).changed
     assert not algebraize_trig_circle(expr, x).changed
 
@@ -91,7 +91,7 @@ def test_circle_relation_preserves_original_poles():
     assert sp.simplify(result.constraints.subs({s: 1, c: 0})) is sp.S.true
 
 
-def test_half_angle_preserves_original_poles_after_cancellation():
+def test_half_angle_original_poles_after_cancellation():
     quotient = sp.Mul(sp.sin(x), sp.Pow(sp.sin(x), -1, evaluate=False), evaluate=False)
     result = algebraize_trigonometric(quotient, x)
     assert result.changed and result.exact and result.expression == 1
@@ -113,7 +113,7 @@ def test_exponential_pole_survives_cancellation():
     assert condition_to_set(image, y) == sp.Interval.Lopen(2, 1 + sp.E)
 
 
-def test_common_subexpression_lifting_remains_uncertified():
+def test_common_subexpression_lifting_uncertified():
     inner = sp.sin(x) + sp.cos(x)
     result = algebraize_common_subexprs(inner**2 + sp.exp(inner), x)
     assert result.exact is False
@@ -165,7 +165,7 @@ def test_hyperbolic_chart_preserves_real_poles(expr, excluded):
     assert (sp.simplify(result.constraints.subs(u, 1)) is sp.S.false) is excluded
 
 
-def test_contour_trig_lifting_declines_residual_parameter():
+def test_contour_trig_lifting_residual_parameter():
     from funcprops.integration import _trig_algebraization
 
     assert _trig_algebraization(x + sp.sin(x), x) is None

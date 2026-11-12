@@ -39,7 +39,11 @@ import funcprops as fp
 
 x, y = sp.symbols("x y", real=True)
 result = fp.integrability(x**2, x, domain=sp.Interval(-1, 1))
-assert result.riemann is fp.TruthValue.TRUE and result.absolutely_integrable is fp.TruthValue.TRUE and result.integral == sp.Rational(2, 3)
+assert (
+    result.riemann is fp.TruthValue.TRUE
+    and result.absolutely_integrable is fp.TruthValue.TRUE
+    and result.integral == sp.Rational(2, 3)
+)
 ```
 
 Expected: Riemann and absolute integrability with integral 2/3.

@@ -55,7 +55,7 @@ def test_analyticity_regressions(expr, var, domain, expected):
     assert fp.analytic(expr, var, domain=domain) is expected
 
 
-def test_nonsmooth_head_is_not_real_analytic_but_restriction_can_be():
+def test_nonsmooth_head_domain():
     assert fp.analytic(sp.Abs(x), x) is Analyticity.NOT_ANALYTIC
     assert fp.analytic(sp.Abs(x), x, domain=x > 0) is Analyticity.ANALYTIC
 
@@ -143,7 +143,7 @@ def test_differentiability_uses_domain_regularity():
     )
 
 
-def test_differentiability_all_properties_reports_implication_closure():
+def test_differentiability_properties_closure():
     from funcprops.results import Differentiability
 
     r = fp.differentiability(sp.exp(x), x, all_properties=True, return_result=True)

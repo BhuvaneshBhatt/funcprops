@@ -25,7 +25,7 @@ def loop():
     return fp.certify_log_atlas(z, z, ring(), policy=P)
 
 
-def test_negative_axis_chart_and_gluing_across_principal_cut():
+def test_negative_axis_chart_gluing_principal_cut():
     D = fp.CoverageRectangle(-2 - sp.I / 4, -1 + sp.I / 4)
     a = fp.certify_log_atlas(z, z, (D,), policy=P)
     assert a.verify() and a.complete and a.charts[0].phase == 2
@@ -43,7 +43,7 @@ def test_negative_axis_chart_and_gluing_across_principal_cut():
     assert all(t.turns == 0 for t in glued.transitions)
 
 
-def test_nontrivial_log_monodromy_and_power_transitions(loop):
+def test_nontrivial_log_monodromy_power_transitions(loop):
     assert loop.verify() and loop.coverage_complete and not loop.gluing_complete
     assert loop.obstructions and not loop.complete
     assert fp.replay_status(loop).complete is False
@@ -92,7 +92,7 @@ def test_altered_atlas_rejected(loop, mutate):
     assert not mutate(loop).verify() and fp.verify_certificate(mutate(loop)) is False
 
 
-def test_unresolved_zero_and_work_limits_remain_incomplete():
+def test_unresolved_zero_work_limits_remain_incomplete():
     a = fp.certify_log_atlas(
         z,
         z,
@@ -115,7 +115,7 @@ def test_atlas_replay_does_not_call_search(loop, monkeypatch):
     assert loop.verify() and fp.verify_certificate(loop)
 
 
-def test_raw_source_holes_and_symbol_assumptions_decline():
+def test_raw_source_holes_symbol_assumptions_decline():
     raw = sp.Mul(z, sp.Pow(z, -1, evaluate=False), evaluate=False)
     for f, x in [(raw, z), (z, sp.Symbol("z", real=True))]:
         with pytest.raises(ValueError):
