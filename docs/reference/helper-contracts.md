@@ -2596,7 +2596,7 @@ No status or check methods are defined on this data record; use its owning or re
 
 ### funcprops.parameter_discriminants.ParameterTransitionLocus
 
-Record a polynomial family's exceptional parameter locus.
+Record a polynomial familys exceptional parameter locus.
 
 Replay contract: `factory-certificate`; mode: `unsupported-unified-replay`.
 

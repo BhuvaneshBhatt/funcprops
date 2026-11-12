@@ -40,11 +40,7 @@ import funcprops as fp
 x, y = sp.symbols("x y", real=True)
 spike = sp.Piecewise((10, sp.Eq(x, 0)), (0, True))
 result = fp.variation(spike, x, domain=sp.Interval(-1, 1), return_result=True)
-assert (
-    result.total_variation == 20
-    and result.bounded_variation is fp.TruthValue.TRUE
-    and result.verify()
-)
+assert result.total_variation == 20 and result.bounded_variation is fp.TruthValue.TRUE and result.verify()
 ```
 
 Expected: total variation 20, counting both incident jumps.

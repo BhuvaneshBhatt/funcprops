@@ -39,10 +39,7 @@ import funcprops as fp
 
 x, y = sp.symbols("x y", real=True)
 result = fp.uniformly_continuous(x**2, x, domain=sp.Interval(-1, 1))
-assert (
-    result is fp.TruthValue.TRUE
-    and fp.uniformly_continuous(x**2, x) is fp.TruthValue.FALSE
-)
+assert result is fp.TruthValue.TRUE and fp.uniformly_continuous(x**2, x) is fp.TruthValue.FALSE
 ```
 
 Expected: TRUE on [-1, 1], while the same polynomial is not uniformly continuous on R.

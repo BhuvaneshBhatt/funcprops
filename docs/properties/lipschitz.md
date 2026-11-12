@@ -39,12 +39,7 @@ import funcprops as fp
 
 x, y = sp.symbols("x y", real=True)
 result = fp.lipschitz(x**2, x, domain=sp.FiniteSet(0, 1, 2), return_result=True)
-assert (
-    result.constant == 3
-    and result.value is fp.TruthValue.TRUE
-    and result.optimal is fp.TruthValue.TRUE
-    and result.verify()
-)
+assert result.constant == 3 and result.value is fp.TruthValue.TRUE and result.optimal is fp.TruthValue.TRUE and result.verify()
 ```
 
 Expected: the optimal constant 3 on {0, 1, 2}.

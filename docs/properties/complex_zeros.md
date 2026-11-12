@@ -41,9 +41,7 @@ z = sp.symbols("z")
 result = fp.complex_zeros(
     sp.exp(z) - 1, z, rectangle=(-1 - sp.I, 1 + sp.I), return_result=True
 )
-assert (
-    result.complete is True and result.total_count == 1 and len(result.rectangles) == 1
-)
+assert result.complete is True and result.total_count == 1 and len(result.rectangles) == 1
 ```
 
 Expected: one certified zero in the rectangle.

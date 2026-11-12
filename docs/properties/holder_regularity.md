@@ -38,9 +38,7 @@ import sympy as sp
 import funcprops as fp
 
 x, y = sp.symbols("x y", real=True)
-result = fp.holder_regularity(
-    sp.sqrt(x), x, domain=sp.Interval(0, 1), return_result=True
-)
+result = fp.holder_regularity(sp.sqrt(x), x, domain=sp.Interval(0, 1), return_result=True)
 assert result.exponent == sp.Rational(1, 2) and result.constant == 1
 ```
 

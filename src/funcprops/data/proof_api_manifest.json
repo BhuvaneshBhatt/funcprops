@@ -1806,7 +1806,7 @@
     {
       "type": "funcprops.real_images.transfers.MonotoneTail",
       "has_verify": true,
-      "line": 61,
+      "line": 62,
       "constructor_sites": [
         "funcprops.real_images.transfers.propose_transfer"
       ],
